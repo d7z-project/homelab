@@ -1,14 +1,14 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { NzFormModule } from 'ng-zorro-antd/form';
-import { NzInputModule } from 'ng-zorro-antd/input';
-import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzCardModule } from 'ng-zorro-antd/card';
-import { NzIconModule } from 'ng-zorro-antd/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../generated';
-import { NzMessageService } from 'ng-zorro-antd/message';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -23,20 +23,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 
     ReactiveFormsModule,
 
-    NzFormModule,
+    MatFormFieldModule,
 
-    NzInputModule,
+    MatInputModule,
 
-    NzButtonModule,
+    MatButtonModule,
 
-    NzCardModule,
+    MatCardModule,
 
-    NzIconModule,
+    MatIconModule,
   ],
 
   templateUrl: './login.component.html',
-
-  styleUrls: ['./login.component.css'],
 })
 export class LoginComponent implements OnInit {
   validateForm!: FormGroup;
@@ -51,7 +49,7 @@ export class LoginComponent implements OnInit {
 
   private authService = inject(AuthService);
 
-  private message = inject(NzMessageService);
+  private snackBar = inject(MatSnackBar);
 
   private cdr = inject(ChangeDetectorRef);
 
@@ -78,7 +76,7 @@ export class LoginComponent implements OnInit {
 
         localStorage.setItem('session_id', res.session_id!);
 
-        this.message.success('登录成功');
+        this.snackBar.open('登录成功', '关闭', { duration: 3000 });
 
         this.router.navigate(['/']);
       } catch (err) {
@@ -96,7 +94,7 @@ export class LoginComponent implements OnInit {
 
             errorMsg = '请输入 TOTP 验证码';
 
-            this.message.info(errorMsg);
+            this.snackBar.open(errorMsg, '关闭', { duration: 3000 });
 
             return;
           } else if (apiError.code === 10000) {
@@ -106,7 +104,7 @@ export class LoginComponent implements OnInit {
           }
         }
 
-        this.message.error(errorMsg);
+        this.snackBar.open(errorMsg, '关闭', { duration: 3000 });
       } finally {
         this.loading = false;
 

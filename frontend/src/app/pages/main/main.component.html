@@ -1,40 +1,32 @@
-<nz-layout class="app-layout">
-  <nz-sider
-    class="menu-sidebar"
-    nzCollapsible
-    nzWidth="256px"
-    nzBreakpoint="md"
-    [(nzCollapsed)]="isCollapsed"
-    [nzTrigger]="null"
-  >
-    <div class="sidebar-logo">
-      <a href="/" target="_blank">
-        <img src="https://ng.ant.design/assets/img/logo.svg" alt="logo" />
-        <h1>Homelab</h1>
-      </a>
+<mat-sidenav-container class="h-full">
+  <mat-sidenav #drawer class="w-64 shadow-[2px_0_6px_rgba(0,0,0,0.24)]" fixedInViewport
+      [attr.role]="isHandset() ? 'dialog' : 'navigation'"
+      [mode]="isHandset() ? 'over' : 'side'"
+      [opened]="!isHandset()">
+    <mat-toolbar class="bg-inherit">Homelab</mat-toolbar>
+    <mat-nav-list>
+      <a mat-list-item routerLink="/welcome">Dashboard / Welcome</a>
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="sticky top-0 z-10">
+      @if (isHandset()) {
+        <button
+          type="button"
+          aria-label="Toggle sidenav"
+          mat-icon-button
+          (click)="drawer.toggle()">
+          <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+        </button>
+      }
+      <span>Application</span>
+      <span class="flex-auto"></span>
+      <button mat-icon-button (click)="logout()" aria-label="Logout">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
+    <div class="p-6">
+      <router-outlet></router-outlet>
     </div>
-    <ul nz-menu nzTheme="dark" nzMode="inline" [nzInlineCollapsed]="isCollapsed">
-      <li nz-submenu nzOpen nzTitle="Dashboard" nzIcon="dashboard">
-        <ul>
-          <li nz-menu-item nzMatchRouter>
-            <a routerLink="/welcome">Welcome</a>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </nz-sider>
-  <nz-layout>
-    <nz-header>
-      <div class="app-header">
-        <span class="header-trigger" (click)="isCollapsed = !isCollapsed">
-          <span class="trigger" nz-icon [nzType]="isCollapsed ? 'menu-unfold' : 'menu-fold'"></span>
-        </span>
-      </div>
-    </nz-header>
-    <nz-content>
-      <div class="inner-content">
-        <router-outlet></router-outlet>
-      </div>
-    </nz-content>
-  </nz-layout>
-</nz-layout>
+  </mat-sidenav-content>
+</mat-sidenav-container>

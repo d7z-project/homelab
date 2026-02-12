@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ExampleService } from './generated';
-import { NzMessageService } from 'ng-zorro-antd/message';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -9,12 +9,11 @@ import { firstValueFrom } from 'rxjs';
   standalone: true,
   imports: [RouterOutlet],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
   protected readonly title = signal('frontend');
   private exampleService = inject(ExampleService);
-  private message = inject(NzMessageService);
+  private snackBar = inject(MatSnackBar);
 
   async ngOnInit() {
     try {
@@ -22,7 +21,7 @@ export class AppComponent implements OnInit {
       console.log('Ping success:', res);
     } catch (err) {
       console.error('Ping failed:', err);
-      this.message.error('Ping 请求失败，请检查网络或后端状态');
+      this.snackBar.open('Ping 请求失败，请检查网络或后端状态', '关闭', { duration: 1000 });
     }
   }
 }

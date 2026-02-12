@@ -1,21 +1,19 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NzCardModule } from 'ng-zorro-antd/card';
-import { NzStatisticModule } from 'ng-zorro-antd/statistic';
-import { NzGridModule } from 'ng-zorro-antd/grid';
-import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzEmptyModule } from 'ng-zorro-antd/empty';
+import { MatCardModule } from '@angular/material/card';
+import { MatGridListModule } from '@angular/material/grid-list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-welcome',
   standalone: true,
   imports: [
     CommonModule,
-    NzCardModule,
-    NzStatisticModule,
-    NzGridModule,
-    NzIconModule,
-    NzEmptyModule,
+    MatCardModule,
+    MatGridListModule,
+    MatIconModule,
+    MatButtonModule,
   ],
   templateUrl: './welcome.component.html',
 })
