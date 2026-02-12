@@ -1,10 +1,57 @@
 basePath: /api/v1
+definitions:
+  auth.LoginRequest:
+    properties:
+      password:
+        type: string
+      totp:
+        type: string
+    type: object
+  auth.LoginResponse:
+    properties:
+      session_id:
+        type: string
+    type: object
+  common.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
 info:
   contact: {}
   description: This is a sample server for homelab.
   title: Homelab API
   version: "1.0"
 paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: verify root password and return session id
+      parameters:
+      - description: Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+      summary: Login to the server
+      tags:
+      - auth
   /ping:
     get:
       consumes:

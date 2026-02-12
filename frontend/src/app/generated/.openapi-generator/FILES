@@ -1,10 +1,14 @@
 api.base.service.ts
 api.module.ts
 api/api.ts
+api/auth.service.ts
 api/example.service.ts
 configuration.ts
 encoder.ts
 index.ts
+model/authLoginRequest.ts
+model/authLoginResponse.ts
+model/commonResponse.ts
 model/models.ts
 param.ts
 provide-api.ts

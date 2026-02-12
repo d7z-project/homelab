@@ -22,6 +22,13 @@ import { Observable } from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AuthLoginRequest } from '../model/authLoginRequest';
+// @ts-ignore
+import { AuthLoginResponse } from '../model/authLoginResponse';
+// @ts-ignore
+import { CommonResponse } from '../model/commonResponse';
+
+// @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
 import { Configuration } from '../configuration';
 import { BaseService } from '../api.base.service';
@@ -29,7 +36,7 @@ import { BaseService } from '../api.base.service';
 @Injectable({
   providedIn: 'root',
 })
-export class ExampleService extends BaseService {
+export class AuthService extends BaseService {
   constructor(
     protected httpClient: HttpClient,
     @Optional() @Inject(BASE_PATH) basePath: string | string[],
@@ -39,14 +46,16 @@ export class ExampleService extends BaseService {
   }
 
   /**
-   * Ping the server
-   * get string \&quot;pong\&quot;
-   * @endpoint get /ping
+   * Login to the server
+   * verify root password and return session id
+   * @endpoint post /login
+   * @param request Login Request
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
-  public pingGet(
+  public loginPost(
+    request: AuthLoginRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -54,8 +63,9 @@ export class ExampleService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<string>;
-  public pingGet(
+  ): Observable<AuthLoginResponse>;
+  public loginPost(
+    request: AuthLoginRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -63,8 +73,9 @@ export class ExampleService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<string>>;
-  public pingGet(
+  ): Observable<HttpResponse<AuthLoginResponse>>;
+  public loginPost(
+    request: AuthLoginRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -72,8 +83,9 @@ export class ExampleService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<string>>;
-  public pingGet(
+  ): Observable<HttpEvent<AuthLoginResponse>>;
+  public loginPost(
+    request: AuthLoginRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -82,6 +94,10 @@ export class ExampleService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<any> {
+    if (request === null || request === undefined) {
+      throw new Error('Required parameter request was null or undefined when calling loginPost.');
+    }
+
     let localVarHeaders = this.defaultHeaders;
 
     const localVarHttpHeaderAcceptSelected: string | undefined =
@@ -94,6 +110,14 @@ export class ExampleService extends BaseService {
 
     const localVarTransferCache: boolean = options?.transferCache ?? true;
 
+    // to determine the Content-Type header
+    const consumes: string[] = ['application/json'];
+    const httpContentTypeSelected: string | undefined =
+      this.configuration.selectHeaderContentType(consumes);
+    if (httpContentTypeSelected !== undefined) {
+      localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+    }
+
     let responseType_: 'text' | 'json' | 'blob' = 'json';
     if (localVarHttpHeaderAcceptSelected) {
       if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
@@ -105,10 +129,11 @@ export class ExampleService extends BaseService {
       }
     }
 
-    let localVarPath = `/ping`;
+    let localVarPath = `/login`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<string>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<AuthLoginResponse>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
+      body: request,
       responseType: <any>responseType_,
       ...(withCredentials ? { withCredentials } : {}),
       headers: localVarHeaders,

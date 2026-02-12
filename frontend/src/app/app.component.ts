@@ -1,0 +1,28 @@
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { ExampleService } from './generated';
+import { NzMessageService } from 'ng-zorro-antd/message';
+import { firstValueFrom } from 'rxjs';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css',
+})
+export class AppComponent implements OnInit {
+  protected readonly title = signal('frontend');
+  private exampleService = inject(ExampleService);
+  private message = inject(NzMessageService);
+
+  async ngOnInit() {
+    try {
+      const res = await firstValueFrom(this.exampleService.pingGet());
+      console.log('Ping success:', res);
+    } catch (err) {
+      console.error('Ping failed:', err);
+      this.message.error('Ping 请求失败，请检查网络或后端状态');
+    }
+  }
+}

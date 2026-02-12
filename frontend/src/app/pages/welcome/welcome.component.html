@@ -1,0 +1,58 @@
+<div class="dashboard-container">
+  <div nz-row [nzGutter]="16">
+    <div nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="(12.5 | number: '1.0-2')!"
+          [nzTitle]="'CPU 使用率'"
+          [nzPrefix]="prefixActive"
+          [nzSuffix]="'%'"
+          [nzValueStyle]="{ color: '#1890ff' }"
+        ></nz-statistic>
+        <ng-template #prefixActive><span nz-icon nzType="dashboard"></span></ng-template>
+      </nz-card>
+    </div>
+    <div nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="(45.2 | number: '1.0-2')!"
+          [nzTitle]="'内存使用率'"
+          [nzPrefix]="prefixMem"
+          [nzSuffix]="'%'"
+          [nzValueStyle]="{ color: '#1890ff' }"
+        ></nz-statistic>
+        <ng-template #prefixMem><span nz-icon nzType="database"></span></ng-template>
+      </nz-card>
+    </div>
+    <div nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="(982 | number)!"
+          [nzTitle]="'活跃连接'"
+          [nzPrefix]="prefixConn"
+          [nzValueStyle]="{ color: '#1890ff' }"
+        ></nz-statistic>
+        <ng-template #prefixConn><span nz-icon nzType="api"></span></ng-template>
+      </nz-card>
+    </div>
+    <div nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="(12 | number)!"
+          [nzTitle]="'运行中容器'"
+          [nzPrefix]="prefixContainer"
+          [nzValueStyle]="{ color: '#1890ff' }"
+        ></nz-statistic>
+        <ng-template #prefixContainer><span nz-icon nzType="container"></span></ng-template>
+      </nz-card>
+    </div>
+  </div>
+
+  <div nz-row [nzGutter]="16" style="margin-top: 16px">
+    <div nz-col [nzSpan]="24">
+      <nz-card nzTitle="系统状态监控">
+        <nz-empty nzNotFoundContent="暂无详细监控数据"></nz-empty>
+      </nz-card>
+    </div>
+  </div>
+</div>

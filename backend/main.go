@@ -1,5 +1,7 @@
 package main
 
+//go:generate swag init
+
 import (
 	"flag"
 	"homelab/assets"
@@ -27,7 +29,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&config, "config", "config.yaml", "config file")
+	flag.StringVar(&config, "config", "", "config file")
 	flag.BoolVar(&debug, "debug", false, "debug mode")
 	flag.Parse()
 }
@@ -37,29 +39,43 @@ func init() {
 // @description This is a sample server for homelab.
 // @BasePath /api/v1
 func main() {
-	if data, err := os.ReadFile(config); err == nil {
-		if err = yaml.Unmarshal(data, common.Opts); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		if debug {
-			log.Printf("Warning: config file not exist")
+	if config != "" {
+		if data, err := os.ReadFile(config); err == nil {
+			if err = yaml.Unmarshal(data, common.Opts); err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			log.Fatal("config file not exist")
 		}
 	}
+	common.Opts.ParseEnv()
 	db, err := kv.NewKVFromURL(common.Opts.DB)
 	if err != nil {
 		log.Fatal(err)
 	}
 	common.DB = db
 	defer db.Close()
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	r.Use(middleware.Recoverer)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rvr := recover(); rvr != nil {
+					if rvr == http.ErrAbortHandler {
+						panic(rvr)
+					}
+					log.Printf("Panic: %v", rvr)
+					common.InternalServerError(w, r, http.StatusInternalServerError, "Internal Server Error")
+				}
+			}()
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.Logger)
 		Router(r)
 	})
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
