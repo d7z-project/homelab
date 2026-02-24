@@ -1,32 +1,63 @@
 <mat-sidenav-container class="h-full">
-  <mat-sidenav #drawer class="w-64 shadow-[2px_0_6px_rgba(0,0,0,0.24)]" fixedInViewport
-      [attr.role]="isHandset() ? 'dialog' : 'navigation'"
-      [mode]="isHandset() ? 'over' : 'side'"
-      [opened]="!isHandset()">
-    <mat-toolbar class="bg-inherit">Homelab</mat-toolbar>
-    <mat-nav-list>
-      <a mat-list-item routerLink="/welcome">Dashboard / Welcome</a>
+  <mat-sidenav
+    #drawer
+    class="app-sidebar border-none shadow-xl"
+    fixedInViewport
+    [attr.role]="isHandset() ? 'dialog' : 'navigation'"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+  >
+    <div class="sidebar-header">
+      <mat-icon class="sidebar-logo">home_work</mat-icon>
+      <div class="text-xl font-bold tracking-wider">HOMELAB</div>
+      <div class="text-[10px] opacity-70 mt-1 uppercase tracking-widest">Management System</div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <mat-nav-list class="py-0">
+      @for (item of menuItems; track item.label) {
+        <a
+          mat-list-item
+          [routerLink]="item.link"
+          routerLinkActive="nav-item-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="isHandset() && drawer.close()"
+        >
+          <mat-icon matListItemIcon class="!mr-4">{{ item.icon }}</mat-icon>
+          <span matListItemTitle class="text-sm">{{ item.label }}</span>
+        </a>
+      }
     </mat-nav-list>
+
+    <div class="absolute bottom-4 w-full text-center px-4">
+      <div class="text-[10px] text-slate-400 uppercase tracking-tighter opacity-50">
+        Connected via ServiceAccount
+      </div>
+    </div>
   </mat-sidenav>
-  <mat-sidenav-content>
-    <mat-toolbar color="primary" class="sticky top-0 z-10">
+
+  <mat-sidenav-content class="bg-slate-50">
+    <mat-toolbar class="bg-white border-b border-slate-200 sticky top-0 z-10 px-6">
       @if (isHandset()) {
-        <button
-          type="button"
-          aria-label="Toggle sidenav"
-          mat-icon-button
-          (click)="drawer.toggle()">
-          <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+        <button type="button" aria-label="Toggle sidenav" mat-icon-button (click)="drawer.toggle()" class="mr-2">
+          <mat-icon>menu</mat-icon>
         </button>
       }
-      <span>Application</span>
+      <span class="text-sm font-semibold text-slate-600 uppercase tracking-wider">
+        {{ router.url === '/welcome' ? 'Dashboard' : 'System' }}
+      </span>
       <span class="flex-auto"></span>
-      <button mat-icon-button (click)="logout()" aria-label="Logout">
-        <mat-icon>logout</mat-icon>
-      </button>
+      
+      <div class="flex items-center gap-1">
+        <button mat-icon-button (click)="logout()" class="text-slate-400 hover:text-red-500 transition-colors" aria-label="Logout">
+          <mat-icon>power_settings_new</mat-icon>
+        </button>
+      </div>
     </mat-toolbar>
-    <div class="p-6">
+
+    <main class="p-6 md:p-10 max-w-screen-2xl mx-auto animate-in fade-in duration-500">
       <router-outlet></router-outlet>
-    </div>
+    </main>
   </mat-sidenav-content>
 </mat-sidenav-container>

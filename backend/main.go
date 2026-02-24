@@ -38,6 +38,9 @@ func init() {
 // @version 1.0
 // @description This is a sample server for homelab.
 // @BasePath /api/v1
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	if config != "" {
 		if data, err := os.ReadFile(config); err == nil {
@@ -78,7 +81,7 @@ func main() {
 	r.Group(func(r chi.Router) {
 		Router(r)
 	})
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
+	r.Get("/api/swagger/*", httpSwagger.WrapHandler)
 	if debug {
 		log.Printf("Debug mode enabled, proxying frontend to http://127.0.0.1:4200")
 		target, _ := url.Parse("http://127.0.0.1:4200")

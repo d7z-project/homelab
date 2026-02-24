@@ -7,11 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AuthPolicyRule } from './authPolicyRule';
 
 
-export interface CommonResponse { 
-    code?: number;
-    data?: object;
-    message?: string;
+export interface AuthRole { 
+    name?: string;
+    rules?: Array<AuthPolicyRule>;
 }
 

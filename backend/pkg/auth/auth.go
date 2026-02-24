@@ -38,9 +38,8 @@ func Login(ctx context.Context, password string, totpCode string) (string, error
 		return "", ErrUnauthorized
 	}
 
-	sessionCtx := common.DB.Child("auth", "sessions")
 	sessionID := uuid.New().String()
-
+	sessionCtx := common.DB.Child("auth", "sessions")
 	// Store session with 24 hours TTL, value as []byte
 	err := sessionCtx.Put(ctx, sessionID, "root", 24*time.Hour)
 	if err != nil {
@@ -56,4 +55,24 @@ func Verify(ctx context.Context, sessionID string) (bool, error) {
 		return false, nil
 	}
 	return string(val) == "root", nil
+}
+
+func Logout(ctx context.Context, sessionID string) error {
+	sessionCtx := common.DB.Child("auth", "sessions")
+	_, err := sessionCtx.Delete(ctx, sessionID)
+	return err
+}
+
+type contextKey string
+
+const AuthContextKey contextKey = "auth_context"
+
+type AuthContext struct {
+	Type string // "root" or "sa"
+	Name string // ServiceAccount name if Type is "sa"
+}
+
+func FromContext(ctx context.Context) *AuthContext {
+	val, _ := ctx.Value(AuthContextKey).(*AuthContext)
+	return val
 }

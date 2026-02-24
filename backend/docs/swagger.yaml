@@ -12,6 +12,44 @@ definitions:
       session_id:
         type: string
     type: object
+  auth.PolicyRule:
+    properties:
+      resources:
+        items:
+          type: string
+        type: array
+      verbs:
+        items:
+          type: string
+        type: array
+    type: object
+  auth.Role:
+    properties:
+      name:
+        type: string
+      rules:
+        items:
+          $ref: '#/definitions/auth.PolicyRule'
+        type: array
+    type: object
+  auth.RoleBinding:
+    properties:
+      name:
+        type: string
+      roleName:
+        type: string
+      serviceAccountName:
+        type: string
+    type: object
+  auth.ServiceAccount:
+    properties:
+      comments:
+        type: string
+      name:
+        type: string
+      token:
+        type: string
+    type: object
   common.Response:
     properties:
       code:
@@ -20,12 +58,31 @@ definitions:
       message:
         type: string
     type: object
+  routers.AuthInfo:
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+    type: object
 info:
   contact: {}
   description: This is a sample server for homelab.
   title: Homelab API
   version: "1.0"
 paths:
+  /info:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routers.AuthInfo'
+      summary: Get current auth info
+      tags:
+      - auth
   /login:
     post:
       consumes:
@@ -52,6 +109,23 @@ paths:
       summary: Login to the server
       tags:
       - auth
+  /logout:
+    post:
+      consumes:
+      - application/json
+      description: invalidate session id
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Logout from the server
+      tags:
+      - auth
   /ping:
     get:
       consumes:
@@ -67,4 +141,177 @@ paths:
       summary: Ping the server
       tags:
       - example
+  /rbac/rolebindings:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.RoleBinding'
+            type: array
+      summary: List all role bindings
+      tags:
+      - rbac
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role Binding
+        in: body
+        name: rb
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RoleBinding'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.RoleBinding'
+      summary: Create a role binding
+      tags:
+      - rbac
+  /rbac/rolebindings/{name}:
+    delete:
+      parameters:
+      - description: Role Binding Name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete a role binding
+      tags:
+      - rbac
+  /rbac/roles:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.Role'
+            type: array
+      summary: List all roles
+      tags:
+      - rbac
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/auth.Role'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.Role'
+      summary: Create a role
+      tags:
+      - rbac
+  /rbac/roles/{name}:
+    delete:
+      parameters:
+      - description: Role Name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete a role
+      tags:
+      - rbac
+  /rbac/serviceaccounts:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.ServiceAccount'
+            type: array
+      summary: List all service accounts
+      tags:
+      - rbac
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Service Account
+        in: body
+        name: sa
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ServiceAccount'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.ServiceAccount'
+      summary: Create a service account
+      tags:
+      - rbac
+  /rbac/serviceaccounts/{name}:
+    delete:
+      parameters:
+      - description: Service Account Name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete a service account
+      tags:
+      - rbac
+  /rbac/serviceaccounts/{name}/reset:
+    post:
+      parameters:
+      - description: Service Account Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.ServiceAccount'
+      summary: Reset a service account token
+      tags:
+      - rbac
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

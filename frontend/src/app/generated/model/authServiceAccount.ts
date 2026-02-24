@@ -9,9 +9,9 @@
  */
 
 
-export interface CommonResponse { 
-    code?: number;
-    data?: object;
-    message?: string;
+export interface AuthServiceAccount { 
+    comments?: string;
+    name?: string;
+    token?: string;
 }
 

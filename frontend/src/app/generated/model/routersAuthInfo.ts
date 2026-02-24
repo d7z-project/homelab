@@ -9,9 +9,8 @@
  */
 
 
-export interface CommonResponse { 
-    code?: number;
-    data?: object;
-    message?: string;
+export interface RoutersAuthInfo { 
+    name?: string;
+    type?: string;
 }
 

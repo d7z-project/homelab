@@ -9,9 +9,9 @@
  */
 
 
-export interface CommonResponse { 
-    code?: number;
-    data?: object;
-    message?: string;
+export interface AuthRoleBinding { 
+    name?: string;
+    roleName?: string;
+    serviceAccountName?: string;
 }
 

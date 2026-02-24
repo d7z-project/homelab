@@ -9,9 +9,8 @@
  */
 
 
-export interface CommonResponse { 
-    code?: number;
-    data?: object;
-    message?: string;
+export interface AuthPolicyRule { 
+    resources?: Array<string>;
+    verbs?: Array<string>;
 }
 

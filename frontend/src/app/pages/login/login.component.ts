@@ -69,15 +69,12 @@ export class LoginComponent implements OnInit {
         const res = await firstValueFrom(
           this.authService.loginPost({
             password: this.validateForm.value.password,
-
             totp: this.validateForm.value.totp,
           }),
         );
 
         localStorage.setItem('session_id', res.session_id!);
-
         this.snackBar.open('登录成功', '关闭', { duration: 3000 });
-
         this.router.navigate(['/']);
       } catch (err) {
         let errorMsg = '登录失败，请检查密码或验证码';
