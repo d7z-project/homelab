@@ -10,26 +10,26 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title>ServiceAccount 已创建</h2>
+    <h2 mat-dialog-title class="!pt-6">ServiceAccount 已就绪</h2>
     <mat-dialog-content>
-      <div class="space-y-4">
-        <p>这是您的 ServiceAccount <strong>{{ data.name }}</strong> 的 Token。</p>
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
-          <div class="flex items-start gap-2 text-amber-800">
-            <mat-icon class="mt-1 scale-75">warning</mat-icon>
-            <p class="text-sm font-medium">请务必保存此 Token，它将不再显示！</p>
+      <div class="space-y-4 pt-2">
+        <p class="text-on-surface opacity-80">账号 <strong>{{ data.name }}</strong> 的访问令牌已生成。</p>
+        <div class="bg-surface-container rounded-2xl p-5 space-y-4 border border-outline-variant">
+          <div class="flex items-start gap-3 text-primary">
+            <mat-icon class="!w-5 !h-5 !text-[20px]">info</mat-icon>
+            <p class="text-xs font-medium leading-relaxed">请妥善保管此令牌。出于安全考虑，离开此页面后将无法再次查看该令牌。</p>
           </div>
-          <div class="flex items-center gap-2 bg-white border rounded p-2 font-mono text-sm break-all">
-            <span class="flex-1">{{ data.token }}</span>
-            <button mat-icon-button (click)="copyToken()">
-              <mat-icon>content_copy</mat-icon>
+          <div class="flex items-center gap-3 bg-surface-container-lowest border border-outline-variant rounded-xl p-3 font-mono text-xs break-all shadow-inner">
+            <span class="flex-1 select-all">{{ data.token }}</span>
+            <button mat-icon-button (click)="copyToken()" class="text-primary">
+              <mat-icon class="!w-5 !h-5 !text-[20px]">content_copy</mat-icon>
             </button>
           </div>
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-flat-button color="primary" mat-dialog-close>我已保存</button>
+    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+      <button mat-flat-button color="primary" mat-dialog-close>已安全保存</button>
     </mat-dialog-actions>
   `,
 })

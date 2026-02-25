@@ -9,10 +9,10 @@
  */
 
 
-export interface AuthRoleBinding { 
-    enabled?: boolean;
-    name?: string;
-    roleNames?: Array<string>;
-    serviceAccountName?: string;
+export interface CommonPaginatedResponse { 
+    items?: object;
+    page?: number;
+    pageSize?: number;
+    total?: number;
 }
 

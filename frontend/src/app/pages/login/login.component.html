@@ -1,31 +1,31 @@
-<div class="flex h-screen w-screen overflow-hidden bg-slate-50">
-  <div class="flex-2 relative hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-[#3f51b5] to-[#5c6bc0]">
+<div class="flex h-screen w-screen overflow-hidden bg-surface">
+  <div class="flex-2 relative hidden md:flex flex-col items-center justify-center bg-primary-container">
     <!-- 左侧品牌展示区域 -->
-    <div class="text-white text-center p-10 animate-in fade-in zoom-in duration-700">
-      <mat-icon class="!text-[120px] !w-32 !h-32 mb-6 opacity-90 drop-shadow-lg">home_work</mat-icon>
-      <h1 class="text-5xl font-extrabold mb-3 tracking-tighter">HOMELAB</h1>
+    <div class="text-on-primary-container text-center p-10 animate-in fade-in zoom-in duration-700">
+      <mat-icon class="!text-[120px] !w-32 !h-32 mb-6 opacity-90 drop-shadow-xl text-primary">home_work</mat-icon>
+      <h1 class="text-6xl font-extralight mb-3 tracking-tighter">HOMELAB</h1>
       <p class="text-xl opacity-80 font-light tracking-wide">智能家庭实验室管理系统</p>
     </div>
-    <div class="absolute bottom-10 text-white/40 text-xs tracking-widest uppercase">
+    <div class="absolute bottom-10 text-on-primary-container opacity-40 text-[10px] tracking-widest uppercase">
       &copy; 2026 Homelab Infrastructure
     </div>
   </div>
-  <div class="flex-1 flex justify-center items-center bg-white min-w-full md:min-w-[450px] shadow-2xl z-10">
+  <div class="flex-1 flex justify-center items-center bg-surface min-w-full md:min-w-[450px] z-10">
     <!-- 右侧登录表单区域 -->
-    <div class="w-full max-w-sm px-8 animate-in slide-in-from-right duration-500">
-      <div class="mb-12">
-        <div class="md:hidden flex items-center gap-2 mb-6 text-[#3f51b5]">
+    <div class="w-full max-w-sm px-10 animate-in slide-in-from-right duration-500">
+      <div class="mb-14">
+        <div class="md:hidden flex items-center gap-2 mb-8 text-primary">
           <mat-icon>home_work</mat-icon>
-          <span class="font-bold tracking-tighter">HOMELAB</span>
+          <span class="font-bold tracking-tighter uppercase">HOMELAB</span>
         </div>
-        <h2 class="text-3xl font-bold text-slate-800 tracking-tight">欢迎回来</h2>
-        <p class="text-slate-400 mt-2">请输入您的管理凭据以继续</p>
+        <h2 class="text-4xl font-light text-on-surface tracking-tight">欢迎回来</h2>
+        <p class="text-outline mt-2 text-sm">请输入您的管理凭据以继续</p>
       </div>
 
       <form [formGroup]="validateForm" (ngSubmit)="submitForm()" class="space-y-6">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>访问密码</mat-label>
-          <mat-icon matPrefix class="text-slate-400">lock_outline</mat-icon>
+          <mat-icon matPrefix class="text-outline">lock_outline</mat-icon>
           <input matInput type="password" formControlName="password" placeholder="请输入系统密码" />
           @if (validateForm.get('password')?.hasError('required')) {
             <mat-error>请输入系统密码以验证身份</mat-error>
@@ -35,7 +35,7 @@
         @if (showTotp) {
           <mat-form-field appearance="outline" class="w-full animate-in fade-in slide-in-from-top-2 duration-300">
              <mat-label>2FA 验证码</mat-label>
-             <mat-icon matPrefix class="text-slate-400">verified_user</mat-icon>
+             <mat-icon matPrefix class="text-outline">verified_user</mat-icon>
              <input matInput type="text" formControlName="totp" maxlength="6" minlength="6" placeholder="输入 6 位 TOTP 动态码" />
               @if (validateForm.get('totp')?.hasError('required')) {
                 <mat-error>请输入双因素验证码</mat-error>
@@ -43,19 +43,22 @@
           </mat-form-field>
         }
 
-        <div class="pt-2">
-          <button mat-flat-button color="primary" class="w-full !h-12 !text-base !rounded-lg shadow-lg shadow-indigo-100" [disabled]="loading">
+        <div class="pt-4">
+          <button mat-flat-button color="primary" class="w-full !h-14 !text-base !rounded-2xl" [disabled]="loading">
               @if (loading) {
-                  <span class="flex items-center gap-2 text-white/80">正在验证安全凭据...</span>
+                  <span class="flex items-center gap-3">
+                    <mat-icon class="animate-spin !w-5 !h-5 !text-[20px]">refresh</mat-icon>
+                    正在验证安全凭据...
+                  </span>
               } @else {
-                  <span class="font-semibold tracking-wide text-white">授权登录</span>
+                  <span class="font-medium tracking-wide">授权登录</span>
               }
           </button>
         </div>
       </form>
 
-      <div class="mt-20 text-center">
-        <p class="text-xs text-slate-400">
+      <div class="mt-24 text-center">
+        <p class="text-[11px] text-outline uppercase tracking-wider font-medium opacity-60">
           如果您忘记了密码，请通过物理终端重置。
         </p>
       </div>

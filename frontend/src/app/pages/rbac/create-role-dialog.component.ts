@@ -21,46 +21,46 @@ import { AuthRole, AuthPolicyRule } from '../../generated';
     MatIconModule,
   ],
   template: `
-    <h2 mat-dialog-title>{{ isEdit ? '修改 Role' : '创建 Role' }}</h2>
+    <h2 mat-dialog-title class="!pt-6">{{ isEdit ? '修改 Role' : '创建 Role' }}</h2>
     <mat-dialog-content>
-      <div class="pt-2 space-y-4">
+      <div class="pt-3 space-y-5">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Role 名称</mat-label>
           <input matInput [(ngModel)]="role.name" placeholder="例如: dns-admin" [disabled]="isEdit" autofocus />
           <mat-error *ngIf="!isEdit && isDuplicate()">角色名称已存在</mat-error>
         </mat-form-field>
 
-        <div class="border rounded-lg p-3 space-y-3 bg-slate-50" *ngIf="firstRule">
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">权限规则</p>
+        <div class="border border-outline-variant rounded-xl p-4 space-y-4 bg-surface-container-low" *ngIf="firstRule">
+          <p class="text-xs font-bold text-outline uppercase tracking-wider">权限规则</p>
           
-          <mat-form-field appearance="outline" class="w-full bg-white">
+          <mat-form-field appearance="outline" class="w-full bg-surface">
             <mat-label>资源 (Resources)</mat-label>
             <input matInput [(ngModel)]="resourceInput" placeholder="dns, service 或 * (回车添加)" (keyup.enter)="addResource()" />
             <mat-hint>输入资源名称并按回车</mat-hint>
           </mat-form-field>
-          <div class="flex flex-wrap gap-1">
-            <span *ngFor="let r of firstRule.resources" class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs flex items-center gap-1">
-              {{r}} <mat-icon class="!w-3 !h-3 !text-[12px] cursor-pointer" (click)="removeResource(r)">close</mat-icon>
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let r of firstRule.resources" class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-sm">
+              {{r}} <mat-icon class="!w-4 !h-4 !text-[14px] cursor-pointer opacity-70 hover:opacity-100" (click)="removeResource(r)">close</mat-icon>
             </span>
           </div>
 
-          <mat-form-field appearance="outline" class="w-full bg-white">
+          <mat-form-field appearance="outline" class="w-full bg-surface">
             <mat-label>操作 (Verbs)</mat-label>
             <input matInput [(ngModel)]="verbInput" placeholder="read, write 或 * (回车添加)" (keyup.enter)="addVerb()" />
             <mat-hint>输入动词并按回车</mat-hint>
           </mat-form-field>
-          <div class="flex flex-wrap gap-1">
-            <span *ngFor="let v of firstRule.verbs" class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs flex items-center gap-1">
-              {{v}} <mat-icon class="!w-3 !h-3 !text-[12px] cursor-pointer" (click)="removeVerb(v)">close</mat-icon>
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let v of firstRule.verbs" class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-sm">
+              {{v}} <mat-icon class="!w-4 !h-4 !text-[14px] cursor-pointer opacity-70 hover:opacity-100" (click)="removeVerb(v)">close</mat-icon>
             </span>
           </div>
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end">
+    <mat-dialog-actions align="end" class="!px-6 !pb-6">
       <button mat-button mat-dialog-close>取消</button>
       <button mat-flat-button color="primary" [mat-dialog-close]="role" 
-              [disabled]="!role.name || !firstRule || (firstRule.resources?.length || 0) === 0 || (firstRule.verbs?.length || 0) === 0 || (!isEdit && isDuplicate())">
+              [disabled]="!role.name || !firstRule || (firstRule.resources?.length || 0) === 0 || (firstRule.verbs?.length || 0) === 0 || (!isEdit && isDuplicate())" class="!ml-2">
         {{ isEdit ? '保存修改' : '确认创建' }}
       </button>
     </mat-dialog-actions>

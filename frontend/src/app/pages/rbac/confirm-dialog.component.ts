@@ -17,16 +17,16 @@ export interface ConfirmDialogData {
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title class="flex items-center gap-2">
-      <mat-icon [color]="data.color || 'warn'">warning</mat-icon>
+    <h2 mat-dialog-title class="flex items-center gap-3 !pt-6">
+      <mat-icon [color]="data.color || 'warn'" class="!w-6 !h-6 !text-[24px]">warning</mat-icon>
       {{ data.title }}
     </h2>
     <mat-dialog-content>
-      <p class="py-2 text-slate-600">{{ data.message }}</p>
+      <p class="py-3 text-on-surface opacity-80">{{ data.message }}</p>
     </mat-dialog-content>
-    <mat-dialog-actions align="end">
+    <mat-dialog-actions align="end" class="!px-6 !pb-6">
       <button mat-button [mat-dialog-close]="false">{{ data.cancelText || '取消' }}</button>
-      <button mat-flat-button [color]="data.color || 'warn'" [mat-dialog-close]="true">
+      <button mat-flat-button [color]="data.color || 'warn'" [mat-dialog-close]="true" class="!ml-2">
         {{ data.confirmText || '确定删除' }}
       </button>
     </mat-dialog-actions>

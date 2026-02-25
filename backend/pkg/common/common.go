@@ -15,6 +15,13 @@ type Response struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
+type PaginatedResponse struct {
+	Total    int         `json:"total"`
+	Page     int         `json:"page"`
+	PageSize int         `json:"pageSize"`
+	Items    interface{} `json:"items"`
+}
+
 func (rd *Response) Render(_ http.ResponseWriter, _ *http.Request) error {
 	return nil
 }
@@ -22,6 +29,15 @@ func (rd *Response) Render(_ http.ResponseWriter, _ *http.Request) error {
 func Success(w http.ResponseWriter, r *http.Request, data interface{}) {
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, data)
+}
+
+func PaginatedSuccess(w http.ResponseWriter, r *http.Request, items interface{}, total int, page int, pageSize int) {
+	Success(w, r, &PaginatedResponse{
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Items:    items,
+	})
 }
 
 func Error(w http.ResponseWriter, r *http.Request, httpStatus int, code int, message string) {

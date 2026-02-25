@@ -19,9 +19,9 @@ import { AuthServiceAccount } from '../../generated';
     FormsModule,
   ],
   template: `
-    <h2 mat-dialog-title>{{ isEdit ? '修改 ServiceAccount' : '创建 ServiceAccount' }}</h2>
+    <h2 mat-dialog-title class="!pt-6">{{ isEdit ? '修改 ServiceAccount' : '创建 ServiceAccount' }}</h2>
     <mat-dialog-content>
-      <div class="pt-2 space-y-4">
+      <div class="pt-3 space-y-5">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>ServiceAccount 名称</mat-label>
           <input matInput [(ngModel)]="sa.name" placeholder="例如: backup-agent" [disabled]="isEdit" autofocus (keyup.enter)="confirm()"/>
@@ -35,9 +35,9 @@ import { AuthServiceAccount } from '../../generated';
         </mat-form-field>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end">
+    <mat-dialog-actions align="end" class="!px-6 !pb-6">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" (click)="confirm()" [disabled]="!sa.name?.trim() || (!isEdit && isDuplicate())">
+      <button mat-flat-button color="primary" (click)="confirm()" [disabled]="!sa.name?.trim() || (!isEdit && isDuplicate())" class="!ml-2">
         {{ isEdit ? '保存修改' : '确认创建' }}
       </button>
     </mat-dialog-actions>

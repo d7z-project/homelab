@@ -1,77 +1,77 @@
-<div class="space-y-6">
+<div class="space-y-8">
   <header>
-    <h1 class="text-2xl font-bold text-slate-800">控制面板</h1>
-    <p class="text-slate-500">欢迎回来，Administrator。这是您实验室的实时概览。</p>
+    <h1 class="text-3xl font-light text-on-surface tracking-tight m-0">Dashboard</h1>
+    <p class="text-sm text-outline mt-1">欢迎回来，Administrator。这是您的实验室实时概览。</p>
   </header>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <mat-card class="!shadow-sm border border-slate-100">
-      <mat-card-header class="!pb-2">
+    <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
+      <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-sm !font-medium text-slate-500">CPU 使用率</mat-card-title>
-          <div class="p-2 bg-blue-50 rounded-lg">
-            <mat-icon class="!text-blue-500">memory</mat-icon>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">CPU 使用率</mat-card-title>
+          <div class="p-2 bg-primary-container rounded-xl">
+            <mat-icon class="text-primary !text-[20px] !w-5 !h-5">memory</mat-icon>
           </div>
         </div>
       </mat-card-header>
       <mat-card-content>
-        <div class="text-3xl font-bold text-slate-900">{{ 12.5 | number: '1.0-1' }}%</div>
-        <div class="text-xs text-green-500 mt-1 flex items-center gap-1">
-          <mat-icon class="!text-xs">trending_down</mat-icon>
+        <div class="text-4xl font-light text-on-surface">{{ 12.5 | number: '1.0-1' }}%</div>
+        <div class="text-xs text-primary mt-2 flex items-center gap-1.5 font-medium">
+          <mat-icon class="!text-[14px] !w-3.5 !h-3.5">trending_down</mat-icon>
           <span>比上小时降低 2.3%</span>
         </div>
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="!shadow-sm border border-slate-100">
-      <mat-card-header class="!pb-2">
+    <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
+      <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-sm !font-medium text-slate-500">内存使用率</mat-card-title>
-          <div class="p-2 bg-purple-50 rounded-lg">
-            <mat-icon class="!text-purple-500">storage</mat-icon>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">内存使用率</mat-card-title>
+          <div class="p-2 bg-secondary-container rounded-xl">
+            <mat-icon class="text-secondary !text-[20px] !w-5 !h-5">storage</mat-icon>
           </div>
         </div>
       </mat-card-header>
       <mat-card-content>
-        <div class="text-3xl font-bold text-slate-900">{{ 45.2 | number: '1.0-1' }}%</div>
-        <div class="text-xs text-amber-500 mt-1 flex items-center gap-1">
-          <mat-icon class="!text-xs">trending_flat</mat-icon>
+        <div class="text-4xl font-light text-on-surface">{{ 45.2 | number: '1.0-1' }}%</div>
+        <div class="text-xs text-secondary mt-2 flex items-center gap-1.5 font-medium">
+          <mat-icon class="!text-[14px] !w-3.5 !h-3.5">trending_flat</mat-icon>
           <span>保持平稳</span>
         </div>
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="!shadow-sm border border-slate-100">
-      <mat-card-header class="!pb-2">
+    <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
+      <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-sm !font-medium text-slate-500">活跃连接</mat-card-title>
-          <div class="p-2 bg-emerald-50 rounded-lg">
-            <mat-icon class="!text-emerald-500">router</mat-icon>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">活跃连接</mat-card-title>
+          <div class="p-2 bg-tertiary-container rounded-xl">
+            <mat-icon class="text-tertiary !text-[20px] !w-5 !h-5">router</mat-icon>
           </div>
         </div>
       </mat-card-header>
       <mat-card-content>
-        <div class="text-3xl font-bold text-slate-900">{{ 982 | number }}</div>
-        <div class="text-xs text-green-500 mt-1 flex items-center gap-1">
-          <mat-icon class="!text-xs">trending_up</mat-icon>
+        <div class="text-4xl font-light text-on-surface">{{ 982 | number }}</div>
+        <div class="text-xs text-tertiary mt-2 flex items-center gap-1.5 font-medium">
+          <mat-icon class="!text-[14px] !w-3.5 !h-3.5">trending_up</mat-icon>
           <span>新增 45 个连接</span>
         </div>
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="!shadow-sm border border-slate-100">
-      <mat-card-header class="!pb-2">
+    <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
+      <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-sm !font-medium text-slate-500">运行中容器</mat-card-title>
-          <div class="p-2 bg-cyan-50 rounded-lg">
-            <mat-icon class="!text-cyan-500">layers</mat-icon>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">运行中容器</mat-card-title>
+          <div class="p-2 bg-primary-container rounded-xl opacity-80">
+            <mat-icon class="text-primary !text-[20px] !w-5 !h-5">layers</mat-icon>
           </div>
         </div>
       </mat-card-header>
       <mat-card-content>
-        <div class="text-3xl font-bold text-slate-900">{{ 12 | number }}</div>
-        <div class="text-xs text-slate-400 mt-1 flex items-center gap-1">
-          <mat-icon class="!text-xs">info_outline</mat-icon>
+        <div class="text-4xl font-light text-on-surface">{{ 12 | number }}</div>
+        <div class="text-xs text-outline mt-2 flex items-center gap-1.5 font-medium opacity-70">
+          <mat-icon class="!text-[14px] !w-3.5 !h-3.5">info_outline</mat-icon>
           <span>总计 15 个容器已部署</span>
         </div>
       </mat-card-content>
@@ -79,30 +79,30 @@
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <mat-card class="lg:col-span-2 !shadow-sm border border-slate-100">
+    <mat-card class="lg:col-span-2 !border-none bg-surface-container-low !shadow-none rounded-3xl">
       <mat-card-header>
-        <mat-card-title class="!text-lg">系统状态监控</mat-card-title>
+        <mat-card-title class="!text-lg font-medium text-on-surface">系统状态监控</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="flex flex-col items-center justify-center p-12 text-slate-300">
-           <mat-icon class="!text-[64px] !w-16 !h-16 mb-4">analytics</mat-icon>
-           <p class="text-slate-400">正在等待实时监控数据流...</p>
+        <div class="flex flex-col items-center justify-center p-16 text-outline opacity-30">
+           <mat-icon class="!text-[72px] !w-20 !h-20 mb-6">analytics</mat-icon>
+           <p class="font-medium text-sm">正在等待实时监控数据流...</p>
         </div>
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="!shadow-sm border border-slate-100">
+    <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
       <mat-card-header>
-        <mat-card-title class="!text-lg">系统日志</mat-card-title>
+        <mat-card-title class="!text-lg font-medium text-on-surface">系统日志</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="space-y-4 py-2">
+        <div class="space-y-5 py-4">
           @for (i of [1,2,3,4,5]; track i) {
-            <div class="flex gap-3 text-sm">
-              <div class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
+            <div class="flex gap-4 text-sm items-start">
+              <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0 opacity-60 shadow-sm"></div>
               <div class="space-y-1">
-                <p class="text-slate-700 leading-tight">系统组件 {{i}} 正常启动</p>
-                <p class="text-[10px] text-slate-400 uppercase">2026-02-24 10:{{i}}0</p>
+                <p class="text-on-surface leading-tight font-medium">系统组件 {{i}} 正常启动</p>
+                <p class="text-[10px] text-outline font-bold uppercase tracking-widest">2026-02-24 10:{{i}}0</p>
               </div>
             </div>
           }

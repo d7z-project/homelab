@@ -7,12 +7,13 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AuthRole } from './authRole';
 
 
-export interface AuthRoleBinding { 
-    enabled?: boolean;
-    name?: string;
-    roleNames?: Array<string>;
-    serviceAccountName?: string;
+export interface RbacRolesGet200Response { 
+    items?: Array<AuthRole>;
+    page?: number;
+    pageSize?: number;
+    total?: number;
 }
 

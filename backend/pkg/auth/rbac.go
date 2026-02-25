@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"homelab/pkg/common"
+	"sort"
+	"strings"
 
 	"gopkg.d7z.net/middleware/kv"
 )
@@ -25,9 +27,10 @@ type ServiceAccount struct {
 }
 
 type RoleBinding struct {
-	Name               string `json:"name"`
-	RoleName           string `json:"roleName"`
-	ServiceAccountName string `json:"serviceAccountName"`
+	Name               string   `json:"name"`
+	RoleNames          []string `json:"roleNames"`
+	ServiceAccountName string   `json:"serviceAccountName"`
+	Enabled            bool     `json:"enabled"`
 }
 
 func GetServiceAccount(ctx context.Context, name string) (*ServiceAccount, error) {
@@ -67,7 +70,7 @@ func DeleteServiceAccount(ctx context.Context, name string) error {
 	}
 
 	// Cascading delete RoleBindings
-	if rbs, err := ListRoleBindings(ctx); err == nil {
+	if rbs, err := ListRoleBindingsAll(ctx); err == nil {
 		for _, rb := range rbs {
 			if rb.ServiceAccountName == name {
 				DeleteRoleBinding(ctx, rb.Name)
@@ -102,11 +105,28 @@ func SaveRole(ctx context.Context, role *Role) error {
 }
 
 func DeleteRole(ctx context.Context, name string) error {
-	// Cascading delete RoleBindings
-	if rbs, err := ListRoleBindings(ctx); err == nil {
+	// Update RoleBindings instead of cascading delete
+	if rbs, err := ListRoleBindingsAll(ctx); err == nil {
 		for _, rb := range rbs {
-			if rb.RoleName == name {
-				DeleteRoleBinding(ctx, rb.Name)
+			newRoleNames := make([]string, 0)
+			changed := false
+			for _, rn := range rb.RoleNames {
+				if rn == name {
+					changed = true
+					continue
+				}
+				newRoleNames = append(newRoleNames, rn)
+			}
+
+			if changed {
+				if len(newRoleNames) == 0 {
+					// No roles left, delete the binding
+					DeleteRoleBinding(ctx, rb.Name)
+				} else {
+					// Update the binding with remaining roles
+					rb.RoleNames = newRoleNames
+					SaveRoleBinding(ctx, &rb)
+				}
 			}
 		}
 	}
@@ -142,7 +162,41 @@ func DeleteRoleBinding(ctx context.Context, name string) error {
 	return err
 }
 
-func ListServiceAccounts(ctx context.Context) ([]ServiceAccount, error) {
+func ListServiceAccounts(ctx context.Context, page uint64, pageSize uint, search string) ([]ServiceAccount, int64, error) {
+	db := common.DB.Child("auth", "serviceaccounts")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, 0, err
+	}
+	res := make([]ServiceAccount, 0)
+	search = strings.ToLower(search)
+	for _, v := range items {
+		var sa ServiceAccount
+		if err := json.Unmarshal([]byte(v), &sa); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(sa.Name), search) {
+				res = append(res, sa)
+			}
+		}
+	}
+
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
+
+	total := int64(len(res))
+	start := int(page) * int(pageSize)
+	if start >= len(res) {
+		return []ServiceAccount{}, total, nil
+	}
+	end := start + int(pageSize)
+	if end > len(res) {
+		end = len(res)
+	}
+
+	return res[start:end], total, nil
+}
+
+func ListServiceAccountsAll(ctx context.Context) ([]ServiceAccount, error) {
 	db := common.DB.Child("auth", "serviceaccounts")
 	items, err := db.List(ctx, "")
 	if err != nil {
@@ -155,10 +209,47 @@ func ListServiceAccounts(ctx context.Context) ([]ServiceAccount, error) {
 			res = append(res, sa)
 		}
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
 	return res, nil
 }
 
-func ListRoles(ctx context.Context) ([]Role, error) {
+func ListRoles(ctx context.Context, page uint64, pageSize uint, search string) ([]Role, int64, error) {
+	db := common.DB.Child("auth", "roles")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, 0, err
+	}
+	res := make([]Role, 0)
+	search = strings.ToLower(search)
+	for _, v := range items {
+		var role Role
+		if err := json.Unmarshal([]byte(v), &role); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(role.Name), search) {
+				res = append(res, role)
+			}
+		}
+	}
+
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
+
+	total := int64(len(res))
+	start := int(page) * int(pageSize)
+	if start >= len(res) {
+		return []Role{}, total, nil
+	}
+	end := start + int(pageSize)
+	if end > len(res) {
+		end = len(res)
+	}
+
+	return res[start:end], total, nil
+}
+
+func ListRolesAll(ctx context.Context) ([]Role, error) {
 	db := common.DB.Child("auth", "roles")
 	items, err := db.List(ctx, "")
 	if err != nil {
@@ -171,10 +262,47 @@ func ListRoles(ctx context.Context) ([]Role, error) {
 			res = append(res, role)
 		}
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
 	return res, nil
 }
 
-func ListRoleBindings(ctx context.Context) ([]RoleBinding, error) {
+func ListRoleBindings(ctx context.Context, page uint64, pageSize uint, search string) ([]RoleBinding, int64, error) {
+	db := common.DB.Child("auth", "rolebindings")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, 0, err
+	}
+	res := make([]RoleBinding, 0)
+	search = strings.ToLower(search)
+	for _, v := range items {
+		var rb RoleBinding
+		if err := json.Unmarshal([]byte(v), &rb); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(rb.Name), search) {
+				res = append(res, rb)
+			}
+		}
+	}
+
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
+
+	total := int64(len(res))
+	start := int(page) * int(pageSize)
+	if start >= len(res) {
+		return []RoleBinding{}, total, nil
+	}
+	end := start + int(pageSize)
+	if end > len(res) {
+		end = len(res)
+	}
+
+	return res[start:end], total, nil
+}
+
+func ListRoleBindingsAll(ctx context.Context) ([]RoleBinding, error) {
 	db := common.DB.Child("auth", "rolebindings")
 	items, err := db.List(ctx, "")
 	if err != nil {
@@ -187,6 +315,9 @@ func ListRoleBindings(ctx context.Context) ([]RoleBinding, error) {
 			res = append(res, rb)
 		}
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
 	return res, nil
 }
 
@@ -195,20 +326,22 @@ func GetTokenSA(ctx context.Context, token string) (string, error) {
 }
 
 func Authorize(ctx context.Context, saName string, verb string, resource string) (bool, error) {
-	rbs, err := ListRoleBindings(ctx)
+	rbs, err := ListRoleBindingsAll(ctx)
 	if err != nil {
 		return false, err
 	}
 
 	for _, rb := range rbs {
-		if rb.ServiceAccountName == saName {
-			role, err := GetRole(ctx, rb.RoleName)
-			if err != nil {
-				continue
-			}
-			for _, rule := range role.Rules {
-				if match(rule.Verbs, verb) && match(rule.Resources, resource) {
-					return true, nil
+		if rb.Enabled && rb.ServiceAccountName == saName {
+			for _, roleName := range rb.RoleNames {
+				role, err := GetRole(ctx, roleName)
+				if err != nil {
+					continue
+				}
+				for _, rule := range role.Rules {
+					if match(rule.Verbs, verb) && match(rule.Resources, resource) {
+						return true, nil
+					}
 				}
 			}
 		}

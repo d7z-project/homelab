@@ -13,8 +13,12 @@ model/authPolicyRule.ts
 model/authRole.ts
 model/authRoleBinding.ts
 model/authServiceAccount.ts
+model/commonPaginatedResponse.ts
 model/commonResponse.ts
 model/models.ts
+model/rbacRolebindingsGet200Response.ts
+model/rbacRolesGet200Response.ts
+model/rbacServiceaccountsGet200Response.ts
 model/routersAuthInfo.ts
 param.ts
 provide-api.ts

@@ -1,16 +1,39 @@
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import '@angular/material/prebuilt-themes/azure-blue.css';
 @import '@fontsource/roboto/300.css';
 @import '@fontsource/roboto/400.css';
 @import '@fontsource/roboto/500.css';
 @import 'material-icons/iconfont/material-icons.css';
 @import "tailwindcss";
 
-
 html, body { 
   height: 100%; 
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: #f8fafc; /* Slate 50 */
+  background-color: var(--mat-sys-surface-container-lowest);
+  color: var(--mat-sys-on-surface);
+}
+
+/* M3 Utility Classes mapping to Mat M3 tokens */
+@layer utilities {
+  .bg-surface { background-color: var(--mat-sys-surface) !important; }
+  .bg-surface-container { background-color: var(--mat-sys-surface-container) !important; }
+  .bg-surface-container-low { background-color: var(--mat-sys-surface-container-low) !important; }
+  .bg-primary-container { background-color: var(--mat-sys-primary-container) !important; }
+  .bg-secondary-container { background-color: var(--mat-sys-secondary-container) !important; }
+  .bg-tertiary-container { background-color: var(--mat-sys-tertiary-container) !important; }
+  
+  .text-on-surface { color: var(--mat-sys-on-surface) !important; }
+  .text-on-primary-container { color: var(--mat-sys-on-primary-container) !important; }
+  .text-on-secondary-container { color: var(--mat-sys-on-secondary-container) !important; }
+  .text-on-tertiary-container { color: var(--mat-sys-on-tertiary-container) !important; }
+  
+  .text-outline { color: var(--mat-sys-outline) !important; }
+  .text-primary { color: var(--mat-sys-primary) !important; }
+  .text-secondary { color: var(--mat-sys-secondary) !important; }
+  .text-tertiary { color: var(--mat-sys-tertiary) !important; }
+  .text-error { color: var(--mat-sys-error) !important; }
+  
+  .border-outline-variant { border-color: var(--mat-sys-outline-variant) !important; }
 }
 
 /* Custom Scrollbar */
@@ -24,12 +47,10 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* Slate 300 */
+  background: var(--mat-sys-outline-variant);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* Slate 400 */
+  background: var(--mat-sys-outline);
 }
-
-

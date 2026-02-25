@@ -33,69 +33,59 @@ import { AuthService } from '../../generated';
   ],
   templateUrl: './main.component.html',
   styles: [`
-    .nav-item-active {
-      background-color: rgba(0, 0, 0, 0.04);
-      color: #3f51b5;
-      font-weight: 500;
-    }
-    .nav-item-active mat-icon {
-      color: #3f51b5;
-    }
     .sidebar-header {
-      padding: 16px;
+      padding: 24px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: linear-gradient(45deg, #3f51b5, #5c6bc0);
-      color: white;
-    }
-    .sidebar-logo {
-      font-size: 48px;
-      height: 48px;
-      width: 48px;
+      background: var(--mat-sys-surface-container-low);
+      color: var(--mat-sys-on-surface);
+      border-radius: 0 0 24px 24px;
       margin-bottom: 8px;
     }
+    .sidebar-logo {
+      font-size: 40px;
+      height: 40px;
+      width: 40px;
+      margin-bottom: 12px;
+      color: var(--mat-sys-primary);
+    }
     .app-sidebar {
-      width: 256px;
-      border-right: 1px solid #e0e0e0 !important;
+      width: 280px;
+      border: none !important;
+      background-color: var(--mat-sys-surface-container-low) !important;
     }
-    ::ng-deep .mat-expansion-panel-body {
-      padding: 0 !important;
+    
+    mat-nav-list {
+      padding: 12px !important;
     }
-    ::ng-deep .mat-expansion-panel {
-      background: transparent !important;
-    }
-    ::ng-deep .mat-expansion-panel-header {
-      height: 48px !important;
-      padding: 0 16px !important;
-    }
-    ::ng-deep .mat-expansion-panel-header:hover {
-      background: rgba(0, 0, 0, 0.04) !important;
-    }
-    ::ng-deep .mat-content {
-      align-items: center !important;
-    }
-    .submenu-item {
-      padding-left: 48px !important;
-      height: 40px !important;
-      margin: 0 !important;
-      border-radius: 0 !important;
-    }
+    
     mat-nav-list a.mat-mdc-list-item {
-      height: 48px !important;
-      margin: 0 !important;
-      border-radius: 0 !important;
+      border-radius: 28px !important;
+      margin-bottom: 4px !important;
+      height: 56px !important;
+      transition: all 0.2s ease-in-out;
     }
+    
     .nav-item-active {
-      background-color: rgba(63, 81, 181, 0.1) !important;
-      color: #3f51b5 !important;
-      border-right: 3px solid #3f51b5;
+      background-color: var(--mat-sys-secondary-container) !important;
+      color: var(--mat-sys-on-secondary-container) !important;
     }
+    
     .nav-item-active mat-icon {
-      color: #3f51b5 !important;
+      color: var(--mat-sys-on-secondary-container) !important;
     }
-    ::ng-deep .mat-mdc-nav-list .mat-mdc-list-item {
-      padding-left: 16px !important;
+    
+    .sidebar-footer {
+      position: absolute;
+      bottom: 16px;
+      width: 100%;
+      text-align: center;
+      padding: 0 16px;
+      font-size: 11px;
+      color: var(--mat-sys-outline);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
   `]
 })
