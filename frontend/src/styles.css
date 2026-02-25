@@ -3,89 +3,63 @@
 @import '@fontsource/roboto/400.css';
 @import '@fontsource/roboto/500.css';
 @import 'material-icons/iconfont/material-icons.css';
-@import 'tailwindcss';
+@import "tailwindcss";
 
-html,
-body {
-  height: 100%;
+html, body { 
+  height: 100%; 
   margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: var(--mat-sys-surface-container-lowest);
   color: var(--mat-sys-on-surface);
+  overflow: hidden;
 }
 
 /* M3 Utility Classes mapping to Mat M3 tokens */
 @layer utilities {
-  .bg-surface {
-    background-color: var(--mat-sys-surface) !important;
-  }
-  .bg-surface-container {
-    background-color: var(--mat-sys-surface-container) !important;
-  }
-  .bg-surface-container-low {
-    background-color: var(--mat-sys-surface-container-low) !important;
-  }
-  .bg-primary-container {
-    background-color: var(--mat-sys-primary-container) !important;
-  }
-  .bg-secondary-container {
-    background-color: var(--mat-sys-secondary-container) !important;
-  }
-  .bg-tertiary-container {
-    background-color: var(--mat-sys-tertiary-container) !important;
-  }
-  .bg-error {
-    background-color: var(--mat-sys-error) !important;
-  }
-
-  .text-on-surface {
-    color: var(--mat-sys-on-surface) !important;
-  }
-  .text-on-primary-container {
-    color: var(--mat-sys-on-primary-container) !important;
-  }
-  .text-on-secondary-container {
-    color: var(--mat-sys-on-secondary-container) !important;
-  }
-  .text-on-tertiary-container {
-    color: var(--mat-sys-on-tertiary-container) !important;
-  }
-  .text-on-error {
-    color: var(--mat-sys-on-error) !important;
-  }
-
-  .text-outline {
-    color: var(--mat-sys-outline) !important;
-  }
-  .text-primary {
-    color: var(--mat-sys-primary) !important;
-  }
-  .text-secondary {
-    color: var(--mat-sys-secondary) !important;
-  }
-  .text-tertiary {
-    color: var(--mat-sys-tertiary) !important;
-  }
-  .text-error {
-    color: var(--mat-sys-error) !important;
-  }
-
-    .border-outline-variant { border-color: var(--mat-sys-outline-variant) !important; }
-  }
+  .bg-surface { background-color: var(--mat-sys-surface) !important; }
+  .bg-surface-container { background-color: var(--mat-sys-surface-container) !important; }
+  .bg-surface-container-low { background-color: var(--mat-sys-surface-container-low) !important; }
+  .bg-surface-container-high { background-color: var(--mat-sys-surface-container-high) !important; }
+  .bg-surface-container-highest { background-color: var(--mat-sys-surface-container-highest) !important; }
+  .bg-primary-container { background-color: var(--mat-sys-primary-container) !important; }
+  .bg-secondary-container { background-color: var(--mat-sys-secondary-container) !important; }
+  .bg-tertiary-container { background-color: var(--mat-sys-tertiary-container) !important; }
+  .bg-error { background-color: var(--mat-sys-error) !important; }
   
-  /* Make MD3 Tabs Sticky and cover header */
-  .rbac-tabs-integrated .mat-mdc-tab-header {
-    position: sticky !important;
-    top: 0;
-    z-index: 30 !important;
-    background-color: var(--mat-sys-surface) !important;
-  }
+  .text-on-surface { color: var(--mat-sys-on-surface) !important; }
+  .text-on-primary-container { color: var(--mat-sys-on-primary-container) !important; }
+  .text-on-secondary-container { color: var(--mat-sys-on-secondary-container) !important; }
+  .text-on-tertiary-container { color: var(--mat-sys-on-tertiary-container) !important; }
+  .text-on-error { color: var(--mat-sys-on-error) !important; }
   
-  /* Ensure table header is below tab header when sticky */
-  .rbac-tabs-integrated .mat-mdc-header-row {
-    top: 48px !important; /* height of tab header */
-    z-index: 25 !important;
-  }
+  .text-outline { color: var(--mat-sys-outline) !important; }
+  .text-primary { color: var(--mat-sys-primary) !important; }
+  .text-secondary { color: var(--mat-sys-secondary) !important; }
+  .text-tertiary { color: var(--mat-sys-tertiary) !important; }
+  .text-error { color: var(--mat-sys-error) !important; }
+  
+  .border-outline-variant { border-color: var(--mat-sys-outline-variant) !important; }
+}
+
+/* Material Component Fixes */
+.mat-mdc-table {
+  background: transparent !important;
+  width: 100% !important;
+}
+
+/* Sticky Header Logic for RBAC */
+.rbac-tabs-integrated .mat-mdc-tab-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 30 !important;
+  background-color: var(--mat-sys-surface) !important;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+/* Ensure Search bar and Table Headers handle sticky correctly */
+.mat-mdc-header-row {
+  background-color: var(--mat-sys-surface) !important;
+}
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
