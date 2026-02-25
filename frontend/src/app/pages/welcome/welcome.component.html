@@ -1,4 +1,4 @@
-<div class="space-y-8">
+<div class="p-6 md:p-10 max-w-screen-2xl mx-auto space-y-8 animate-in fade-in duration-500">
   <header>
     <h1 class="text-3xl font-light text-on-surface tracking-tight m-0">Dashboard</h1>
     <p class="text-sm text-outline mt-1">欢迎回来，Administrator。这是您的实验室实时概览。</p>
@@ -107,14 +107,12 @@
         <div class="space-y-5 py-4">
           @for (i of [1, 2, 3, 4, 5]; track i) {
             <div class="flex gap-4 text-sm items-start">
-              <div
-                class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0 opacity-60 shadow-sm"
-              ></div>
+              <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0 opacity-60 shadow-sm"></div>
               <div class="space-y-1">
                 <p class="text-on-surface leading-tight font-medium">系统组件 {{ i }} 正常启动</p>
-                <p class="text-[10px] text-outline font-bold uppercase tracking-widest">
-                  2026-02-24 10:{{ i }}0
-                </p>
+                <p class="text-[10px] text-outline font-bold uppercase tracking-widest"
+                  >2026-02-24 10:{{ i }}0</p
+                >
               </div>
             </div>
           }

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, ViewChild, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
-import { RbacService, AuthServiceAccount, AuthRole, AuthRoleBinding } from '../../generated';
+import { RbacService, AuthServiceAccount, AuthRole, AuthRoleBinding, AuthService } from '../../generated';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -22,6 +22,11 @@ import { CreateRoleDialogComponent } from './create-role-dialog.component';
 import { CreateBindingDialogComponent } from './create-binding-dialog.component';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 import { ShowSaRolesDialogComponent } from './show-sa-roles-dialog.component';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
+import { LogoutDialogComponent } from '../main/logout-dialog.component';
+import { UiService } from '../../ui.service';
 
 @Component({
   selector: 'app-rbac',
@@ -43,12 +48,22 @@ import { ShowSaRolesDialogComponent } from './show-sa-roles-dialog.component';
   ],
   templateUrl: './rbac.component.html',
 })
-export class RbacComponent implements OnInit {
+export class RbacComponent implements OnInit, OnDestroy {
   private rbacService = inject(RbacService);
+  private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private breakpointObserver = inject(BreakpointObserver);
+  private uiService = inject(UiService);
+
+  private scrollListener?: () => void;
+
+  isHandset = toSignal(
+    this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
+    { initialValue: false },
+  );
 
   serviceAccounts = signal<AuthServiceAccount[]>([]);
   roles = signal<AuthRole[]>([]);
@@ -62,18 +77,48 @@ export class RbacComponent implements OnInit {
   rolePage = signal(0);
   rbPage = signal(0);
 
-  pageSize = signal(10);
+  pageSize = signal(20);
 
   saSearch = signal('');
   roleSearch = signal('');
   rbSearch = signal('');
 
   loading = signal(false);
+  loadingMore = signal(false);
   selectedTabIndex = signal(0);
+
+  hasMoreSa = computed(() => this.serviceAccounts().length < this.saTotal());
+  hasMoreRoles = computed(() => this.roles().length < this.roleTotal());
+  hasMoreRb = computed(() => this.roleBindings().length < this.rbTotal());
 
   saColumns: string[] = ['name', 'comments', 'token', 'actions'];
   roleColumns: string[] = ['name', 'rules', 'actions'];
   rbColumns: string[] = ['name', 'sa', 'role', 'actions'];
+
+  fabConfig = computed(() => {
+    switch (this.selectedTabIndex()) {
+      case 0:
+        return {
+          icon: 'add',
+          label: '创建账号',
+          action: () => this.createServiceAccount(),
+        };
+      case 1:
+        return {
+          icon: 'add_moderator',
+          label: '新增角色',
+          action: () => this.createRole(),
+        };
+      case 2:
+        return {
+          icon: 'link',
+          label: '建立绑定',
+          action: () => this.createRB(),
+        };
+      default:
+        return null;
+    }
+  });
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;
@@ -91,6 +136,40 @@ export class RbacComponent implements OnInit {
     if (params['rbSearch']) this.rbSearch.set(params['rbSearch']);
 
     this.refreshAll();
+    this.setupScrollListener();
+  }
+
+  ngOnDestroy(): void {
+    if (this.scrollListener) {
+      const scrollElement = document.querySelector('mat-sidenav-content');
+      scrollElement?.removeEventListener('scroll', this.scrollListener);
+    }
+  }
+
+  private setupScrollListener() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (!scrollElement) return;
+
+    this.scrollListener = () => {
+      const atBottom =
+        scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
+
+      if (atBottom && !this.loadingMore() && !this.loading()) {
+        const tab = this.selectedTabIndex();
+        if (tab === 0 && this.hasMoreSa()) {
+          this.saPage.update((p) => p + 1);
+          this.loadMore('sa');
+        } else if (tab === 1 && this.hasMoreRoles()) {
+          this.rolePage.update((p) => p + 1);
+          this.loadMore('role');
+        } else if (tab === 2 && this.hasMoreRb()) {
+          this.rbPage.update((p) => p + 1);
+          this.loadMore('rb');
+        }
+      }
+    };
+
+    scrollElement.addEventListener('scroll', this.scrollListener);
   }
 
   private updateQueryParams() {
@@ -120,39 +199,59 @@ export class RbacComponent implements OnInit {
   async refreshAll() {
     this.loading.set(true);
     try {
-      await Promise.all([this.loadServiceAccounts(), this.loadRoles(), this.loadRoleBindings()]);
+      this.saPage.set(0);
+      this.rolePage.set(0);
+      this.rbPage.set(0);
+      await Promise.all([this.loadServiceAccounts(true), this.loadRoles(true), this.loadRoleBindings(true)]);
     } catch (err) {
       this.snackBar
         .open('加载数据失败', '重试', { duration: 3000 })
         .onAction()
         .subscribe(() => this.refreshAll());
     } finally {
-      // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
       setTimeout(() => this.loading.set(false));
     }
   }
 
-  async loadServiceAccounts() {
+  async loadServiceAccounts(reset = false) {
     const data = await firstValueFrom(
       this.rbacService.rbacServiceaccountsGet(this.saPage() + 1, this.pageSize(), this.saSearch()),
     );
-    this.serviceAccounts.set(data.items || []);
+    if (reset) {
+      this.serviceAccounts.set(data.items || []);
+    } else {
+      const current = this.serviceAccounts();
+      const newItems = (data.items || []).filter(newItem => !current.some(existing => existing.name === newItem.name));
+      this.serviceAccounts.update((prev) => [...prev, ...newItems]);
+    }
     this.saTotal.set(data.total || 0);
   }
 
-  async loadRoles() {
+  async loadRoles(reset = false) {
     const data = await firstValueFrom(
       this.rbacService.rbacRolesGet(this.rolePage() + 1, this.pageSize(), this.roleSearch()),
     );
-    this.roles.set(data.items || []);
+    if (reset) {
+      this.roles.set(data.items || []);
+    } else {
+      const current = this.roles();
+      const newItems = (data.items || []).filter(newItem => !current.some(existing => existing.name === newItem.name));
+      this.roles.update((prev) => [...prev, ...newItems]);
+    }
     this.roleTotal.set(data.total || 0);
   }
 
-  async loadRoleBindings() {
+  async loadRoleBindings(reset = false) {
     const data = await firstValueFrom(
       this.rbacService.rbacRolebindingsGet(this.rbPage() + 1, this.pageSize(), this.rbSearch()),
     );
-    this.roleBindings.set(data.items || []);
+    if (reset) {
+      this.roleBindings.set(data.items || []);
+    } else {
+      const current = this.roleBindings();
+      const newItems = (data.items || []).filter(newItem => !current.some(existing => existing.name === newItem.name));
+      this.roleBindings.update((prev) => [...prev, ...newItems]);
+    }
     this.rbTotal.set(data.total || 0);
   }
 
@@ -160,42 +259,58 @@ export class RbacComponent implements OnInit {
     this.saSearch.set(term);
     this.saPage.set(0);
     this.updateQueryParams();
-    this.loadServiceAccounts();
+    this.loadServiceAccounts(true);
   }
 
   onRoleSearch(term: string) {
     this.roleSearch.set(term);
     this.rolePage.set(0);
     this.updateQueryParams();
-    this.loadRoles();
+    this.loadRoles(true);
   }
 
   onRbSearch(term: string) {
     this.rbSearch.set(term);
     this.rbPage.set(0);
     this.updateQueryParams();
-    this.loadRoleBindings();
+    this.loadRoleBindings(true);
   }
 
-  onSaPageChange(event: PageEvent) {
-    this.saPage.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
-    this.updateQueryParams();
-    this.loadServiceAccounts();
+  async loadMore(type: 'sa' | 'role' | 'rb') {
+    this.loadingMore.set(true);
+    try {
+      if (type === 'sa') await this.loadServiceAccounts();
+      else if (type === 'role') await this.loadRoles();
+      else if (type === 'rb') await this.loadRoleBindings();
+    } finally {
+      this.loadingMore.set(false);
+    }
   }
 
-  onRolePageChange(event: PageEvent) {
-    this.rolePage.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
-    this.updateQueryParams();
-    this.loadRoles();
+  toggleDrawer() {
+    this.uiService.toggleSidenav();
   }
 
-  onRbPageChange(event: PageEvent) {
-    this.rbPage.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
-    this.updateQueryParams();
-    this.loadRoleBindings();
+  logout() {
+    const dialogRef = this.dialog.open(LogoutDialogComponent, {
+      width: '400px',
+      maxWidth: '90vw',
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.authService.logoutPost().subscribe({
+          next: () => {
+            localStorage.clear();
+            this.router.navigate(['/login']);
+          },
+          error: () => {
+            localStorage.clear();
+            this.router.navigate(['/login']);
+          },
+        });
+      }
+    });
   }
 
   async showSaRoles(saName: string) {
@@ -229,7 +344,8 @@ export class RbacComponent implements OnInit {
             this.rbacService.rbacServiceaccountsNamePut(updatedSa.name, updatedSa),
           );
           this.snackBar.open('ServiceAccount 已更新', '关闭', { duration: 2000 });
-          await this.loadServiceAccounts();
+          this.saPage.set(0);
+          await this.loadServiceAccounts(true);
         } catch (err) {
           this.snackBar.open('更新失败', '关闭', { duration: 3000 });
         } finally {
@@ -250,7 +366,8 @@ export class RbacComponent implements OnInit {
         try {
           await firstValueFrom(this.rbacService.rbacRolesNamePut(updatedRole.name, updatedRole));
           this.snackBar.open('Role 已更新', '关闭', { duration: 2000 });
-          await this.loadRoles();
+          this.rolePage.set(0);
+          await this.loadRoles(true);
         } catch (err) {
           this.snackBar.open('更新失败', '关闭', { duration: 3000 });
         } finally {
@@ -276,7 +393,8 @@ export class RbacComponent implements OnInit {
         try {
           await firstValueFrom(this.rbacService.rbacRolebindingsNamePut(updatedRB.name, updatedRB));
           this.snackBar.open('RoleBinding 已更新', '关闭', { duration: 2000 });
-          await this.loadRoleBindings();
+          this.rbPage.set(0);
+          await this.loadRoleBindings(true);
         } catch (err) {
           this.snackBar.open('更新失败', '关闭', { duration: 3000 });
         } finally {
@@ -297,7 +415,8 @@ export class RbacComponent implements OnInit {
         try {
           const sa = await firstValueFrom(this.rbacService.rbacServiceaccountsPost(result));
           this.snackBar.open('ServiceAccount 已创建', '关闭', { duration: 2000 });
-          await this.loadServiceAccounts();
+          this.saPage.set(0);
+          await this.loadServiceAccounts(true);
 
           // Show the token to user
           this.dialog.open(ShowTokenDialogComponent, {
@@ -333,7 +452,8 @@ export class RbacComponent implements OnInit {
         try {
           await firstValueFrom(this.rbacService.rbacServiceaccountsNameDelete(name));
           this.snackBar.open('已成功删除 ServiceAccount', '关闭', { duration: 2000 });
-          await this.refreshAll();
+          this.saPage.set(0);
+          await this.loadServiceAccounts(true);
         } catch (err) {
           this.snackBar.open('删除失败', '关闭', { duration: 2000 });
         } finally {
@@ -367,8 +487,8 @@ export class RbacComponent implements OnInit {
             data: { name: sa.name, token: sa.token },
             disableClose: true,
           });
-
-          await this.loadServiceAccounts();
+          this.saPage.set(0);
+          await this.loadServiceAccounts(true);
         } catch (err) {
           this.snackBar.open('重置失败', '关闭', { duration: 3000 });
         } finally {
@@ -389,7 +509,8 @@ export class RbacComponent implements OnInit {
         try {
           await firstValueFrom(this.rbacService.rbacRolesPost(role));
           this.snackBar.open('Role 已创建', '关闭', { duration: 2000 });
-          await this.loadRoles();
+          this.rolePage.set(0);
+          await this.loadRoles(true);
         } catch (err) {
           this.snackBar.open('创建失败', '关闭', { duration: 3000 });
         } finally {
@@ -416,7 +537,8 @@ export class RbacComponent implements OnInit {
         try {
           await firstValueFrom(this.rbacService.rbacRolesNameDelete(name));
           this.snackBar.open('已成功删除角色', '关闭', { duration: 2000 });
-          await this.refreshAll();
+          this.rolePage.set(0);
+          await this.loadRoles(true);
         } catch (err) {
           this.snackBar.open('删除失败', '关闭', { duration: 2000 });
         } finally {
@@ -441,7 +563,8 @@ export class RbacComponent implements OnInit {
         try {
           await firstValueFrom(this.rbacService.rbacRolebindingsPost(rb));
           this.snackBar.open('RoleBinding 已创建', '关闭', { duration: 2000 });
-          await this.loadRoleBindings();
+          this.rbPage.set(0);
+          await this.loadRoleBindings(true);
         } catch (err) {
           this.snackBar.open('创建失败', '关闭', { duration: 3000 });
         } finally {
@@ -458,7 +581,8 @@ export class RbacComponent implements OnInit {
       const updated = { ...rb, enabled: !rb.enabled };
       await firstValueFrom(this.rbacService.rbacRolebindingsNamePut(rb.name, updated));
       this.snackBar.open(`绑定已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
-      await this.loadRoleBindings();
+      this.rbPage.set(0);
+      await this.loadRoleBindings(true);
     } catch (err) {
       this.snackBar.open('操作失败', '关闭', { duration: 3000 });
     } finally {
@@ -483,7 +607,8 @@ export class RbacComponent implements OnInit {
         try {
           await firstValueFrom(this.rbacService.rbacRolebindingsNameDelete(name));
           this.snackBar.open('已成功解除绑定', '关闭', { duration: 2000 });
-          await this.refreshAll();
+          this.rbPage.set(0);
+          await this.loadRoleBindings(true);
         } catch (err) {
           this.snackBar.open('删除失败', '关闭', { duration: 2000 });
         } finally {

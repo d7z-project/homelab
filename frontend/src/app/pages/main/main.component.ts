@@ -1,6 +1,6 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import { Component, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, Router, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, Router, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,10 +10,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs/operators';
+import { map, filter } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { LogoutDialogComponent } from './logout-dialog.component';
 import { AuthService } from '../../generated';
+import { UiService } from '../../ui.service';
 
 @Component({
   selector: 'app-main',
@@ -96,6 +97,7 @@ export class MainComponent {
   public router = inject(Router);
   private dialog = inject(MatDialog);
   private authService = inject(AuthService);
+  public uiService = inject(UiService);
 
   constructor() {
     this.authService.infoGet().subscribe({
@@ -104,6 +106,16 @@ export class MainComponent {
         this.router.navigate(['/login']);
       },
     });
+
+    // Automatically sync initial state for handset
+    effect(() => {
+      const handset = this.isHandset();
+      if (!handset) {
+        this.uiService.setSidenav(true);
+      } else {
+        this.uiService.setSidenav(false);
+      }
+    }, { allowSignalWrites: true });
   }
 
   menuItems = [
@@ -115,6 +127,23 @@ export class MainComponent {
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
     { initialValue: false },
   );
+
+  currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  currentPageLabel = computed(() => {
+    const url = this.currentUrl().split('?')[0];
+    const item = this.menuItems.find((m) => {
+      const linkPath = m.link.split('?')[0];
+      return url === linkPath || url.startsWith(linkPath + '/');
+    });
+    return item ? item.label : '系统';
+  });
 
   logout() {
     const dialogRef = this.dialog.open(LogoutDialogComponent, {

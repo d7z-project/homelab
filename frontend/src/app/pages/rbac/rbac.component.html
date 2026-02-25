@@ -1,55 +1,39 @@
-<div class="space-y-6 animate-in fade-in duration-500">
-  <header class="px-4">
-    <h1 class="text-3xl font-light text-on-surface m-0">权限管理</h1>
-    <p class="text-sm text-outline mt-1">配置基于角色的访问控制 (RBAC) 策略</p>
-  </header>
-
-  <mat-card class="rounded-[28px] overflow-hidden bg-surface-container-lowest">
+<div class="animate-in fade-in duration-500">
+  <div class="relative">
     @if (loading()) {
-      <div
-        class="absolute inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]"
-      >
+      <div class="absolute inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]">
         <mat-spinner diameter="40"></mat-spinner>
       </div>
     }
 
+    <!-- mat-tab-group becomes sticky at top:0 with higher z-index to cover global header -->
     <mat-tab-group
       animationDuration="250ms"
-      class="rbac-tabs-integrated"
+      class="rbac-tabs-integrated sticky top-0 z-30 bg-surface"
       [selectedIndex]="selectedTabIndex()"
       (selectedIndexChange)="onTabChange($event)"
     >
       <!-- ServiceAccounts Tab -->
       <mat-tab label="服务账号">
-        <div class="flex flex-col">
-          <div class="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div
-              class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-full flex items-center px-4 h-12 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm"
-            >
-              <mat-icon class="text-outline !mr-3">search</mat-icon>
-              <input
-                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline"
-                placeholder="搜索账号"
-                (input)="onSaSearch(saSearchInput.value)"
-                #saSearchInput
+        <div class="bg-surface">
+          <div class="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-full flex items-center px-4 h-11 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm">
+              <mat-icon class="text-outline !mr-3 !text-[20px] !w-5 !h-5 !flex !items-center !justify-center">search</mat-icon>
+              <input 
+                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline" 
+                placeholder="搜索账号" 
+                (input)="onSaSearch(saSearchInput.value)" 
+                #saSearchInput 
                 [value]="saSearch()"
               />
             </div>
-            <button
-              mat-flat-button
-              class="!rounded-full !h-12 !px-6"
-              (click)="createServiceAccount()"
-              [disabled]="loading()"
-            >
-              <mat-icon class="mr-2">add</mat-icon> 创建账号
-            </button>
           </div>
 
-          <div class="overflow-x-auto h-[480px] md:h-[580px] overflow-y-auto">
+          <div class="overflow-x-auto px-6 pb-24">
             <table mat-table [dataSource]="serviceAccounts()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="!pl-6">名称</th>
-                <td mat-cell *matCellDef="let element" class="!pl-6 py-3 font-medium">
+                <th mat-header-cell *matHeaderCellDef>名称</th>
+                <td mat-cell *matCellDef="let element" class="py-3 font-medium">
                   {{ element.name }}
                 </td>
               </ng-container>
@@ -77,7 +61,7 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="text-right !pr-6"
+                  class="text-right"
                   style="width: 1px; white-space: nowrap"
                 >
                   操作
@@ -85,34 +69,21 @@
                 <td
                   mat-cell
                   *matCellDef="let element"
-                  class="text-right !pr-6"
+                  class="text-right"
                   style="white-space: nowrap"
                 >
                   <div class="flex justify-end gap-1">
-                    <button
-                      mat-icon-button
-                      (click)="showSaRoles(element.name)"
-                      matTooltip="生效权限"
-                    >
-                      <mat-icon>manage_accounts</mat-icon>
+                    <button mat-icon-button (click)="showSaRoles(element.name)" matTooltip="生效权限">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">manage_accounts</mat-icon>
                     </button>
-                    <button
-                      mat-icon-button
-                      (click)="resetToken(element.name)"
-                      matTooltip="重置令牌"
-                    >
-                      <mat-icon>key</mat-icon>
+                    <button mat-icon-button (click)="resetToken(element.name)" matTooltip="重置令牌">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">key</mat-icon>
                     </button>
                     <button mat-icon-button (click)="editSA(element)" matTooltip="编辑">
-                      <mat-icon>edit</mat-icon>
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
                     </button>
-                    <button
-                      mat-icon-button
-                      color="warn"
-                      (click)="deleteSA(element.name)"
-                      matTooltip="删除"
-                    >
-                      <mat-icon>delete_outline</mat-icon>
+                    <button mat-icon-button color="warn" (click)="deleteSA(element.name)" matTooltip="删除">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
                     </button>
                   </div>
                 </td>
@@ -120,58 +91,43 @@
               <tr
                 mat-header-row
                 *matHeaderRowDef="saColumns"
-                class="sticky top-0 z-10 bg-surface-container-lowest"
+                class="sticky top-0 z-10 bg-surface"
               ></tr>
               <tr mat-row *matRowDef="let row; columns: saColumns"></tr>
             </table>
             @if (serviceAccounts().length === 0 && !loading()) {
-              <div class="py-20 text-center text-outline opacity-40">暂无数据</div>
+              <div class="py-20 text-center text-outline opacity-40 italic">暂无数据</div>
+            }
+            @if (loadingMore() && selectedTabIndex() === 0) {
+              <div class="py-4 flex justify-center">
+                <mat-spinner diameter="24"></mat-spinner>
+              </div>
             }
           </div>
-
-          <mat-paginator
-            [length]="saTotal()"
-            [pageSize]="pageSize()"
-            [pageIndex]="saPage()"
-            [pageSizeOptions]="[5, 10, 15, 20, 50]"
-            (page)="onSaPageChange($event)"
-            class="bg-transparent border-t border-outline-variant"
-          >
-          </mat-paginator>
         </div>
       </mat-tab>
 
       <!-- Roles Tab -->
       <mat-tab label="角色管理">
-        <div class="flex flex-col">
-          <div class="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div
-              class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-full flex items-center px-4 h-12 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm"
-            >
-              <mat-icon class="text-outline !mr-3">search</mat-icon>
-              <input
-                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline"
-                placeholder="搜索角色"
-                (input)="onRoleSearch(roleSearchInput.value)"
-                #roleSearchInput
+        <div class="bg-surface">
+          <div class="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-full flex items-center px-4 h-11 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm">
+              <mat-icon class="text-outline !mr-3 !text-[20px] !w-5 !h-5 !flex !items-center !justify-center">search</mat-icon>
+              <input 
+                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline" 
+                placeholder="搜索角色" 
+                (input)="onRoleSearch(roleSearchInput.value)" 
+                #roleSearchInput 
                 [value]="roleSearch()"
               />
             </div>
-            <button
-              mat-flat-button
-              class="!rounded-full !h-12 !px-6"
-              (click)="createRole()"
-              [disabled]="loading()"
-            >
-              <mat-icon class="mr-2">add_moderator</mat-icon> 新增角色
-            </button>
           </div>
 
-          <div class="overflow-x-auto h-[480px] md:h-[580px] overflow-y-auto">
+          <div class="overflow-x-auto px-6 pb-24">
             <table mat-table [dataSource]="roles()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="!pl-6">角色名称</th>
-                <td mat-cell *matCellDef="let element" class="!pl-6 py-3 font-medium">
+                <th mat-header-cell *matHeaderCellDef>角色名称</th>
+                <td mat-cell *matCellDef="let element" class="py-3 font-medium">
                   {{ element.name }}
                 </td>
               </ng-container>
@@ -184,7 +140,7 @@
                         class="text-[10px] px-2 py-0.5 rounded border border-outline-variant bg-surface-container flex items-center gap-1"
                       >
                         <span class="text-primary font-bold">{{ rule.resources.join(',') }}</span>
-                        <mat-icon class="!w-3 !h-3 !text-[12px] opacity-40">east</mat-icon>
+                        <mat-icon class="!w-3 !h-3 !text-[12px] opacity-40 !flex !items-center !justify-center">east</mat-icon>
                         <span class="text-secondary font-bold">{{ rule.verbs.join(',') }}</span>
                       </div>
                     }
@@ -195,7 +151,7 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="text-right !pr-6"
+                  class="text-right"
                   style="width: 1px; white-space: nowrap"
                 >
                   操作
@@ -203,15 +159,15 @@
                 <td
                   mat-cell
                   *matCellDef="let element"
-                  class="text-right !pr-6"
+                  class="text-right"
                   style="white-space: nowrap"
                 >
                   <div class="flex justify-end gap-1">
                     <button mat-icon-button (click)="editRole(element)">
-                      <mat-icon>edit</mat-icon>
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
                     </button>
                     <button mat-icon-button color="warn" (click)="deleteRole(element.name)">
-                      <mat-icon>delete_outline</mat-icon>
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
                     </button>
                   </div>
                 </td>
@@ -219,58 +175,43 @@
               <tr
                 mat-header-row
                 *matHeaderRowDef="roleColumns"
-                class="sticky top-0 z-10 bg-surface-container-lowest"
+                class="sticky top-0 z-10 bg-surface"
               ></tr>
               <tr mat-row *matRowDef="let row; columns: roleColumns"></tr>
             </table>
             @if (roles().length === 0 && !loading()) {
-              <div class="py-20 text-center text-outline opacity-40">暂无数据</div>
+              <div class="py-20 text-center text-outline opacity-40 italic">暂无数据</div>
+            }
+            @if (loadingMore() && selectedTabIndex() === 1) {
+              <div class="py-4 flex justify-center">
+                <mat-spinner diameter="24"></mat-spinner>
+              </div>
             }
           </div>
-
-          <mat-paginator
-            [length]="roleTotal()"
-            [pageSize]="pageSize()"
-            [pageIndex]="rolePage()"
-            [pageSizeOptions]="[5, 10, 15, 20, 50]"
-            (page)="onRolePageChange($event)"
-            class="bg-transparent border-t border-outline-variant"
-          >
-          </mat-paginator>
         </div>
       </mat-tab>
 
       <!-- RoleBindings Tab -->
       <mat-tab label="权限绑定">
-        <div class="flex flex-col">
-          <div class="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div
-              class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-full flex items-center px-4 h-12 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm"
-            >
-              <mat-icon class="text-outline !mr-3">search</mat-icon>
-              <input
-                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline"
-                placeholder="搜索绑定"
-                (input)="onRbSearch(rbSearchInput.value)"
-                #rbSearchInput
+        <div class="bg-surface">
+          <div class="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-full flex items-center px-4 h-11 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm">
+              <mat-icon class="text-outline !mr-3 !text-[20px] !w-5 !h-5 !flex !items-center !justify-center">search</mat-icon>
+              <input 
+                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline" 
+                placeholder="搜索绑定" 
+                (input)="onRbSearch(rbSearchInput.value)" 
+                #rbSearchInput 
                 [value]="rbSearch()"
               />
             </div>
-            <button
-              mat-flat-button
-              class="!rounded-full !h-12 !px-6"
-              (click)="createRB()"
-              [disabled]="loading()"
-            >
-              <mat-icon class="mr-2">link</mat-icon> 建立绑定
-            </button>
           </div>
 
-          <div class="overflow-x-auto h-[480px] md:h-[580px] overflow-y-auto">
+          <div class="overflow-x-auto px-6 pb-24">
             <table mat-table [dataSource]="roleBindings()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="!pl-6">绑定ID</th>
-                <td mat-cell *matCellDef="let element" class="!pl-6 py-3 font-medium">
+                <th mat-header-cell *matHeaderCellDef>绑定ID</th>
+                <td mat-cell *matCellDef="let element" class="py-3 font-medium">
                   {{ element.name }}
                 </td>
               </ng-container>
@@ -298,7 +239,7 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="text-right !pr-6"
+                  class="text-right"
                   style="width: 1px; white-space: nowrap"
                 >
                   操作
@@ -306,7 +247,7 @@
                 <td
                   mat-cell
                   *matCellDef="let element"
-                  class="text-right !pr-6"
+                  class="text-right"
                   style="white-space: nowrap"
                 >
                   <div class="flex justify-end gap-1">
@@ -316,13 +257,13 @@
                       [matTooltip]="element.enabled ? '禁用' : '启用'"
                       [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
                     >
-                      <mat-icon>{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon>
                     </button>
                     <button mat-icon-button (click)="editRB(element)">
-                      <mat-icon>edit</mat-icon>
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
                     </button>
                     <button mat-icon-button color="warn" (click)="deleteRB(element.name)">
-                      <mat-icon>delete_outline</mat-icon>
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
                     </button>
                   </div>
                 </td>
@@ -330,26 +271,37 @@
               <tr
                 mat-header-row
                 *matHeaderRowDef="rbColumns"
-                class="sticky top-0 z-10 bg-surface-container-lowest"
+                class="sticky top-0 z-10 bg-surface"
               ></tr>
               <tr mat-row *matRowDef="let row; columns: rbColumns"></tr>
             </table>
             @if (roleBindings().length === 0 && !loading()) {
-              <div class="py-20 text-center text-outline opacity-40">暂无数据</div>
+              <div class="py-20 text-center text-outline opacity-40 italic">暂无数据</div>
+            }
+            @if (loadingMore() && selectedTabIndex() === 2) {
+              <div class="py-4 flex justify-center">
+                <mat-spinner diameter="24"></mat-spinner>
+              </div>
             }
           </div>
-
-          <mat-paginator
-            [length]="rbTotal()"
-            [pageSize]="pageSize()"
-            [pageIndex]="rbPage()"
-            [pageSizeOptions]="[5, 10, 15, 20, 50]"
-            (page)="onRbPageChange($event)"
-            class="bg-transparent border-t border-outline-variant"
-          >
-          </mat-paginator>
         </div>
       </mat-tab>
     </mat-tab-group>
-  </mat-card>
+  </div>
+
+  @if (fabConfig()) {
+    <div class="fixed bottom-8 right-8 z-50">
+      <button 
+        mat-fab 
+        extended 
+        color="primary" 
+        (click)="fabConfig()?.action()" 
+        [disabled]="loading()"
+        class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
+      >
+        <mat-icon>{{ fabConfig()?.icon }}</mat-icon>
+        <span class="ml-2 font-medium">{{ fabConfig()?.label }}</span>
+      </button>
+    </div>
+  }
 </div>

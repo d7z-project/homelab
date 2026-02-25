@@ -34,7 +34,7 @@ export function getZhPaginatorIntl() {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withHashLocation()),
+    provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideApi(`${window.location.origin}/api/v1`),
     { provide: MatPaginatorIntl, useValue: getZhPaginatorIntl() },
