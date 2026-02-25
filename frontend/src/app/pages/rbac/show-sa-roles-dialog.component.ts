@@ -10,22 +10,33 @@ import { AuthRole } from '../../generated';
 @Component({
   selector: 'app-show-sa-roles-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, MatListModule, MatDividerModule],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatListModule,
+    MatDividerModule,
+  ],
   template: `
-    <h2 mat-dialog-title class="!pt-6 !flex !items-center !gap-3">
-      <mat-icon color="primary">verified_user</mat-icon>
-      生效权限详情
-    </h2>
+    <h2 mat-dialog-title class="!pt-6">生效权限详情</h2>
     <mat-dialog-content>
       <div class="py-2">
-        <p class="text-sm text-outline mb-4">账号 <strong>{{ data.saName }}</strong> 当前拥有的权限详情：</p>
-        
+        <p class="text-sm text-outline mb-4">
+          账号 <strong>{{ data.saName }}</strong> 当前拥有的权限详情：
+        </p>
+
         @if (data.roles.length > 0) {
           <div class="space-y-4">
             @for (role of data.roles; track role.name) {
-              <div class="border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest">
+              <div
+                class="border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest"
+              >
                 <div class="bg-surface-container px-4 py-2 flex items-center gap-2">
-                  <mat-icon class="!text-secondary !w-4 !h-4 !text-[18px]">shield</mat-icon>
+                  <mat-icon
+                    class="!text-secondary !w-[18px] !h-[18px] !text-[18px] !flex !items-center !justify-center"
+                    >shield</mat-icon
+                  >
                   <span class="font-bold text-sm text-on-surface">{{ role.name }}</span>
                 </div>
                 <div class="p-4 space-y-3">
@@ -33,13 +44,22 @@ import { AuthRole } from '../../generated';
                     <div class="flex flex-wrap items-center gap-2">
                       <div class="flex gap-1">
                         @for (res of rule.resources; track res) {
-                          <span class="text-primary text-[10px] font-bold uppercase border border-primary/20 px-1.5 rounded bg-primary/5">{{ res }}</span>
+                          <span
+                            class="text-primary text-[10px] font-bold uppercase border border-primary/20 px-1.5 rounded bg-primary/5"
+                            >{{ res }}</span
+                          >
                         }
                       </div>
-                      <mat-icon class="!w-3 !h-3 !text-[12px] text-outline opacity-50">east</mat-icon>
+                      <mat-icon
+                        class="!w-[12px] !h-[12px] !text-[12px] text-outline opacity-50 !flex !items-center !justify-center"
+                        >east</mat-icon
+                      >
                       <div class="flex gap-1">
                         @for (verb of rule.verbs; track verb) {
-                          <span class="text-secondary text-[10px] font-bold uppercase border border-secondary/20 px-1.5 rounded bg-secondary/5">{{ verb }}</span>
+                          <span
+                            class="text-secondary text-[10px] font-bold uppercase border border-secondary/20 px-1.5 rounded bg-secondary/5"
+                            >{{ verb }}</span
+                          >
                         }
                       </div>
                     </div>
@@ -49,8 +69,13 @@ import { AuthRole } from '../../generated';
             }
           </div>
         } @else {
-          <div class="flex flex-col items-center justify-center py-10 bg-surface-container rounded-xl border border-dashed border-outline-variant">
-            <mat-icon class="text-outline opacity-20 !w-12 !h-12 !text-[48px] mb-2">block</mat-icon>
+          <div
+            class="flex flex-col items-center justify-center py-10 bg-surface-container rounded-xl border border-dashed border-outline-variant"
+          >
+            <mat-icon
+              class="text-outline opacity-20 !w-[48px] !h-[48px] !text-[48px] !flex !items-center !justify-center mb-2"
+              >block</mat-icon
+            >
             <p class="text-xs text-outline italic">该账号目前没有任何生效的角色绑定</p>
           </div>
         }
@@ -62,5 +87,5 @@ import { AuthRole } from '../../generated';
   `,
 })
 export class ShowSaRolesDialogComponent {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { saName: string, roles: AuthRole[] }) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { saName: string; roles: AuthRole[] }) {}
 }

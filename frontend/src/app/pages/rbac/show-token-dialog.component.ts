@@ -13,16 +13,31 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     <h2 mat-dialog-title class="!pt-6">ServiceAccount 已就绪</h2>
     <mat-dialog-content>
       <div class="space-y-4 pt-2">
-        <p class="text-on-surface opacity-80">账号 <strong>{{ data.name }}</strong> 的访问令牌已生成。</p>
+        <p class="text-on-surface opacity-80">
+          账号 <strong>{{ data.name }}</strong> 的访问令牌已生成。
+        </p>
         <div class="bg-surface-container rounded-2xl p-5 space-y-4 border border-outline-variant">
           <div class="flex items-start gap-3 text-primary">
-            <mat-icon class="!w-5 !h-5 !text-[20px]">info</mat-icon>
-            <p class="text-xs font-medium leading-relaxed">请妥善保管此令牌。出于安全考虑，离开此页面后将无法再次查看该令牌。</p>
+            <mat-icon
+              class="!w-[20px] !h-[20px] !text-[20px] !flex !items-center !justify-center shrink-0"
+              >info</mat-icon
+            >
+            <p class="text-xs font-medium leading-relaxed">
+              请妥善保管此令牌。出于安全考虑，离开此页面后将无法再次查看该令牌。
+            </p>
           </div>
-          <div class="flex items-center gap-3 bg-surface-container-lowest border border-outline-variant rounded-xl p-3 font-mono text-xs break-all shadow-inner">
+          <div
+            class="flex items-center gap-3 bg-surface-container-lowest border border-outline-variant rounded-xl p-3 font-mono text-xs break-all shadow-inner"
+          >
             <span class="flex-1 select-all">{{ data.token }}</span>
-            <button mat-icon-button (click)="copyToken()" class="text-primary">
-              <mat-icon class="!w-5 !h-5 !text-[20px]">content_copy</mat-icon>
+            <button
+              mat-icon-button
+              (click)="copyToken()"
+              class="text-primary flex items-center justify-center"
+            >
+              <mat-icon class="!w-[20px] !h-[20px] !text-[20px] !flex !items-center !justify-center"
+                >content_copy</mat-icon
+              >
             </button>
           </div>
         </div>
@@ -35,7 +50,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class ShowTokenDialogComponent {
   private snackBar = inject(MatSnackBar);
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { name: string, token: string }) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { name: string; token: string }) {}
 
   copyToken() {
     navigator.clipboard.writeText(this.data.token);

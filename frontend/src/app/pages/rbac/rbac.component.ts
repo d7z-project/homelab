@@ -62,7 +62,7 @@ export class RbacComponent implements OnInit {
   rolePage = signal(0);
   rbPage = signal(0);
 
-  pageSize = signal(15);
+  pageSize = signal(10);
 
   saSearch = signal('');
   roleSearch = signal('');
@@ -77,7 +77,7 @@ export class RbacComponent implements OnInit {
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;
-    
+
     if (params['tab'] === 'sa') this.selectedTabIndex.set(0);
     else if (params['tab'] === 'role') this.selectedTabIndex.set(1);
     else if (params['tab'] === 'binding') this.selectedTabIndex.set(2);
@@ -108,7 +108,7 @@ export class RbacComponent implements OnInit {
         rbSearch: this.rbSearch() || null,
       },
       queryParamsHandling: 'merge',
-      replaceUrl: true
+      replaceUrl: true,
     });
   }
 
@@ -120,13 +120,12 @@ export class RbacComponent implements OnInit {
   async refreshAll() {
     this.loading.set(true);
     try {
-      await Promise.all([
-        this.loadServiceAccounts(),
-        this.loadRoles(),
-        this.loadRoleBindings(),
-      ]);
+      await Promise.all([this.loadServiceAccounts(), this.loadRoles(), this.loadRoleBindings()]);
     } catch (err) {
-      this.snackBar.open('加载数据失败', '重试', { duration: 3000 }).onAction().subscribe(() => this.refreshAll());
+      this.snackBar
+        .open('加载数据失败', '重试', { duration: 3000 })
+        .onAction()
+        .subscribe(() => this.refreshAll());
     } finally {
       // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
       setTimeout(() => this.loading.set(false));
@@ -134,19 +133,25 @@ export class RbacComponent implements OnInit {
   }
 
   async loadServiceAccounts() {
-    const data = await firstValueFrom(this.rbacService.rbacServiceaccountsGet(this.saPage() + 1, this.pageSize(), this.saSearch()));
+    const data = await firstValueFrom(
+      this.rbacService.rbacServiceaccountsGet(this.saPage() + 1, this.pageSize(), this.saSearch()),
+    );
     this.serviceAccounts.set(data.items || []);
     this.saTotal.set(data.total || 0);
   }
 
   async loadRoles() {
-    const data = await firstValueFrom(this.rbacService.rbacRolesGet(this.rolePage() + 1, this.pageSize(), this.roleSearch()));
+    const data = await firstValueFrom(
+      this.rbacService.rbacRolesGet(this.rolePage() + 1, this.pageSize(), this.roleSearch()),
+    );
     this.roles.set(data.items || []);
     this.roleTotal.set(data.total || 0);
   }
 
   async loadRoleBindings() {
-    const data = await firstValueFrom(this.rbacService.rbacRolebindingsGet(this.rbPage() + 1, this.pageSize(), this.rbSearch()));
+    const data = await firstValueFrom(
+      this.rbacService.rbacRolebindingsGet(this.rbPage() + 1, this.pageSize(), this.rbSearch()),
+    );
     this.roleBindings.set(data.items || []);
     this.rbTotal.set(data.total || 0);
   }
@@ -194,29 +199,35 @@ export class RbacComponent implements OnInit {
   }
 
   async showSaRoles(saName: string) {
-    const relevantRbs = this.roleBindings().filter(rb => rb.serviceAccountName === saName && rb.enabled);
-    const roleNames = Array.from(new Set(relevantRbs.flatMap(rb => rb.roleNames || [])));
-    const roles = roleNames.map(name => this.roles().find(r => r.name === name)).filter(r => !!r) as AuthRole[];
-    
+    const relevantRbs = this.roleBindings().filter(
+      (rb) => rb.serviceAccountName === saName && rb.enabled,
+    );
+    const roleNames = Array.from(new Set(relevantRbs.flatMap((rb) => rb.roleNames || [])));
+    const roles = roleNames
+      .map((name) => this.roles().find((r) => r.name === name))
+      .filter((r) => !!r) as AuthRole[];
+
     this.dialog.open(ShowSaRolesDialogComponent, {
       width: '500px',
       data: {
         saName: saName,
-        roles: roles
-      }
+        roles: roles,
+      },
     });
   }
 
   editSA(sa: AuthServiceAccount) {
-    const dialogRef = this.dialog.open(CreateSaDialogComponent, { 
+    const dialogRef = this.dialog.open(CreateSaDialogComponent, {
       width: '400px',
-      data: { sa: sa, existingNames: this.serviceAccounts().map(x => x.name) }
+      data: { sa: sa, existingNames: this.serviceAccounts().map((x) => x.name) },
     });
     dialogRef.afterClosed().subscribe(async (updatedSa) => {
       if (updatedSa) {
         this.loading.set(true);
         try {
-          await firstValueFrom(this.rbacService.rbacServiceaccountsNamePut(updatedSa.name, updatedSa));
+          await firstValueFrom(
+            this.rbacService.rbacServiceaccountsNamePut(updatedSa.name, updatedSa),
+          );
           this.snackBar.open('ServiceAccount 已更新', '关闭', { duration: 2000 });
           await this.loadServiceAccounts();
         } catch (err) {
@@ -229,9 +240,9 @@ export class RbacComponent implements OnInit {
   }
 
   editRole(role: AuthRole) {
-    const dialogRef = this.dialog.open(CreateRoleDialogComponent, { 
+    const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
       width: '500px',
-      data: { role: role, existingNames: this.roles().map(x => x.name) }
+      data: { role: role, existingNames: this.roles().map((x) => x.name) },
     });
     dialogRef.afterClosed().subscribe(async (updatedRole) => {
       if (updatedRole) {
@@ -250,14 +261,14 @@ export class RbacComponent implements OnInit {
   }
 
   editRB(binding: AuthRoleBinding) {
-    const dialogRef = this.dialog.open(CreateBindingDialogComponent, { 
+    const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
       width: '450px',
-      data: { 
-        serviceAccounts: this.serviceAccounts(), 
-        roles: this.roles(), 
+      data: {
+        serviceAccounts: this.serviceAccounts(),
+        roles: this.roles(),
         binding: binding,
-        existingNames: this.roleBindings().map(x => x.name)
-      }
+        existingNames: this.roleBindings().map((x) => x.name),
+      },
     });
     dialogRef.afterClosed().subscribe(async (updatedRB) => {
       if (updatedRB) {
@@ -276,9 +287,9 @@ export class RbacComponent implements OnInit {
   }
 
   createServiceAccount() {
-    const dialogRef = this.dialog.open(CreateSaDialogComponent, { 
+    const dialogRef = this.dialog.open(CreateSaDialogComponent, {
       width: '400px',
-      data: { sa: null, existingNames: this.serviceAccounts().map(x => x.name) }
+      data: { sa: null, existingNames: this.serviceAccounts().map((x) => x.name) },
     });
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result && result.name) {
@@ -287,15 +298,17 @@ export class RbacComponent implements OnInit {
           const sa = await firstValueFrom(this.rbacService.rbacServiceaccountsPost(result));
           this.snackBar.open('ServiceAccount 已创建', '关闭', { duration: 2000 });
           await this.loadServiceAccounts();
-          
+
           // Show the token to user
           this.dialog.open(ShowTokenDialogComponent, {
             width: '450px',
             data: { name: sa.name, token: sa.token },
-            disableClose: true
+            disableClose: true,
           });
         } catch (err) {
-          this.snackBar.open('创建失败: ' + (err as any).error?.message || '未知错误', '关闭', { duration: 3000 });
+          this.snackBar.open('创建失败: ' + (err as any).error?.message || '未知错误', '关闭', {
+            duration: 3000,
+          });
         } finally {
           this.loading.set(false);
         }
@@ -309,9 +322,9 @@ export class RbacComponent implements OnInit {
       data: {
         title: '删除 ServiceAccount',
         message: `确定要永久删除 ServiceAccount "${name}" 吗？此操作不可撤销。`,
-        confirmText: '确定删除',
-        color: 'warn'
-      }
+        confirmText: '确认删除',
+        color: 'warn',
+      },
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
@@ -337,8 +350,8 @@ export class RbacComponent implements OnInit {
         title: '重置令牌',
         message: `确定要重置 ServiceAccount "${name}" 的令牌吗？旧令牌将立即失效。`,
         confirmText: '确定重置',
-        color: 'primary'
-      }
+        color: 'warn',
+      },
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
@@ -347,14 +360,14 @@ export class RbacComponent implements OnInit {
         try {
           const sa = await firstValueFrom(this.rbacService.rbacServiceaccountsNameResetPost(name));
           this.snackBar.open('令牌已重置', '关闭', { duration: 2000 });
-          
+
           // Show the new token
           this.dialog.open(ShowTokenDialogComponent, {
             width: '450px',
             data: { name: sa.name, token: sa.token },
-            disableClose: true
+            disableClose: true,
           });
-          
+
           await this.loadServiceAccounts();
         } catch (err) {
           this.snackBar.open('重置失败', '关闭', { duration: 3000 });
@@ -366,9 +379,9 @@ export class RbacComponent implements OnInit {
   }
 
   createRole() {
-    const dialogRef = this.dialog.open(CreateRoleDialogComponent, { 
+    const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
       width: '500px',
-      data: { role: null, existingNames: this.roles().map(x => x.name) }
+      data: { role: null, existingNames: this.roles().map((x) => x.name) },
     });
     dialogRef.afterClosed().subscribe(async (role) => {
       if (role) {
@@ -393,8 +406,8 @@ export class RbacComponent implements OnInit {
         title: '删除角色 (Role)',
         message: `确定要删除角色 "${name}" 吗？删除后关联的权限绑定可能会失效。`,
         confirmText: '确定删除',
-        color: 'warn'
-      }
+        color: 'warn',
+      },
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
@@ -414,13 +427,13 @@ export class RbacComponent implements OnInit {
   }
 
   createRB() {
-    const dialogRef = this.dialog.open(CreateBindingDialogComponent, { 
+    const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
       width: '450px',
-      data: { 
-        serviceAccounts: this.serviceAccounts(), 
+      data: {
+        serviceAccounts: this.serviceAccounts(),
         roles: this.roles(),
-        existingNames: this.roleBindings().map(x => x.name)
-      }
+        existingNames: this.roleBindings().map((x) => x.name),
+      },
     });
     dialogRef.afterClosed().subscribe(async (rb) => {
       if (rb) {
@@ -460,8 +473,8 @@ export class RbacComponent implements OnInit {
         title: '解除权限绑定',
         message: `确定要删除绑定 "${name}" 吗？这将立即撤销该 ServiceAccount 的相关权限。`,
         confirmText: '确定解除',
-        color: 'warn'
-      }
+        color: 'warn',
+      },
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {

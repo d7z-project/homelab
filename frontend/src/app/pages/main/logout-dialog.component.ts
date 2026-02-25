@@ -13,7 +13,9 @@ import { MatIconModule } from '@angular/material/icon';
       确认注销
     </h2>
     <mat-dialog-content>
-      <p class="py-3 text-on-surface opacity-80">确定要注销并退出系统吗？所有的未保存更改可能会丢失。</p>
+      <p class="py-3 text-on-surface opacity-80">
+        确定要注销并退出系统吗？所有的未保存更改可能会丢失。
+      </p>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="!px-6 !pb-6">
       <button mat-button mat-dialog-close>取消</button>

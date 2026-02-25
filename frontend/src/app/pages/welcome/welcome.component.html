@@ -8,7 +8,9 @@
     <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
       <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">CPU 使用率</mat-card-title>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider"
+            >CPU 使用率</mat-card-title
+          >
           <div class="p-2 bg-primary-container rounded-xl">
             <mat-icon class="text-primary !text-[20px] !w-5 !h-5">memory</mat-icon>
           </div>
@@ -26,7 +28,9 @@
     <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
       <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">内存使用率</mat-card-title>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider"
+            >内存使用率</mat-card-title
+          >
           <div class="p-2 bg-secondary-container rounded-xl">
             <mat-icon class="text-secondary !text-[20px] !w-5 !h-5">storage</mat-icon>
           </div>
@@ -44,7 +48,9 @@
     <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
       <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">活跃连接</mat-card-title>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider"
+            >活跃连接</mat-card-title
+          >
           <div class="p-2 bg-tertiary-container rounded-xl">
             <mat-icon class="text-tertiary !text-[20px] !w-5 !h-5">router</mat-icon>
           </div>
@@ -62,7 +68,9 @@
     <mat-card class="!border-none bg-surface-container-low !shadow-none rounded-3xl">
       <mat-card-header class="!pb-3">
         <div class="flex items-center justify-between w-full">
-          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider">运行中容器</mat-card-title>
+          <mat-card-title class="!text-xs !font-bold text-outline uppercase tracking-wider"
+            >运行中容器</mat-card-title
+          >
           <div class="p-2 bg-primary-container rounded-xl opacity-80">
             <mat-icon class="text-primary !text-[20px] !w-5 !h-5">layers</mat-icon>
           </div>
@@ -85,8 +93,8 @@
       </mat-card-header>
       <mat-card-content>
         <div class="flex flex-col items-center justify-center p-16 text-outline opacity-30">
-           <mat-icon class="!text-[72px] !w-20 !h-20 mb-6">analytics</mat-icon>
-           <p class="font-medium text-sm">正在等待实时监控数据流...</p>
+          <mat-icon class="!text-[72px] !w-20 !h-20 mb-6">analytics</mat-icon>
+          <p class="font-medium text-sm">正在等待实时监控数据流...</p>
         </div>
       </mat-card-content>
     </mat-card>
@@ -97,12 +105,16 @@
       </mat-card-header>
       <mat-card-content>
         <div class="space-y-5 py-4">
-          @for (i of [1,2,3,4,5]; track i) {
+          @for (i of [1, 2, 3, 4, 5]; track i) {
             <div class="flex gap-4 text-sm items-start">
-              <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0 opacity-60 shadow-sm"></div>
+              <div
+                class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0 opacity-60 shadow-sm"
+              ></div>
               <div class="space-y-1">
-                <p class="text-on-surface leading-tight font-medium">系统组件 {{i}} 正常启动</p>
-                <p class="text-[10px] text-outline font-bold uppercase tracking-widest">2026-02-24 10:{{i}}0</p>
+                <p class="text-on-surface leading-tight font-medium">系统组件 {{ i }} 正常启动</p>
+                <p class="text-[10px] text-outline font-bold uppercase tracking-widest">
+                  2026-02-24 10:{{ i }}0
+                </p>
               </div>
             </div>
           }

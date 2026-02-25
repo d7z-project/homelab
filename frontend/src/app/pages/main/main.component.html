@@ -30,15 +30,19 @@
       }
     </mat-nav-list>
 
-    <div class="sidebar-footer">
-      Connected via ServiceAccount
-    </div>
+    <div class="sidebar-footer">Connected via ServiceAccount</div>
   </mat-sidenav>
 
   <mat-sidenav-content class="bg-surface">
     <mat-toolbar class="bg-surface border-b border-outline-variant sticky top-0 z-10 px-6">
       @if (isHandset()) {
-        <button type="button" aria-label="Toggle sidenav" mat-icon-button (click)="drawer.toggle()" class="mr-2">
+        <button
+          type="button"
+          aria-label="Toggle sidenav"
+          mat-icon-button
+          (click)="drawer.toggle()"
+          class="mr-2"
+        >
           <mat-icon>menu</mat-icon>
         </button>
       }
@@ -46,9 +50,14 @@
         {{ router.url === '/welcome' ? 'Dashboard' : 'System' }}
       </span>
       <span class="flex-auto"></span>
-      
+
       <div class="flex items-center gap-1">
-        <button mat-icon-button (click)="logout()" class="text-outline hover:text-error transition-colors" aria-label="Logout">
+        <button
+          mat-icon-button
+          (click)="logout()"
+          class="text-outline hover:text-error transition-colors"
+          aria-label="Logout"
+        >
           <mat-icon>logout</mat-icon>
         </button>
       </div>

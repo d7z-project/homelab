@@ -32,62 +32,64 @@ import { AuthService } from '../../generated';
     MatExpansionModule,
   ],
   templateUrl: './main.component.html',
-  styles: [`
-    .sidebar-header {
-      padding: 24px 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: var(--mat-sys-surface-container-low);
-      color: var(--mat-sys-on-surface);
-      border-radius: 0 0 24px 24px;
-      margin-bottom: 8px;
-    }
-    .sidebar-logo {
-      font-size: 40px;
-      height: 40px;
-      width: 40px;
-      margin-bottom: 12px;
-      color: var(--mat-sys-primary);
-    }
-    .app-sidebar {
-      width: 280px;
-      border: none !important;
-      background-color: var(--mat-sys-surface-container-low) !important;
-    }
-    
-    mat-nav-list {
-      padding: 12px !important;
-    }
-    
-    mat-nav-list a.mat-mdc-list-item {
-      border-radius: 28px !important;
-      margin-bottom: 4px !important;
-      height: 56px !important;
-      transition: all 0.2s ease-in-out;
-    }
-    
-    .nav-item-active {
-      background-color: var(--mat-sys-secondary-container) !important;
-      color: var(--mat-sys-on-secondary-container) !important;
-    }
-    
-    .nav-item-active mat-icon {
-      color: var(--mat-sys-on-secondary-container) !important;
-    }
-    
-    .sidebar-footer {
-      position: absolute;
-      bottom: 16px;
-      width: 100%;
-      text-align: center;
-      padding: 0 16px;
-      font-size: 11px;
-      color: var(--mat-sys-outline);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-  `]
+  styles: [
+    `
+      .sidebar-header {
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: var(--mat-sys-surface-container-low);
+        color: var(--mat-sys-on-surface);
+        border-radius: 0 0 24px 24px;
+        margin-bottom: 8px;
+      }
+      .sidebar-logo {
+        font-size: 40px;
+        height: 40px;
+        width: 40px;
+        margin-bottom: 12px;
+        color: var(--mat-sys-primary);
+      }
+      .app-sidebar {
+        width: 280px;
+        border: none !important;
+        background-color: var(--mat-sys-surface-container-low) !important;
+      }
+
+      mat-nav-list {
+        padding: 12px !important;
+      }
+
+      mat-nav-list a.mat-mdc-list-item {
+        border-radius: 28px !important;
+        margin-bottom: 4px !important;
+        height: 56px !important;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .nav-item-active {
+        background-color: var(--mat-sys-secondary-container) !important;
+        color: var(--mat-sys-on-secondary-container) !important;
+      }
+
+      .nav-item-active mat-icon {
+        color: var(--mat-sys-on-secondary-container) !important;
+      }
+
+      .sidebar-footer {
+        position: absolute;
+        bottom: 16px;
+        width: 100%;
+        text-align: center;
+        padding: 0 16px;
+        font-size: 11px;
+        color: var(--mat-sys-outline);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    `,
+  ],
 })
 export class MainComponent {
   private breakpointObserver = inject(BreakpointObserver);
@@ -111,7 +113,7 @@ export class MainComponent {
 
   isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
-    { initialValue: false }
+    { initialValue: false },
   );
 
   logout() {

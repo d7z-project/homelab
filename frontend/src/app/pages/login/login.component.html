@@ -1,12 +1,18 @@
 <div class="flex h-screen w-screen overflow-hidden bg-surface">
-  <div class="flex-2 relative hidden md:flex flex-col items-center justify-center bg-primary-container">
+  <div
+    class="flex-2 relative hidden md:flex flex-col items-center justify-center bg-primary-container"
+  >
     <!-- 左侧品牌展示区域 -->
     <div class="text-on-primary-container text-center p-10 animate-in fade-in zoom-in duration-700">
-      <mat-icon class="!text-[120px] !w-32 !h-32 mb-6 opacity-90 drop-shadow-xl text-primary">home_work</mat-icon>
+      <mat-icon class="!text-[120px] !w-32 !h-32 mb-6 opacity-90 drop-shadow-xl text-primary"
+        >home_work</mat-icon
+      >
       <h1 class="text-6xl font-extralight mb-3 tracking-tighter">HOMELAB</h1>
       <p class="text-xl opacity-80 font-light tracking-wide">智能家庭实验室管理系统</p>
     </div>
-    <div class="absolute bottom-10 text-on-primary-container opacity-40 text-[10px] tracking-widest uppercase">
+    <div
+      class="absolute bottom-10 text-on-primary-container opacity-40 text-[10px] tracking-widest uppercase"
+    >
       &copy; 2026 Homelab Infrastructure
     </div>
   </div>
@@ -31,28 +37,43 @@
             <mat-error>请输入系统密码以验证身份</mat-error>
           }
         </mat-form-field>
-        
+
         @if (showTotp) {
-          <mat-form-field appearance="outline" class="w-full animate-in fade-in slide-in-from-top-2 duration-300">
-             <mat-label>2FA 验证码</mat-label>
-             <mat-icon matPrefix class="text-outline">verified_user</mat-icon>
-             <input matInput type="text" formControlName="totp" maxlength="6" minlength="6" placeholder="输入 6 位 TOTP 动态码" />
-              @if (validateForm.get('totp')?.hasError('required')) {
-                <mat-error>请输入双因素验证码</mat-error>
-              }
+          <mat-form-field
+            appearance="outline"
+            class="w-full animate-in fade-in slide-in-from-top-2 duration-300"
+          >
+            <mat-label>2FA 验证码</mat-label>
+            <mat-icon matPrefix class="text-outline">verified_user</mat-icon>
+            <input
+              matInput
+              type="text"
+              formControlName="totp"
+              maxlength="6"
+              minlength="6"
+              placeholder="输入 6 位 TOTP 动态码"
+            />
+            @if (validateForm.get('totp')?.hasError('required')) {
+              <mat-error>请输入双因素验证码</mat-error>
+            }
           </mat-form-field>
         }
 
         <div class="pt-4">
-          <button mat-flat-button color="primary" class="w-full !h-14 !text-base !rounded-2xl" [disabled]="loading">
-              @if (loading) {
-                  <span class="flex items-center gap-3">
-                    <mat-icon class="animate-spin !w-5 !h-5 !text-[20px]">refresh</mat-icon>
-                    正在验证安全凭据...
-                  </span>
-              } @else {
-                  <span class="font-medium tracking-wide">授权登录</span>
-              }
+          <button
+            mat-flat-button
+            color="primary"
+            class="w-full !h-14 !text-base !rounded-2xl"
+            [disabled]="loading"
+          >
+            @if (loading) {
+              <span class="flex items-center gap-3">
+                <mat-icon class="animate-spin !w-5 !h-5 !text-[20px]">refresh</mat-icon>
+                正在验证安全凭据...
+              </span>
+            } @else {
+              <span class="font-medium tracking-wide">授权登录</span>
+            }
           </button>
         </div>
       </form>
