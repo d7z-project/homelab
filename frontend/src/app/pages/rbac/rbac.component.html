@@ -17,17 +17,23 @@
       <mat-tab label="服务账号">
         <div class="bg-surface">
           <!-- Search bar container -->
-          <div class="px-0 sm:px-6 py-4 flex justify-center border-b border-outline-variant/10">
-            <div class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-none sm:rounded-full flex items-center px-4 h-11 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm">
-              <mat-icon class="text-outline !mr-3 !text-[20px] !w-5 !h-5 !flex !items-center !justify-center">search</mat-icon>
-              <input 
-                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline" 
-                placeholder="搜索账号" 
-                (input)="onSaSearch(saSearchInput.value)" 
-                #saSearchInput 
+          <div class="px-4 sm:px-6 py-4 flex justify-center border-b border-outline-variant/10">
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-label>搜索账号</mat-label>
+              <mat-icon matPrefix class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center !mr-2 text-outline">search</mat-icon>
+              <input
+                matInput
+                (input)="onSaSearch(saSearchInput.value)"
+                #saSearchInput
                 [value]="saSearch()"
+                placeholder="输入账号名称或备注"
               />
-            </div>
+              @if (saSearchInput.value) {
+                <button matSuffix mat-icon-button (click)="saSearchInput.value=''; onSaSearch('')">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
           </div>
 
           <table mat-table [dataSource]="serviceAccounts()" class="w-full bg-transparent">
@@ -73,18 +79,44 @@
                 style="white-space: nowrap"
               >
                 <div class="flex justify-end gap-1">
-                  <button mat-icon-button (click)="showSaRoles(element.name)" matTooltip="生效权限">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">manage_accounts</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="resetToken(element.name)" matTooltip="重置令牌">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">key</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="editSA(element)" matTooltip="编辑">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
-                  </button>
-                  <button mat-icon-button color="warn" (click)="deleteSA(element.name)" matTooltip="删除">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
-                  </button>
+                  @if (!isHandset()) {
+                    <button mat-icon-button (click)="showSaRoles(element.name)" matTooltip="生效权限">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">manage_accounts</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="resetToken(element.name)" matTooltip="重置令牌">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">key</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="editSA(element)" matTooltip="编辑">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteSA(element.name)" matTooltip="删除">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
+                    </button>
+                  } @else {
+                    <button mat-icon-button [matMenuTriggerFor]="saMenu">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #saMenu="matMenu">
+                      <ng-template matMenuContent>
+                        <button mat-menu-item (click)="showSaRoles(element.name)">
+                          <mat-icon>manage_accounts</mat-icon>
+                          <span>生效权限</span>
+                        </button>
+                        <button mat-menu-item (click)="resetToken(element.name)">
+                          <mat-icon>key</mat-icon>
+                          <span>重置令牌</span>
+                        </button>
+                        <button mat-menu-item (click)="editSA(element)">
+                          <mat-icon>edit</mat-icon>
+                          <span>编辑</span>
+                        </button>
+                        <button mat-menu-item (click)="deleteSA(element.name)">
+                          <mat-icon color="warn">delete_outline</mat-icon>
+                          <span class="text-error">删除</span>
+                        </button>
+                      </ng-template>
+                    </mat-menu>
+                  }
                 </div>
               </td>
             </ng-container>
@@ -95,34 +127,43 @@
               class="sticky top-[48px] z-10 bg-surface"
             ></tr>
             <tr mat-row *matRowDef="let row; columns: saColumns"></tr>
+
+            <!-- Row shown when there is no matching data. -->
+            <tr class="mat-mdc-row" *matNoDataRow>
+              <td class="mat-mdc-cell py-10 text-center text-outline opacity-40 italic" [attr.colspan]="saColumns.length">
+                {{ saSearchInput.value ? '没有找到匹配 "' + saSearchInput.value + '" 的账号' : '暂无数据' }}
+              </td>
+            </tr>
           </table>
-          
-          @if (serviceAccounts().length === 0 && !loading()) {
-            <div class="py-20 text-center text-outline opacity-40 italic">暂无数据</div>
-          }
+
           @if (loadingMore() && selectedTabIndex() === 0) {
             <div class="py-10 flex justify-center">
               <mat-spinner diameter="24"></mat-spinner>
             </div>
           }
-          <div class="h-24"></div> <!-- Spacer for FAB -->
         </div>
       </mat-tab>
 
       <!-- Roles Tab -->
       <mat-tab label="角色管理">
         <div class="bg-surface">
-          <div class="px-0 sm:px-6 py-4 flex justify-center border-b border-outline-variant/10">
-            <div class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-none sm:rounded-full flex items-center px-4 h-11 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm">
-              <mat-icon class="text-outline !mr-3 !text-[20px] !w-5 !h-5 !flex !items-center !justify-center">search</mat-icon>
-              <input 
-                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline" 
-                placeholder="搜索角色" 
-                (input)="onRoleSearch(roleSearchInput.value)" 
-                #roleSearchInput 
+          <div class="px-4 sm:px-6 py-4 flex justify-center border-b border-outline-variant/10">
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-label>搜索角色</mat-label>
+              <mat-icon matPrefix class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center !mr-2 text-outline">search</mat-icon>
+              <input
+                matInput
+                (input)="onRoleSearch(roleSearchInput.value)"
+                #roleSearchInput
                 [value]="roleSearch()"
+                placeholder="输入角色名称"
               />
-            </div>
+              @if (roleSearchInput.value) {
+                <button matSuffix mat-icon-button (click)="roleSearchInput.value=''; onRoleSearch('')">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
           </div>
 
           <table mat-table [dataSource]="roles()" class="w-full bg-transparent">
@@ -164,12 +205,30 @@
                 style="white-space: nowrap"
               >
                 <div class="flex justify-end gap-1">
-                  <button mat-icon-button (click)="editRole(element)">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
-                  </button>
-                  <button mat-icon-button color="warn" (click)="deleteRole(element.name)">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
-                  </button>
+                  @if (!isHandset()) {
+                    <button mat-icon-button (click)="editRole(element)">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteRole(element.name)">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
+                    </button>
+                  } @else {
+                    <button mat-icon-button [matMenuTriggerFor]="roleMenu">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #roleMenu="matMenu">
+                      <ng-template matMenuContent>
+                        <button mat-menu-item (click)="editRole(element)">
+                          <mat-icon>edit</mat-icon>
+                          <span>编辑</span>
+                        </button>
+                        <button mat-menu-item (click)="deleteRole(element.name)">
+                          <mat-icon color="warn">delete_outline</mat-icon>
+                          <span class="text-error">删除</span>
+                        </button>
+                      </ng-template>
+                    </mat-menu>
+                  }
                 </div>
               </td>
             </ng-container>
@@ -179,34 +238,43 @@
               class="sticky top-[48px] z-10 bg-surface"
             ></tr>
             <tr mat-row *matRowDef="let row; columns: roleColumns"></tr>
+
+            <!-- Row shown when there is no matching data. -->
+            <tr class="mat-mdc-row" *matNoDataRow>
+              <td class="mat-mdc-cell py-10 text-center text-outline opacity-40 italic" [attr.colspan]="roleColumns.length">
+                {{ roleSearchInput.value ? '没有找到匹配 "' + roleSearchInput.value + '" 的角色' : '暂无数据' }}
+              </td>
+            </tr>
           </table>
-          
-          @if (roles().length === 0 && !loading()) {
-            <div class="py-20 text-center text-outline opacity-40 italic">暂无数据</div>
-          }
+
           @if (loadingMore() && selectedTabIndex() === 1) {
             <div class="py-10 flex justify-center">
               <mat-spinner diameter="24"></mat-spinner>
             </div>
           }
-          <div class="h-24"></div> <!-- Spacer for FAB -->
         </div>
       </mat-tab>
 
       <!-- RoleBindings Tab -->
       <mat-tab label="权限绑定">
         <div class="bg-surface">
-          <div class="px-0 sm:px-6 py-4 flex justify-center border-b border-outline-variant/10">
-            <div class="flex-1 w-full sm:max-w-md bg-surface-container-high rounded-none sm:rounded-full flex items-center px-4 h-11 transition-all focus-within:bg-surface-container-highest focus-within:shadow-sm">
-              <mat-icon class="text-outline !mr-3 !text-[20px] !w-5 !h-5 !flex !items-center !justify-center">search</mat-icon>
-              <input 
-                class="bg-transparent border-none outline-none flex-1 text-sm text-on-surface placeholder:text-outline" 
-                placeholder="搜索绑定" 
-                (input)="onRbSearch(rbSearchInput.value)" 
-                #rbSearchInput 
+          <div class="px-4 sm:px-6 py-4 flex justify-center border-b border-outline-variant/10">
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-label>搜索绑定</mat-label>
+              <mat-icon matPrefix class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center !mr-2 text-outline">search</mat-icon>
+              <input
+                matInput
+                (input)="onRbSearch(rbSearchInput.value)"
+                #rbSearchInput
                 [value]="rbSearch()"
+                placeholder="输入绑定ID或账号名称"
               />
-            </div>
+              @if (rbSearchInput.value) {
+                <button matSuffix mat-icon-button (click)="rbSearchInput.value=''; onRbSearch('')">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
           </div>
 
           <table mat-table [dataSource]="roleBindings()" class="w-full bg-transparent">
@@ -252,20 +320,42 @@
                 style="white-space: nowrap"
               >
                 <div class="flex justify-end gap-1">
-                  <button
-                    mat-icon-button
-                    (click)="toggleRb(element)"
-                    [matTooltip]="element.enabled ? '禁用' : '启用'"
-                    [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
-                  >
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="editRB(element)">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
-                  </button>
-                  <button mat-icon-button color="warn" (click)="deleteRB(element.name)">
-                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
-                  </button>
+                  @if (!isHandset()) {
+                    <button
+                      mat-icon-button
+                      (click)="toggleRb(element)"
+                      [matTooltip]="element.enabled ? '禁用' : '启用'"
+                      [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                    >
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="editRB(element)">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteRB(element.name)">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
+                    </button>
+                  } @else {
+                    <button mat-icon-button [matMenuTriggerFor]="rbMenu">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #rbMenu="matMenu">
+                      <ng-template matMenuContent>
+                        <button mat-menu-item (click)="toggleRb(element)">
+                          <mat-icon [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'">{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                          <span>{{ element.enabled ? '禁用' : '启用' }}</span>
+                        </button>
+                        <button mat-menu-item (click)="editRB(element)">
+                          <mat-icon>edit</mat-icon>
+                          <span>编辑</span>
+                        </button>
+                        <button mat-menu-item (click)="deleteRB(element.name)">
+                          <mat-icon color="warn">delete_outline</mat-icon>
+                          <span class="text-error">删除</span>
+                        </button>
+                      </ng-template>
+                    </mat-menu>
+                  }
                 </div>
               </td>
             </ng-container>
@@ -275,35 +365,41 @@
               class="sticky top-[48px] z-10 bg-surface"
             ></tr>
             <tr mat-row *matRowDef="let row; columns: rbColumns"></tr>
+
+            <!-- Row shown when there is no matching data. -->
+            <tr class="mat-mdc-row" *matNoDataRow>
+              <td class="mat-mdc-cell py-10 text-center text-outline opacity-40 italic" [attr.colspan]="rbColumns.length">
+                {{ rbSearchInput.value ? '没有找到匹配 "' + rbSearchInput.value + '" 的绑定' : '暂无数据' }}
+              </td>
+            </tr>
           </table>
-          
-          @if (roleBindings().length === 0 && !loading()) {
-            <div class="py-20 text-center text-outline opacity-40 italic">暂无数据</div>
-          }
+
           @if (loadingMore() && selectedTabIndex() === 2) {
             <div class="py-10 flex justify-center">
               <mat-spinner diameter="24"></mat-spinner>
             </div>
           }
-          <div class="h-24"></div> <!-- Spacer for FAB -->
         </div>
       </mat-tab>
     </mat-tab-group>
   </div>
 
-  @if (fabConfig()) {
-    <div class="fixed bottom-8 right-8 z-50">
-      <button 
-        mat-fab 
-        extended 
-        color="primary" 
-        (click)="fabConfig()?.action()" 
-        [disabled]="loading()"
-        class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
-      >
-        <mat-icon>{{ fabConfig()?.icon }}</mat-icon>
-        <span class="ml-2 font-medium">{{ fabConfig()?.label }}</span>
-      </button>
+      <div class="fixed bottom-8 right-8 z-50">
+        @if (fabConfig()) {
+          <button 
+            mat-fab 
+            [extended]="!isHandset()" 
+            [color]="showScrollTop() ? 'tertiary' : 'primary'"
+            (click)="showScrollTop() ? scrollToTop() : fabConfig()?.action()" 
+            [disabled]="loading()"
+            class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
+            [matTooltip]="showScrollTop() ? '回到顶部' : ''"
+          >
+            <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig()?.icon }}</mat-icon>
+            @if (!isHandset()) {
+              <span class="ml-2 font-medium">{{ showScrollTop() ? '回到顶部' : fabConfig()?.label }}</span>
+            }
+          </button>
+        }
+      </div>
     </div>
-  }
-</div>

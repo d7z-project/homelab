@@ -34,28 +34,26 @@
   </mat-sidenav>
 
   <mat-sidenav-content class="bg-surface h-full overflow-y-auto scroll-smooth">
-    <!-- Global Header: Sticky with lower z-index -->
-    <header class="sticky top-0 z-20 bg-surface shrink-0 px-6 py-4 flex items-center justify-between border-b border-outline-variant/30">
-      <div class="flex items-center gap-2">
-        @if (isHandset()) {
-          <button mat-icon-button (click)="uiService.toggleSidenav()" class="mr-2">
-            <mat-icon>menu</mat-icon>
-          </button>
-        }
-        <h1 class="text-2xl font-medium text-on-surface m-0 tracking-tight">{{ currentPageLabel() }}</h1>
-      </div>
-      
-      <div class="flex items-center gap-2">
-        <button
-          mat-icon-button
-          (click)="logout()"
-          class="text-outline hover:text-error transition-colors"
-          matTooltip="退出登录"
-        >
-          <mat-icon class="!w-5 !h-5 !text-[20px] !flex !items-center !justify-center">logout</mat-icon>
+    <!-- Global Header: Sticky mat-toolbar -->
+    <mat-toolbar class="sticky top-0 z-20 bg-surface border-b border-outline-variant/30 px-4 sm:px-6">
+      @if (isHandset()) {
+        <button mat-icon-button (click)="uiService.toggleSidenav()" class="mr-2">
+          <mat-icon>menu</mat-icon>
         </button>
-      </div>
-    </header>
+      }
+      <span>{{ currentPageLabel() }}</span>
+      
+      <span class="flex-auto"></span>
+      
+      <button
+        mat-icon-button
+        (click)="logout()"
+        class="text-outline hover:text-error transition-colors"
+        matTooltip="退出登录"
+      >
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
 
     <main class="w-full animate-in fade-in duration-500">
       <router-outlet></router-outlet>

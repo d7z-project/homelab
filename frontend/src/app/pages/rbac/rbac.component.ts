@@ -12,6 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -42,6 +43,7 @@ import { UiService } from '../../ui.service';
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatMenuModule,
     MatPaginatorModule,
     MatFormFieldModule,
     MatInputModule,
@@ -86,6 +88,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   loading = signal(false);
   loadingMore = signal(false);
   selectedTabIndex = signal(0);
+  showScrollTop = signal(false);
 
   hasMoreSa = computed(() => this.serviceAccounts().length < this.saTotal());
   hasMoreRoles = computed(() => this.roles().length < this.roleTotal());
@@ -151,6 +154,9 @@ export class RbacComponent implements OnInit, OnDestroy {
     if (!scrollElement) return;
 
     this.scrollListener = () => {
+      // Check if we should show the scroll-to-top button
+      this.showScrollTop.set(scrollElement.scrollTop > 300);
+
       const atBottom =
         scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
 
@@ -170,6 +176,13 @@ export class RbacComponent implements OnInit, OnDestroy {
     };
 
     scrollElement.addEventListener('scroll', this.scrollListener);
+  }
+
+  scrollToTop() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (scrollElement) {
+      scrollElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   private updateQueryParams() {

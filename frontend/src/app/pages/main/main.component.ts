@@ -58,10 +58,6 @@ import { UiService } from '../../ui.service';
         background-color: var(--mat-sys-surface-container-low) !important;
       }
 
-      header {
-        height: 64px;
-      }
-
       mat-nav-list {
         padding: 12px !important;
       }
