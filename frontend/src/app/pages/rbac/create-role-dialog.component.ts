@@ -1,12 +1,14 @@
-import { Component, Inject, inject } from '@angular/core';
+import { Component, Inject, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthRole, AuthPolicyRule } from '../../generated';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { FormsModule } from '@angular/forms';
+import { AuthRole, AuthPolicyRule, RbacService } from '../../generated';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-create-role-dialog',
@@ -17,41 +19,41 @@ import { AuthRole, AuthPolicyRule } from '../../generated';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    FormsModule,
     MatIconModule,
+    MatAutocompleteModule,
+    FormsModule,
   ],
   template: `
-    <h2 mat-dialog-title class="!pt-6">{{ isEdit ? '修改 Role' : '创建 Role' }}</h2>
-    <mat-dialog-content>
-      <div class="pt-3 space-y-5">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Role 名称</mat-label>
-          <input
-            matInput
-            [(ngModel)]="role.name"
-            placeholder="例如: dns-admin"
-            [disabled]="isEdit"
-            autofocus
-          />
-          <mat-error *ngIf="!isEdit && isDuplicate()">角色名称已存在</mat-error>
-        </mat-form-field>
+    <h2 mat-dialog-title>{{ isEdit ? '编辑角色' : '创建角色' }}</h2>
+    <mat-dialog-content class="flex flex-col gap-4 min-w-[400px]">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>角色名称</mat-label>
+        <input matInput [(ngModel)]="role.name" [disabled]="isEdit" placeholder="例如: admin, viewer" />
+        <mat-error *ngIf="isDuplicate()">角色名称已存在</mat-error>
+      </mat-form-field>
 
-        <div
-          class="border border-outline-variant rounded-xl p-4 space-y-4 bg-surface-container-low"
-          *ngIf="firstRule"
-        >
-          <p class="text-xs font-bold text-outline uppercase tracking-wider">权限规则</p>
+      <div *ngIf="firstRule" class="space-y-4 border border-outline-variant/30 p-4 rounded-2xl bg-surface-container-lowest">
+        <div class="text-xs font-bold text-outline uppercase tracking-wider mb-2">权限规则</div>
 
+        <div class="flex flex-col gap-4">
           <mat-form-field appearance="outline" class="w-full bg-surface">
             <mat-label>资源 (Resources)</mat-label>
             <input
               matInput
               [(ngModel)]="resourceInput"
-              placeholder="dns, service 或 * (回车添加)"
+              [matAutocomplete]="auto"
+              placeholder="dns, dns/**, dns/example.com 或 * (回车添加)"
+              (input)="onResourceInput($event)"
               (keyup.enter)="addResource()"
             />
-            <mat-hint>输入资源名称并按回车</mat-hint>
+            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSuggestionSelected($event)">
+              <mat-option *ngFor="let suggestion of suggestions()" [value]="suggestion">
+                {{ suggestion }}
+              </mat-option>
+            </mat-autocomplete>
+            <mat-hint>输入并从下拉列表选择，或按回车添加。支持 dns/example.com 格式</mat-hint>
           </mat-form-field>
+          
           <div class="flex flex-wrap gap-2">
             <span
               *ngFor="let r of firstRule.resources"
@@ -74,7 +76,7 @@ import { AuthRole, AuthPolicyRule } from '../../generated';
               placeholder="read, write 或 * (回车添加)"
               (keyup.enter)="addVerb()"
             />
-            <mat-hint>输入动词并按回车</mat-hint>
+            <mat-hint>常用动作: read, write, create, delete, *</mat-hint>
           </mat-form-field>
           <div class="flex flex-wrap gap-2">
             <span
@@ -92,27 +94,22 @@ import { AuthRole, AuthPolicyRule } from '../../generated';
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="p-4">
       <button mat-button mat-dialog-close>取消</button>
       <button
         mat-flat-button
         color="primary"
         [mat-dialog-close]="role"
-        [disabled]="
-          !role.name ||
-          !firstRule ||
-          (firstRule.resources?.length || 0) === 0 ||
-          (firstRule.verbs?.length || 0) === 0 ||
-          (!isEdit && isDuplicate())
-        "
-        class="!ml-2"
+        [disabled]="!role.name || isDuplicate() || !firstRule?.resources?.length || !firstRule?.verbs?.length"
       >
-        {{ isEdit ? '保存修改' : '确认创建' }}
+        确定
       </button>
     </mat-dialog-actions>
   `,
 })
 export class CreateRoleDialogComponent {
+  private rbacService = inject(RbacService);
+  
   isEdit = false;
   role: AuthRole = {
     name: '',
@@ -122,6 +119,8 @@ export class CreateRoleDialogComponent {
 
   resourceInput = '';
   verbInput = '';
+  
+  suggestions = signal<string[]>([]);
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { role: AuthRole | null; existingNames?: string[] },
@@ -137,11 +136,27 @@ export class CreateRoleDialogComponent {
   }
 
   isDuplicate(): boolean {
+    if (this.isEdit) return false;
     return this.existingNames.includes(this.role.name?.trim() || '');
   }
 
   get firstRule(): AuthPolicyRule | undefined {
     return this.role.rules && this.role.rules.length > 0 ? this.role.rules[0] : undefined;
+  }
+
+  async onResourceInput(event: any) {
+    const val = this.resourceInput.trim();
+    try {
+      const list = await firstValueFrom(this.rbacService.rbacResourcesSuggestGet(val));
+      this.suggestions.set(list || []);
+    } catch (e) {
+      this.suggestions.set([]);
+    }
+  }
+
+  onSuggestionSelected(event: MatAutocompleteSelectedEvent) {
+    this.resourceInput = event.option.viewValue;
+    this.addResource();
   }
 
   addResource() {
@@ -152,6 +167,7 @@ export class CreateRoleDialogComponent {
       if (!rule.resources.includes(val)) {
         rule.resources.push(val);
         this.resourceInput = '';
+        this.suggestions.set([]);
       }
     }
   }

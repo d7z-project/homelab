@@ -1,7 +1,7 @@
 <mat-sidenav-container class="h-full">
   <mat-sidenav
     #drawer
-    class="app-sidebar border-none shadow-xl"
+    class="app-sidebar shadow-sm"
     fixedInViewport
     [attr.role]="isHandset() ? 'dialog' : 'navigation'"
     [mode]="isHandset() ? 'over' : 'side'"
@@ -10,50 +10,106 @@
   >
     <div class="sidebar-header">
       <mat-icon class="sidebar-logo">home_work</mat-icon>
-      <div class="text-xl font-bold tracking-wider">HOMELAB</div>
-      <div class="text-[10px] opacity-70 mt-1 uppercase tracking-widest">Management System</div>
+      <div class="text-xl font-bold tracking-tight text-primary">HOMELAB</div>
+      <div class="text-[10px] opacity-50 mt-0.5 uppercase tracking-[0.2em] font-semibold">Management</div>
     </div>
 
-    <mat-divider></mat-divider>
-
-    <mat-nav-list class="py-0">
+    <mat-nav-list class="mt-2">
       @for (item of menuItems; track item.label) {
-        <a
-          mat-list-item
-          [routerLink]="item.link"
-          routerLinkActive="nav-item-active"
-          (click)="isHandset() && uiService.setSidenav(false)"
-        >
-          <mat-icon matListItemIcon class="!mr-4">{{ item.icon }}</mat-icon>
-          <span matListItemTitle class="text-sm">{{ item.label }}</span>
-        </a>
+        @if (!item.children) {
+          <a
+            mat-list-item
+            class="!mx-3 !w-auto"
+            [class.nav-item-active]="currentPath() === item.link"
+            (click)="onMenuClick(item, $event)"
+          >
+            <mat-icon matListItemIcon class="!mr-4">{{ item.icon }}</mat-icon>
+            <span matListItemTitle class="text-sm font-medium">{{ item.label }}</span>
+          </a>
+        } @else {
+          <mat-expansion-panel
+            [expanded]="currentPath().startsWith(item.link)"
+            class="!bg-transparent !shadow-none !border-none !mx-0"
+            togglePosition="after"
+          >
+            <mat-expansion-panel-header
+              class="!h-14 !px-7 !rounded-r-[28px] !mr-3 hover:!bg-surface-container transition-colors"
+              [class.nav-item-active-parent]="currentPath().startsWith(item.link)"
+            >
+              <mat-panel-title class="flex items-center gap-4">
+                <mat-icon class="text-on-surface-variant scale-90">{{ item.icon }}</mat-icon>
+                <span class="text-sm font-medium">{{ item.label }}</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <div class="sub-menu-container mb-2">
+              @for (child of item.children; track child.label) {
+                <a
+                  mat-list-item
+                  class="!h-12 !mx-2 !w-auto"
+                  [class.nav-item-active]="currentPath() === child.link && (!child.queryParams || route.snapshot.queryParams['tab'] === child.queryParams['tab'])"
+                  (click)="onMenuClick(child, $event)"
+                >
+                  <mat-icon matListItemIcon class="!mr-3 !text-xs opacity-60 scale-75">{{ child.icon }}</mat-icon>
+                  <span matListItemTitle class="text-xs font-medium">{{ child.label }}</span>
+                </a>
+              }
+            </div>
+          </mat-expansion-panel>
+        }
       }
     </mat-nav-list>
 
     <div class="sidebar-footer">Connected via ServiceAccount</div>
   </mat-sidenav>
 
-  <mat-sidenav-content class="bg-surface h-full overflow-y-auto scroll-smooth">
-    <!-- Global Header: Sticky mat-toolbar -->
-    <mat-toolbar class="sticky top-0 z-20 bg-surface border-b border-outline-variant/30 px-4 sm:px-6">
-      @if (isHandset()) {
-        <button mat-icon-button (click)="uiService.toggleSidenav()" class="mr-2">
-          <mat-icon>menu</mat-icon>
-        </button>
-      }
-      <span>{{ currentPageLabel() }}</span>
-      
-      <span class="flex-auto"></span>
-      
-      <button
-        mat-icon-button
-        (click)="logout()"
-        class="text-outline hover:text-error transition-colors"
-        matTooltip="退出登录"
+  <mat-sidenav-content 
+    class="bg-surface h-full overflow-y-auto scroll-smooth"
+    [class.has-sticky-toolbar]="uiService.toolbarSticky()"
+  >
+    <!-- Global Header: M3 Styled Top App Bar -->
+    @if (uiService.toolbarVisible()) {
+      <mat-toolbar 
+        class="z-40 bg-surface/90 backdrop-blur-lg h-16 sm:h-[72px] px-4 sm:px-12 transition-all duration-300"
+        [class.sticky]="uiService.toolbarSticky()"
+        [class.top-0]="uiService.toolbarSticky()"
+        [class.relative]="!uiService.toolbarSticky()"
+        [class.shadow-md]="uiService.toolbarShadow()"
+        [class.border-b]="uiService.toolbarDivider()"
+        [class.border-outline-variant/10]="uiService.toolbarDivider()"
       >
-        <mat-icon>logout</mat-icon>
-      </button>
-    </mat-toolbar>
+        <div class="flex items-center w-full max-w-7xl mx-auto">
+          @if (isHandset()) {
+            <button mat-icon-button (click)="uiService.toggleSidenav()" class="!mr-4 text-on-surface">
+              <mat-icon>menu</mat-icon>
+            </button>
+          }
+          
+          <h1 class="m-0 text-xl sm:text-2xl font-medium tracking-tight text-on-surface">
+            {{ currentPageLabel() }}
+          </h1>
+          
+          <span class="flex-auto"></span>
+          
+          <div class="flex items-center gap-1">
+            <!-- User Profile or Actions -->
+            <div class="hidden sm:flex items-center mr-4 px-3 py-1.5 bg-surface-container-high rounded-full border border-outline-variant/30 shadow-sm">
+              <mat-icon class="!w-4 !h-4 !text-[16px] text-primary mr-2">account_circle</mat-icon>
+              <span class="text-xs font-medium text-on-surface-variant tracking-wide">Administrator</span>
+            </div>
+
+            <button
+              mat-icon-button
+              (click)="logout()"
+              class="!text-on-surface-variant hover:!bg-error/10 hover:!text-error transition-all duration-300"
+              matTooltip="退出登录"
+            >
+              <mat-icon class="!text-[22px]">logout</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-toolbar>
+    }
 
     <main class="w-full animate-in fade-in duration-500">
       <router-outlet></router-outlet>

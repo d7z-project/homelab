@@ -89,12 +89,29 @@ export class RbacComponent implements OnInit, OnDestroy {
   loadingMore = signal(false);
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
+  showSearch = signal(false);
+
+  hasSearchContent = computed(() => {
+    const tab = this.selectedTabIndex();
+    if (tab === 0) return this.saSearch().length > 0;
+    if (tab === 1) return this.roleSearch().length > 0;
+    if (tab === 2) return this.rbSearch().length > 0;
+    return false;
+  });
+
+  currentSearchTerm = computed(() => {
+    const tab = this.selectedTabIndex();
+    if (tab === 0) return this.saSearch();
+    if (tab === 1) return this.roleSearch();
+    if (tab === 2) return this.rbSearch();
+    return '';
+  });
 
   hasMoreSa = computed(() => this.serviceAccounts().length < this.saTotal());
   hasMoreRoles = computed(() => this.roles().length < this.roleTotal());
   hasMoreRb = computed(() => this.roleBindings().length < this.rbTotal());
 
-  saColumns: string[] = ['name', 'comments', 'token', 'actions'];
+  saColumns: string[] = ['name', 'comments', 'token', 'lastUsedAt', 'actions'];
   roleColumns: string[] = ['name', 'rules', 'actions'];
   rbColumns: string[] = ['name', 'sa', 'role', 'actions'];
 
@@ -123,12 +140,24 @@ export class RbacComponent implements OnInit, OnDestroy {
     }
   });
 
-  ngOnInit(): void {
-    const params = this.route.snapshot.queryParams;
+  constructor() {
+    // Listen to query params changes to sync tab index
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] === 'sa') this.selectedTabIndex.set(0);
+      else if (params['tab'] === 'role') this.selectedTabIndex.set(1);
+      else if (params['tab'] === 'binding') this.selectedTabIndex.set(2);
+    });
+  }
 
-    if (params['tab'] === 'sa') this.selectedTabIndex.set(0);
-    else if (params['tab'] === 'role') this.selectedTabIndex.set(1);
-    else if (params['tab'] === 'binding') this.selectedTabIndex.set(2);
+  ngOnInit(): void {
+    // Configure toolbar for RBAC page - wrapped in timeout to avoid NG0100 error
+    setTimeout(() => {
+      this.uiService.toolbarShadow.set(false);
+      this.uiService.toolbarDivider.set(false);
+      this.uiService.toolbarSticky.set(false);
+    });
+
+    const params = this.route.snapshot.queryParams;
 
     if (params['pageSize']) this.pageSize.set(Number(params['pageSize']));
     if (params['saPage']) this.saPage.set(Number(params['saPage']));

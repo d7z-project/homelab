@@ -15,73 +15,14 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/info": {
+        "/audit/logs": {
             "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Get current auth info",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routers.AuthInfo"
-                        }
-                    }
-                }
-            }
-        },
-        "/login": {
-            "post": {
-                "description": "verify root password and return session id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Login to the server",
-                "parameters": [
-                    {
-                        "description": "Login Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/auth.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/auth.LoginResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/logout": {
-            "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "invalidate session id",
+                "description": "Retrieve a paginated list of audit logs",
                 "consumes": [
                     "application/json"
                 ],
@@ -89,37 +30,49 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "audit"
                 ],
-                "summary": "Logout from the server",
+                "summary": "List audit logs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (0-based)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query by subject, action or resource",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/ping": {
-            "get": {
-                "description": "get string \"pong\"",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "example"
-                ],
-                "summary": "Ping the server",
-                "responses": {
-                    "200": {
-                        "description": "pong",
-                        "schema": {
-                            "type": "string"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.AuditLog"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -168,7 +121,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/auth.RoleBinding"
+                                                "$ref": "#/definitions/models.RoleBinding"
                                             }
                                         }
                                     }
@@ -196,7 +149,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RoleBinding"
+                            "$ref": "#/definitions/models.RoleBinding"
                         }
                     }
                 ],
@@ -204,13 +157,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.RoleBinding"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
+                            "$ref": "#/definitions/models.RoleBinding"
                         }
                     }
                 }
@@ -242,7 +189,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RoleBinding"
+                            "$ref": "#/definitions/models.RoleBinding"
                         }
                     }
                 ],
@@ -250,7 +197,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.RoleBinding"
+                            "$ref": "#/definitions/models.RoleBinding"
                         }
                     }
                 }
@@ -322,7 +269,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/auth.Role"
+                                                "$ref": "#/definitions/models.Role"
                                             }
                                         }
                                     }
@@ -350,7 +297,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.Role"
+                            "$ref": "#/definitions/models.Role"
                         }
                     }
                 ],
@@ -358,13 +305,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.Role"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
+                            "$ref": "#/definitions/models.Role"
                         }
                     }
                 }
@@ -396,7 +337,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.Role"
+                            "$ref": "#/definitions/models.Role"
                         }
                     }
                 ],
@@ -404,7 +345,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.Role"
+                            "$ref": "#/definitions/models.Role"
                         }
                     }
                 }
@@ -476,7 +417,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/auth.ServiceAccount"
+                                                "$ref": "#/definitions/models.ServiceAccount"
                                             }
                                         }
                                     }
@@ -504,7 +445,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     }
                 ],
@@ -512,13 +453,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.ServiceAccount"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     }
                 }
@@ -550,7 +485,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     }
                 ],
@@ -558,7 +493,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     }
                 }
@@ -609,7 +544,40 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
+                        }
+                    }
+                }
+            }
+        },
+        "/rbac/simulate": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rbac"
+                ],
+                "summary": "Simulate permissions for a service account",
+                "parameters": [
+                    {
+                        "description": "Simulation Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.SimulatePermissionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResourcePermissions"
                         }
                     }
                 }
@@ -617,26 +585,74 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.LoginRequest": {
+        "common.PaginatedResponse": {
             "type": "object",
             "properties": {
-                "password": {
+                "items": {},
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "controllers.SimulatePermissionsRequest": {
+            "type": "object",
+            "properties": {
+                "resource": {
                     "type": "string"
                 },
-                "totp": {
+                "serviceAccountName": {
+                    "type": "string"
+                },
+                "verb": {
                     "type": "string"
                 }
             }
         },
-        "auth.LoginResponse": {
+        "models.AuditLog": {
             "type": "object",
             "properties": {
-                "session_id": {
+                "action": {
+                    "description": "CREATE, UPDATE, DELETE, or HTTP Method",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ipAddress": {
+                    "type": "string"
+                },
+                "resource": {
+                    "description": "e.g., \"DNS/Record\", \"RBAC/ServiceAccount\"",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Success or Failed",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "User or SA name (e.g., \"root\" or \"sa-name\")",
+                    "type": "string"
+                },
+                "targetId": {
+                    "description": "ID or name of the resource operated on",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "RFC3339 format",
+                    "type": "string"
+                },
+                "userAgent": {
                     "type": "string"
                 }
             }
         },
-        "auth.PolicyRule": {
+        "models.PolicyRule": {
             "type": "object",
             "properties": {
                 "resources": {
@@ -653,7 +669,21 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.Role": {
+        "models.ResourcePermissions": {
+            "type": "object",
+            "properties": {
+                "allowedAll": {
+                    "type": "boolean"
+                },
+                "allowedInstances": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.Role": {
             "type": "object",
             "properties": {
                 "name": {
@@ -662,12 +692,12 @@ const docTemplate = `{
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/auth.PolicyRule"
+                        "$ref": "#/definitions/models.PolicyRule"
                     }
                 }
             }
         },
-        "auth.RoleBinding": {
+        "models.RoleBinding": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -687,54 +717,19 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.ServiceAccount": {
+        "models.ServiceAccount": {
             "type": "object",
             "properties": {
                 "comments": {
+                    "type": "string"
+                },
+                "lastUsedAt": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
                 "token": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.PaginatedResponse": {
-            "type": "object",
-            "properties": {
-                "items": {},
-                "page": {
-                    "type": "integer"
-                },
-                "pageSize": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "common.Response": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "routers.AuthInfo": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "type": {
                     "type": "string"
                 }
             }

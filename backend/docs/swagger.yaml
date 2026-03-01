@@ -1,18 +1,52 @@
 basePath: /api/v1
 definitions:
-  auth.LoginRequest:
+  common.PaginatedResponse:
     properties:
-      password:
+      items: {}
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      total:
+        type: integer
+    type: object
+  controllers.SimulatePermissionsRequest:
+    properties:
+      resource:
         type: string
-      totp:
+      serviceAccountName:
+        type: string
+      verb:
         type: string
     type: object
-  auth.LoginResponse:
+  models.AuditLog:
     properties:
-      session_id:
+      action:
+        description: CREATE, UPDATE, DELETE, or HTTP Method
+        type: string
+      id:
+        type: string
+      ipAddress:
+        type: string
+      resource:
+        description: e.g., "DNS/Record", "RBAC/ServiceAccount"
+        type: string
+      status:
+        description: Success or Failed
+        type: string
+      subject:
+        description: User or SA name (e.g., "root" or "sa-name")
+        type: string
+      targetId:
+        description: ID or name of the resource operated on
+        type: string
+      timestamp:
+        description: RFC3339 format
+        type: string
+      userAgent:
         type: string
     type: object
-  auth.PolicyRule:
+  models.PolicyRule:
     properties:
       resources:
         items:
@@ -23,16 +57,25 @@ definitions:
           type: string
         type: array
     type: object
-  auth.Role:
+  models.ResourcePermissions:
+    properties:
+      allowedAll:
+        type: boolean
+      allowedInstances:
+        items:
+          type: string
+        type: array
+    type: object
+  models.Role:
     properties:
       name:
         type: string
       rules:
         items:
-          $ref: '#/definitions/auth.PolicyRule'
+          $ref: '#/definitions/models.PolicyRule'
         type: array
     type: object
-  auth.RoleBinding:
+  models.RoleBinding:
     properties:
       enabled:
         type: boolean
@@ -45,38 +88,15 @@ definitions:
       serviceAccountName:
         type: string
     type: object
-  auth.ServiceAccount:
+  models.ServiceAccount:
     properties:
       comments:
+        type: string
+      lastUsedAt:
         type: string
       name:
         type: string
       token:
-        type: string
-    type: object
-  common.PaginatedResponse:
-    properties:
-      items: {}
-      page:
-        type: integer
-      pageSize:
-        type: integer
-      total:
-        type: integer
-    type: object
-  common.Response:
-    properties:
-      code:
-        type: integer
-      data: {}
-      message:
-        type: string
-    type: object
-  routers.AuthInfo:
-    properties:
-      name:
-        type: string
-      type:
         type: string
     type: object
 info:
@@ -85,76 +105,43 @@ info:
   title: Homelab API
   version: "1.0"
 paths:
-  /info:
+  /audit/logs:
     get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routers.AuthInfo'
-      summary: Get current auth info
-      tags:
-      - auth
-  /login:
-    post:
       consumes:
       - application/json
-      description: verify root password and return session id
+      description: Retrieve a paginated list of audit logs
       parameters:
-      - description: Login Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/auth.LoginRequest'
+      - description: Page number (0-based)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search query by subject, action or resource
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.LoginResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-      summary: Login to the server
-      tags:
-      - auth
-  /logout:
-    post:
-      consumes:
-      - application/json
-      description: invalidate session id
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.Response'
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.AuditLog'
+                  type: array
+              type: object
       security:
-      - ApiKeyAuth: []
-      summary: Logout from the server
+      - BearerAuth: []
+      summary: List audit logs
       tags:
-      - auth
-  /ping:
-    get:
-      consumes:
-      - application/json
-      description: get string "pong"
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: pong
-          schema:
-            type: string
-      summary: Ping the server
-      tags:
-      - example
+      - audit
   /rbac/rolebindings:
     get:
       parameters:
@@ -181,7 +168,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/auth.RoleBinding'
+                    $ref: '#/definitions/models.RoleBinding'
                   type: array
               type: object
       summary: List all role bindings
@@ -196,18 +183,14 @@ paths:
         name: rb
         required: true
         schema:
-          $ref: '#/definitions/auth.RoleBinding'
+          $ref: '#/definitions/models.RoleBinding'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.RoleBinding'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/common.Response'
+            $ref: '#/definitions/models.RoleBinding'
       summary: Create a role binding
       tags:
       - rbac
@@ -241,14 +224,14 @@ paths:
         name: rb
         required: true
         schema:
-          $ref: '#/definitions/auth.RoleBinding'
+          $ref: '#/definitions/models.RoleBinding'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.RoleBinding'
+            $ref: '#/definitions/models.RoleBinding'
       summary: Update a role binding
       tags:
       - rbac
@@ -278,7 +261,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/auth.Role'
+                    $ref: '#/definitions/models.Role'
                   type: array
               type: object
       summary: List all roles
@@ -293,18 +276,14 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/auth.Role'
+          $ref: '#/definitions/models.Role'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.Role'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/common.Response'
+            $ref: '#/definitions/models.Role'
       summary: Create a role
       tags:
       - rbac
@@ -338,14 +317,14 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/auth.Role'
+          $ref: '#/definitions/models.Role'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.Role'
+            $ref: '#/definitions/models.Role'
       summary: Update a role
       tags:
       - rbac
@@ -375,7 +354,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/auth.ServiceAccount'
+                    $ref: '#/definitions/models.ServiceAccount'
                   type: array
               type: object
       summary: List all service accounts
@@ -390,18 +369,14 @@ paths:
         name: sa
         required: true
         schema:
-          $ref: '#/definitions/auth.ServiceAccount'
+          $ref: '#/definitions/models.ServiceAccount'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.ServiceAccount'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/common.Response'
+            $ref: '#/definitions/models.ServiceAccount'
       summary: Create a service account
       tags:
       - rbac
@@ -435,14 +410,14 @@ paths:
         name: sa
         required: true
         schema:
-          $ref: '#/definitions/auth.ServiceAccount'
+          $ref: '#/definitions/models.ServiceAccount'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.ServiceAccount'
+            $ref: '#/definitions/models.ServiceAccount'
       summary: Update a service account
       tags:
       - rbac
@@ -460,8 +435,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.ServiceAccount'
+            $ref: '#/definitions/models.ServiceAccount'
       summary: Reset a service account token
+      tags:
+      - rbac
+  /rbac/simulate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Simulation Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.SimulatePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResourcePermissions'
+      summary: Simulate permissions for a service account
       tags:
       - rbac
 securityDefinitions:

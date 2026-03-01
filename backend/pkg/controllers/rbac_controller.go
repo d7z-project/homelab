@@ -1,14 +1,14 @@
-package routers
+package controllers
 
 import (
 	"encoding/json"
-	"homelab/pkg/auth"
 	"homelab/pkg/common"
+	"homelab/pkg/models"
+	rbacservice "homelab/pkg/services/rbac"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 func getPaginationParams(r *http.Request) (int, int) {
@@ -30,17 +30,18 @@ func getPaginationParams(r *http.Request) (int, int) {
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]auth.ServiceAccount}
+// @Success 200 {object} common.PaginatedResponse{items=[]models.ServiceAccount}
 // @Router /rbac/serviceaccounts [get]
 func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
 	search := r.URL.Query().Get("search")
-	sas, total, err := auth.ListServiceAccounts(r.Context(), uint64(page-1), uint(pageSize), search)
+
+	res, err := rbacservice.ListServiceAccounts(r.Context(), page, pageSize, search)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
-	common.PaginatedSuccess(w, r, sas, int(total), page, pageSize)
+	common.Success(w, r, res)
 }
 
 // CreateServiceAccountHandler godoc
@@ -48,37 +49,22 @@ func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param sa body auth.ServiceAccount true "Service Account"
-// @Success 200 {object} auth.ServiceAccount
-// @Failure 400 {object} common.Response
+// @Param sa body models.ServiceAccount true "Service Account"
+// @Success 200 {object} models.ServiceAccount
 // @Router /rbac/serviceaccounts [post]
 func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
-	var sa auth.ServiceAccount
+	var sa models.ServiceAccount
 	if err := json.NewDecoder(r.Body).Decode(&sa); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	if sa.Name == "" {
-		common.BadRequestError(w, r, http.StatusBadRequest, "name is required")
+
+	res, err := rbacservice.CreateServiceAccount(r.Context(), &sa)
+	if err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	// Check if already exists
-	existing, _ := auth.GetServiceAccount(r.Context(), sa.Name)
-	if existing != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, "ServiceAccount already exists")
-		return
-	}
-
-	if sa.Token == "" {
-		sa.Token = uuid.New().String()
-	}
-
-	if err := auth.SaveServiceAccount(r.Context(), &sa); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-	common.Success(w, r, sa)
+	common.Success(w, r, res)
 }
 
 // UpdateServiceAccountHandler godoc
@@ -87,36 +73,23 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param name path string true "Service Account Name"
-// @Param sa body auth.ServiceAccount true "Service Account"
-// @Success 200 {object} auth.ServiceAccount
+// @Param sa body models.ServiceAccount true "Service Account"
+// @Success 200 {object} models.ServiceAccount
 // @Router /rbac/serviceaccounts/{name} [put]
 func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	var sa auth.ServiceAccount
+	var sa models.ServiceAccount
 	if err := json.NewDecoder(r.Body).Decode(&sa); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	if sa.Name != name {
-		common.BadRequestError(w, r, http.StatusBadRequest, "name in body does not match path")
-		return
-	}
 
-	existing, err := auth.GetServiceAccount(r.Context(), name)
+	res, err := rbacservice.UpdateServiceAccount(r.Context(), name, &sa)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusNotFound, "ServiceAccount not found")
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	if sa.Token == "" {
-		sa.Token = existing.Token
-	}
-
-	if err := auth.SaveServiceAccount(r.Context(), &sa); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-	common.Success(w, r, sa)
+	common.Success(w, r, res)
 }
 
 // DeleteServiceAccountHandler godoc
@@ -127,7 +100,7 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/serviceaccounts/{name} [delete]
 func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	if err := auth.DeleteServiceAccount(r.Context(), name); err != nil {
+	if err := rbacservice.DeleteServiceAccount(r.Context(), name); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -141,17 +114,18 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]auth.Role}
+// @Success 200 {object} common.PaginatedResponse{items=[]models.Role}
 // @Router /rbac/roles [get]
 func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
 	search := r.URL.Query().Get("search")
-	roles, total, err := auth.ListRoles(r.Context(), uint64(page-1), uint(pageSize), search)
+
+	res, err := rbacservice.ListRoles(r.Context(), page, pageSize, search)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
-	common.PaginatedSuccess(w, r, roles, int(total), page, pageSize)
+	common.Success(w, r, res)
 }
 
 // CreateRoleHandler godoc
@@ -159,33 +133,22 @@ func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param role body auth.Role true "Role"
-// @Success 200 {object} auth.Role
-// @Failure 400 {object} common.Response
+// @Param role body models.Role true "Role"
+// @Success 200 {object} models.Role
 // @Router /rbac/roles [post]
 func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
-	var role auth.Role
+	var role models.Role
 	if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	if role.Name == "" {
-		common.BadRequestError(w, r, http.StatusBadRequest, "name is required")
-		return
-	}
 
-	// Check if already exists
-	existing, _ := auth.GetRole(r.Context(), role.Name)
-	if existing != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, "Role already exists")
+	res, err := rbacservice.CreateRole(r.Context(), &role)
+	if err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	if err := auth.SaveRole(r.Context(), &role); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-	common.Success(w, r, role)
+	common.Success(w, r, res)
 }
 
 // UpdateRoleHandler godoc
@@ -194,32 +157,23 @@ func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param name path string true "Role Name"
-// @Param role body auth.Role true "Role"
-// @Success 200 {object} auth.Role
+// @Param role body models.Role true "Role"
+// @Success 200 {object} models.Role
 // @Router /rbac/roles/{name} [put]
 func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	var role auth.Role
+	var role models.Role
 	if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	if role.Name != name {
-		common.BadRequestError(w, r, http.StatusBadRequest, "name in body does not match path")
-		return
-	}
 
-	_, err := auth.GetRole(r.Context(), name)
+	res, err := rbacservice.UpdateRole(r.Context(), name, &role)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusNotFound, "Role not found")
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	if err := auth.SaveRole(r.Context(), &role); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-	common.Success(w, r, role)
+	common.Success(w, r, res)
 }
 
 // DeleteRoleHandler godoc
@@ -230,7 +184,7 @@ func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/roles/{name} [delete]
 func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	if err := auth.DeleteRole(r.Context(), name); err != nil {
+	if err := rbacservice.DeleteRole(r.Context(), name); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -244,17 +198,18 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]auth.RoleBinding}
+// @Success 200 {object} common.PaginatedResponse{items=[]models.RoleBinding}
 // @Router /rbac/rolebindings [get]
 func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
 	search := r.URL.Query().Get("search")
-	rbs, total, err := auth.ListRoleBindings(r.Context(), uint64(page-1), uint(pageSize), search)
+
+	res, err := rbacservice.ListRoleBindings(r.Context(), page, pageSize, search)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
-	common.PaginatedSuccess(w, r, rbs, int(total), page, pageSize)
+	common.Success(w, r, res)
 }
 
 // CreateRoleBindingHandler godoc
@@ -262,33 +217,22 @@ func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param rb body auth.RoleBinding true "Role Binding"
-// @Success 200 {object} auth.RoleBinding
-// @Failure 400 {object} common.Response
+// @Param rb body models.RoleBinding true "Role Binding"
+// @Success 200 {object} models.RoleBinding
 // @Router /rbac/rolebindings [post]
 func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
-	var rb auth.RoleBinding
+	var rb models.RoleBinding
 	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	if rb.Name == "" {
-		common.BadRequestError(w, r, http.StatusBadRequest, "name is required")
-		return
-	}
 
-	// Check if already exists
-	existing, _ := auth.GetRoleBinding(r.Context(), rb.Name)
-	if existing != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, "RoleBinding already exists")
+	res, err := rbacservice.CreateRoleBinding(r.Context(), &rb)
+	if err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	if err := auth.SaveRoleBinding(r.Context(), &rb); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-	common.Success(w, r, rb)
+	common.Success(w, r, res)
 }
 
 // UpdateRoleBindingHandler godoc
@@ -297,32 +241,23 @@ func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param name path string true "Role Binding Name"
-// @Param rb body auth.RoleBinding true "Role Binding"
-// @Success 200 {object} auth.RoleBinding
+// @Param rb body models.RoleBinding true "Role Binding"
+// @Success 200 {object} models.RoleBinding
 // @Router /rbac/rolebindings/{name} [put]
 func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	var rb auth.RoleBinding
+	var rb models.RoleBinding
 	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	if rb.Name != name {
-		common.BadRequestError(w, r, http.StatusBadRequest, "name in body does not match path")
-		return
-	}
 
-	_, err := auth.GetRoleBinding(r.Context(), name)
+	res, err := rbacservice.UpdateRoleBinding(r.Context(), name, &rb)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusNotFound, "RoleBinding not found")
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	if err := auth.SaveRoleBinding(r.Context(), &rb); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-	common.Success(w, r, rb)
+	common.Success(w, r, res)
 }
 
 // DeleteRoleBindingHandler godoc
@@ -333,7 +268,7 @@ func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/rolebindings/{name} [delete]
 func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	if err := auth.DeleteRoleBinding(r.Context(), name); err != nil {
+	if err := rbacservice.DeleteRoleBinding(r.Context(), name); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -345,27 +280,51 @@ func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Produce json
 // @Param name path string true "Service Account Name"
-// @Success 200 {object} auth.ServiceAccount
+// @Success 200 {object} models.ServiceAccount
 // @Router /rbac/serviceaccounts/{name}/reset [post]
 func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	sa, err := auth.GetServiceAccount(r.Context(), name)
+	res, err := rbacservice.ResetServiceAccountToken(r.Context(), name)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusNotFound, "service account not found")
+		common.BadRequestError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+	common.Success(w, r, res)
+}
+
+type SimulatePermissionsRequest struct {
+	ServiceAccountName string `json:"serviceAccountName"`
+	Verb               string `json:"verb"`
+	Resource           string `json:"resource"`
+}
+
+// SimulatePermissionsHandler godoc
+// @Summary Simulate permissions for a service account
+// @Tags rbac
+// @Accept json
+// @Produce json
+// @Param request body SimulatePermissionsRequest true "Simulation Request"
+// @Success 200 {object} models.ResourcePermissions
+// @Router /rbac/simulate [post]
+func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
+	var req SimulatePermissionsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	sa.Token = uuid.New().String()
-	if err := auth.SaveServiceAccount(r.Context(), sa); err != nil {
+	res, err := rbacservice.SimulatePermissions(r.Context(), req.ServiceAccountName, req.Verb, req.Resource)
+	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
-	common.Success(w, r, sa)
+	common.Success(w, r, res)
 }
 
 // RBACRouter registers the RBAC routes
 func RBACRouter(r chi.Router) {
 	r.Route("/rbac", func(r chi.Router) {
+		r.Post("/simulate", SimulatePermissionsHandler)
 		r.Get("/serviceaccounts", ListServiceAccountsHandler)
 		r.Post("/serviceaccounts", CreateServiceAccountHandler)
 		r.Put("/serviceaccounts/{name}", UpdateServiceAccountHandler)

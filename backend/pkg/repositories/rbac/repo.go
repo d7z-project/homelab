@@ -1,0 +1,283 @@
+package rbac
+
+import (
+	"context"
+	"encoding/json"
+	"homelab/pkg/common"
+	"homelab/pkg/models"
+	"strings"
+	"sync"
+
+	lru "github.com/hashicorp/golang-lru/v2"
+	"gopkg.d7z.net/middleware/kv"
+)
+
+var (
+	roleCache  *lru.Cache[string, *models.Role]
+	tokenCache *lru.Cache[string, string]
+
+	rbCache struct {
+		rbs   []models.RoleBinding
+		valid bool
+		mu    sync.RWMutex
+	}
+)
+
+func init() {
+	roleCache, _ = lru.New[string, *models.Role](1024)
+	tokenCache, _ = lru.New[string, string](4096)
+}
+
+func InvalidateCache(roleName string) {
+	if roleName != "" {
+		roleCache.Remove(roleName)
+	} else {
+		roleCache.Purge()
+	}
+	rbCache.mu.Lock()
+	rbCache.valid = false
+	rbCache.mu.Unlock()
+}
+
+// ServiceAccount Repo
+
+func GetServiceAccount(ctx context.Context, name string) (*models.ServiceAccount, error) {
+	db := common.DB.Child("auth", "serviceaccounts")
+	data, err := db.Get(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	var sa models.ServiceAccount
+	if err := json.Unmarshal([]byte(data), &sa); err != nil {
+		return nil, err
+	}
+	return &sa, nil
+}
+
+func SaveServiceAccount(ctx context.Context, sa *models.ServiceAccount) error {
+	db := common.DB.Child("auth", "serviceaccounts")
+	data, err := json.Marshal(sa)
+	if err != nil {
+		return err
+	}
+	if sa.Token != "" {
+		tokenDB := common.DB.Child("auth", "tokens")
+		err = tokenDB.Put(ctx, sa.Token, sa.Name, kv.TTLKeep)
+		if err != nil {
+			return err
+		}
+		tokenCache.Add(sa.Token, sa.Name)
+	}
+	return db.Put(ctx, sa.Name, string(data), kv.TTLKeep)
+}
+
+func DeleteServiceAccount(ctx context.Context, name string) error {
+	sa, err := GetServiceAccount(ctx, name)
+	if err == nil && sa.Token != "" {
+		common.DB.Child("auth", "tokens").Delete(ctx, sa.Token)
+		tokenCache.Remove(sa.Token)
+	}
+	_, err = common.DB.Child("auth", "serviceaccounts").Delete(ctx, name)
+	return err
+}
+
+func ListServiceAccounts(ctx context.Context, page uint64, pageSize uint, search string) ([]models.ServiceAccount, int64, error) {
+	db := common.DB.Child("auth", "serviceaccounts")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, 0, err
+	}
+	var res []models.ServiceAccount
+	search = strings.ToLower(search)
+	for _, v := range items {
+		var sa models.ServiceAccount
+		if err := json.Unmarshal([]byte(v.Value), &sa); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(sa.Name), search) {
+				res = append(res, sa)
+			}
+		}
+	}
+	total := int64(len(res))
+	start := int(page) * int(pageSize)
+	if start >= len(res) {
+		return []models.ServiceAccount{}, total, nil
+	}
+	end := start + int(pageSize)
+	if end > len(res) {
+		end = len(res)
+	}
+	return res[start:end], total, nil
+}
+
+// Token Repo
+
+func GetTokenSA(ctx context.Context, token string) (string, error) {
+	if saName, ok := tokenCache.Get(token); ok {
+		return saName, nil
+	}
+	saName, err := common.DB.Child("auth", "tokens").Get(ctx, token)
+	if err == nil && saName != "" {
+		tokenCache.Add(token, saName)
+	}
+	return saName, err
+}
+
+// Role Repo
+
+func GetRole(ctx context.Context, name string) (*models.Role, error) {
+	if val, ok := roleCache.Get(name); ok {
+		return val, nil
+	}
+	db := common.DB.Child("auth", "roles")
+	data, err := db.Get(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	var role models.Role
+	if err := json.Unmarshal([]byte(data), &role); err != nil {
+		return nil, err
+	}
+	roleCache.Add(name, &role)
+	return &role, nil
+}
+
+func SaveRole(ctx context.Context, role *models.Role) error {
+	db := common.DB.Child("auth", "roles")
+	data, err := json.Marshal(role)
+	if err != nil {
+		return err
+	}
+	err = db.Put(ctx, role.Name, string(data), kv.TTLKeep)
+	if err == nil {
+		InvalidateCache(role.Name)
+	}
+	return err
+}
+
+func DeleteRole(ctx context.Context, name string) error {
+	_, err := common.DB.Child("auth", "roles").Delete(ctx, name)
+	if err == nil {
+		InvalidateCache(name)
+	}
+	return err
+}
+
+func ListRoles(ctx context.Context, page uint64, pageSize uint, search string) ([]models.Role, int64, error) {
+	db := common.DB.Child("auth", "roles")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, 0, err
+	}
+	var res []models.Role
+	search = strings.ToLower(search)
+	for _, v := range items {
+		var role models.Role
+		if err := json.Unmarshal([]byte(v.Value), &role); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(role.Name), search) {
+				res = append(res, role)
+			}
+		}
+	}
+	total := int64(len(res))
+	start := int(page) * int(pageSize)
+	if start >= len(res) {
+		return []models.Role{}, total, nil
+	}
+	end := start + int(pageSize)
+	if end > len(res) {
+		end = len(res)
+	}
+	return res[start:end], total, nil
+}
+
+// RoleBinding Repo
+
+func SaveRoleBinding(ctx context.Context, rb *models.RoleBinding) error {
+	db := common.DB.Child("auth", "rolebindings")
+	data, err := json.Marshal(rb)
+	if err != nil {
+		return err
+	}
+	err = db.Put(ctx, rb.Name, string(data), kv.TTLKeep)
+	if err == nil {
+		InvalidateCache("")
+	}
+	return err
+}
+
+func GetRoleBinding(ctx context.Context, name string) (*models.RoleBinding, error) {
+	db := common.DB.Child("auth", "rolebindings")
+	data, err := db.Get(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	var rb models.RoleBinding
+	if err := json.Unmarshal([]byte(data), &rb); err != nil {
+		return nil, err
+	}
+	return &rb, nil
+}
+
+func DeleteRoleBinding(ctx context.Context, name string) error {
+	_, err := common.DB.Child("auth", "rolebindings").Delete(ctx, name)
+	if err == nil {
+		InvalidateCache("")
+	}
+	return err
+}
+
+func ListRoleBindings(ctx context.Context, page uint64, pageSize uint, search string) ([]models.RoleBinding, int64, error) {
+	db := common.DB.Child("auth", "rolebindings")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, 0, err
+	}
+	var res []models.RoleBinding
+	search = strings.ToLower(search)
+	for _, v := range items {
+		var rb models.RoleBinding
+		if err := json.Unmarshal([]byte(v.Value), &rb); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(rb.Name), search) {
+				res = append(res, rb)
+			}
+		}
+	}
+	total := int64(len(res))
+	start := int(page) * int(pageSize)
+	if start >= len(res) {
+		return []models.RoleBinding{}, total, nil
+	}
+	end := start + int(pageSize)
+	if end > len(res) {
+		end = len(res)
+	}
+	return res[start:end], total, nil
+}
+
+func ListRoleBindingsAll(ctx context.Context) ([]models.RoleBinding, error) {
+	rbCache.mu.RLock()
+	if rbCache.valid {
+		rbs := rbCache.rbs
+		rbCache.mu.RUnlock()
+		return rbs, nil
+	}
+	rbCache.mu.RUnlock()
+
+	db := common.DB.Child("auth", "rolebindings")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	var res []models.RoleBinding
+	for _, v := range items {
+		var rb models.RoleBinding
+		if err := json.Unmarshal([]byte(v.Value), &rb); err == nil {
+			res = append(res, rb)
+		}
+	}
+	rbCache.mu.Lock()
+	rbCache.rbs = res
+	rbCache.valid = true
+	rbCache.mu.Unlock()
+	return res, nil
+}
