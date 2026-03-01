@@ -5,13 +5,19 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	authservice "homelab/pkg/services/auth"
-	rbacservice "homelab/pkg/services/rbac"
 	"net/http"
 
 	"github.com/go-chi/render"
 )
 
 // LoginHandler godoc
+// @Summary Login to get session
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body models.LoginRequest true "Login Request"
+// @Success 200 {object} models.LoginResponse
+// @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := render.DecodeJSON(r.Body, &req); err != nil {
@@ -38,6 +44,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // LogoutHandler godoc
+// @Summary Logout
+// @Tags auth
+// @Produce json
+// @Success 200 {string} string "success"
+// @Router /logout [post]
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.Header.Get("Authorization")
 	if len(sessionID) > 7 && sessionID[:7] == "Bearer " {
@@ -62,6 +73,11 @@ type AuthInfo struct {
 }
 
 // InfoHandler godoc
+// @Summary Get current user info
+// @Tags auth
+// @Produce json
+// @Success 200 {object} AuthInfo
+// @Router /info [get]
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	ac := commonauth.FromContext(r.Context())
 	if ac == nil {
@@ -73,17 +89,4 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 		Type: ac.Type,
 		Name: ac.Name,
 	})
-}
-
-// SuggestResourcesHandler godoc
-func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
-	prefix := r.URL.Query().Get("prefix")
-
-	suggestions, err := rbacservice.SuggestResources(r.Context(), prefix)
-	if err != nil {
-		common.InternalServerError(w, r, 10001, err.Error())
-		return
-	}
-
-	common.Success(w, r, suggestions)
 }

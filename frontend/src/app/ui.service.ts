@@ -1,16 +1,39 @@
 import { Injectable, signal } from '@angular/core';
 
+export interface SearchConfig {
+  placeholder: string;
+  value: string;
+  onSearch: (value: string) => void;
+  onClose?: () => void;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class UiService {
+  // Sidenav state
   sidenavOpened = signal(false);
-  
-  // Toolbar controls
+
+  // Dynamic toolbar controls (inherited from route or manually set)
   toolbarVisible = signal(true);
   toolbarShadow = signal(true);
   toolbarDivider = signal(false);
-  toolbarSticky = signal(true); // Default to sticky
+  toolbarSticky = signal(true);
+
+  // Global Search Overlay state
+  searchConfig = signal<SearchConfig | null>(null);
+
+  openSearch(config: SearchConfig) {
+    this.searchConfig.set(config);
+  }
+
+  closeSearch() {
+    const current = this.searchConfig();
+    if (current && current.onClose) {
+      current.onClose();
+    }
+    this.searchConfig.set(null);
+  }
 
   toggleSidenav() {
     this.sidenavOpened.update((v) => !v);
@@ -20,11 +43,22 @@ export class UiService {
     this.sidenavOpened.set(opened);
   }
 
-  // Helper to reset to defaults
   resetToolbar() {
     this.toolbarVisible.set(true);
     this.toolbarShadow.set(true);
     this.toolbarDivider.set(false);
     this.toolbarSticky.set(true);
+  }
+
+  configureToolbar(config: {
+    visible?: boolean;
+    shadow?: boolean;
+    divider?: boolean;
+    sticky?: boolean;
+  }) {
+    if (config.visible !== undefined) this.toolbarVisible.set(config.visible);
+    if (config.shadow !== undefined) this.toolbarShadow.set(config.shadow);
+    if (config.divider !== undefined) this.toolbarDivider.set(config.divider);
+    if (config.sticky !== undefined) this.toolbarSticky.set(config.sticky);
   }
 }

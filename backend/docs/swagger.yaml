@@ -10,6 +10,13 @@ definitions:
       total:
         type: integer
     type: object
+  controllers.AuthInfo:
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+    type: object
   controllers.SimulatePermissionsRequest:
     properties:
       resource:
@@ -27,6 +34,9 @@ definitions:
       id:
         type: string
       ipAddress:
+        type: string
+      message:
+        description: Detailed description
         type: string
       resource:
         description: e.g., "DNS/Record", "RBAC/ServiceAccount"
@@ -46,16 +56,75 @@ definitions:
       userAgent:
         type: string
     type: object
+  models.Domain:
+    properties:
+      comments:
+        description: 备注说明
+        type: string
+      createdAt:
+        description: 创建时间
+        type: string
+      id:
+        type: string
+      name:
+        description: 域名名称 (e.g., example.com)
+        type: string
+      status:
+        description: 状态 (active/inactive)
+        type: string
+      updatedAt:
+        description: 更新时间
+        type: string
+    type: object
+  models.LoginRequest:
+    properties:
+      password:
+        type: string
+      totp:
+        type: string
+    type: object
+  models.LoginResponse:
+    properties:
+      session_id:
+        type: string
+    type: object
   models.PolicyRule:
     properties:
-      resources:
-        items:
-          type: string
-        type: array
+      resource:
+        type: string
       verbs:
         items:
           type: string
         type: array
+    type: object
+  models.Record:
+    properties:
+      comments:
+        description: 备注说明
+        type: string
+      domainId:
+        description: 关联的域名 ID
+        type: string
+      id:
+        type: string
+      name:
+        description: 记录名 (e.g., @, www, api)
+        type: string
+      priority:
+        description: 优先级 (仅用于 MX 和 SRV)
+        type: integer
+      status:
+        description: 状态 (active/inactive)
+        type: string
+      ttl:
+        description: 生存时间 (秒)
+        type: integer
+      type:
+        description: 记录类型 (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)
+        type: string
+      value:
+        description: 记录值 (e.g., 192.168.1.1)
+        type: string
     type: object
   models.ResourcePermissions:
     properties:
@@ -142,6 +211,260 @@ paths:
       summary: List audit logs
       tags:
       - audit
+  /dns/domains:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.Domain'
+                  type: array
+              type: object
+      summary: List all DNS domains
+      tags:
+      - dns
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Domain
+        in: body
+        name: domain
+        required: true
+        schema:
+          $ref: '#/definitions/models.Domain'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Domain'
+      summary: Create a DNS domain
+      tags:
+      - dns
+  /dns/domains/{id}:
+    delete:
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete a DNS domain
+      tags:
+      - dns
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Domain
+        in: body
+        name: domain
+        required: true
+        schema:
+          $ref: '#/definitions/models.Domain'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Domain'
+      summary: Update a DNS domain
+      tags:
+      - dns
+  /dns/records:
+    get:
+      parameters:
+      - description: Domain ID filter
+        in: query
+        name: domainId
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name or value
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.Record'
+                  type: array
+              type: object
+      summary: List all DNS records
+      tags:
+      - dns
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Record
+        in: body
+        name: record
+        required: true
+        schema:
+          $ref: '#/definitions/models.Record'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Record'
+      summary: Create a DNS record
+      tags:
+      - dns
+  /dns/records/{id}:
+    delete:
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete a DNS record
+      tags:
+      - dns
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Record
+        in: body
+        name: record
+        required: true
+        schema:
+          $ref: '#/definitions/models.Record'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Record'
+      summary: Update a DNS record
+      tags:
+      - dns
+  /info:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.AuthInfo'
+      summary: Get current user info
+      tags:
+      - auth
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+      summary: Login to get session
+      tags:
+      - auth
+  /logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Logout
+      tags:
+      - auth
+  /rbac/resources/suggest:
+    get:
+      parameters:
+      - description: Prefix to filter resources
+        in: query
+        name: prefix
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Suggest RBAC resources
+      tags:
+      - rbac
   /rbac/rolebindings:
     get:
       parameters:
@@ -458,6 +781,25 @@ paths:
           schema:
             $ref: '#/definitions/models.ResourcePermissions'
       summary: Simulate permissions for a service account
+      tags:
+      - rbac
+  /rbac/verbs/suggest:
+    get:
+      parameters:
+      - description: Resource prefix
+        in: query
+        name: resource
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Suggest RBAC verbs for a resource
       tags:
       - rbac
 securityDefinitions:

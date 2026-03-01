@@ -1,13 +1,18 @@
 import { Component, Inject, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDividerModule } from '@angular/material/divider';
 import { FormsModule } from '@angular/forms';
-import { AuthRole, AuthPolicyRule, RbacService } from '../../generated';
+import { ModelsRole, ModelsPolicyRule, RbacService } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -21,118 +26,173 @@ import { firstValueFrom } from 'rxjs';
     MatInputModule,
     MatIconModule,
     MatAutocompleteModule,
+    MatChipsModule,
+    MatDividerModule,
     FormsModule,
   ],
   template: `
-    <h2 mat-dialog-title>{{ isEdit ? '编辑角色' : '创建角色' }}</h2>
-    <mat-dialog-content class="flex flex-col gap-4 min-w-[400px]">
+    <h2 mat-dialog-title class="!pt-6">
+      <mat-icon class="mr-2 align-middle text-primary">shield_person</mat-icon>
+      {{ isEdit ? '编辑角色配置' : '创建新角色' }}
+    </h2>
+    <mat-dialog-content
+      class="flex flex-col gap-6 !pb-4"
+      style="min-width: 350px; max-width: 800px;"
+    >
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>角色名称</mat-label>
-        <input matInput [(ngModel)]="role.name" [disabled]="isEdit" placeholder="例如: admin, viewer" />
+        <input
+          matInput
+          [(ngModel)]="role.name"
+          [disabled]="isEdit"
+          placeholder="例如: dns-admin"
+          autofocus
+        />
+        <mat-hint *ngIf="!isEdit">全局唯一的身份标识</mat-hint>
         <mat-error *ngIf="isDuplicate()">角色名称已存在</mat-error>
       </mat-form-field>
 
-      <div *ngIf="firstRule" class="space-y-4 border border-outline-variant/30 p-4 rounded-2xl bg-surface-container-lowest">
-        <div class="text-xs font-bold text-outline uppercase tracking-wider mb-2">权限规则</div>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[10px] font-bold text-outline uppercase tracking-[0.2em]"
+            >权限定义列表</span
+          >
+          <button
+            mat-stroked-button
+            color="primary"
+            class="!rounded-xl scale-90"
+            (click)="addRule()"
+          >
+            <mat-icon class="!w-4 !h-4 !text-[16px]">add</mat-icon>
+            添加规则
+          </button>
+        </div>
 
-        <div class="flex flex-col gap-4">
-          <mat-form-field appearance="outline" class="w-full bg-surface">
-            <mat-label>资源 (Resources)</mat-label>
-            <input
-              matInput
-              [(ngModel)]="resourceInput"
-              [matAutocomplete]="auto"
-              placeholder="dns, dns/**, dns/example.com 或 * (回车添加)"
-              (input)="onResourceInput($event)"
-              (keyup.enter)="addResource()"
-            />
-            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSuggestionSelected($event)">
-              <mat-option *ngFor="let suggestion of suggestions()" [value]="suggestion">
-                {{ suggestion }}
-              </mat-option>
-            </mat-autocomplete>
-            <mat-hint>输入并从下拉列表选择，或按回车添加。支持 dns/example.com 格式</mat-hint>
-          </mat-form-field>
-          
-          <div class="flex flex-wrap gap-2">
-            <span
-              *ngFor="let r of firstRule.resources"
-              class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-sm"
+        <div class="space-y-4">
+          <div
+            *ngFor="let rule of role.rules; let i = index"
+            class="group relative border border-outline-variant/50 p-4 pt-6 rounded-[24px] bg-surface-container-lowest transition-all hover:border-primary/30 animate-in zoom-in-95 duration-200"
+          >
+            <!-- Delete Action -->
+            <button
+              mat-icon-button
+              color="warn"
+              class="absolute top-1 right-1 !w-8 !h-8 scale-75 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+              (click)="removeRule(i)"
+              *ngIf="role.rules!.length > 1"
+              matTooltip="删除此规则"
             >
-              {{ r }}
-              <mat-icon
-                class="!w-[14px] !h-[14px] !text-[14px] !flex !items-center !justify-center cursor-pointer opacity-70 hover:opacity-100"
-                (click)="removeResource(r)"
-                >close</mat-icon
-              >
-            </span>
-          </div>
+              <mat-icon class="!text-[18px]">delete_outline</mat-icon>
+            </button>
 
-          <mat-form-field appearance="outline" class="w-full bg-surface">
-            <mat-label>操作 (Verbs)</mat-label>
-            <input
-              matInput
-              [(ngModel)]="verbInput"
-              placeholder="read, write 或 * (回车添加)"
-              (keyup.enter)="addVerb()"
-            />
-            <mat-hint>常用动作: read, write, create, delete, *</mat-hint>
-          </mat-form-field>
-          <div class="flex flex-wrap gap-2">
-            <span
-              *ngFor="let v of firstRule.verbs"
-              class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-sm"
-            >
-              {{ v }}
-              <mat-icon
-                class="!w-[14px] !h-[14px] !text-[14px] !flex !items-center !justify-center cursor-pointer opacity-70 hover:opacity-100"
-                (click)="removeVerb(v)"
-                >close</mat-icon
-              >
-            </span>
+            <div class="space-y-4">
+              <!-- Resource Input -->
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-label>资源路径 (Resource)</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="rule.resource"
+                  [matAutocomplete]="autoRes"
+                  (input)="onResourceInput(rule)"
+                  placeholder="例如: dns/*"
+                />
+                <mat-autocomplete
+                  #autoRes="matAutocomplete"
+                  (optionSelected)="onResourceSelected($event, rule)"
+                >
+                  <mat-option *ngFor="let suggestion of resourceSuggestions()" [value]="suggestion">
+                    <mat-icon class="scale-75 opacity-50">category</mat-icon>
+                    <span>{{ suggestion }}</span>
+                  </mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+
+              <!-- Verbs Selection -->
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-label>允许操作 (Verbs)</mat-label>
+                <mat-chip-grid #chipGridVerb class="!min-h-0">
+                  <mat-chip-row
+                    *ngFor="let v of rule.verbs"
+                    (removed)="removeVerb(rule, v)"
+                    class="!bg-secondary-container !text-on-secondary-container !text-[10px] !min-h-[24px]"
+                  >
+                    {{ v }}
+                    <button matChipRemove><mat-icon>cancel</mat-icon></button>
+                  </mat-chip-row>
+                  <input
+                    placeholder="添加..."
+                    [matAutocomplete]="autoVerb"
+                    [matChipInputFor]="chipGridVerb"
+                    #verbInputEl
+                    (focus)="onVerbInputFocus(rule)"
+                    class="!text-sm"
+                  />
+                </mat-chip-grid>
+                <mat-autocomplete
+                  #autoVerb="matAutocomplete"
+                  (optionSelected)="onVerbSelected($event, rule, verbInputEl)"
+                >
+                  <mat-option *ngFor="let verb of verbSuggestions()" [value]="verb">
+                    <mat-icon class="scale-75 opacity-50">bolt</mat-icon>
+                    <span>{{ verb }}</span>
+                  </mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+            </div>
           </div>
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="p-4">
+    <mat-dialog-actions align="end" class="!px-6 !pb-6 !pt-2">
       <button mat-button mat-dialog-close>取消</button>
       <button
         mat-flat-button
         color="primary"
-        [mat-dialog-close]="role"
-        [disabled]="!role.name || isDuplicate() || !firstRule?.resources?.length || !firstRule?.verbs?.length"
+        (click)="confirm()"
+        [disabled]="!isValid()"
+        class="!ml-2 px-8 rounded-full"
       >
-        确定
+        <mat-icon class="mr-1">check</mat-icon>
+        {{ isEdit ? '保存更改' : '立即创建' }}
       </button>
     </mat-dialog-actions>
   `,
 })
 export class CreateRoleDialogComponent {
   private rbacService = inject(RbacService);
-  
+  private dialogRef = inject(MatDialogRef<CreateRoleDialogComponent>);
+
   isEdit = false;
-  role: AuthRole = {
+  role: ModelsRole = {
     name: '',
-    rules: [{ verbs: [], resources: [] }],
+    rules: [],
   };
   existingNames: string[] = [];
 
-  resourceInput = '';
-  verbInput = '';
-  
-  suggestions = signal<string[]>([]);
+  resourceSuggestions = signal<string[]>([]);
+  verbSuggestions = signal<string[]>([]);
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { role: AuthRole | null; existingNames?: string[] },
+    @Inject(MAT_DIALOG_DATA) public data: { role: ModelsRole | null; existingNames?: string[] },
   ) {
     if (data.role) {
       this.isEdit = true;
       this.role = JSON.parse(JSON.stringify(data.role));
-      if (!this.role.rules || this.role.rules.length === 0) {
-        this.role.rules = [{ verbs: [], resources: [] }];
-      }
+    }
+
+    if (!this.role.rules || this.role.rules.length === 0) {
+      this.addRule();
     }
     this.existingNames = data.existingNames || [];
+  }
+
+  addRule() {
+    if (!this.role.rules) this.role.rules = [];
+    this.role.rules.push({ resource: '', verbs: [] });
+  }
+
+  removeRule(index: number) {
+    this.role.rules?.splice(index, 1);
   }
 
   isDuplicate(): boolean {
@@ -140,61 +200,63 @@ export class CreateRoleDialogComponent {
     return this.existingNames.includes(this.role.name?.trim() || '');
   }
 
-  get firstRule(): AuthPolicyRule | undefined {
-    return this.role.rules && this.role.rules.length > 0 ? this.role.rules[0] : undefined;
+  isValid(): boolean {
+    if (!this.role.name || this.isDuplicate()) return false;
+    if (!this.role.rules || this.role.rules.length === 0) return false;
+    return this.role.rules.every((r) => r.resource && r.verbs && r.verbs.length > 0);
   }
 
-  async onResourceInput(event: any) {
-    const val = this.resourceInput.trim();
+  async onResourceInput(rule: ModelsPolicyRule) {
+    const val = (rule.resource || '').trim();
     try {
       const list = await firstValueFrom(this.rbacService.rbacResourcesSuggestGet(val));
-      this.suggestions.set(list || []);
+      this.resourceSuggestions.set(list || []);
     } catch (e) {
-      this.suggestions.set([]);
+      this.resourceSuggestions.set([]);
     }
   }
 
-  onSuggestionSelected(event: MatAutocompleteSelectedEvent) {
-    this.resourceInput = event.option.viewValue;
-    this.addResource();
+  onResourceSelected(event: MatAutocompleteSelectedEvent, rule: ModelsPolicyRule) {
+    rule.resource = event.option.viewValue;
+    this.updateVerbSuggestions(rule);
   }
 
-  addResource() {
-    const val = this.resourceInput.trim();
-    const rule = this.firstRule;
-    if (val && rule) {
-      if (!rule.resources) rule.resources = [];
-      if (!rule.resources.includes(val)) {
-        rule.resources.push(val);
-        this.resourceInput = '';
-        this.suggestions.set([]);
-      }
+  async onVerbInputFocus(rule: ModelsPolicyRule) {
+    await this.updateVerbSuggestions(rule);
+  }
+
+  async updateVerbSuggestions(rule: ModelsPolicyRule) {
+    const resource = rule.resource || '';
+    try {
+      const list = await firstValueFrom(this.rbacService.rbacVerbsSuggestGet(resource));
+      this.verbSuggestions.set(list || []);
+    } catch (e) {
+      this.verbSuggestions.set([]);
     }
   }
 
-  removeResource(r: string) {
-    const rule = this.firstRule;
-    if (rule && rule.resources) {
-      rule.resources = rule.resources.filter((x) => x !== r);
+  onVerbSelected(
+    event: MatAutocompleteSelectedEvent,
+    rule: ModelsPolicyRule,
+    inputEl: HTMLInputElement,
+  ) {
+    if (!rule.verbs) rule.verbs = [];
+    const val = event.option.viewValue;
+    if (!rule.verbs.includes(val)) {
+      rule.verbs.push(val);
     }
+    inputEl.value = '';
   }
 
-  addVerb() {
-    const val = this.verbInput.trim();
-    const rule = this.firstRule;
-    if (val && rule) {
-      if (!rule.verbs) rule.verbs = [];
-      if (!rule.verbs.includes(val)) {
-        rule.verbs.push(val);
-        this.verbInput = '';
-      }
-    }
-  }
-
-  removeVerb(v: string) {
-    const rule = this.firstRule;
-    if (rule && rule.verbs) {
+  removeVerb(rule: ModelsPolicyRule, v: string) {
+    if (rule.verbs) {
       rule.verbs = rule.verbs.filter((x) => x !== v);
+    }
+  }
+
+  confirm() {
+    if (this.isValid()) {
+      this.dialogRef.close(this.role);
     }
   }
 }

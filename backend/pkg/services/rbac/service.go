@@ -3,6 +3,7 @@ package rbac
 import (
 	"context"
 	"errors"
+	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	"homelab/pkg/models"
@@ -46,11 +47,12 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 		sa.Token = uuid.New().String()
 	}
 
+	message := fmt.Sprintf("Created ServiceAccount: %s", sa.Name)
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
-		commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.Name, false)
+		commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.Name, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.Name, true)
+	commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.Name, message, true)
 	return sa, nil
 }
 
@@ -68,20 +70,22 @@ func UpdateServiceAccount(ctx context.Context, name string, sa *models.ServiceAc
 		sa.Token = existing.Token
 	}
 
+	message := fmt.Sprintf("Updated ServiceAccount: %s", sa.Name)
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.Name, false)
+		commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.Name, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.Name, true)
+	commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.Name, message, true)
 	return sa, nil
 }
 
 func DeleteServiceAccount(ctx context.Context, name string) error {
+	message := fmt.Sprintf("Deleted ServiceAccount: %s", name)
 	if err := rbacrepo.DeleteServiceAccount(ctx, name); err != nil {
-		commonaudit.FromContext(ctx).Log("DeleteServiceAccount", name, false)
+		commonaudit.FromContext(ctx).Log("DeleteServiceAccount", name, message, false)
 		return err
 	}
-	commonaudit.FromContext(ctx).Log("DeleteServiceAccount", name, true)
+	commonaudit.FromContext(ctx).Log("DeleteServiceAccount", name, message, true)
 	return nil
 }
 
@@ -92,11 +96,12 @@ func ResetServiceAccountToken(ctx context.Context, name string) (*models.Service
 	}
 
 	sa.Token = uuid.New().String()
+	message := fmt.Sprintf("Reset token for ServiceAccount: %s", sa.Name)
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
-		commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", sa.Name, false)
+		commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", sa.Name, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", sa.Name, true)
+	commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", sa.Name, message, true)
 	return sa, nil
 }
 
@@ -130,11 +135,12 @@ func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 		return nil, errors.New("Role already exists")
 	}
 
+	message := fmt.Sprintf("Created Role: %s with %d rules", role.Name, len(role.Rules))
 	if err := rbacrepo.SaveRole(ctx, role); err != nil {
-		commonaudit.FromContext(ctx).Log("CreateRole", role.Name, false)
+		commonaudit.FromContext(ctx).Log("CreateRole", role.Name, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("CreateRole", role.Name, true)
+	commonaudit.FromContext(ctx).Log("CreateRole", role.Name, message, true)
 	return role, nil
 }
 
@@ -148,20 +154,22 @@ func UpdateRole(ctx context.Context, name string, role *models.Role) (*models.Ro
 		return nil, errors.New("Role not found")
 	}
 
+	message := fmt.Sprintf("Updated Role: %s", role.Name)
 	if err := rbacrepo.SaveRole(ctx, role); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateRole", role.Name, false)
+		commonaudit.FromContext(ctx).Log("UpdateRole", role.Name, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("UpdateRole", role.Name, true)
+	commonaudit.FromContext(ctx).Log("UpdateRole", role.Name, message, true)
 	return role, nil
 }
 
 func DeleteRole(ctx context.Context, name string) error {
+	message := fmt.Sprintf("Deleted Role: %s", name)
 	if err := rbacrepo.DeleteRole(ctx, name); err != nil {
-		commonaudit.FromContext(ctx).Log("DeleteRole", name, false)
+		commonaudit.FromContext(ctx).Log("DeleteRole", name, message, false)
 		return err
 	}
-	commonaudit.FromContext(ctx).Log("DeleteRole", name, true)
+	commonaudit.FromContext(ctx).Log("DeleteRole", name, message, true)
 	return nil
 }
 
@@ -195,11 +203,13 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 		return nil, errors.New("RoleBinding already exists")
 	}
 
+	message := fmt.Sprintf("Created RoleBinding: %s (SA: %s -> Roles: %v)",
+		rb.Name, rb.ServiceAccountName, rb.RoleNames)
 	if err := rbacrepo.SaveRoleBinding(ctx, rb); err != nil {
-		commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.Name, false)
+		commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.Name, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.Name, true)
+	commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.Name, message, true)
 	return rb, nil
 }
 
@@ -208,25 +218,31 @@ func UpdateRoleBinding(ctx context.Context, name string, rb *models.RoleBinding)
 		return nil, errors.New("name in body does not match path")
 	}
 
-	_, err := rbacrepo.GetRoleBinding(ctx, name)
+	existing, err := rbacrepo.GetRoleBinding(ctx, name)
 	if err != nil {
 		return nil, errors.New("RoleBinding not found")
 	}
 
+	message := fmt.Sprintf("Updated RoleBinding: %s", rb.Name)
+	if existing.Enabled != rb.Enabled {
+		message += fmt.Sprintf(" (Status: %v -> %v)", existing.Enabled, rb.Enabled)
+	}
+
 	if err := rbacrepo.SaveRoleBinding(ctx, rb); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateRoleBinding", rb.Name, false)
+		commonaudit.FromContext(ctx).Log("UpdateRoleBinding", rb.Name, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("UpdateRoleBinding", rb.Name, true)
+	commonaudit.FromContext(ctx).Log("UpdateRoleBinding", rb.Name, message, true)
 	return rb, nil
 }
 
 func DeleteRoleBinding(ctx context.Context, name string) error {
+	message := fmt.Sprintf("Deleted RoleBinding: %s", name)
 	if err := rbacrepo.DeleteRoleBinding(ctx, name); err != nil {
-		commonaudit.FromContext(ctx).Log("DeleteRoleBinding", name, false)
+		commonaudit.FromContext(ctx).Log("DeleteRoleBinding", name, message, false)
 		return err
 	}
-	commonaudit.FromContext(ctx).Log("DeleteRoleBinding", name, true)
+	commonaudit.FromContext(ctx).Log("DeleteRoleBinding", name, message, true)
 	return nil
 }
 

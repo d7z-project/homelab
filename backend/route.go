@@ -30,6 +30,12 @@ func Router(r chi.Router) {
 				r.Use(middlewares.RequirePermission("admin", "audit"))
 				r.Get("/audit/logs", controllers.ListAuditLogsHandler)
 			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(middlewares.RequirePermission("admin", "dns"))
+				r.Use(middlewares.AuditMiddleware("dns"))
+				controllers.DNSRouter(r)
+			})
 		})
 	})
 }

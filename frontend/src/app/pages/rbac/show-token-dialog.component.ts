@@ -11,7 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
     <h2 mat-dialog-title class="!pt-6">ServiceAccount 已就绪</h2>
-    <mat-dialog-content>
+    <mat-dialog-content style="min-width: 350px; max-width: 550px;">
       <div class="space-y-4 pt-2">
         <p class="text-on-surface opacity-80">
           账号 <strong>{{ data.name }}</strong> 的访问令牌已生成。

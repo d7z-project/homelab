@@ -7,6 +7,7 @@ type AuditLog struct {
 	Action    string `json:"action"`    // CREATE, UPDATE, DELETE, or HTTP Method
 	Resource  string `json:"resource"`  // e.g., "DNS/Record", "RBAC/ServiceAccount"
 	TargetID  string `json:"targetId"`  // ID or name of the resource operated on
+	Message   string `json:"message"`   // Detailed description
 	Status    string `json:"status"`    // Success or Failed
 	IPAddress string `json:"ipAddress"`
 	UserAgent string `json:"userAgent"`

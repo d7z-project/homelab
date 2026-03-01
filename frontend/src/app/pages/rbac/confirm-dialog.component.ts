@@ -18,7 +18,7 @@ export interface ConfirmDialogData {
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
     <h2 mat-dialog-title class="!pt-6">{{ data.title }}</h2>
-    <mat-dialog-content>
+    <mat-dialog-content style="min-width: 300px; max-width: 450px;">
       <p class="py-3 text-on-surface opacity-80 leading-relaxed">{{ data.message }}</p>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="!px-6 !pb-6 !gap-2">

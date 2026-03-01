@@ -6,22 +6,9 @@ import (
 	"homelab/pkg/models"
 	rbacservice "homelab/pkg/services/rbac"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
-
-func getPaginationParams(r *http.Request) (int, int) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
-	}
-	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
-	if pageSize < 1 {
-		pageSize = 15
-	}
-	return page, pageSize
-}
 
 // ListServiceAccountsHandler godoc
 // @Summary List all service accounts
@@ -321,9 +308,45 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, res)
 }
 
+// SuggestResourcesHandler godoc
+// @Summary Suggest RBAC resources
+// @Tags rbac
+// @Produce json
+// @Param prefix query string false "Prefix to filter resources"
+// @Success 200 {array} string
+// @Router /rbac/resources/suggest [get]
+func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
+	prefix := r.URL.Query().Get("prefix")
+	suggestions, err := rbacservice.SuggestResources(r.Context(), prefix)
+	if err != nil {
+		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+	common.Success(w, r, suggestions)
+}
+
+// SuggestVerbsHandler godoc
+// @Summary Suggest RBAC verbs for a resource
+// @Tags rbac
+// @Produce json
+// @Param resource query string false "Resource prefix"
+// @Success 200 {array} string
+// @Router /rbac/verbs/suggest [get]
+func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
+	resource := r.URL.Query().Get("resource")
+	verbs, err := rbacservice.SuggestVerbs(r.Context(), resource)
+	if err != nil {
+		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+	common.Success(w, r, verbs)
+}
+
 // RBACRouter registers the RBAC routes
 func RBACRouter(r chi.Router) {
 	r.Route("/rbac", func(r chi.Router) {
+		r.Get("/resources/suggest", SuggestResourcesHandler)
+		r.Get("/verbs/suggest", SuggestVerbsHandler)
 		r.Post("/simulate", SimulatePermissionsHandler)
 		r.Get("/serviceaccounts", ListServiceAccountsHandler)
 		r.Post("/serviceaccounts", CreateServiceAccountHandler)

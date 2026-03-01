@@ -1,6 +1,12 @@
-import { Component, inject, signal, effect, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
+import {
+  RouterOutlet,
+  Router,
+  NavigationEnd,
+  ActivatedRoute,
+  ActivationEnd,
+} from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,7 +16,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map, filter } from 'rxjs/operators';
+import { map, filter, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { LogoutDialogComponent } from './logout-dialog.component';
 import { AuthService } from '../../generated';
@@ -127,42 +133,68 @@ export class MainComponent {
       },
     });
 
-    effect(() => {
-      const handset = this.isHandset();
-      if (!handset) {
-        this.uiService.setSidenav(true);
-      } else {
-        this.uiService.setSidenav(false);
-      }
-    }, { allowSignalWrites: true });
+    // Reactive handling of viewport changes
+    this.breakpointObserver
+      .observe(Breakpoints.Handset)
+      .pipe(
+        map((result) => result.matches),
+        tap((handset) => {
+          requestAnimationFrame(() => {
+            this.uiService.setSidenav(!handset);
+          });
+        }),
+      )
+      .subscribe();
 
-    // Reset toolbar only on path navigation (ignore query parameters)
-    effect(() => {
-      this.currentPath(); // Track only the base path
-      // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
-      setTimeout(() => this.uiService.resetToolbar());
-    }, { allowSignalWrites: true });
+    // The MAGIC fix: Listen to route data changes synchronously at the parent level
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof ActivationEnd && e.snapshot.firstChild === null),
+        map((e) => (e as ActivationEnd).snapshot.data),
+        tap((data) => {
+          // Wrap in requestAnimationFrame to ensure the state update happens after the current check cycle,
+          // which avoids the NG0100: ExpressionChangedAfterItHasBeenCheckedError.
+          requestAnimationFrame(() => {
+            const config = data['toolbar'];
+            if (config) {
+              this.uiService.configureToolbar(config);
+            } else {
+              this.uiService.resetToolbar();
+            }
+          });
+        }),
+      )
+      .subscribe();
   }
 
   menuItems = [
     { link: '/welcome', icon: 'dashboard', label: '控制面板' },
-    { 
-      link: '/rbac', 
-      icon: 'security', 
+    {
+      link: '/rbac',
+      icon: 'security',
       label: 'RBAC 权限管理',
       children: [
         { link: '/rbac', queryParams: { tab: 'sa' }, icon: 'account_circle', label: '服务账号' },
         { link: '/rbac', queryParams: { tab: 'role' }, icon: 'shield_person', label: '角色管理' },
         { link: '/rbac', queryParams: { tab: 'binding' }, icon: 'link', label: '权限绑定' },
         { link: '/rbac/simulator', icon: 'psychology', label: '权限模拟器' },
-      ]
+      ],
+    },
+    {
+      link: '/dns',
+      icon: 'dns',
+      label: 'DNS 管理',
+      children: [
+        { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
+        { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
+      ],
     },
     { link: '/audit', icon: 'history', label: '审计日志' },
   ];
 
   isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
-    { initialValue: false },
+    { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
   currentUrl = toSignal(
@@ -174,6 +206,12 @@ export class MainComponent {
   );
 
   currentPath = computed(() => this.currentUrl().split('?')[0]);
+
+  currentTab = computed(() => {
+    const url = this.currentUrl();
+    const match = url.match(/[?&]tab=([^&]+)/);
+    return match ? match[1] : undefined;
+  });
 
   currentPageLabel = computed(() => {
     const url = this.currentPath();
@@ -189,10 +227,10 @@ export class MainComponent {
     const targetParams = item.queryParams || {};
 
     const currentPath = this.currentPath();
-    const currentTab = this.route.snapshot.queryParams['tab'];
-    
+    const currentTab = this.currentTab();
+
     const isSamePath = currentPath === targetUrl;
-    const isSameTab = (!targetParams.tab && !currentTab) || (targetParams.tab === currentTab);
+    const isSameTab = (!targetParams.tab && !currentTab) || targetParams.tab === currentTab;
 
     if (isSamePath && isSameTab) {
       event.preventDefault();
@@ -211,7 +249,6 @@ export class MainComponent {
 
   logout() {
     const dialogRef = this.dialog.open(LogoutDialogComponent, {
-      width: '400px',
       maxWidth: '90vw',
     });
 
@@ -223,7 +260,6 @@ export class MainComponent {
             this.router.navigate(['/login']);
           },
           error: () => {
-            // Even if backend fails, we should clear local storage and redirect
             localStorage.clear();
             this.router.navigate(['/login']);
           },

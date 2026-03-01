@@ -19,7 +19,7 @@ type AuditLogger struct {
 }
 
 // Log an action manually (e.g. action="CreateServiceAccount", targetID="test-sa")
-func (l *AuditLogger) Log(action string, targetID string, success bool) {
+func (l *AuditLogger) Log(action string, targetID string, message string, success bool) {
 	if l == nil {
 		return
 	}
@@ -32,6 +32,7 @@ func (l *AuditLogger) Log(action string, targetID string, success bool) {
 		Action:    action,
 		Resource:  l.Resource,
 		TargetID:  targetID,
+		Message:   message,
 		Status:    status,
 		IPAddress: l.IPAddress,
 		UserAgent: l.UserAgent,

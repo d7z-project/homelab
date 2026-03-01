@@ -10,8 +10,8 @@ type LoginResponse struct {
 }
 
 type PolicyRule struct {
-	Verbs     []string `json:"verbs"`
-	Resources []string `json:"resources"`
+	Resource string   `json:"resource"`
+	Verbs    []string `json:"verbs"`
 }
 
 type Role struct {

@@ -9,18 +9,25 @@ import (
 
 var (
 	// Resource Discovery
-	discoveredResources map[string]DiscoverFunc
+	discoveredResources map[string]resourceInfo
 	discoveryMu         sync.RWMutex
 )
+
+type resourceInfo struct {
+	discover DiscoverFunc
+	verbs    []string
+}
 
 // DiscoverFunc returns a list of matching resource paths based on the remaining prefix
 type DiscoverFunc func(ctx context.Context, prefix string) ([]string, error)
 
 func init() {
-	discoveredResources = make(map[string]DiscoverFunc)
+	discoveredResources = make(map[string]resourceInfo)
+
+	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
 
 	// Register default internal resources
-	RegisterResource("rbac", func(ctx context.Context, prefix string) ([]string, error) {
+	RegisterResourceWithVerbs("rbac", func(ctx context.Context, prefix string) ([]string, error) {
 		subs := []string{"serviceaccounts", "roles", "rolebindings", "simulate"}
 		var res []string
 		for _, s := range subs {
@@ -29,8 +36,9 @@ func init() {
 			}
 		}
 		return res, nil
-	})
-	RegisterResource("audit", func(ctx context.Context, prefix string) ([]string, error) {
+	}, standardVerbs)
+
+	RegisterResourceWithVerbs("audit", func(ctx context.Context, prefix string) ([]string, error) {
 		subs := []string{"logs"}
 		var res []string
 		for _, s := range subs {
@@ -39,14 +47,28 @@ func init() {
 			}
 		}
 		return res, nil
-	})
+	}, []string{"get", "list", "*"})
+
+	RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]string, error) {
+		// This could be further expanded to list actual domains from repo
+		// For now provide basic pattern suggestions
+		return []string{}, nil
+	}, standardVerbs)
 }
 
-// RegisterResource allows modules to register their resource types and instance providers
+// RegisterResource allows modules to register their resource types
 func RegisterResource(name string, f DiscoverFunc) {
+	RegisterResourceWithVerbs(name, f, []string{"*"})
+}
+
+// RegisterResourceWithVerbs allows modules to register their resource types and supported verbs
+func RegisterResourceWithVerbs(name string, f DiscoverFunc, verbs []string) {
 	discoveryMu.Lock()
 	defer discoveryMu.Unlock()
-	discoveredResources[name] = f
+	discoveredResources[name] = resourceInfo{
+		discover: f,
+		verbs:    verbs,
+	}
 }
 
 // SuggestResources returns a list of resource paths matching the prefix
@@ -70,8 +92,8 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 	baseRes := parts[0]
 	remaining := parts[1]
 
-	if f, ok := discoveredResources[baseRes]; ok {
-		matches, err := f(ctx, remaining)
+	if info, ok := discoveredResources[baseRes]; ok {
+		matches, err := info.discover(ctx, remaining)
 		if err != nil {
 			return nil, err
 		}
@@ -89,4 +111,17 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 
 	sort.Strings(suggestions)
 	return suggestions, nil
+}
+
+// SuggestVerbs returns supported verbs for a given resource prefix
+func SuggestVerbs(ctx context.Context, resourcePrefix string) ([]string, error) {
+	discoveryMu.RLock()
+	defer discoveryMu.RUnlock()
+
+	baseRes := strings.Split(resourcePrefix, "/")[0]
+	if info, ok := discoveredResources[baseRes]; ok {
+		return info.verbs, nil
+	}
+
+	return []string{"get", "list", "create", "update", "delete", "*"}, nil
 }

@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
-import { AuthServiceAccount } from '../../generated';
+import { ModelsServiceAccount } from '../../generated';
 
 @Component({
   selector: 'app-create-sa-dialog',
@@ -22,7 +22,7 @@ import { AuthServiceAccount } from '../../generated';
     <h2 mat-dialog-title class="!pt-6">
       {{ isEdit ? '修改 ServiceAccount' : '创建 ServiceAccount' }}
     </h2>
-    <mat-dialog-content>
+    <mat-dialog-content style="min-width: 320px; max-width: 500px;">
       <div class="pt-3 space-y-5">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>ServiceAccount 名称</mat-label>
@@ -66,7 +66,7 @@ import { AuthServiceAccount } from '../../generated';
 export class CreateSaDialogComponent {
   private dialogRef = inject(MatDialogRef<CreateSaDialogComponent>);
   isEdit = false;
-  sa: AuthServiceAccount = {
+  sa: ModelsServiceAccount = {
     name: '',
     comments: '',
   };
@@ -74,7 +74,7 @@ export class CreateSaDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public data: { sa: AuthServiceAccount | null; existingNames?: string[] },
+    public data: { sa: ModelsServiceAccount | null; existingNames?: string[] },
   ) {
     if (data.sa) {
       this.isEdit = true;

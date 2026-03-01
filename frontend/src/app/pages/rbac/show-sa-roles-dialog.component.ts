@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
-import { AuthRole } from '../../generated';
+import { ModelsRole } from '../../generated';
 
 @Component({
   selector: 'app-show-sa-roles-dialog',
@@ -43,12 +43,10 @@ import { AuthRole } from '../../generated';
                   @for (rule of role.rules; track rule) {
                     <div class="flex flex-wrap items-center gap-2">
                       <div class="flex gap-1">
-                        @for (res of rule.resources; track res) {
-                          <span
-                            class="text-primary text-[10px] font-bold uppercase border border-primary/20 px-1.5 rounded bg-primary/5"
-                            >{{ res }}</span
-                          >
-                        }
+                        <span
+                          class="text-primary text-[10px] font-bold uppercase border border-primary/20 px-1.5 rounded bg-primary/5"
+                          >{{ rule.resource }}</span
+                        >
                       </div>
                       <mat-icon
                         class="!w-[12px] !h-[12px] !text-[12px] text-outline opacity-50 !flex !items-center !justify-center"
@@ -87,5 +85,5 @@ import { AuthRole } from '../../generated';
   `,
 })
 export class ShowSaRolesDialogComponent {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { saName: string; roles: AuthRole[] }) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { saName: string; roles: ModelsRole[] }) {}
 }

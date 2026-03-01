@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ViewChild, computed, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -6,16 +6,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
-import { RbacService, AuthServiceAccount, AuthRole, AuthRoleBinding, AuthService } from '../../generated';
+import {
+  RbacService,
+  ModelsServiceAccount,
+  ModelsRole,
+  ModelsRoleBinding,
+  AuthService,
+} from '../../generated';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatDividerModule } from '@angular/material/divider';
 import { firstValueFrom } from 'rxjs';
 import { CreateSaDialogComponent } from './create-sa-dialog.component';
 import { ShowTokenDialogComponent } from './show-token-dialog.component';
@@ -44,9 +50,9 @@ import { UiService } from '../../ui.service';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatMenuModule,
-    MatPaginatorModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDividerModule,
   ],
   templateUrl: './rbac.component.html',
 })
@@ -58,18 +64,18 @@ export class RbacComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private breakpointObserver = inject(BreakpointObserver);
-  private uiService = inject(UiService);
+  public uiService = inject(UiService);
 
   private scrollListener?: () => void;
 
   isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
-    { initialValue: false },
+    { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
-  serviceAccounts = signal<AuthServiceAccount[]>([]);
-  roles = signal<AuthRole[]>([]);
-  roleBindings = signal<AuthRoleBinding[]>([]);
+  serviceAccounts = signal<ModelsServiceAccount[]>([]);
+  roles = signal<ModelsRole[]>([]);
+  roleBindings = signal<ModelsRoleBinding[]>([]);
 
   saTotal = signal(0);
   roleTotal = signal(0);
@@ -89,7 +95,19 @@ export class RbacComponent implements OnInit, OnDestroy {
   loadingMore = signal(false);
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
-  showSearch = signal(false);
+
+  // Controlled signals for table columns to ensure stability
+  displayedSaColumns = computed(() =>
+    this.isHandset()
+      ? ['name', 'token', 'actions']
+      : ['name', 'comments', 'token', 'lastUsedAt', 'actions'],
+  );
+  displayedRoleColumns = computed(() =>
+    this.isHandset() ? ['name', 'actions'] : ['name', 'rules', 'actions'],
+  );
+  displayedRbColumns = computed(() =>
+    this.isHandset() ? ['sa', 'role', 'actions'] : ['name', 'sa', 'role', 'actions'],
+  );
 
   hasSearchContent = computed(() => {
     const tab = this.selectedTabIndex();
@@ -98,6 +116,33 @@ export class RbacComponent implements OnInit, OnDestroy {
     if (tab === 2) return this.rbSearch().length > 0;
     return false;
   });
+
+  openSearch() {
+    const tab = this.selectedTabIndex();
+    let placeholder = '';
+    let value = '';
+    let onSearch: (val: string) => void;
+
+    if (tab === 0) {
+      placeholder = '搜索账号名称或备注...';
+      value = this.saSearch();
+      onSearch = (v) => this.onSaSearch(v);
+    } else if (tab === 1) {
+      placeholder = '搜索角色名称...';
+      value = this.roleSearch();
+      onSearch = (v) => this.onRoleSearch(v);
+    } else {
+      placeholder = '搜索绑定ID或账号名称...';
+      value = this.rbSearch();
+      onSearch = (v) => this.onRbSearch(v);
+    }
+
+    this.uiService.openSearch({
+      placeholder,
+      value,
+      onSearch,
+    });
+  }
 
   currentSearchTerm = computed(() => {
     const tab = this.selectedTabIndex();
@@ -110,10 +155,6 @@ export class RbacComponent implements OnInit, OnDestroy {
   hasMoreSa = computed(() => this.serviceAccounts().length < this.saTotal());
   hasMoreRoles = computed(() => this.roles().length < this.roleTotal());
   hasMoreRb = computed(() => this.roleBindings().length < this.rbTotal());
-
-  saColumns: string[] = ['name', 'comments', 'token', 'lastUsedAt', 'actions'];
-  roleColumns: string[] = ['name', 'rules', 'actions'];
-  rbColumns: string[] = ['name', 'sa', 'role', 'actions'];
 
   fabConfig = computed(() => {
     switch (this.selectedTabIndex()) {
@@ -141,8 +182,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    // Listen to query params changes to sync tab index
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       if (params['tab'] === 'sa') this.selectedTabIndex.set(0);
       else if (params['tab'] === 'role') this.selectedTabIndex.set(1);
       else if (params['tab'] === 'binding') this.selectedTabIndex.set(2);
@@ -150,23 +190,8 @@ export class RbacComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Configure toolbar for RBAC page - wrapped in timeout to avoid NG0100 error
-    setTimeout(() => {
-      this.uiService.toolbarShadow.set(false);
-      this.uiService.toolbarDivider.set(false);
-      this.uiService.toolbarSticky.set(false);
-    });
-
     const params = this.route.snapshot.queryParams;
-
     if (params['pageSize']) this.pageSize.set(Number(params['pageSize']));
-    if (params['saPage']) this.saPage.set(Number(params['saPage']));
-    if (params['saSearch']) this.saSearch.set(params['saSearch']);
-    if (params['rolePage']) this.rolePage.set(Number(params['rolePage']));
-    if (params['roleSearch']) this.roleSearch.set(params['roleSearch']);
-    if (params['rbPage']) this.rbPage.set(Number(params['rbPage']));
-    if (params['rbSearch']) this.rbSearch.set(params['rbSearch']);
-
     this.refreshAll();
     this.setupScrollListener();
   }
@@ -183,9 +208,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     if (!scrollElement) return;
 
     this.scrollListener = () => {
-      // Check if we should show the scroll-to-top button
       this.showScrollTop.set(scrollElement.scrollTop > 300);
-
       const atBottom =
         scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
 
@@ -203,7 +226,6 @@ export class RbacComponent implements OnInit, OnDestroy {
         }
       }
     };
-
     scrollElement.addEventListener('scroll', this.scrollListener);
   }
 
@@ -220,12 +242,8 @@ export class RbacComponent implements OnInit, OnDestroy {
       relativeTo: this.route,
       queryParams: {
         tab: tabs[this.selectedTabIndex()],
-        pageSize: this.pageSize() || null,
-        saPage: this.saPage() || null,
         saSearch: this.saSearch() || null,
-        rolePage: this.rolePage() || null,
         roleSearch: this.roleSearch() || null,
-        rbPage: this.rbPage() || null,
         rbSearch: this.rbSearch() || null,
       },
       queryParamsHandling: 'merge',
@@ -244,14 +262,18 @@ export class RbacComponent implements OnInit, OnDestroy {
       this.saPage.set(0);
       this.rolePage.set(0);
       this.rbPage.set(0);
-      await Promise.all([this.loadServiceAccounts(true), this.loadRoles(true), this.loadRoleBindings(true)]);
+      await Promise.all([
+        this.loadServiceAccounts(true),
+        this.loadRoles(true),
+        this.loadRoleBindings(true),
+      ]);
     } catch (err) {
       this.snackBar
         .open('加载数据失败', '重试', { duration: 3000 })
         .onAction()
         .subscribe(() => this.refreshAll());
     } finally {
-      setTimeout(() => this.loading.set(false));
+      this.loading.set(false);
     }
   }
 
@@ -259,11 +281,12 @@ export class RbacComponent implements OnInit, OnDestroy {
     const data = await firstValueFrom(
       this.rbacService.rbacServiceaccountsGet(this.saPage() + 1, this.pageSize(), this.saSearch()),
     );
-    if (reset) {
-      this.serviceAccounts.set(data.items || []);
-    } else {
+    if (reset) this.serviceAccounts.set(data.items || []);
+    else {
       const current = this.serviceAccounts();
-      const newItems = (data.items || []).filter(newItem => !current.some(existing => existing.name === newItem.name));
+      const newItems = (data.items || []).filter(
+        (newItem) => !current.some((existing) => existing.name === newItem.name),
+      );
       this.serviceAccounts.update((prev) => [...prev, ...newItems]);
     }
     this.saTotal.set(data.total || 0);
@@ -273,11 +296,12 @@ export class RbacComponent implements OnInit, OnDestroy {
     const data = await firstValueFrom(
       this.rbacService.rbacRolesGet(this.rolePage() + 1, this.pageSize(), this.roleSearch()),
     );
-    if (reset) {
-      this.roles.set(data.items || []);
-    } else {
+    if (reset) this.roles.set(data.items || []);
+    else {
       const current = this.roles();
-      const newItems = (data.items || []).filter(newItem => !current.some(existing => existing.name === newItem.name));
+      const newItems = (data.items || []).filter(
+        (newItem) => !current.some((existing) => existing.name === newItem.name),
+      );
       this.roles.update((prev) => [...prev, ...newItems]);
     }
     this.roleTotal.set(data.total || 0);
@@ -287,11 +311,12 @@ export class RbacComponent implements OnInit, OnDestroy {
     const data = await firstValueFrom(
       this.rbacService.rbacRolebindingsGet(this.rbPage() + 1, this.pageSize(), this.rbSearch()),
     );
-    if (reset) {
-      this.roleBindings.set(data.items || []);
-    } else {
+    if (reset) this.roleBindings.set(data.items || []);
+    else {
       const current = this.roleBindings();
-      const newItems = (data.items || []).filter(newItem => !current.some(existing => existing.name === newItem.name));
+      const newItems = (data.items || []).filter(
+        (newItem) => !current.some((existing) => existing.name === newItem.name),
+      );
       this.roleBindings.update((prev) => [...prev, ...newItems]);
     }
     this.rbTotal.set(data.total || 0);
@@ -300,21 +325,18 @@ export class RbacComponent implements OnInit, OnDestroy {
   onSaSearch(term: string) {
     this.saSearch.set(term);
     this.saPage.set(0);
-    this.updateQueryParams();
     this.loadServiceAccounts(true);
   }
 
   onRoleSearch(term: string) {
     this.roleSearch.set(term);
     this.rolePage.set(0);
-    this.updateQueryParams();
     this.loadRoles(true);
   }
 
   onRbSearch(term: string) {
     this.rbSearch.set(term);
     this.rbPage.set(0);
-    this.updateQueryParams();
     this.loadRoleBindings(true);
   }
 
@@ -334,24 +356,22 @@ export class RbacComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    const dialogRef = this.dialog.open(LogoutDialogComponent, {
-      width: '400px',
-      maxWidth: '90vw',
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.authService.logoutPost().subscribe({
-          next: () => {
-            localStorage.clear();
-            this.router.navigate(['/login']);
-          },
-          error: () => {
-            localStorage.clear();
-            this.router.navigate(['/login']);
-          },
-        });
-      }
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(LogoutDialogComponent, { maxWidth: '90vw' });
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result) {
+          this.authService.logoutPost().subscribe({
+            next: () => {
+              localStorage.clear();
+              this.router.navigate(['/login']);
+            },
+            error: () => {
+              localStorage.clear();
+              this.router.navigate(['/login']);
+            },
+          });
+        }
+      });
     });
   }
 
@@ -362,261 +382,266 @@ export class RbacComponent implements OnInit, OnDestroy {
     const roleNames = Array.from(new Set(relevantRbs.flatMap((rb) => rb.roleNames || [])));
     const roles = roleNames
       .map((name) => this.roles().find((r) => r.name === name))
-      .filter((r) => !!r) as AuthRole[];
+      .filter((r) => !!r) as ModelsRole[];
 
-    this.dialog.open(ShowSaRolesDialogComponent, {
-      width: '500px',
-      data: {
-        saName: saName,
-        roles: roles,
-      },
+    requestAnimationFrame(() => {
+      this.dialog.open(ShowSaRolesDialogComponent, {
+        data: { saName: saName, roles: roles },
+      });
     });
   }
 
-  editSA(sa: AuthServiceAccount) {
-    const dialogRef = this.dialog.open(CreateSaDialogComponent, {
-      width: '400px',
-      data: { sa: sa, existingNames: this.serviceAccounts().map((x) => x.name) },
-    });
-    dialogRef.afterClosed().subscribe(async (updatedSa) => {
-      if (updatedSa) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(
-            this.rbacService.rbacServiceaccountsNamePut(updatedSa.name, updatedSa),
-          );
-          this.snackBar.open('ServiceAccount 已更新', '关闭', { duration: 2000 });
-          this.saPage.set(0);
-          await this.loadServiceAccounts(true);
-        } catch (err) {
-          this.snackBar.open('更新失败', '关闭', { duration: 3000 });
-        } finally {
-          this.loading.set(false);
+  editSA(sa: ModelsServiceAccount) {
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateSaDialogComponent, {
+        data: { sa: sa, existingNames: this.serviceAccounts().map((x) => x.name) },
+      });
+      dialogRef.afterClosed().subscribe(async (updatedSa) => {
+        if (updatedSa) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(
+              this.rbacService.rbacServiceaccountsNamePut(updatedSa.name, updatedSa),
+            );
+            this.snackBar.open('ServiceAccount 已更新', '关闭', { duration: 2000 });
+            this.saPage.set(0);
+            await this.loadServiceAccounts(true);
+          } catch (err) {
+            this.snackBar.open('更新失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
-  editRole(role: AuthRole) {
-    const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
-      width: '500px',
-      data: { role: role, existingNames: this.roles().map((x) => x.name) },
-    });
-    dialogRef.afterClosed().subscribe(async (updatedRole) => {
-      if (updatedRole) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(this.rbacService.rbacRolesNamePut(updatedRole.name, updatedRole));
-          this.snackBar.open('Role 已更新', '关闭', { duration: 2000 });
-          this.rolePage.set(0);
-          await this.loadRoles(true);
-        } catch (err) {
-          this.snackBar.open('更新失败', '关闭', { duration: 3000 });
-        } finally {
-          this.loading.set(false);
+  editRole(role: ModelsRole) {
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
+        data: { role: role, existingNames: this.roles().map((x) => x.name) },
+      });
+      dialogRef.afterClosed().subscribe(async (updatedRole) => {
+        if (updatedRole) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(this.rbacService.rbacRolesNamePut(updatedRole.name, updatedRole));
+            this.snackBar.open('Role 已更新', '关闭', { duration: 2000 });
+            this.rolePage.set(0);
+            await this.loadRoles(true);
+          } catch (err) {
+            this.snackBar.open('更新失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
-  editRB(binding: AuthRoleBinding) {
-    const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
-      width: '450px',
-      data: {
-        serviceAccounts: this.serviceAccounts(),
-        roles: this.roles(),
-        binding: binding,
-        existingNames: this.roleBindings().map((x) => x.name),
-      },
-    });
-    dialogRef.afterClosed().subscribe(async (updatedRB) => {
-      if (updatedRB) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(this.rbacService.rbacRolebindingsNamePut(updatedRB.name, updatedRB));
-          this.snackBar.open('RoleBinding 已更新', '关闭', { duration: 2000 });
-          this.rbPage.set(0);
-          await this.loadRoleBindings(true);
-        } catch (err) {
-          this.snackBar.open('更新失败', '关闭', { duration: 3000 });
-        } finally {
-          this.loading.set(false);
+  editRB(binding: ModelsRoleBinding) {
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
+        data: {
+          serviceAccounts: this.serviceAccounts(),
+          roles: this.roles(),
+          binding: binding,
+          existingNames: this.roleBindings().map((x) => x.name),
+        },
+      });
+      dialogRef.afterClosed().subscribe(async (updatedRB) => {
+        if (updatedRB) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(
+              this.rbacService.rbacRolebindingsNamePut(updatedRB.name, updatedRB),
+            );
+            this.snackBar.open('RoleBinding 已更新', '关闭', { duration: 2000 });
+            this.rbPage.set(0);
+            await this.loadRoleBindings(true);
+          } catch (err) {
+            this.snackBar.open('更新失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
   createServiceAccount() {
-    const dialogRef = this.dialog.open(CreateSaDialogComponent, {
-      width: '400px',
-      data: { sa: null, existingNames: this.serviceAccounts().map((x) => x.name) },
-    });
-    dialogRef.afterClosed().subscribe(async (result) => {
-      if (result && result.name) {
-        this.loading.set(true);
-        try {
-          const sa = await firstValueFrom(this.rbacService.rbacServiceaccountsPost(result));
-          this.snackBar.open('ServiceAccount 已创建', '关闭', { duration: 2000 });
-          this.saPage.set(0);
-          await this.loadServiceAccounts(true);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateSaDialogComponent, {
+        data: { sa: null, existingNames: this.serviceAccounts().map((x) => x.name) },
+      });
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result && result.name) {
+          this.loading.set(true);
+          try {
+            const sa = await firstValueFrom(this.rbacService.rbacServiceaccountsPost(result));
+            this.snackBar.open('ServiceAccount 已创建', '关闭', { duration: 2000 });
+            this.saPage.set(0);
+            await this.loadServiceAccounts(true);
 
-          // Show the token to user
-          this.dialog.open(ShowTokenDialogComponent, {
-            width: '450px',
-            data: { name: sa.name, token: sa.token },
-            disableClose: true,
-          });
-        } catch (err) {
-          this.snackBar.open('创建失败: ' + (err as any).error?.message || '未知错误', '关闭', {
-            duration: 3000,
-          });
-        } finally {
-          this.loading.set(false);
+            requestAnimationFrame(() => {
+              this.dialog.open(ShowTokenDialogComponent, {
+                data: { name: sa.name, token: sa.token },
+                disableClose: true,
+              });
+            });
+          } catch (err) {
+            this.snackBar.open('创建失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
   deleteSA(name: string) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: '删除 ServiceAccount',
-        message: `确定要永久删除 ServiceAccount "${name}" 吗？此操作不可撤销。`,
-        confirmText: '确认删除',
-        color: 'warn',
-      },
-    });
-
-    dialogRef.afterClosed().subscribe(async (result) => {
-      if (result) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(this.rbacService.rbacServiceaccountsNameDelete(name));
-          this.snackBar.open('已成功删除 ServiceAccount', '关闭', { duration: 2000 });
-          this.saPage.set(0);
-          await this.loadServiceAccounts(true);
-        } catch (err) {
-          this.snackBar.open('删除失败', '关闭', { duration: 2000 });
-        } finally {
-          this.loading.set(false);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: '删除 ServiceAccount',
+          message: `确定要永久删除 ServiceAccount "${name}" 吗？此操作不可撤销。`,
+          confirmText: '确认删除',
+          color: 'warn',
+        },
+      });
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(this.rbacService.rbacServiceaccountsNameDelete(name));
+            this.snackBar.open('已成功删除 ServiceAccount', '关闭', { duration: 2000 });
+            this.saPage.set(0);
+            await this.loadServiceAccounts(true);
+          } catch (err) {
+            this.snackBar.open('删除失败', '关闭', { duration: 2000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
   resetToken(name: string) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: '重置令牌',
-        message: `确定要重置 ServiceAccount "${name}" 的令牌吗？旧令牌将立即失效。`,
-        confirmText: '确定重置',
-        color: 'warn',
-      },
-    });
-
-    dialogRef.afterClosed().subscribe(async (result) => {
-      if (result) {
-        this.loading.set(true);
-        try {
-          const sa = await firstValueFrom(this.rbacService.rbacServiceaccountsNameResetPost(name));
-          this.snackBar.open('令牌已重置', '关闭', { duration: 2000 });
-
-          // Show the new token
-          this.dialog.open(ShowTokenDialogComponent, {
-            width: '450px',
-            data: { name: sa.name, token: sa.token },
-            disableClose: true,
-          });
-          this.saPage.set(0);
-          await this.loadServiceAccounts(true);
-        } catch (err) {
-          this.snackBar.open('重置失败', '关闭', { duration: 3000 });
-        } finally {
-          this.loading.set(false);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: '重置令牌',
+          message: `确定要重置 ServiceAccount "${name}" 的令牌吗？旧令牌将立即失效。`,
+          confirmText: '确定重置',
+          color: 'warn',
+        },
+      });
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result) {
+          this.loading.set(true);
+          try {
+            const sa = await firstValueFrom(
+              this.rbacService.rbacServiceaccountsNameResetPost(name),
+            );
+            this.snackBar.open('令牌已重置', '关闭', { duration: 2000 });
+            requestAnimationFrame(() => {
+              this.dialog.open(ShowTokenDialogComponent, {
+                data: { name: sa.name, token: sa.token },
+                disableClose: true,
+              });
+            });
+            this.saPage.set(0);
+            await this.loadServiceAccounts(true);
+          } catch (err) {
+            this.snackBar.open('重置失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
   createRole() {
-    const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
-      width: '500px',
-      data: { role: null, existingNames: this.roles().map((x) => x.name) },
-    });
-    dialogRef.afterClosed().subscribe(async (role) => {
-      if (role) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(this.rbacService.rbacRolesPost(role));
-          this.snackBar.open('Role 已创建', '关闭', { duration: 2000 });
-          this.rolePage.set(0);
-          await this.loadRoles(true);
-        } catch (err) {
-          this.snackBar.open('创建失败', '关闭', { duration: 3000 });
-        } finally {
-          this.loading.set(false);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
+        data: { role: null, existingNames: this.roles().map((x) => x.name) },
+      });
+      dialogRef.afterClosed().subscribe(async (role) => {
+        if (role) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(this.rbacService.rbacRolesPost(role));
+            this.snackBar.open('Role 已创建', '关闭', { duration: 2000 });
+            this.rolePage.set(0);
+            await this.loadRoles(true);
+          } catch (err) {
+            this.snackBar.open('创建失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
   deleteRole(name: string) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: '删除角色 (Role)',
-        message: `确定要删除角色 "${name}" 吗？删除后关联的权限绑定可能会失效。`,
-        confirmText: '确定删除',
-        color: 'warn',
-      },
-    });
-
-    dialogRef.afterClosed().subscribe(async (result) => {
-      if (result) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(this.rbacService.rbacRolesNameDelete(name));
-          this.snackBar.open('已成功删除角色', '关闭', { duration: 2000 });
-          this.rolePage.set(0);
-          await this.loadRoles(true);
-        } catch (err) {
-          this.snackBar.open('删除失败', '关闭', { duration: 2000 });
-        } finally {
-          this.loading.set(false);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: '删除角色 (Role)',
+          message: `确定要删除角色 "${name}" 吗？删除后关联的权限绑定可能会失效。`,
+          confirmText: '确定删除',
+          color: 'warn',
+        },
+      });
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(this.rbacService.rbacRolesNameDelete(name));
+            this.snackBar.open('已成功删除角色', '关闭', { duration: 2000 });
+            this.rolePage.set(0);
+            await this.loadRoles(true);
+          } catch (err) {
+            this.snackBar.open('删除失败', '关闭', { duration: 2000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
   createRB() {
-    const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
-      width: '450px',
-      data: {
-        serviceAccounts: this.serviceAccounts(),
-        roles: this.roles(),
-        existingNames: this.roleBindings().map((x) => x.name),
-      },
-    });
-    dialogRef.afterClosed().subscribe(async (rb) => {
-      if (rb) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(this.rbacService.rbacRolebindingsPost(rb));
-          this.snackBar.open('RoleBinding 已创建', '关闭', { duration: 2000 });
-          this.rbPage.set(0);
-          await this.loadRoleBindings(true);
-        } catch (err) {
-          this.snackBar.open('创建失败', '关闭', { duration: 3000 });
-        } finally {
-          this.loading.set(false);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
+        data: {
+          serviceAccounts: this.serviceAccounts(),
+          roles: this.roles(),
+          existingNames: this.roleBindings().map((x) => x.name),
+        },
+      });
+      dialogRef.afterClosed().subscribe(async (rb) => {
+        if (rb) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(this.rbacService.rbacRolebindingsPost(rb));
+            this.snackBar.open('RoleBinding 已创建', '关闭', { duration: 2000 });
+            this.rbPage.set(0);
+            await this.loadRoleBindings(true);
+          } catch (err) {
+            this.snackBar.open('创建失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 
-  async toggleRb(rb: AuthRoleBinding) {
+  async toggleRb(rb: ModelsRoleBinding) {
     if (!rb.name) return;
     this.loading.set(true);
     try {
@@ -633,30 +658,30 @@ export class RbacComponent implements OnInit, OnDestroy {
   }
 
   deleteRB(name: string) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: '解除权限绑定',
-        message: `确定要删除绑定 "${name}" 吗？这将立即撤销该 ServiceAccount 的相关权限。`,
-        confirmText: '确定解除',
-        color: 'warn',
-      },
-    });
-
-    dialogRef.afterClosed().subscribe(async (result) => {
-      if (result) {
-        this.loading.set(true);
-        try {
-          await firstValueFrom(this.rbacService.rbacRolebindingsNameDelete(name));
-          this.snackBar.open('已成功解除绑定', '关闭', { duration: 2000 });
-          this.rbPage.set(0);
-          await this.loadRoleBindings(true);
-        } catch (err) {
-          this.snackBar.open('删除失败', '关闭', { duration: 2000 });
-        } finally {
-          this.loading.set(false);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: '解除权限绑定',
+          message: `确定要删除绑定 "${name}" 吗？这将立即撤销该 ServiceAccount 的相关权限。`,
+          confirmText: '确定解除',
+          color: 'warn',
+        },
+      });
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(this.rbacService.rbacRolebindingsNameDelete(name));
+            this.snackBar.open('已成功解除绑定', '关闭', { duration: 2000 });
+            this.rbPage.set(0);
+            await this.loadRoleBindings(true);
+          } catch (err) {
+            this.snackBar.open('删除失败', '关闭', { duration: 2000 });
+          } finally {
+            this.loading.set(false);
+          }
         }
-      }
+      });
     });
   }
 }

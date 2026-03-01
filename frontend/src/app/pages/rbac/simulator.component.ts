@@ -10,7 +10,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { FormsModule } from '@angular/forms';
-import { RbacService, AuthServiceAccount, AuthResourcePermissions } from '../../generated';
+import { RbacService, ModelsServiceAccount, ModelsResourcePermissions } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -34,7 +34,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     <div class="animate-in fade-in duration-500 pb-20">
       <div class="min-h-[calc(100vh-64px)] bg-surface-container-lowest py-8 px-4 sm:px-8">
         <div class="max-w-4xl mx-auto space-y-8">
-          
           <!-- Header -->
           <div class="flex flex-col gap-1">
             <h1 class="text-3xl font-bold tracking-tight text-on-surface">权限评估模拟器</h1>
@@ -44,29 +43,41 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           <!-- Configuration Card -->
           <div class="bg-surface border border-outline-variant rounded-3xl p-6 sm:p-8 shadow-sm">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>目标服务账号 (ServiceAccount)</mat-label>
                 <mat-select [(ngModel)]="selectedSa">
-                  <mat-option *ngFor="let sa of saList()" [value]="sa.name">{{ sa.name }}</mat-option>
+                  <mat-option *ngFor="let sa of saList()" [value]="sa.name">{{
+                    sa.name
+                  }}</mat-option>
                 </mat-select>
                 <mat-hint>选择要模拟的账号</mat-hint>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>动作 (Verb)</mat-label>
-                <input matInput [(ngModel)]="verb" placeholder="read, write, * ..." />
+                <input
+                  matInput
+                  [(ngModel)]="verb"
+                  [matAutocomplete]="autoVerb"
+                  (focus)="onVerbInputFocus()"
+                  placeholder="read, write, * ..."
+                />
+                <mat-autocomplete #autoVerb="matAutocomplete">
+                  <mat-option *ngFor="let v of verbSuggestions()" [value]="v">
+                    {{ v }}
+                  </mat-option>
+                </mat-autocomplete>
                 <mat-hint>例如: read</mat-hint>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
                 <mat-label>资源路径 (Resource)</mat-label>
-                <input 
-                  matInput 
-                  [(ngModel)]="resource" 
+                <input
+                  matInput
+                  [(ngModel)]="resource"
                   [matAutocomplete]="auto"
                   (input)="onResourceInput()"
-                  placeholder="dns, rbac, dns/example.com ..." 
+                  placeholder="dns, rbac, dns/example.com ..."
                 />
                 <mat-autocomplete #auto="matAutocomplete">
                   <mat-option *ngFor="let suggestion of suggestions()" [value]="suggestion">
@@ -75,15 +86,14 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 </mat-autocomplete>
                 <mat-hint>基础资源名（如 dns）或 实例路径（如 dns/example.com）</mat-hint>
               </mat-form-field>
-
             </div>
 
             <div class="mt-8 flex justify-center">
-              <button 
-                mat-fab 
-                extended 
-                color="primary" 
-                class="!rounded-2xl !px-12" 
+              <button
+                mat-fab
+                extended
+                color="primary"
+                class="!rounded-2xl !px-12"
                 (click)="simulate()"
                 [disabled]="loading() || !selectedSa() || !verb() || !resource()"
               >
@@ -100,23 +110,55 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           <!-- Result Card -->
           @if (result(); as res) {
             <div class="animate-in slide-in-from-top-4 duration-500">
-              <div class="bg-surface border-2 rounded-3xl p-6 sm:p-8 shadow-md transition-all"
-                   [class.border-primary]="res.allowedAll"
-                   [class.border-tertiary]="!res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0"
-                   [class.border-outline-variant]="!res.allowedAll && (!res.allowedInstances || res.allowedInstances.length === 0)">
-                
+              <div
+                class="bg-surface border-2 rounded-3xl p-6 sm:p-8 shadow-md transition-all"
+                [class.border-primary]="res.allowedAll"
+                [class.border-tertiary]="
+                  !res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0
+                "
+                [class.border-outline-variant]="
+                  !res.allowedAll && (!res.allowedInstances || res.allowedInstances.length === 0)
+                "
+              >
                 <div class="flex items-center gap-4 mb-6">
-                  <div class="w-12 h-12 rounded-2xl flex items-center justify-center"
-                       [class.bg-primary]="res.allowedAll"
-                       [class.bg-tertiary]="!res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0"
-                       [class.bg-error/10]="!res.allowedAll && (!res.allowedInstances || res.allowedInstances.length === 0)">
+                  <div
+                    class="w-12 h-12 rounded-2xl flex items-center justify-center"
+                    [class.bg-primary]="res.allowedAll"
+                    [class.bg-tertiary]="
+                      !res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0
+                    "
+                    [class.bg-error/10]="
+                      !res.allowedAll &&
+                      (!res.allowedInstances || res.allowedInstances.length === 0)
+                    "
+                  >
                     <mat-icon class="text-white" *ngIf="res.allowedAll">verified_user</mat-icon>
-                    <mat-icon class="text-white" *ngIf="!res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0">rule</mat-icon>
-                    <mat-icon class="text-error" *ngIf="!res.allowedAll && (!res.allowedInstances || res.allowedInstances.length === 0)">gpp_bad</mat-icon>
+                    <mat-icon
+                      class="text-white"
+                      *ngIf="
+                        !res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0
+                      "
+                      >rule</mat-icon
+                    >
+                    <mat-icon
+                      class="text-error"
+                      *ngIf="
+                        !res.allowedAll &&
+                        (!res.allowedInstances || res.allowedInstances.length === 0)
+                      "
+                      >gpp_bad</mat-icon
+                    >
                   </div>
                   <div>
-                    <h2 class="text-xl font-bold">评估结果: 
-                      {{ res.allowedAll ? '完全放行' : (res.allowedInstances && res.allowedInstances.length > 0 ? '受限放行' : '拒绝访问') }}
+                    <h2 class="text-xl font-bold">
+                      评估结果:
+                      {{
+                        res.allowedAll
+                          ? '完全放行'
+                          : res.allowedInstances && res.allowedInstances.length > 0
+                            ? '受限放行'
+                            : '拒绝访问'
+                      }}
                     </h2>
                     <p class="text-sm opacity-60">基于当前 {{ selectedSa() }} 的角色绑定计算得出</p>
                   </div>
@@ -125,7 +167,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 <div class="space-y-6">
                   <!-- Capability: All -->
                   <div class="flex items-start gap-3">
-                    <mat-icon class="mt-0.5" [class.text-primary]="res.allowedAll" [class.opacity-20]="!res.allowedAll">
+                    <mat-icon
+                      class="mt-0.5"
+                      [class.text-primary]="res.allowedAll"
+                      [class.opacity-20]="!res.allowedAll"
+                    >
                       {{ res.allowedAll ? 'check_circle' : 'cancel' }}
                     </mat-icon>
                     <div>
@@ -136,19 +182,31 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
                   <!-- Capability: Specific Instances -->
                   <div class="flex items-start gap-3">
-                    <mat-icon class="mt-0.5" 
-                              [class.text-tertiary]="res.allowedInstances && res.allowedInstances.length > 0" 
-                              [class.opacity-20]="!res.allowedInstances || res.allowedInstances.length === 0">
-                      {{ res.allowedInstances && res.allowedInstances.length > 0 ? 'check_circle' : 'cancel' }}
+                    <mat-icon
+                      class="mt-0.5"
+                      [class.text-tertiary]="
+                        res.allowedInstances && res.allowedInstances.length > 0
+                      "
+                      [class.opacity-20]="
+                        !res.allowedInstances || res.allowedInstances.length === 0
+                      "
+                    >
+                      {{
+                        res.allowedInstances && res.allowedInstances.length > 0
+                          ? 'check_circle'
+                          : 'cancel'
+                      }}
                     </mat-icon>
                     <div class="flex-1">
                       <div class="font-bold">特定实例权限 (AllowedInstances)</div>
                       <div class="text-sm opacity-60 mb-3">仅允许操作下列具体资源</div>
-                      
+
                       @if (res.allowedInstances && res.allowedInstances.length > 0) {
                         <div class="flex flex-wrap gap-2">
-                          <span *ngFor="let inst of res.allowedInstances" 
-                                class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-xs font-mono font-medium shadow-sm">
+                          <span
+                            *ngFor="let inst of res.allowedInstances"
+                            class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-xs font-mono font-medium shadow-sm"
+                          >
                             {{ inst }}
                           </span>
                         </div>
@@ -160,29 +218,33 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 </div>
 
                 <!-- Explanation -->
-                <div class="mt-8 pt-6 border-t border-outline-variant/30 text-xs text-outline leading-relaxed italic">
-                  * 提示：如果资源路径输入包含实例（如 dns/example.com），系统会自动拆分并优先匹配精确规则。如果仅输入资源类名（如 dns），系统将展示该账号在 dns 下的所有能力。
+                <div
+                  class="mt-8 pt-6 border-t border-outline-variant/30 text-xs text-outline leading-relaxed italic"
+                >
+                  * 提示：如果资源路径输入包含实例（如
+                  dns/example.com），系统会自动拆分并优先匹配精确规则。如果仅输入资源类名（如
+                  dns），系统将展示该账号在 dns 下的所有能力。
                 </div>
               </div>
             </div>
           }
-
         </div>
       </div>
     </div>
-  `
+  `,
 })
 export class RbacSimulatorComponent implements OnInit {
   private rbacService = inject(RbacService);
   private snackBar = inject(MatSnackBar);
 
-  saList = signal<AuthServiceAccount[]>([]);
+  saList = signal<ModelsServiceAccount[]>([]);
   selectedSa = signal('');
   verb = signal('read');
   resource = signal('');
   suggestions = signal<string[]>([]);
+  verbSuggestions = signal<string[]>([]);
   loading = signal(false);
-  result = signal<AuthResourcePermissions | null>(null);
+  result = signal<ModelsResourcePermissions | null>(null);
 
   ngOnInit() {
     this.loadSAs();
@@ -207,15 +269,26 @@ export class RbacSimulatorComponent implements OnInit {
     }
   }
 
+  async onVerbInputFocus() {
+    try {
+      const list = await firstValueFrom(this.rbacService.rbacVerbsSuggestGet(this.resource()));
+      this.verbSuggestions.set(list || []);
+    } catch (e) {
+      this.verbSuggestions.set([]);
+    }
+  }
+
   async simulate() {
     this.loading.set(true);
     this.result.set(null);
     try {
-      const res = await firstValueFrom(this.rbacService.rbacSimulatePost({
-        serviceAccountName: this.selectedSa(),
-        verb: this.verb(),
-        resource: this.resource(),
-      }));
+      const res = await firstValueFrom(
+        this.rbacService.rbacSimulatePost({
+          serviceAccountName: this.selectedSa(),
+          verb: this.verb(),
+          resource: this.resource(),
+        }),
+      );
       this.result.set(res);
     } catch (err: any) {
       const msg = err.error?.message || '评估失败';

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -34,9 +34,28 @@ export class WelcomeComponent {
   private uiService = inject(UiService);
   private breakpointObserver = inject(BreakpointObserver);
 
+  // 模拟图表点位 (0-100)
+  chartPoints = signal<number[]>([30, 45, 35, 60, 55, 70, 65, 80, 75, 90, 85, 95]);
+
+  // 生成 SVG 路径
+  chartPath = computed(() => {
+    const points = this.chartPoints();
+    const width = 1000;
+    const height = 200;
+    const step = width / (points.length - 1);
+
+    return points.map((p, i) => `${i * step},${height - (p / 100) * height}`).join(' L ');
+  });
+
+  // 生成面积路径
+  areaPath = computed(() => {
+    const path = this.chartPath();
+    return `M 0,200 L ${path} L 1000,200 Z`;
+  });
+
   isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
-    { initialValue: false },
+    { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
   toggleDrawer() {
@@ -45,7 +64,6 @@ export class WelcomeComponent {
 
   logout() {
     const dialogRef = this.dialog.open(LogoutDialogComponent, {
-      width: '400px',
       maxWidth: '90vw',
     });
 

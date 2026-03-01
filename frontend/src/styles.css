@@ -12,28 +12,28 @@
 @import 'material-icons/iconfont/material-icons.css';
 
 /* 3. Tailwind v4 */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   /* Sans Font Family Override */
-  --mat-sys-body-large-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-body-medium-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-body-small-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-display-large-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-display-medium-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-display-small-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-headline-large-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-headline-medium-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-headline-small-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-title-large-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-title-medium-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-title-small-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-label-large-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-label-medium-font: Roboto, "Noto Sans SC", sans-serif;
-  --mat-sys-label-small-font: Roboto, "Noto Sans SC", sans-serif;
+  --mat-sys-body-large-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-body-medium-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-body-small-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-display-large-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-display-medium-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-display-small-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-headline-large-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-headline-medium-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-headline-small-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-title-large-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-title-medium-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-title-small-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-label-large-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-label-medium-font: Roboto, 'Noto Sans SC', sans-serif;
+  --mat-sys-label-small-font: Roboto, 'Noto Sans SC', sans-serif;
 
   /* Monospace Font Family */
-  --font-mono: "Roboto Mono", "Courier New", monospace;
+  --font-mono: 'Roboto Mono', 'Courier New', monospace;
 
   /* Force Weight 400+ */
   --mat-sys-body-large-weight: 400;
@@ -62,16 +62,19 @@
   }
 }
 
-html, body { 
-  height: 100%; 
+html,
+body {
+  height: 100%;
   margin: 0;
-  font-family: Roboto, "Noto Sans SC", sans-serif !important;
+  font-family: Roboto, 'Noto Sans SC', sans-serif !important;
   font-weight: 400 !important;
   background-color: var(--mat-sys-surface-container-lowest);
   color: var(--mat-sys-on-surface);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   font-family: inherit;
 }
 

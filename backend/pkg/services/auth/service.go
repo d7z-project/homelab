@@ -98,27 +98,27 @@ func GetPermissions(ctx context.Context, saName, verb, resource string) (*models
 					continue
 				}
 				for _, rule := range role.Rules {
-					if match(rule.Verbs, verb) {
-						for _, res := range rule.Resources {
-							if res == "*" {
-								perms.AllowedAll = true
-								continue
-							}
+					// Check if any verb in this rule matches requested verb
+					if matchVerb(rule.Verbs, verb) {
+						res := rule.Resource
+						if res == "*" {
+							perms.AllowedAll = true
+							continue
+						}
 
-							cleanedRes := res
-							if strings.HasSuffix(cleanedRes, "/**") {
-								cleanedRes = strings.TrimSuffix(cleanedRes, "/**")
-							} else if strings.HasSuffix(cleanedRes, "/*") {
-								cleanedRes = strings.TrimSuffix(cleanedRes, "/*")
-							}
+						cleanedRes := res
+						if strings.HasSuffix(cleanedRes, "/**") {
+							cleanedRes = strings.TrimSuffix(cleanedRes, "/**")
+						} else if strings.HasSuffix(cleanedRes, "/*") {
+							cleanedRes = strings.TrimSuffix(cleanedRes, "/*")
+						}
 
-							if cleanedRes == resource || strings.HasPrefix(resource, cleanedRes+"/") {
-								perms.AllowedAll = true
-							} else if strings.HasPrefix(cleanedRes, resource+"/") {
-								inst := strings.TrimPrefix(cleanedRes, resource+"/")
-								if inst != "" && inst != "*" && inst != "**" {
-									perms.AllowedInstances = append(perms.AllowedInstances, inst)
-								}
+						if cleanedRes == resource || strings.HasPrefix(resource, cleanedRes+"/") {
+							perms.AllowedAll = true
+						} else if strings.HasPrefix(cleanedRes, resource+"/") {
+							inst := strings.TrimPrefix(cleanedRes, resource+"/")
+							if inst != "" && inst != "*" && inst != "**" {
+								perms.AllowedInstances = append(perms.AllowedInstances, inst)
 							}
 						}
 					}
@@ -130,7 +130,7 @@ func GetPermissions(ctx context.Context, saName, verb, resource string) (*models
 	return perms, nil
 }
 
-func match(list []string, item string) bool {
+func matchVerb(list []string, item string) bool {
 	for _, v := range list {
 		if v == "*" || v == item {
 			return true

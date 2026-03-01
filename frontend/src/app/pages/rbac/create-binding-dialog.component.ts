@@ -9,7 +9,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { FormsModule } from '@angular/forms';
-import { AuthServiceAccount, AuthRole, AuthRoleBinding, RbacService } from '../../generated';
+import { ModelsServiceAccount, ModelsRole, ModelsRoleBinding, RbacService } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -29,7 +29,7 @@ import { firstValueFrom } from 'rxjs';
   ],
   template: `
     <h2 mat-dialog-title class="!pt-6">{{ isEdit ? '修改 RoleBinding' : '创建 RoleBinding' }}</h2>
-    <mat-dialog-content>
+    <mat-dialog-content style="min-width: 350px; max-width: 500px;">
       <div class="pt-3 space-y-5">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>绑定名称</mat-label>
@@ -116,7 +116,7 @@ import { firstValueFrom } from 'rxjs';
 export class CreateBindingDialogComponent implements OnInit {
   private rbacService = inject(RbacService);
   isEdit = false;
-  binding: AuthRoleBinding = {
+  binding: ModelsRoleBinding = {
     name: '',
     serviceAccountName: '',
     roleNames: [],
@@ -124,8 +124,8 @@ export class CreateBindingDialogComponent implements OnInit {
   };
   existingNames: string[] = [];
 
-  serviceAccounts = signal<AuthServiceAccount[]>([]);
-  roles = signal<AuthRole[]>([]);
+  serviceAccounts = signal<ModelsServiceAccount[]>([]);
+  roles = signal<ModelsRole[]>([]);
 
   saPage = 0;
   rolePage = 0;
@@ -135,7 +135,7 @@ export class CreateBindingDialogComponent implements OnInit {
   hasMoreRoles = signal(false);
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { binding?: AuthRoleBinding; existingNames?: string[] },
+    @Inject(MAT_DIALOG_DATA) public data: { binding?: ModelsRoleBinding; existingNames?: string[] },
   ) {
     if (data.binding) {
       this.isEdit = true;
