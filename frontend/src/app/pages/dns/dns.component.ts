@@ -89,8 +89,16 @@ export class DnsComponent implements OnInit, OnDestroy {
     this.isHandset() ? ['name', 'actions'] : ['name', 'comments', 'updatedAt', 'actions'],
   );
   displayedRecordColumns = computed(() =>
-    this.isHandset() ? ['name', 'type', 'actions'] : ['name', 'type', 'value', 'ttl', 'actions'],
+    this.isHandset()
+      ? ['name', 'type', 'value', 'actions']
+      : ['name', 'type', 'value', 'ttl', 'actions'],
   );
+
+  getDomainName(domainId: string | undefined): string {
+    if (!domainId) return '未知域名';
+    const domain = this.domains().find((d) => d.id === domainId);
+    return domain?.name || '未知域名';
+  }
 
   hasSearchContent = computed(() => {
     const tab = this.selectedTabIndex();
