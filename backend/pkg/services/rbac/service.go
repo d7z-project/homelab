@@ -80,6 +80,16 @@ func UpdateServiceAccount(ctx context.Context, name string, sa *models.ServiceAc
 }
 
 func DeleteServiceAccount(ctx context.Context, name string) error {
+	// Cascade delete RoleBindings
+	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
+	if err == nil {
+		for _, rb := range rbs {
+			if rb.ServiceAccountName == name {
+				rbacrepo.DeleteRoleBinding(ctx, rb.Name)
+			}
+		}
+	}
+
 	message := fmt.Sprintf("Deleted ServiceAccount: %s", name)
 	if err := rbacrepo.DeleteServiceAccount(ctx, name); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteServiceAccount", name, message, false)
@@ -164,6 +174,30 @@ func UpdateRole(ctx context.Context, name string, role *models.Role) (*models.Ro
 }
 
 func DeleteRole(ctx context.Context, name string) error {
+	// Cascade update/delete RoleBindings
+	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
+	if err == nil {
+		for _, rb := range rbs {
+			newRoles := make([]string, 0)
+			found := false
+			for _, r := range rb.RoleNames {
+				if r == name {
+					found = true
+				} else {
+					newRoles = append(newRoles, r)
+				}
+			}
+			if found {
+				if len(newRoles) == 0 {
+					rbacrepo.DeleteRoleBinding(ctx, rb.Name)
+				} else {
+					rb.RoleNames = newRoles
+					rbacrepo.SaveRoleBinding(ctx, &rb)
+				}
+			}
+		}
+	}
+
 	message := fmt.Sprintf("Deleted Role: %s", name)
 	if err := rbacrepo.DeleteRole(ctx, name); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRole", name, message, false)

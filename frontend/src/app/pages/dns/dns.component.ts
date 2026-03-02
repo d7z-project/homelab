@@ -225,6 +225,15 @@ export class DnsComponent implements OnInit, OnDestroy {
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
     this.updateQueryParams();
+    
+    // Refresh data for the selected tab
+    if (index === 0) {
+      this.domainPage.set(1);
+      this.loadDomains(true);
+    } else if (index === 1) {
+      this.recordPage.set(1);
+      this.loadRecords(true);
+    }
   }
 
   async refreshAll() {

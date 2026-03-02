@@ -36,13 +36,17 @@ import { ModelsDomain } from '../../generated';
           <input
             matInput
             [(ngModel)]="domain.name"
+            #nameInput="ngModel"
             placeholder="例如: example.com"
             [disabled]="isEdit"
             autofocus
             (keyup.enter)="confirm()"
-            pattern="^([a-z0-9]+(-[a-z0-9]+)*.)+[a-z]{2,}$"
+            required
+            pattern="^([a-z0-9]+(\-[a-z0-9]+)*\\.)+[a-z]{2,}$"
           />
           <mat-hint *ngIf="!isEdit">创建后名称不可直接修改</mat-hint>
+          <mat-error *ngIf="!isEdit && nameInput.errors?.['required']">请输入域名名称</mat-error>
+          <mat-error *ngIf="!isEdit && nameInput.errors?.['pattern']">域名格式不正确</mat-error>
           <mat-error *ngIf="!isEdit && isDuplicate()">域名已存在</mat-error>
         </mat-form-field>
 
@@ -116,7 +120,7 @@ export class CreateDomainDialogComponent {
     if (!name) return false;
     if (!this.isEdit && this.isDuplicate()) return false;
     // Simple regex for domain validation
-    return /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/.test(name.toLowerCase());
+    return /^([a-z0-9]+(\-[a-z0-9]+)*\.)+[a-z]{2,}$/.test(name.toLowerCase());
   }
 
   confirm() {

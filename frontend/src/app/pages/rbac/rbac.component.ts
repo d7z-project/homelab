@@ -254,6 +254,18 @@ export class RbacComponent implements OnInit, OnDestroy {
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
     this.updateQueryParams();
+    
+    // Refresh data for the selected tab
+    if (index === 0) {
+      this.saPage.set(0);
+      this.loadServiceAccounts(true);
+    } else if (index === 1) {
+      this.rolePage.set(0);
+      this.loadRoles(true);
+    } else if (index === 2) {
+      this.rbPage.set(0);
+      this.loadRoleBindings(true);
+    }
   }
 
   async refreshAll() {

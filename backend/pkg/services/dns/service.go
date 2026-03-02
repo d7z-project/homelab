@@ -96,7 +96,7 @@ func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*model
 		changes = append(changes, fmt.Sprintf("status: %s -> %s", existing.Status, domain.Status))
 	}
 	if existing.Comments != domain.Comments {
-		changes = append(changes, "comments updated")
+		changes = append(changes, fmt.Sprintf("comments: '%s' -> '%s'", existing.Comments, domain.Comments))
 	}
 	if len(changes) > 0 {
 		message += " (" + strings.Join(changes, ", ") + ")"
@@ -233,11 +233,14 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 
 	message := fmt.Sprintf("Updated record %s in %s", existing.Name, domain.Name)
 	changes := []string{}
+	if existing.Name != record.Name {
+		changes = append(changes, fmt.Sprintf("host: %s -> %s", existing.Name, record.Name))
+	}
 	if existing.Type != record.Type {
 		changes = append(changes, fmt.Sprintf("type: %s -> %s", existing.Type, record.Type))
 	}
 	if existing.Value != record.Value {
-		changes = append(changes, "value changed")
+		changes = append(changes, fmt.Sprintf("value: %s -> %s", existing.Value, record.Value))
 	}
 	if existing.TTL != record.TTL {
 		changes = append(changes, fmt.Sprintf("ttl: %d -> %d", existing.TTL, record.TTL))

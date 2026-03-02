@@ -33,16 +33,26 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
       <div class="pt-3 space-y-4">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>所属域名</mat-label>
-          <mat-select [(ngModel)]="record.domainId" [disabled]="isEdit">
+          <mat-select [(ngModel)]="record.domainId" [disabled]="isEdit" required #domainId="ngModel">
             <mat-option *ngFor="let d of domains" [value]="d.id">{{ d.name }}</mat-option>
           </mat-select>
+          <mat-error *ngIf="domainId.errors?.['required']">请选择域名</mat-error>
         </mat-form-field>
 
         <div class="flex gap-4">
           <mat-form-field appearance="outline" class="flex-1">
             <mat-label>主机记录 (Name)</mat-label>
-            <input matInput [(ngModel)]="record.name" placeholder="例如: www 或 @" />
+            <input
+              matInput
+              [(ngModel)]="record.name"
+              placeholder="例如: www 或 @"
+              required
+              pattern="^(@|[a-zA-Z0-9*_\-]+(\\.[a-zA-Z0-9*_\-]+)*)$"
+              #nameInput="ngModel"
+            />
             <mat-hint>@ 表示主域名</mat-hint>
+            <mat-error *ngIf="nameInput.errors?.['required']">请输入主机记录</mat-error>
+            <mat-error *ngIf="nameInput.errors?.['pattern']">主机记录格式不正确</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-32">
@@ -55,14 +65,32 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>记录值 (Value)</mat-label>
-          <input matInput [(ngModel)]="record.value" [placeholder]="getValuePlaceholder()" />
+          <input
+            matInput
+            [(ngModel)]="record.value"
+            [placeholder]="getValuePlaceholder()"
+            required
+            #valueInput="ngModel"
+          />
+          <mat-error *ngIf="valueInput.errors?.['required']">请输入记录值</mat-error>
+          <mat-error *ngIf="record.type === 'A' && !isValidIPv4()">无效的 IPv4 地址</mat-error>
+          <mat-error *ngIf="record.type === 'AAAA' && !isValidIPv6()">无效的 IPv6 地址</mat-error>
         </mat-form-field>
 
         <div class="flex gap-4">
           <mat-form-field appearance="outline" class="flex-1">
             <mat-label>TTL (秒)</mat-label>
-            <input matInput type="number" [(ngModel)]="record.ttl" min="1" placeholder="默认 600" />
+            <input
+              matInput
+              type="number"
+              [(ngModel)]="record.ttl"
+              min="1"
+              required
+              placeholder="默认 600"
+              #ttlInput="ngModel"
+            />
             <mat-hint>推荐值: 600, 3600, 86400</mat-hint>
+            <mat-error *ngIf="ttlInput.errors?.['required'] || record.ttl! < 1">TTL 必须大于 0</mat-error>
           </mat-form-field>
 
           <mat-form-field
@@ -157,8 +185,29 @@ export class CreateRecordDialogComponent {
     }
   }
 
+  isValidIPv4(): boolean {
+    const ipv4Regex =
+      /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    return ipv4Regex.test(this.record.value || '');
+  }
+
+  isValidIPv6(): boolean {
+    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
+    return ipv6Regex.test(this.record.value || '');
+  }
+
   isValid(): boolean {
-    return !!(this.record.domainId && this.record.name && this.record.type && this.record.value);
+    const name = this.record.name?.trim();
+    if (!name || !this.record.domainId || !this.record.type || !this.record.value) return false;
+    if (this.record.ttl! < 1) return false;
+
+    // Type-specific value validation
+    if (this.record.type === 'A' && !this.isValidIPv4()) return false;
+    if (this.record.type === 'AAAA' && !this.isValidIPv6()) return false;
+
+    // Basic name pattern check
+    const namePattern = /^(@|[a-zA-Z0-9*_\-]+(\.[a-zA-Z0-9*_\-]+)*)$/;
+    return namePattern.test(name);
   }
 
   confirm() {
