@@ -134,6 +134,10 @@ definitions:
         items:
           type: string
         type: array
+      matchedRule:
+        allOf:
+        - $ref: '#/definitions/models.PolicyRule'
+        description: Records which rule allowed the access
     type: object
   models.Role:
     properties:

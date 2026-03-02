@@ -34,8 +34,12 @@ import { ModelsServiceAccount } from '../../generated';
             autofocus
             (keyup.enter)="confirm()"
           />
-          <mat-hint *ngIf="!isEdit">创建后名称不可修改</mat-hint>
-          <mat-error *ngIf="!isEdit && isDuplicate()">名称已存在</mat-error>
+          @if (!isEdit) {
+            <mat-hint>创建后名称不可修改</mat-hint>
+          }
+          @if (!isEdit && isDuplicate()) {
+            <mat-error>名称已存在</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">

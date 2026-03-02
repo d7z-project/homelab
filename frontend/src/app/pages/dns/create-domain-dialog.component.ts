@@ -42,12 +42,20 @@ import { ModelsDomain } from '../../generated';
             autofocus
             (keyup.enter)="confirm()"
             required
-            pattern="^([a-z0-9]+(\-[a-z0-9]+)*\\.)+[a-z]{2,}$"
+            pattern="^([\\-a-zA-Z0-9]+([\\-a-zA-Z0-9]+)*\\.)+[a-zA-Z]{2,}$"
           />
-          <mat-hint *ngIf="!isEdit">创建后名称不可直接修改</mat-hint>
-          <mat-error *ngIf="!isEdit && nameInput.errors?.['required']">请输入域名名称</mat-error>
-          <mat-error *ngIf="!isEdit && nameInput.errors?.['pattern']">域名格式不正确</mat-error>
-          <mat-error *ngIf="!isEdit && isDuplicate()">域名已存在</mat-error>
+          @if (!isEdit) {
+            <mat-hint>创建后名称不可直接修改</mat-hint>
+          }
+          @if (!isEdit && nameInput.errors?.['required']) {
+            <mat-error>请输入域名名称</mat-error>
+          }
+          @if (!isEdit && nameInput.errors?.['pattern']) {
+            <mat-error>域名格式不正确</mat-error>
+          }
+          @if (!isEdit && isDuplicate()) {
+            <mat-error>域名已存在</mat-error>
+          }
         </mat-form-field>
 
         <div class="flex items-center justify-between px-4 py-3 bg-surface-container rounded-2xl">
@@ -120,11 +128,12 @@ export class CreateDomainDialogComponent {
     if (!name) return false;
     if (!this.isEdit && this.isDuplicate()) return false;
     // Simple regex for domain validation
-    return /^([a-z0-9]+(\-[a-z0-9]+)*\.)+[a-z]{2,}$/.test(name.toLowerCase());
+    return /^([\-a-zA-Z0-9]+([\-a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$/.test(name.toLowerCase());
   }
 
   confirm() {
     if (this.isValid()) {
+      this.domain.name = this.domain.name?.toLowerCase().trim();
       this.dialogRef.close(this.domain);
     }
   }

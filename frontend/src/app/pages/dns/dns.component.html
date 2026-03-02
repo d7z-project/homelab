@@ -184,7 +184,9 @@
                   (selectionChange)="onDomainFilterChange($event.value)"
                 >
                   <mat-option value="">所有域名</mat-option>
-                  <mat-option *ngFor="let d of domains()" [value]="d.id">{{ d.name }}</mat-option>
+                  @for (d of domains(); track d.id) {
+                    <mat-option [value]="d.id">{{ d.name }}</mat-option>
+                  }
                 </mat-select>
               </mat-form-field>
 

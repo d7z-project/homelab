@@ -20,7 +20,7 @@ import (
 // @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
-	if err := render.DecodeJSON(r.Body, &req); err != nil {
+	if err := render.Bind(r, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -48,8 +48,12 @@ import { firstValueFrom } from 'rxjs';
           placeholder="例如: dns-admin"
           autofocus
         />
-        <mat-hint *ngIf="!isEdit">全局唯一的身份标识</mat-hint>
-        <mat-error *ngIf="isDuplicate()">角色名称已存在</mat-error>
+        @if (!isEdit) {
+          <mat-hint>全局唯一的身份标识</mat-hint>
+        }
+        @if (isDuplicate()) {
+          <mat-error>角色名称已存在</mat-error>
+        }
       </mat-form-field>
 
       <div class="space-y-4">
@@ -69,77 +73,84 @@ import { firstValueFrom } from 'rxjs';
         </div>
 
         <div class="space-y-4">
-          <div
-            *ngFor="let rule of role.rules; let i = index"
-            class="group relative border border-outline-variant/50 p-4 pt-6 rounded-[24px] bg-surface-container-lowest transition-all hover:border-primary/30 animate-in zoom-in-95 duration-200"
-          >
-            <!-- Delete Action -->
-            <button
-              mat-icon-button
-              color="warn"
-              class="absolute top-1 right-1 !w-8 !h-8 scale-75 sm:opacity-0 group-hover:opacity-100 transition-opacity"
-              (click)="removeRule(i)"
-              *ngIf="role.rules!.length > 1"
-              matTooltip="删除此规则"
+          @for (rule of role.rules; track i; let i = $index) {
+            <div
+              class="group relative border border-outline-variant/50 p-4 pt-6 rounded-[24px] bg-surface-container-lowest transition-all hover:border-primary/30 animate-in zoom-in-95 duration-200"
             >
-              <mat-icon class="!text-[18px]">delete_outline</mat-icon>
-            </button>
-
-            <div class="space-y-4">
-              <!-- Resource Input -->
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <mat-label>资源路径 (Resource)</mat-label>
-                <input
-                  matInput
-                  [(ngModel)]="rule.resource"
-                  [matAutocomplete]="autoRes"
-                  (input)="onResourceInput(rule)"
-                  placeholder="例如: dns/*"
-                />
-                <mat-autocomplete
-                  #autoRes="matAutocomplete"
-                  (optionSelected)="onResourceSelected($event, rule)"
+              <!-- Delete Action -->
+              @if (role.rules!.length > 1) {
+                <button
+                  mat-icon-button
+                  color="warn"
+                  class="absolute top-1 right-1 !w-8 !h-8 scale-75 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                  (click)="removeRule(i)"
+                  matTooltip="删除此规则"
                 >
-                  <mat-option *ngFor="let suggestion of resourceSuggestions()" [value]="suggestion">
-                    <mat-icon class="scale-75 opacity-50">category</mat-icon>
-                    <span>{{ suggestion }}</span>
-                  </mat-option>
-                </mat-autocomplete>
-              </mat-form-field>
+                  <mat-icon class="!text-[18px]">delete_outline</mat-icon>
+                </button>
+              }
 
-              <!-- Verbs Selection -->
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <mat-label>允许操作 (Verbs)</mat-label>
-                <mat-chip-grid #chipGridVerb class="!min-h-0">
-                  <mat-chip-row
-                    *ngFor="let v of rule.verbs"
-                    (removed)="removeVerb(rule, v)"
-                    class="!bg-secondary-container !text-on-secondary-container !text-[10px] !min-h-[24px]"
-                  >
-                    {{ v }}
-                    <button matChipRemove><mat-icon>cancel</mat-icon></button>
-                  </mat-chip-row>
+              <div class="space-y-4">
+                <!-- Resource Input -->
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <mat-label>资源路径 (Resource)</mat-label>
                   <input
-                    placeholder="添加..."
-                    [matAutocomplete]="autoVerb"
-                    [matChipInputFor]="chipGridVerb"
-                    #verbInputEl
-                    (focus)="onVerbInputFocus(rule)"
-                    class="!text-sm"
+                    matInput
+                    [(ngModel)]="rule.resource"
+                    [matAutocomplete]="autoRes"
+                    (input)="onResourceInput(rule)"
+                    placeholder="例如: dns/*"
                   />
-                </mat-chip-grid>
-                <mat-autocomplete
-                  #autoVerb="matAutocomplete"
-                  (optionSelected)="onVerbSelected($event, rule, verbInputEl)"
-                >
-                  <mat-option *ngFor="let verb of verbSuggestions()" [value]="verb">
-                    <mat-icon class="scale-75 opacity-50">bolt</mat-icon>
-                    <span>{{ verb }}</span>
-                  </mat-option>
-                </mat-autocomplete>
-              </mat-form-field>
+                  <mat-autocomplete
+                    #autoRes="matAutocomplete"
+                    (optionSelected)="onResourceSelected($event, rule)"
+                  >
+                    @for (suggestion of resourceSuggestions(); track suggestion) {
+                      <mat-option [value]="suggestion">
+                        <mat-icon class="scale-75 opacity-50">category</mat-icon>
+                        <span>{{ suggestion }}</span>
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+
+                <!-- Verbs Selection -->
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <mat-label>允许操作 (Verbs)</mat-label>
+                  <mat-chip-grid #chipGridVerb class="!min-h-0">
+                    @for (v of rule.verbs; track v) {
+                      <mat-chip-row
+                        (removed)="removeVerb(rule, v)"
+                        class="!bg-secondary-container !text-on-secondary-container !text-[10px] !min-h-[24px]"
+                      >
+                        {{ v }}
+                        <button matChipRemove><mat-icon>cancel</mat-icon></button>
+                      </mat-chip-row>
+                    }
+                    <input
+                      placeholder="添加..."
+                      [matAutocomplete]="autoVerb"
+                      [matChipInputFor]="chipGridVerb"
+                      #verbInputEl
+                      (focus)="onVerbInputFocus(rule)"
+                      class="!text-sm"
+                    />
+                  </mat-chip-grid>
+                  <mat-autocomplete
+                    #autoVerb="matAutocomplete"
+                    (optionSelected)="onVerbSelected($event, rule, verbInputEl)"
+                  >
+                    @for (verb of verbSuggestions(); track verb) {
+                      <mat-option [value]="verb">
+                        <mat-icon class="scale-75 opacity-50">bolt</mat-icon>
+                        <span>{{ verb }}</span>
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+              </div>
             </div>
-          </div>
+          }
         </div>
       </div>
     </mat-dialog-content>

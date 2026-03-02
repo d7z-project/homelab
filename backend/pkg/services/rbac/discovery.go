@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"context"
+	dnsrepo "homelab/pkg/repositories/dns"
 	"sort"
 	"strings"
 	"sync"
@@ -50,9 +51,59 @@ func init() {
 	}, []string{"get", "list", "*"})
 
 	RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]string, error) {
-		// This could be further expanded to list actual domains from repo
-		// For now provide basic pattern suggestions
-		return []string{}, nil
+		// prefix is everything after "dns/"
+		parts := strings.Split(prefix, "/")
+		
+		// Get all domains to match against the first part
+		domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
+		if err != nil {
+			return nil, err
+		}
+
+		var res []string
+		for _, d := range domains {
+			// Check if domain matches parts[0]
+			if !strings.HasPrefix(d.Name, parts[0]) {
+				continue
+			}
+
+			if len(parts) <= 1 {
+				// Level 1: Suggest domains
+				res = append(res, d.Name)
+				res = append(res, d.Name+"/*")
+				res = append(res, d.Name+"/**")
+			} else {
+				// Level 2 & 3: We have a full domain match, suggest records
+				if d.Name != parts[0] {
+					continue
+				}
+
+				records, _, err := dnsrepo.ListRecords(ctx, d.ID, 0, 1000, "")
+				if err != nil {
+					continue
+				}
+
+				for _, r := range records {
+					// Check if record host matches parts[1]
+					if !strings.HasPrefix(r.Name, parts[1]) {
+						continue
+					}
+
+					if len(parts) <= 2 {
+						// Level 2: Suggest hostnames
+						res = append(res, d.Name+"/"+r.Name)
+						res = append(res, d.Name+"/"+r.Name+"/*")
+					} else {
+						// Level 3: Suggest types
+						if r.Name == parts[1] && strings.HasPrefix(r.Type, parts[2]) {
+							res = append(res, d.Name+"/"+r.Name+"/"+r.Type)
+						}
+					}
+				}
+			}
+		}
+
+		return res, nil
 	}, standardVerbs)
 }
 
@@ -77,11 +128,13 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 	defer discoveryMu.RUnlock()
 
 	var suggestions []string
+	seen := make(map[string]struct{})
 
 	if !strings.Contains(prefix, "/") {
 		for name := range discoveredResources {
 			if strings.HasPrefix(name, prefix) {
 				suggestions = append(suggestions, name)
+				seen[name] = struct{}{}
 			}
 		}
 		sort.Strings(suggestions)
@@ -98,14 +151,23 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 			return nil, err
 		}
 		for _, m := range matches {
-			suggestions = append(suggestions, baseRes+"/"+m)
+			fullPath := baseRes + "/" + m
+			if _, exists := seen[fullPath]; !exists {
+				suggestions = append(suggestions, fullPath)
+				seen[fullPath] = struct{}{}
+			}
 		}
 
-		if remaining == "" || strings.HasPrefix("*", remaining) {
-			suggestions = append(suggestions, baseRes+"/*")
-		}
-		if remaining == "" || strings.HasPrefix("**", remaining) {
-			suggestions = append(suggestions, baseRes+"/**")
+		// Ensure standard wildcards are present
+		wildcards := []string{"*", "**"}
+		for _, w := range wildcards {
+			if remaining == "" || strings.HasPrefix(w, remaining) {
+				fullPath := baseRes + "/" + w
+				if _, exists := seen[fullPath]; !exists {
+					suggestions = append(suggestions, fullPath)
+					seen[fullPath] = struct{}{}
+				}
+			}
 		}
 	}
 
@@ -118,10 +180,17 @@ func SuggestVerbs(ctx context.Context, resourcePrefix string) ([]string, error) 
 	discoveryMu.RLock()
 	defer discoveryMu.RUnlock()
 
+	if resourcePrefix == "" {
+		return []string{"*"}, nil
+	}
+
+	// Split to get the root resource name
 	baseRes := strings.Split(resourcePrefix, "/")[0]
 	if info, ok := discoveredResources[baseRes]; ok {
+		// Only if we recognize the root resource do we suggest its specific verbs
 		return info.verbs, nil
 	}
 
-	return []string{"get", "list", "create", "update", "delete", "*"}, nil
+	// If the resource is unknown or partially typed, only suggest "*"
+	return []string{"*"}, nil
 }

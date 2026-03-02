@@ -80,7 +80,10 @@ func GetTokenSA(ctx context.Context, token string) (string, error) {
 
 func GetPermissions(ctx context.Context, saName, verb, resource string) (*models.ResourcePermissions, error) {
 	if saName == "root" {
-		return &models.ResourcePermissions{AllowedAll: true}, nil
+		return &models.ResourcePermissions{
+			AllowedAll: true,
+			MatchedRule: &models.PolicyRule{Resource: "*", Verbs: []string{"*"}},
+		}, nil
 	}
 
 	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
@@ -101,9 +104,12 @@ func GetPermissions(ctx context.Context, saName, verb, resource string) (*models
 					// Check if any verb in this rule matches requested verb
 					if matchVerb(rule.Verbs, verb) {
 						res := rule.Resource
-						if res == "*" {
+						
+						// Case 1: Full Wildcard
+						if res == "*" || res == "**" {
 							perms.AllowedAll = true
-							continue
+							perms.MatchedRule = &rule
+							return perms, nil
 						}
 
 						cleanedRes := res
@@ -113,12 +119,22 @@ func GetPermissions(ctx context.Context, saName, verb, resource string) (*models
 							cleanedRes = strings.TrimSuffix(cleanedRes, "/*")
 						}
 
+						// Case 2: Exact Match or Prefix Match (e.g., resource "dns/a" matches rule "dns/*")
 						if cleanedRes == resource || strings.HasPrefix(resource, cleanedRes+"/") {
 							perms.AllowedAll = true
-						} else if strings.HasPrefix(cleanedRes, resource+"/") {
+							perms.MatchedRule = &rule
+							return perms, nil
+						} 
+						
+						// Case 3: Instance Suggestion (e.g., resource "dns" matches rule "dns/a")
+						if strings.HasPrefix(cleanedRes, resource+"/") {
 							inst := strings.TrimPrefix(cleanedRes, resource+"/")
 							if inst != "" && inst != "*" && inst != "**" {
 								perms.AllowedInstances = append(perms.AllowedInstances, inst)
+								// Note: We don't return early here as multiple rules might contribute to the instances list
+								if perms.MatchedRule == nil {
+									perms.MatchedRule = &rule
+								}
 							}
 						}
 					}

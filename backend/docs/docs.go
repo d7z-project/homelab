@@ -1212,6 +1212,14 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "matchedRule": {
+                    "description": "Records which rule allowed the access",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.PolicyRule"
+                        }
+                    ]
                 }
             }
         },

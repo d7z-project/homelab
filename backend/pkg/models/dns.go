@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"net/http"
+	"time"
+)
 
 // Domain 代表一个 DNS 域名
 type Domain struct {
@@ -10,6 +13,10 @@ type Domain struct {
 	Comments  string    `json:"comments"`  // 备注说明
 	CreatedAt time.Time `json:"createdAt"` // 创建时间
 	UpdatedAt time.Time `json:"updatedAt"` // 更新时间
+}
+
+func (d *Domain) Bind(r *http.Request) error {
+	return nil
 }
 
 // Record 代表一个 DNS 解析记录
@@ -23,4 +30,8 @@ type Record struct {
 	Priority int    `json:"priority"` // 优先级 (仅用于 MX 和 SRV)
 	Status   string `json:"status"`   // 状态 (active/inactive)
 	Comments string `json:"comments"` // 备注说明
+}
+
+func (rc *Record) Bind(r *http.Request) error {
+	return nil
 }

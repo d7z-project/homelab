@@ -34,9 +34,13 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>所属域名</mat-label>
           <mat-select [(ngModel)]="record.domainId" [disabled]="isEdit" required #domainId="ngModel">
-            <mat-option *ngFor="let d of domains" [value]="d.id">{{ d.name }}</mat-option>
+            @for (d of domains; track d.id) {
+              <mat-option [value]="d.id">{{ d.name }}</mat-option>
+            }
           </mat-select>
-          <mat-error *ngIf="domainId.errors?.['required']">请选择域名</mat-error>
+          @if (domainId.errors?.['required']) {
+            <mat-error>请选择域名</mat-error>
+          }
         </mat-form-field>
 
         <div class="flex gap-4">
@@ -47,18 +51,24 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
               [(ngModel)]="record.name"
               placeholder="例如: www 或 @"
               required
-              pattern="^(@|[a-zA-Z0-9*_\-]+(\\.[a-zA-Z0-9*_\-]+)*)$"
+              pattern="^(@|[\\-a-zA-Z0-9\\*_]+(\\.[\\-a-zA-Z0-9\\*_]+)*)$"
               #nameInput="ngModel"
             />
             <mat-hint>@ 表示主域名</mat-hint>
-            <mat-error *ngIf="nameInput.errors?.['required']">请输入主机记录</mat-error>
-            <mat-error *ngIf="nameInput.errors?.['pattern']">主机记录格式不正确</mat-error>
+            @if (nameInput.errors?.['required']) {
+              <mat-error>请输入主机记录</mat-error>
+            }
+            @if (nameInput.errors?.['pattern']) {
+              <mat-error>主机记录格式不正确</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-32">
             <mat-label>记录类型</mat-label>
             <mat-select [(ngModel)]="record.type">
-              <mat-option *ngFor="let t of recordTypes" [value]="t">{{ t }}</mat-option>
+              @for (t of recordTypes; track t) {
+                <mat-option [value]="t">{{ t }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
         </div>
@@ -72,9 +82,15 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
             required
             #valueInput="ngModel"
           />
-          <mat-error *ngIf="valueInput.errors?.['required']">请输入记录值</mat-error>
-          <mat-error *ngIf="record.type === 'A' && !isValidIPv4()">无效的 IPv4 地址</mat-error>
-          <mat-error *ngIf="record.type === 'AAAA' && !isValidIPv6()">无效的 IPv6 地址</mat-error>
+          @if (valueInput.errors?.['required']) {
+            <mat-error>请输入记录值</mat-error>
+          }
+          @if (record.type === 'A' && !isValidIPv4()) {
+            <mat-error>无效的 IPv4 地址</mat-error>
+          }
+          @if (record.type === 'AAAA' && !isValidIPv6()) {
+            <mat-error>无效的 IPv6 地址</mat-error>
+          }
         </mat-form-field>
 
         <div class="flex gap-4">
@@ -90,17 +106,17 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
               #ttlInput="ngModel"
             />
             <mat-hint>推荐值: 600, 3600, 86400</mat-hint>
-            <mat-error *ngIf="ttlInput.errors?.['required'] || record.ttl! < 1">TTL 必须大于 0</mat-error>
+            @if (ttlInput.errors?.['required'] || (record.ttl !== undefined && record.ttl < 1)) {
+              <mat-error>TTL 必须大于 0</mat-error>
+            }
           </mat-form-field>
 
-          <mat-form-field
-            *ngIf="record.type === 'MX' || record.type === 'SRV'"
-            appearance="outline"
-            class="w-32"
-          >
-            <mat-label>优先级</mat-label>
-            <input matInput type="number" [(ngModel)]="record.priority" />
-          </mat-form-field>
+          @if (record.type === 'MX' || record.type === 'SRV') {
+            <mat-form-field appearance="outline" class="w-32">
+              <mat-label>优先级</mat-label>
+              <input matInput type="number" [(ngModel)]="record.priority" />
+            </mat-form-field>
+          }
         </div>
 
         <div class="flex items-center justify-between px-4 py-3 bg-surface-container rounded-2xl">
@@ -116,13 +132,12 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
           </mat-slide-toggle>
         </div>
 
-        <div
-          *ngIf="record.type === 'CNAME'"
-          class="p-3 bg-warn-container text-on-warn-container rounded-xl text-xs flex gap-2"
-        >
-          <mat-icon class="text-sm h-4 w-4">info</mat-icon>
-          <span>提示: CNAME 记录不能与同一主机记录下的其他记录（如 A, TXT）共存。</span>
-        </div>
+        @if (record.type === 'CNAME') {
+          <div class="p-3 bg-warn-container text-on-warn-container rounded-xl text-xs flex gap-2">
+            <mat-icon class="text-sm h-4 w-4">info</mat-icon>
+            <span>提示: CNAME 记录不能与同一主机记录下的其他记录（如 A, TXT）共存。</span>
+          </div>
+        }
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="!px-6 !pb-6">
@@ -199,14 +214,14 @@ export class CreateRecordDialogComponent {
   isValid(): boolean {
     const name = this.record.name?.trim();
     if (!name || !this.record.domainId || !this.record.type || !this.record.value) return false;
-    if (this.record.ttl! < 1) return false;
+    if (this.record.ttl === undefined || this.record.ttl < 1) return false;
 
     // Type-specific value validation
     if (this.record.type === 'A' && !this.isValidIPv4()) return false;
     if (this.record.type === 'AAAA' && !this.isValidIPv6()) return false;
 
     // Basic name pattern check
-    const namePattern = /^(@|[a-zA-Z0-9*_\-]+(\.[a-zA-Z0-9*_\-]+)*)$/;
+    const namePattern = /^(@|[\\-a-zA-Z0-9\\*_]+(\\.[\\-a-zA-Z0-9\\*_]+)*)$/;
     return namePattern.test(name);
   }
 

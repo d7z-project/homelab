@@ -40,25 +40,31 @@ import { firstValueFrom } from 'rxjs';
             [disabled]="isEdit"
             autofocus
           />
-          <mat-error *ngIf="!isEdit && isDuplicate()">绑定名称已存在</mat-error>
+          @if (!isEdit && isDuplicate()) {
+            <mat-error>绑定名称已存在</mat-error>
+          }
         </mat-form-field>
 
         <!-- ServiceAccount Select with Pagination -->
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>ServiceAccount</mat-label>
           <mat-select [(ngModel)]="binding.serviceAccountName" [disabled]="isEdit">
-            <mat-option *ngFor="let sa of serviceAccounts()" [value]="sa.name">
-              {{ sa.name }}
-            </mat-option>
-            <div *ngIf="hasMoreSa()" class="px-2 py-1">
-              <button
-                mat-button
-                class="w-full !text-xs !text-primary"
-                (click)="$event.stopPropagation(); loadMoreSa()"
-              >
-                加载更多...
-              </button>
-            </div>
+            @for (sa of serviceAccounts(); track sa.name) {
+              <mat-option [value]="sa.name">
+                {{ sa.name }}
+              </mat-option>
+            }
+            @if (hasMoreSa()) {
+              <div class="px-2 py-1">
+                <button
+                  mat-button
+                  class="w-full !text-xs !text-primary"
+                  (click)="$event.stopPropagation(); loadMoreSa()"
+                >
+                  加载更多...
+                </button>
+              </div>
+            }
           </mat-select>
         </mat-form-field>
 
@@ -66,18 +72,22 @@ import { firstValueFrom } from 'rxjs';
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>赋予角色 (Roles)</mat-label>
           <mat-select [(ngModel)]="binding.roleNames" multiple>
-            <mat-option *ngFor="let role of roles()" [value]="role.name">
-              {{ role.name }}
-            </mat-option>
-            <div *ngIf="hasMoreRoles()" class="px-2 py-1">
-              <button
-                mat-button
-                class="w-full !text-xs !text-primary"
-                (click)="$event.stopPropagation(); loadMoreRoles()"
-              >
-                加载更多...
-              </button>
-            </div>
+            @for (role of roles(); track role.name) {
+              <mat-option [value]="role.name">
+                {{ role.name }}
+              </mat-option>
+            }
+            @if (hasMoreRoles()) {
+              <div class="px-2 py-1">
+                <button
+                  mat-button
+                  class="w-full !text-xs !text-primary"
+                  (click)="$event.stopPropagation(); loadMoreRoles()"
+                >
+                  加载更多...
+                </button>
+              </div>
+            }
           </mat-select>
           <mat-hint>可选择一个或多个角色</mat-hint>
         </mat-form-field>

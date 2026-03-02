@@ -1,13 +1,13 @@
 package controllers
 
 import (
-	"encoding/json"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	rbacservice "homelab/pkg/services/rbac"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 // ListServiceAccountsHandler godoc
@@ -41,7 +41,7 @@ func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/serviceaccounts [post]
 func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	var sa models.ServiceAccount
-	if err := json.NewDecoder(r.Body).Decode(&sa); err != nil {
+	if err := render.Bind(r, &sa); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -66,7 +66,7 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	var sa models.ServiceAccount
-	if err := json.NewDecoder(r.Body).Decode(&sa); err != nil {
+	if err := render.Bind(r, &sa); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -125,7 +125,7 @@ func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/roles [post]
 func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 	var role models.Role
-	if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
+	if err := render.Bind(r, &role); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -150,7 +150,7 @@ func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	var role models.Role
-	if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
+	if err := render.Bind(r, &role); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -209,7 +209,7 @@ func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/rolebindings [post]
 func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 	var rb models.RoleBinding
-	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
+	if err := render.Bind(r, &rb); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -234,7 +234,7 @@ func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	var rb models.RoleBinding
-	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
+	if err := render.Bind(r, &rb); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -285,6 +285,10 @@ type SimulatePermissionsRequest struct {
 	Resource           string `json:"resource"`
 }
 
+func (s *SimulatePermissionsRequest) Bind(r *http.Request) error {
+	return nil
+}
+
 // SimulatePermissionsHandler godoc
 // @Summary Simulate permissions for a service account
 // @Tags rbac
@@ -295,7 +299,7 @@ type SimulatePermissionsRequest struct {
 // @Router /rbac/simulate [post]
 func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 	var req SimulatePermissionsRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := render.Bind(r, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}

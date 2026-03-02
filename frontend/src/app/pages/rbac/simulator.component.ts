@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -43,34 +43,17 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           <!-- Configuration Card -->
           <div class="bg-surface border border-outline-variant rounded-3xl p-6 sm:p-8 shadow-sm">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
                 <mat-label>目标服务账号 (ServiceAccount)</mat-label>
                 <mat-select [(ngModel)]="selectedSa">
-                  <mat-option *ngFor="let sa of saList()" [value]="sa.name">{{
-                    sa.name
-                  }}</mat-option>
+                  @for (sa of saList(); track sa.name) {
+                    <mat-option [value]="sa.name">{{ sa.name }}</mat-option>
+                  }
                 </mat-select>
                 <mat-hint>选择要模拟的账号</mat-hint>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>动作 (Verb)</mat-label>
-                <input
-                  matInput
-                  [(ngModel)]="verb"
-                  [matAutocomplete]="autoVerb"
-                  (focus)="onVerbInputFocus()"
-                  placeholder="read, write, * ..."
-                />
-                <mat-autocomplete #autoVerb="matAutocomplete">
-                  <mat-option *ngFor="let v of verbSuggestions()" [value]="v">
-                    {{ v }}
-                  </mat-option>
-                </mat-autocomplete>
-                <mat-hint>例如: read</mat-hint>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
                 <mat-label>资源路径 (Resource)</mat-label>
                 <input
                   matInput
@@ -80,11 +63,32 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                   placeholder="dns, rbac, dns/example.com ..."
                 />
                 <mat-autocomplete #auto="matAutocomplete">
-                  <mat-option *ngFor="let suggestion of suggestions()" [value]="suggestion">
-                    {{ suggestion }}
-                  </mat-option>
+                  @for (suggestion of suggestions(); track suggestion) {
+                    <mat-option [value]="suggestion">
+                      {{ suggestion }}
+                    </mat-option>
+                  }
                 </mat-autocomplete>
-                <mat-hint>基础资源名（如 dns）或 实例路径（如 dns/example.com）</mat-hint>
+                <mat-hint>例如: dns/example.com</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>动作 (Verb)</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="verb"
+                  [matAutocomplete]="autoVerb"
+                  (focus)="onVerbInputFocus()"
+                  placeholder="get, list, * ..."
+                />
+                <mat-autocomplete #autoVerb="matAutocomplete">
+                  @for (v of verbSuggestions(); track v) {
+                    <mat-option [value]="v">
+                      {{ v }}
+                    </mat-option>
+                  }
+                </mat-autocomplete>
+                <mat-hint>针对该资源的允许操作</mat-hint>
               </mat-form-field>
             </div>
 
@@ -132,22 +136,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                       (!res.allowedInstances || res.allowedInstances.length === 0)
                     "
                   >
-                    <mat-icon class="text-white" *ngIf="res.allowedAll">verified_user</mat-icon>
-                    <mat-icon
-                      class="text-white"
-                      *ngIf="
-                        !res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0
-                      "
-                      >rule</mat-icon
-                    >
-                    <mat-icon
-                      class="text-error"
-                      *ngIf="
-                        !res.allowedAll &&
-                        (!res.allowedInstances || res.allowedInstances.length === 0)
-                      "
-                      >gpp_bad</mat-icon
-                    >
+                    @if (res.allowedAll) {
+                      <mat-icon class="text-white">verified_user</mat-icon>
+                    } @else if (res.allowedInstances && res.allowedInstances.length > 0) {
+                      <mat-icon class="text-white">rule</mat-icon>
+                    } @else {
+                      <mat-icon class="text-error">gpp_bad</mat-icon>
+                    }
                   </div>
                   <div>
                     <h2 class="text-xl font-bold">
@@ -165,6 +160,43 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 </div>
 
                 <div class="space-y-6">
+                  <!-- Matched Rule Info -->
+                  @if (res.matchedRule; as rule) {
+                    <div
+                      class="flex items-start gap-4 p-4 rounded-2xl bg-secondary-container/30 border border-secondary-container/50 animate-in zoom-in-95 duration-300"
+                    >
+                      <div
+                        class="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center"
+                      >
+                        <mat-icon class="text-lg">policy</mat-icon>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-xs font-bold uppercase tracking-wider text-secondary/80">
+                          命中的策略规则
+                        </div>
+                        <div class="mt-1 flex items-center gap-2 flex-wrap">
+                          <code
+                            class="px-2 py-0.5 bg-surface rounded border border-outline-variant font-mono text-sm"
+                            >{{ rule.resource }}</code
+                          >
+                          <mat-icon class="text-sm opacity-40">arrow_forward</mat-icon>
+                          <div class="flex gap-1">
+                            @for (v of rule.verbs; track v) {
+                              <span
+                                class="text-[10px] bg-secondary text-on-secondary px-1.5 py-0.5 rounded uppercase font-bold"
+                              >
+                                {{ v }}
+                              </span>
+                            }
+                          </div>
+                        </div>
+                        <div class="mt-2 text-xs text-outline italic">
+                          * 系统判定此规则能够涵盖您的请求。
+                        </div>
+                      </div>
+                    </div>
+                  }
+
                   <!-- Capability: All -->
                   <div class="flex items-start gap-3">
                     <mat-icon
@@ -203,12 +235,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
                       @if (res.allowedInstances && res.allowedInstances.length > 0) {
                         <div class="flex flex-wrap gap-2">
-                          <span
-                            *ngFor="let inst of res.allowedInstances"
-                            class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-xs font-mono font-medium shadow-sm"
-                          >
-                            {{ inst }}
-                          </span>
+                          @for (inst of res.allowedInstances; track inst) {
+                            <span
+                              class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-xs font-mono font-medium shadow-sm"
+                            >
+                              {{ inst }}
+                            </span>
+                          }
                         </div>
                       } @else {
                         <div class="text-xs italic opacity-40">列表为空</div>

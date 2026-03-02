@@ -1,8 +1,14 @@
 package models
 
+import "net/http"
+
 type LoginRequest struct {
 	Password string `json:"password"`
 	Totp     string `json:"totp"`
+}
+
+func (l *LoginRequest) Bind(r *http.Request) error {
+	return nil
 }
 
 type LoginResponse struct {
@@ -19,11 +25,19 @@ type Role struct {
 	Rules []PolicyRule `json:"rules"`
 }
 
+func (ro *Role) Bind(r *http.Request) error {
+	return nil
+}
+
 type ServiceAccount struct {
 	Name       string `json:"name"`
 	Token      string `json:"token"`
 	Comments   string `json:"comments"`
 	LastUsedAt string `json:"lastUsedAt,omitempty"`
+}
+
+func (s *ServiceAccount) Bind(r *http.Request) error {
+	return nil
 }
 
 type RoleBinding struct {
@@ -33,9 +47,14 @@ type RoleBinding struct {
 	Enabled            bool     `json:"enabled"`
 }
 
+func (rb *RoleBinding) Bind(r *http.Request) error {
+	return nil
+}
+
 type ResourcePermissions struct {
-	AllowedAll       bool     `json:"allowedAll"`
-	AllowedInstances []string `json:"allowedInstances"`
+	AllowedAll       bool        `json:"allowedAll"`
+	AllowedInstances []string    `json:"allowedInstances"`
+	MatchedRule      *PolicyRule `json:"matchedRule,omitempty"` // Records which rule allowed the access
 }
 
 // IsAllowed precisely checks if a specific resource instance is allowed.

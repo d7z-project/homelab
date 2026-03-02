@@ -1,13 +1,13 @@
 package controllers
 
 import (
-	"encoding/json"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	dnsservice "homelab/pkg/services/dns"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 // ListDomainsHandler godoc
@@ -41,7 +41,7 @@ func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /dns/domains [post]
 func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	var domain models.Domain
-	if err := json.NewDecoder(r.Body).Decode(&domain); err != nil {
+	if err := render.Bind(r, &domain); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -66,7 +66,7 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var domain models.Domain
-	if err := json.NewDecoder(r.Body).Decode(&domain); err != nil {
+	if err := render.Bind(r, &domain); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -127,7 +127,7 @@ func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /dns/records [post]
 func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	var record models.Record
-	if err := json.NewDecoder(r.Body).Decode(&record); err != nil {
+	if err := render.Bind(r, &record); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -149,10 +149,10 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Param record body models.Record true "Record"
 // @Success 200 {object} models.Record
 // @Router /dns/records/{id} [put]
-func UpdateRecordRecordHandler(w http.ResponseWriter, r *http.Request) {
+func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var record models.Record
-	if err := json.NewDecoder(r.Body).Decode(&record); err != nil {
+	if err := render.Bind(r, &record); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -190,7 +190,7 @@ func DNSRouter(r chi.Router) {
 
 		r.Get("/records", ListRecordsHandler)
 		r.Post("/records", CreateRecordHandler)
-		r.Put("/records/{id}", UpdateRecordRecordHandler)
+		r.Put("/records/{id}", UpdateRecordHandler)
 		r.Delete("/records/{id}", DeleteRecordHandler)
 	})
 }

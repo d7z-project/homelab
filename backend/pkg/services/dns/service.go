@@ -179,8 +179,8 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 		return nil, errors.New("domain not found")
 	}
 
-	// Permission check: dns/<domain>/<dns-type>/<主机记录>
-	resource := fmt.Sprintf("dns/%s/%s/%s", domain.Name, record.Type, record.Name)
+	// Permission check: dns/<domain>/<host>/<type>
+	resource := fmt.Sprintf("dns/%s/%s/%s", domain.Name, record.Name, record.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return nil, errors.New("permission denied: " + resource)
 	}
@@ -216,9 +216,9 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 		return nil, errors.New("domain not found")
 	}
 
-	// Permission check: dns/<domain>/<dns-type>/<主机记录> (Check both existing and new if changed)
-	resourceOld := fmt.Sprintf("dns/%s/%s/%s", domain.Name, existing.Type, existing.Name)
-	resourceNew := fmt.Sprintf("dns/%s/%s/%s", domain.Name, record.Type, record.Name)
+	// Permission check: dns/<domain>/<host>/<type> (Check both existing and new if changed)
+	resourceOld := fmt.Sprintf("dns/%s/%s/%s", domain.Name, existing.Name, existing.Type)
+	resourceNew := fmt.Sprintf("dns/%s/%s/%s", domain.Name, record.Name, record.Type)
 	perms := commonauth.PermissionsFromContext(ctx)
 	if !perms.IsAllowed(resourceOld) || !perms.IsAllowed(resourceNew) {
 		return nil, errors.New("permission denied for this record operation")
@@ -271,8 +271,8 @@ func DeleteRecord(ctx context.Context, id string) error {
 		return errors.New("domain not found")
 	}
 
-	// Permission check: dns/<domain>/<dns-type>/<主机记录>
-	resource := fmt.Sprintf("dns/%s/%s/%s", domain.Name, existing.Type, existing.Name)
+	// Permission check: dns/<domain>/<host>/<type>
+	resource := fmt.Sprintf("dns/%s/%s/%s", domain.Name, existing.Name, existing.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return errors.New("permission denied: " + resource)
 	}

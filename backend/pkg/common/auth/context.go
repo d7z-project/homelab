@@ -28,7 +28,15 @@ func FromContext(ctx context.Context) *AuthContext {
 	return val
 }
 
+func WithAuth(ctx context.Context, auth *AuthContext) context.Context {
+	return context.WithValue(ctx, AuthContextKey, auth)
+}
+
 func PermissionsFromContext(ctx context.Context) *models.ResourcePermissions {
 	val, _ := ctx.Value(PermissionsContextKey).(*models.ResourcePermissions)
 	return val
+}
+
+func WithPermissions(ctx context.Context, perms *models.ResourcePermissions) context.Context {
+	return context.WithValue(ctx, PermissionsContextKey, perms)
 }

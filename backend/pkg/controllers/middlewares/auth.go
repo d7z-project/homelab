@@ -58,7 +58,12 @@ func RequirePermission(verb string, resource string) func(http.Handler) http.Han
 			}
 
 			if ac.Type == "root" {
-				ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, &models.ResourcePermissions{AllowedAll: true})
+				perms := &models.ResourcePermissions{
+					AllowedAll:  true,
+					MatchedRule: &models.PolicyRule{Resource: "*", Verbs: []string{"*"}},
+				}
+				w.Header().Set("X-Matched-Policy", "*:*")
+				ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, perms)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
@@ -66,6 +71,9 @@ func RequirePermission(verb string, resource string) func(http.Handler) http.Han
 			if ac.Name != "" {
 				perms, err := authservice.GetPermissions(r.Context(), ac.Name, verb, resource)
 				if err == nil && perms != nil && (perms.AllowedAll || len(perms.AllowedInstances) > 0) {
+					if perms.MatchedRule != nil {
+						w.Header().Set("X-Matched-Policy", perms.MatchedRule.Resource)
+					}
 					ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, perms)
 					next.ServeHTTP(w, r.WithContext(ctx))
 					return

@@ -163,19 +163,21 @@
         </div>
       }
 
-      <div class="flex justify-center pb-12 pt-4" *ngIf="hasMore()">
-        <button
-          mat-fab
-          extended
-          color="primary"
-          class="!rounded-2xl"
-          (click)="loadMore()"
-          [disabled]="loadingMore()"
-        >
-          <mat-icon>expand_more</mat-icon>
-          加载更多记录
-        </button>
-      </div>
+      @if (hasMore()) {
+        <div class="flex justify-center pb-12 pt-4">
+          <button
+            mat-fab
+            extended
+            color="primary"
+            class="!rounded-2xl"
+            (click)="loadMore()"
+            [disabled]="loadingMore()"
+          >
+            <mat-icon>expand_more</mat-icon>
+            加载更多记录
+          </button>
+        </div>
+      }
     </div>
   </div>
 

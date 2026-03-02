@@ -33,11 +33,9 @@ export interface ConfirmDialogData {
         [mat-dialog-close]="true"
         class="!rounded-full px-6"
       >
-        <mat-icon
-          *ngIf="data.color !== 'primary'"
-          class="mr-1.5 !w-5 !h-5 !text-[20px] !text-inherit"
-          >delete_outline</mat-icon
-        >
+        @if (data.color !== 'primary') {
+          <mat-icon class="mr-1.5 !w-5 !h-5 !text-[20px] !text-inherit">delete_outline</mat-icon>
+        }
         {{ data.confirmText || '确定删除' }}
       </button>
     </mat-dialog-actions>
