@@ -18,15 +18,15 @@ export interface ModelsDomain {
      * 创建时间
      */
     createdAt?: string;
+    /**
+     * 是否启用
+     */
+    enabled?: boolean;
     id?: string;
     /**
      * 域名名称 (e.g., example.com)
      */
     name?: string;
-    /**
-     * 状态 (active/inactive)
-     */
-    status?: string;
     /**
      * 更新时间
      */

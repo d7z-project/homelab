@@ -65,8 +65,7 @@ import { ModelsDomain } from '../../generated';
           </div>
           <mat-slide-toggle
             color="primary"
-            [checked]="domain.status === 'active'"
-            (change)="domain.status = $event.checked ? 'active' : 'inactive'"
+            [(ngModel)]="domain.enabled"
           >
           </mat-slide-toggle>
         </div>
@@ -102,7 +101,7 @@ export class CreateDomainDialogComponent {
   isEdit = false;
   domain: ModelsDomain = {
     name: '',
-    status: 'active',
+    enabled: true,
     comments: '',
   };
   existingNames: string[] = [];

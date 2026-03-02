@@ -1315,15 +1315,15 @@ const docTemplate = `{
                     "description": "创建时间",
                     "type": "string"
                 },
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
                 "name": {
                     "description": "域名名称 (e.g., example.com)",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "状态 (active/inactive)",
                     "type": "string"
                 },
                 "updatedAt": {
@@ -1410,6 +1410,10 @@ const docTemplate = `{
                     "description": "关联的域名 ID",
                     "type": "string"
                 },
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1420,10 +1424,6 @@ const docTemplate = `{
                 "priority": {
                     "description": "优先级 (仅用于 MX 和 SRV)",
                     "type": "integer"
-                },
-                "status": {
-                    "description": "状态 (active/inactive)",
-                    "type": "string"
                 },
                 "ttl": {
                     "description": "生存时间 (秒)",

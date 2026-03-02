@@ -104,7 +104,26 @@ body {
   width: 100% !important;
 }
 
+/* Force Monospace for Table Contents */
+.mat-mdc-cell,
+.mat-mdc-header-cell,
+.mat-mdc-table {
+  font-family: var(--font-mono) !important;
+}
+
+.mat-mdc-header-cell {
+  font-size: 13px !important;
+  letter-spacing: 0.02em;
+  text-align: center !important;
+}
+
+.mat-mdc-cell {
+  font-size: 13px !important;
+  text-align: center !important;
+}
+
 /* Sticky Header Logic for Integrated Tabs */
+
 .rbac-tabs-integrated .mat-mdc-tab-header,
 .dns-tabs-integrated .mat-mdc-tab-header {
   position: sticky !important;

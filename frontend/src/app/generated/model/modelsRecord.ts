@@ -18,6 +18,10 @@ export interface ModelsRecord {
      * 关联的域名 ID
      */
     domainId?: string;
+    /**
+     * 是否启用
+     */
+    enabled?: boolean;
     id?: string;
     /**
      * 记录名 (e.g., @, www, api)
@@ -27,10 +31,6 @@ export interface ModelsRecord {
      * 优先级 (仅用于 MX 和 SRV)
      */
     priority?: number;
-    /**
-     * 状态 (active/inactive)
-     */
-    status?: string;
     /**
      * 生存时间 (秒)
      */

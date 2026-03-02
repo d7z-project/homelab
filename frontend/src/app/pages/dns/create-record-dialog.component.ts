@@ -126,8 +126,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
           </div>
           <mat-slide-toggle
             color="primary"
-            [checked]="record.status === 'active'"
-            (change)="record.status = $event.checked ? 'active' : 'inactive'"
+            [(ngModel)]="record.enabled"
           >
           </mat-slide-toggle>
         </div>
@@ -165,7 +164,7 @@ export class CreateRecordDialogComponent {
     value: '',
     ttl: 600,
     priority: 10,
-    status: 'active',
+    enabled: true,
   };
   domains: ModelsDomain[] = [];
   recordTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];

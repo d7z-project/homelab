@@ -67,11 +67,8 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 	domain.ID = uuid.New().String()
 	domain.CreatedAt = time.Now()
 	domain.UpdatedAt = time.Now()
-	if domain.Status == "" {
-		domain.Status = "active"
-	}
 
-	message := fmt.Sprintf("Created domain %s (status: %s)", domain.Name, domain.Status)
+	message := fmt.Sprintf("Created domain %s (enabled: %v)", domain.Name, domain.Enabled)
 	if err := dnsrepo.SaveDomain(ctx, domain); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, false)
 		return nil, err
@@ -94,8 +91,8 @@ func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*model
 
 	message := fmt.Sprintf("Updated domain %s", existing.Name)
 	changes := []string{}
-	if existing.Status != domain.Status {
-		changes = append(changes, fmt.Sprintf("status: %s -> %s", existing.Status, domain.Status))
+	if existing.Enabled != domain.Enabled {
+		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, domain.Enabled))
 	}
 	if existing.Comments != domain.Comments {
 		changes = append(changes, fmt.Sprintf("comments: '%s' -> '%s'", existing.Comments, domain.Comments))
@@ -192,12 +189,9 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 	}
 
 	record.ID = uuid.New().String()
-	if record.Status == "" {
-		record.Status = "active"
-	}
 
-	message := fmt.Sprintf("Created record %s in %s: %s -> %s (TTL: %d)",
-		record.Type, domain.Name, record.Name, record.Value, record.TTL)
+	message := fmt.Sprintf("Created record %s in %s: %s -> %s (TTL: %d, enabled: %v)",
+		record.Type, domain.Name, record.Name, record.Value, record.TTL, record.Enabled)
 
 	if err := dnsrepo.SaveRecord(ctx, record); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+domain.Name, message, false)
@@ -247,8 +241,8 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 	if existing.TTL != record.TTL {
 		changes = append(changes, fmt.Sprintf("ttl: %d -> %d", existing.TTL, record.TTL))
 	}
-	if existing.Status != record.Status {
-		changes = append(changes, fmt.Sprintf("status: %s -> %s", existing.Status, record.Status))
+	if existing.Enabled != record.Enabled {
+		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, record.Enabled))
 	}
 	if len(changes) > 0 {
 		message += " (" + strings.Join(changes, ", ") + ")"
@@ -302,10 +296,10 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		return nil, err
 	}
 
-	// Map active records to domain IDs
+	// Map enabled records to domain IDs
 	recordMap := make(map[string][]models.ExportRecord)
 	for _, r := range allRecords {
-		if r.Status != "active" {
+		if !r.Enabled {
 			continue
 		}
 		exportRec := models.ExportRecord{
@@ -318,13 +312,13 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		recordMap[r.DomainID] = append(recordMap[r.DomainID], exportRec)
 	}
 
-	// Construct response with only active domains
+	// Construct response with only enabled domains
 	resp := &models.DnsExportResponse{
 		Domains: make([]models.ExportDomain, 0),
 	}
 
 	for _, d := range domains {
-		if d.Status != "active" {
+		if !d.Enabled {
 			continue
 		}
 		exportDom := models.ExportDomain{

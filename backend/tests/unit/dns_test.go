@@ -113,8 +113,8 @@ func TestDNSExportFiltering(t *testing.T) {
 
 	// 1. 创建并禁用域名 (不应导出)
 	inactiveDomain, err := dnsservice.CreateDomain(ctx, &models.Domain{
-		Name:   "inactive-export.com",
-		Status: "inactive",
+		Name:    "inactive-export.com",
+		Enabled: false,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create inactive domain: %v", err)
@@ -124,7 +124,7 @@ func TestDNSExportFiltering(t *testing.T) {
 		Name:     "www",
 		Type:     "A",
 		Value:    "1.1.1.1",
-		Status:   "active",
+		Enabled:  true,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create record for inactive domain: %v", err)
@@ -132,8 +132,8 @@ func TestDNSExportFiltering(t *testing.T) {
 
 	// 2. 创建激活域名及其记录
 	activeDomain, err := dnsservice.CreateDomain(ctx, &models.Domain{
-		Name:   "active-export.com",
-		Status: "active",
+		Name:    "active-export.com",
+		Enabled: true,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create active domain: %v", err)
@@ -144,7 +144,7 @@ func TestDNSExportFiltering(t *testing.T) {
 		Name:     "www",
 		Type:     "A",
 		Value:    "2.2.2.2",
-		Status:   "active",
+		Enabled:  true,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create active record: %v", err)
@@ -155,7 +155,7 @@ func TestDNSExportFiltering(t *testing.T) {
 		Name:     "api",
 		Type:     "A",
 		Value:    "3.3.3.3",
-		Status:   "inactive",
+		Enabled:  false,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create inactive record: %v", err)

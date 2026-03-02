@@ -63,23 +63,6 @@
                 </td>
               </ng-container>
 
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                  状态
-                </th>
-                <td mat-cell *matCellDef="let element">
-                  <span
-                    class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                    [class]="
-                      element.status === 'active'
-                        ? 'bg-primary/5 text-primary border-primary/20'
-                        : 'bg-surface-container-high text-outline border-outline-variant'
-                    "
-                  >
-                    {{ element.status === 'active' ? '运行中' : '已禁用' }}
-                  </span>
-                </td>
-              </ng-container>
 
               <ng-container matColumnDef="comments">
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
@@ -99,7 +82,7 @@
                   最后更新
                 </th>
                 <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono">
-                  {{ element.updatedAt | date: 'yyyy-MM-dd HH:mm' }}
+                  {{ element.updatedAt | date: 'yyyy-MM-dd HH:mm:ss' }}
                 </td>
               </ng-container>
 
@@ -118,8 +101,18 @@
                   class="text-right !pr-6"
                   style="white-space: nowrap"
                 >
-                  <div class="flex justify-end gap-1">
+                  <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
+                      <button
+                        mat-icon-button
+                        (click)="toggleDomain(element)"
+                        [matTooltip]="element.enabled ? '禁用解析' : '启用解析'"
+                        [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                        >
+                      </button>
                       <button
                         mat-icon-button
                         (click)="onTabChange(1); onDomainFilterChange(element.id!)"
@@ -150,6 +143,13 @@
                       </button>
                       <mat-menu #domainMenu="matMenu">
                         <ng-template matMenuContent>
+                          <button mat-menu-item (click)="toggleDomain(element)">
+                            <mat-icon
+                              [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                              >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                            >
+                            <span>{{ element.enabled ? '禁用解析' : '启用解析' }}</span>
+                          </button>
                           <button
                             mat-menu-item
                             (click)="onTabChange(1); onDomainFilterChange(element.id!)"
@@ -333,21 +333,6 @@
                 </td>
               </ng-container>
 
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                  状态
-                </th>
-                <td mat-cell *matCellDef="let element">
-                  <mat-icon
-                    class="scale-75"
-                    [class.text-primary]="element.status === 'active'"
-                    [class.text-outline]="element.status !== 'active'"
-                    [class.opacity-30]="element.status !== 'active'"
-                  >
-                    {{ element.status === 'active' ? 'check_circle' : 'pause_circle' }}
-                  </mat-icon>
-                </td>
-              </ng-container>
 
               <ng-container matColumnDef="actions">
                 <th
@@ -364,8 +349,18 @@
                   class="text-right !pr-6"
                   style="white-space: nowrap"
                 >
-                  <div class="flex justify-end gap-1">
+                  <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
+                      <button
+                        mat-icon-button
+                        (click)="toggleRecord(element)"
+                        [matTooltip]="element.enabled ? '禁用记录' : '启用记录'"
+                        [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                        >
+                      </button>
                       <button mat-icon-button (click)="editRecord(element)" matTooltip="编辑">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >edit</mat-icon
@@ -387,6 +382,13 @@
                       </button>
                       <mat-menu #recordMenu="matMenu">
                         <ng-template matMenuContent>
+                          <button mat-menu-item (click)="toggleRecord(element)">
+                            <mat-icon
+                              [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                              >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                            >
+                            <span>{{ element.enabled ? '禁用记录' : '启用记录' }}</span>
+                          </button>
                           <button mat-menu-item (click)="editRecord(element)">
                             <mat-icon>edit</mat-icon>
                             <span>编辑</span>

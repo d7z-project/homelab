@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, OnDestroy, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -87,13 +87,13 @@ export class DnsComponent implements OnInit, OnDestroy {
   // Controlled signals for stability
   displayedDomainColumns = computed(() =>
     this.isHandset()
-      ? ['name', 'status', 'actions']
-      : ['name', 'status', 'comments', 'updatedAt', 'actions'],
+      ? ['name', 'actions']
+      : ['name', 'comments', 'updatedAt', 'actions'],
   );
   displayedRecordColumns = computed(() =>
     this.isHandset()
-      ? ['name', 'type', 'status', 'actions']
-      : ['name', 'type', 'value', 'ttl', 'status', 'actions'],
+      ? ['name', 'type', 'actions']
+      : ['name', 'type', 'value', 'ttl', 'actions'],
   );
 
   hasSearchContent = computed(() => {
@@ -310,6 +310,36 @@ export class DnsComponent implements OnInit, OnDestroy {
     this.recordPage.set(1);
     this.updateQueryParams();
     this.loadRecords(true);
+  }
+
+  async toggleDomain(domain: ModelsDomain) {
+    if (!domain.id) return;
+    this.loading.set(true);
+    try {
+      const updated = { ...domain, enabled: !domain.enabled };
+      await firstValueFrom(this.dnsService.dnsDomainsIdPut(domain.id, updated));
+      this.snackBar.open(`域名已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      await this.loadDomains(true);
+    } catch (err) {
+      this.snackBar.open('操作失败', '关闭', { duration: 2000 });
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async toggleRecord(record: ModelsRecord) {
+    if (!record.id) return;
+    this.loading.set(true);
+    try {
+      const updated = { ...record, enabled: !record.enabled };
+      await firstValueFrom(this.dnsService.dnsRecordsIdPut(record.id, updated));
+      this.snackBar.open(`记录已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      await this.loadRecords(true);
+    } catch (err) {
+      this.snackBar.open('操作失败', '关闭', { duration: 2000 });
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   createDomain() {
