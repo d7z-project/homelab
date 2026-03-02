@@ -55,6 +55,8 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 		sa.Token = uuid.New().String()
 	}
 
+	sa.Enabled = true
+
 	message := fmt.Sprintf("Created ServiceAccount: %s (%s)", sa.Name, sa.ID)
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.ID, message, false)

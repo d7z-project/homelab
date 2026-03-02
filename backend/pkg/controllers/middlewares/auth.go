@@ -35,6 +35,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		// 2. Check if it's a ServiceAccount token
 		saID, err := authservice.GetTokenSA(r.Context(), token)
 		if err == nil && saID != "" {
+			// Check if SA is enabled
+			if !authservice.IsSAEnabled(r.Context(), saID) {
+				common.UnauthorizedError(w, r, 10001, "Service Account Disabled")
+				return
+			}
+
 			ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
 				Type: "sa",
 				ID:   saID,

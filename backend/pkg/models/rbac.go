@@ -35,6 +35,7 @@ type ServiceAccount struct {
 	Name       string `json:"name"`
 	Token      string `json:"token"`
 	Comments   string `json:"comments"`
+	Enabled    bool   `json:"enabled"`
 	LastUsedAt string `json:"lastUsedAt,omitempty"`
 }
 

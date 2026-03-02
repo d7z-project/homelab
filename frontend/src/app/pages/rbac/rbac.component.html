@@ -124,6 +124,17 @@
                     @if (!isHandset()) {
                       <button
                         mat-icon-button
+                        (click)="toggleSa(element)"
+                        [matTooltip]="element.enabled ? '禁用' : '启用'"
+                        [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                      >
+                        <mat-icon
+                          class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                        >
+                      </button>
+                      <button
+                        mat-icon-button
                         (click)="showSaRoles(element)"
                         matTooltip="生效权限"
                       >
@@ -161,6 +172,13 @@
                       </button>
                       <mat-menu #saMenu="matMenu">
                         <ng-template matMenuContent>
+                          <button mat-menu-item (click)="toggleSa(element)">
+                            <mat-icon
+                              [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                              >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                            >
+                            <span>{{ element.enabled ? '禁用' : '启用' }}</span>
+                          </button>
                           <button mat-menu-item (click)="showSaRoles(element)">
                             <mat-icon>manage_accounts</mat-icon>
                             <span>生效权限</span>

@@ -11,6 +11,7 @@
 
 export interface ModelsServiceAccount { 
     comments?: string;
+    enabled?: boolean;
     id?: string;
     lastUsedAt?: string;
     name?: string;

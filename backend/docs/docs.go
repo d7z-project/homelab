@@ -1507,6 +1507,9 @@ const docTemplate = `{
                 "comments": {
                     "type": "string"
                 },
+                "enabled": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },

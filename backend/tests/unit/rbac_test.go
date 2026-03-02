@@ -94,6 +94,22 @@ func TestRBACFullWorkflow(t *testing.T) {
 		t.Errorf("Expected 'example.com' in AllowedInstances, got %v", perms.AllowedInstances)
 	}
 
+	// 5.5. 验证 ServiceAccount 启用/禁用
+	if !sa.Enabled {
+		t.Error("Expected ServiceAccount to be enabled by default")
+	}
+	sa.Enabled = false
+	_, _ = rbacservice.UpdateServiceAccount(ctx, saID, sa)
+	
+	// 验证禁用后权限模拟应为空
+	perms, _ = rbacservice.SimulatePermissions(ctx, saID, "get", "dns")
+	if perms.AllowedAll || len(perms.AllowedInstances) > 0 {
+		t.Error("Expected no permissions for disabled ServiceAccount")
+	}
+
+	sa.Enabled = true
+	_, _ = rbacservice.UpdateServiceAccount(ctx, saID, sa)
+
 	// 6. 重置 Token 验证
 	oldToken := sa.Token
 	resetSA, err := rbacservice.ResetServiceAccountToken(ctx, saID)

@@ -4,6 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { ModelsServiceAccount } from '../../generated';
 
@@ -16,6 +17,7 @@ import { ModelsServiceAccount } from '../../generated';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatCheckboxModule,
     FormsModule,
   ],
   template: `
@@ -66,6 +68,12 @@ import { ModelsServiceAccount } from '../../generated';
             rows="3"
           ></textarea>
         </mat-form-field>
+
+        <div class="py-2">
+          <mat-checkbox [(ngModel)]="sa.enabled" color="primary">
+            启用此账号
+          </mat-checkbox>
+        </div>
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="!px-6 !pb-6">
@@ -89,6 +97,7 @@ export class CreateSaDialogComponent {
     id: '',
     name: '',
     comments: '',
+    enabled: true,
   };
   existingIDs: string[] = [];
 

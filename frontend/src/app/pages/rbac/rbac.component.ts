@@ -102,6 +102,22 @@ export class RbacComponent implements OnInit, OnDestroy {
       ? ['name', 'id', 'actions']
       : ['name', 'id', 'comments', 'token', 'lastUsedAt', 'actions'],
   );
+
+  async toggleSa(sa: ModelsServiceAccount) {
+    if (!sa.id) return;
+    this.loading.set(true);
+    try {
+      const updated = { ...sa, enabled: !sa.enabled };
+      await firstValueFrom(this.rbacService.rbacServiceaccountsIdPut(sa.id, updated));
+      this.snackBar.open(`账号已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      this.saPage.set(0);
+      await this.loadServiceAccounts(true);
+    } catch (err) {
+      this.snackBar.open('操作失败', '关闭', { duration: 3000 });
+    } finally {
+      this.loading.set(false);
+    }
+  }
   displayedRoleColumns = computed(() =>
     this.isHandset() ? ['name', 'actions'] : ['name', 'rules', 'actions'],
   );

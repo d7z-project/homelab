@@ -78,12 +78,25 @@ func GetTokenSA(ctx context.Context, token string) (string, error) {
 	return rbacrepo.GetTokenSA(ctx, token)
 }
 
+func IsSAEnabled(ctx context.Context, saID string) bool {
+	sa, err := rbacrepo.GetServiceAccount(ctx, saID)
+	if err != nil || sa == nil {
+		return false
+	}
+	return sa.Enabled
+}
+
 func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.ResourcePermissions, error) {
 	if saID == "root" {
 		return &models.ResourcePermissions{
 			AllowedAll: true,
 			MatchedRule: &models.PolicyRule{Resource: "*", Verbs: []string{"*"}},
 		}, nil
+	}
+
+	// Check if SA is enabled
+	if !IsSAEnabled(ctx, saID) {
+		return &models.ResourcePermissions{}, nil
 	}
 
 	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
