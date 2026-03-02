@@ -1339,30 +1339,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "records": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ExportRecord"
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": true
                     }
-                }
-            }
-        },
-        "models.ExportRecord": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "ttl": {
-                    "type": "integer"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
                 }
             }
         },

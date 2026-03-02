@@ -175,11 +175,27 @@ func TestDNSExportFiltering(t *testing.T) {
 		}
 		if dom.Name == "active-export.com" {
 			foundActive = true
-			// 验证记录过滤
-			if len(dom.Records) != 1 {
-				t.Errorf("Expected 1 exported record for active-export.com, got %d", len(dom.Records))
-			} else if dom.Records[0].Name != "www" {
-				t.Errorf("Expected record www, got %s", dom.Records[0].Name)
+			// 验证记录过滤 (现在应包含 SOA 和 www A 记录)
+			// dom.Records is map[name]map[type][]ExportRecord
+			foundWWW := false
+			foundSOA := false
+			
+			if types, ok := dom.Records["www"]; ok {
+				if _, ok := types["A"]; ok {
+					foundWWW = true
+				}
+			}
+			if types, ok := dom.Records["@"]; ok {
+				if _, ok := types["SOA"]; ok {
+					foundSOA = true
+				}
+			}
+
+			if !foundWWW {
+				t.Error("Expected record www (A) not found in export")
+			}
+			if !foundSOA {
+				t.Error("Expected SOA record (@) not found in export")
 			}
 		}
 	}

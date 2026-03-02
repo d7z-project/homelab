@@ -19,7 +19,6 @@ model/modelsAuditLog.ts
 model/modelsDnsExportResponse.ts
 model/modelsDomain.ts
 model/modelsExportDomain.ts
-model/modelsExportRecord.ts
 model/modelsLoginRequest.ts
 model/modelsLoginResponse.ts
 model/modelsPolicyRule.ts

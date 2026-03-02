@@ -43,15 +43,63 @@ type DnsExportResponse struct {
 
 // ExportDomain 导出的域名信息，不含 ID 和业务状态
 type ExportDomain struct {
-	Name    string         `json:"name"`
-	Records []ExportRecord `json:"records"`
+	Name    string                            `json:"name"`
+	Records map[string]map[string]interface{} `json:"records"`
 }
 
-// ExportRecord 导出的解析记录信息，不含 ID 和业务状态
-type ExportRecord struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Value    string `json:"value"`
-	TTL      int    `json:"ttl"`
+type ExportRecordA struct {
+	Address string `json:"address"`
+	TTL     int    `json:"ttl"`
+}
+
+type ExportRecordAAAA struct {
+	Address string `json:"address"`
+	TTL     int    `json:"ttl"`
+}
+
+type ExportRecordCNAME struct {
+	Target string `json:"target"`
+	TTL    int    `json:"ttl"`
+}
+
+type ExportRecordNS struct {
+	Target string `json:"target"`
+	TTL    int    `json:"ttl"`
+}
+
+type ExportRecordMX struct {
+	Host     string `json:"host"`
 	Priority int    `json:"priority"`
+	TTL      int    `json:"ttl"`
+}
+
+type ExportRecordTXT struct {
+	Text string `json:"text"`
+	TTL  int    `json:"ttl"`
+}
+
+type ExportRecordSRV struct {
+	Priority int    `json:"priority"`
+	Weight   int    `json:"weight"`
+	Port     int    `json:"port"`
+	Target   string `json:"target"`
+	TTL      int    `json:"ttl"`
+}
+
+type ExportRecordCAA struct {
+	Flags int    `json:"flags"`
+	Tag   string `json:"tag"`
+	Value string `json:"value"`
+	TTL   int    `json:"ttl"`
+}
+
+type ExportRecordSOA struct {
+	Mname   string `json:"mname"`
+	Rname   string `json:"rname"`
+	Serial  int64  `json:"serial"`
+	Refresh int    `json:"refresh"`
+	Retry   int    `json:"retry"`
+	Expire  int    `json:"expire"`
+	Minimum int    `json:"minimum"`
+	TTL     int    `json:"ttl"`
 }

@@ -21,6 +21,48 @@ var (
 	domainRegex = regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
 )
 
+const (
+	defaultSOAMaster  = "ns1.hover.com."
+	defaultSOARefresh = 7200
+	defaultSOARetry    = 3600
+	defaultSOAExpire   = 1209600
+	defaultSOAMinimum  = 3600
+)
+
+func generateSOASerial() string {
+	return time.Now().Format("20060102") + "01"
+}
+
+func parseSOA(value string) (mname, rname, rest string, err error) {
+	parts := strings.Fields(value)
+	if len(parts) < 2 {
+		return "", "", "", errors.New("invalid SOA value")
+	}
+	mname = parts[0]
+	rname = parts[1]
+	if len(parts) > 2 {
+		rest = strings.Join(parts[2:], " ")
+	}
+	return mname, rname, rest, nil
+}
+
+func incrementSerial(currentValue string) string {
+	parts := strings.Fields(currentValue)
+	if len(parts) < 3 {
+		return generateSOASerial()
+	}
+	currentSerial := parts[2]
+	today := time.Now().Format("20060102")
+	if strings.HasPrefix(currentSerial, today) {
+		// Increment within same day
+		serialNum := 0
+		fmt.Sscanf(currentSerial[len(today):], "%d", &serialNum)
+		serialNum++
+		return fmt.Sprintf("%s%02d", today, serialNum)
+	}
+	return today + "01"
+}
+
 // Domain Service
 
 func ListDomains(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
@@ -92,6 +134,23 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 		commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, false)
 		return nil, err
 	}
+
+	// Generate default SOA record
+	defaultSOA := &models.Record{
+		ID:       uuid.New().String(),
+		DomainID: domain.ID,
+		Name:     "@",
+		Type:     "SOA",
+		Value:    fmt.Sprintf("ns1.%s. admin.%s. %s %d %d %d %d", domain.Name, domain.Name, generateSOASerial(), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum),
+		TTL:      3600,
+		Enabled:  true,
+		Comments: "System generated default SOA",
+	}
+	if err := dnsrepo.SaveRecord(ctx, defaultSOA); err != nil {
+		// Log error but domain is already created
+		commonaudit.FromContext(ctx).Log("CreateRecord (SOA)", defaultSOA.Name+"."+domain.Name, "Failed to create default SOA record: "+err.Error(), false)
+	}
+
 	commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, true)
 	return domain, nil
 }
@@ -226,6 +285,11 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 		return nil, errors.New("permission denied: " + resource)
 	}
 
+	// Prevent manual SOA creation (handled by system)
+	if record.Type == "SOA" {
+		return nil, errors.New("SOA records are managed by the system and cannot be created manually")
+	}
+
 	if err := validateRecord(ctx, record); err != nil {
 		return nil, err
 	}
@@ -239,6 +303,10 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 		commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+domain.Name, message, false)
 		return nil, err
 	}
+	
+	// Update SOA serial
+	updateSOASerial(ctx, domain.ID)
+
 	commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+domain.Name, message, true)
 	return record, nil
 }
@@ -264,6 +332,31 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 
 	record.ID = id
 	record.DomainID = existing.DomainID // Cannot change domain of a record
+
+	// Special handling for SOA
+	isSOAUpdate := false
+	if existing.Type == "SOA" {
+		isSOAUpdate = true
+		if record.Type != "SOA" {
+			return nil, errors.New("cannot change type of SOA record")
+		}
+		if record.Name != "@" {
+			return nil, errors.New("SOA record name must be '@'")
+		}
+
+		mname, rname, _, err := parseSOA(record.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid SOA format: %w", err)
+		}
+
+		// Keep current serial but increment it
+		record.Value = fmt.Sprintf("%s %s %s %d %d %d %d",
+			mname, rname, incrementSerial(existing.Value),
+			defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+		
+		// SOA must always be enabled
+		record.Enabled = true
+	}
 
 	if err := validateRecord(ctx, record); err != nil {
 		return nil, err
@@ -299,6 +392,12 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 		commonaudit.FromContext(ctx).Log("UpdateRecord", existing.Name+"."+domain.Name, message, false)
 		return nil, err
 	}
+
+	// Update SOA serial if NOT an SOA update (to avoid double update or recursion if we had any)
+	if !isSOAUpdate {
+		updateSOASerial(ctx, domain.ID)
+	}
+
 	commonaudit.FromContext(ctx).Log("UpdateRecord", existing.Name+"."+domain.Name, message, true)
 	return record, nil
 }
@@ -320,6 +419,11 @@ func DeleteRecord(ctx context.Context, id string) error {
 		return errors.New("permission denied: " + resource)
 	}
 
+	// Prevent SOA deletion
+	if existing.Type == "SOA" {
+		return errors.New("SOA records cannot be deleted")
+	}
+
 	message := fmt.Sprintf("Deleted record: %s/%s -> %s (TTL: %d, enabled: %v, priority: %d) in %s", 
 		existing.Name, existing.Type, existing.Value, existing.TTL, existing.Enabled, existing.Priority, domain.Name)
 
@@ -327,8 +431,36 @@ func DeleteRecord(ctx context.Context, id string) error {
 		commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Name+"."+domain.Name, message, false)
 		return err
 	}
+
+	// Update SOA serial
+	updateSOASerial(ctx, domain.ID)
+
 	commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Name+"."+domain.Name, message, true)
 	return nil
+}
+
+func updateSOASerial(ctx context.Context, domainID string) {
+	records, _, err := dnsrepo.ListRecords(ctx, domainID, 0, 100, "")
+	if err != nil {
+		return
+	}
+	for _, r := range records {
+		if r.Type == "SOA" {
+			r.Value = fmt.Sprintf("%s %s %s %d %d %d %d",
+				getPart(r.Value, 0), getPart(r.Value, 1), incrementSerial(r.Value),
+				defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+			_ = dnsrepo.SaveRecord(ctx, &r)
+			break
+		}
+	}
+}
+
+func getPart(value string, index int) string {
+	parts := strings.Fields(value)
+	if index < len(parts) {
+		return parts[index]
+	}
+	return ""
 }
 
 func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
@@ -346,20 +478,90 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		return nil, err
 	}
 
-	// Map enabled records to domain IDs
-	recordMap := make(map[string][]models.ExportRecord)
+	// Map enabled records to domain IDs: map[domainID]map[name]map[type]interface{}
+	domainMap := make(map[string]map[string]map[string]interface{})
 	for _, r := range allRecords {
 		if !r.Enabled {
 			continue
 		}
-		exportRec := models.ExportRecord{
-			Name:     r.Name,
-			Type:     r.Type,
-			Value:    r.Value,
-			TTL:      r.TTL,
-			Priority: r.Priority,
+		
+		if _, ok := domainMap[r.DomainID]; !ok {
+			domainMap[r.DomainID] = make(map[string]map[string]interface{})
 		}
-		recordMap[r.DomainID] = append(recordMap[r.DomainID], exportRec)
+		if _, ok := domainMap[r.DomainID][r.Name]; !ok {
+			domainMap[r.DomainID][r.Name] = make(map[string]interface{})
+		}
+
+		var exportRec interface{}
+		switch r.Type {
+		case "A":
+			exportRec = models.ExportRecordA{Address: r.Value, TTL: r.TTL}
+		case "AAAA":
+			exportRec = models.ExportRecordAAAA{Address: r.Value, TTL: r.TTL}
+		case "CNAME":
+			exportRec = models.ExportRecordCNAME{Target: r.Value, TTL: r.TTL}
+		case "NS":
+			exportRec = models.ExportRecordNS{Target: r.Value, TTL: r.TTL}
+		case "MX":
+			exportRec = models.ExportRecordMX{Host: r.Value, Priority: r.Priority, TTL: r.TTL}
+		case "TXT":
+			exportRec = models.ExportRecordTXT{Text: r.Value, TTL: r.TTL}
+		case "SRV":
+			parts := strings.Fields(r.Value)
+			weight := 0
+			port := 0
+			target := ""
+			if len(parts) >= 3 {
+				fmt.Sscanf(parts[0], "%d", &weight)
+				fmt.Sscanf(parts[1], "%d", &port)
+				target = strings.Join(parts[2:], " ")
+			}
+			exportRec = models.ExportRecordSRV{Priority: r.Priority, Weight: weight, Port: port, Target: target, TTL: r.TTL}
+		case "CAA":
+			parts := strings.Fields(r.Value)
+			flags := 0
+			tag := ""
+			value := ""
+			if len(parts) >= 3 {
+				fmt.Sscanf(parts[0], "%d", &flags)
+				tag = parts[1]
+				value = strings.Join(parts[2:], " ")
+				if strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"") {
+					value = value[1 : len(value)-1]
+				}
+			}
+			exportRec = models.ExportRecordCAA{Flags: flags, Tag: tag, Value: value, TTL: r.TTL}
+		case "SOA":
+			parts := strings.Fields(r.Value)
+			var serial int64
+			refresh, retry, expire, minimum := 0, 0, 0, 0
+			mname, rname := "", ""
+			if len(parts) >= 7 {
+				mname = parts[0]
+				rname = parts[1]
+				fmt.Sscanf(parts[2], "%d", &serial)
+				fmt.Sscanf(parts[3], "%d", &refresh)
+				fmt.Sscanf(parts[4], "%d", &retry)
+				fmt.Sscanf(parts[5], "%d", &expire)
+				fmt.Sscanf(parts[6], "%d", &minimum)
+			}
+			exportRec = models.ExportRecordSOA{
+				Mname: mname, Rname: rname, Serial: serial,
+				Refresh: refresh, Retry: retry, Expire: expire, Minimum: minimum,
+				TTL: r.TTL,
+			}
+		}
+
+		if r.Type == "SOA" {
+			// SOA is single
+			domainMap[r.DomainID][r.Name][r.Type] = exportRec
+		} else {
+			// Others are arrays
+			if _, ok := domainMap[r.DomainID][r.Name][r.Type]; !ok {
+				domainMap[r.DomainID][r.Name][r.Type] = []interface{}{}
+			}
+			domainMap[r.DomainID][r.Name][r.Type] = append(domainMap[r.DomainID][r.Name][r.Type].([]interface{}), exportRec)
+		}
 	}
 
 	// Construct response with only enabled domains and those allowed by permissions
@@ -377,12 +579,14 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 			continue
 		}
 
+		recordsForDomain := domainMap[d.ID]
+		if recordsForDomain == nil {
+			recordsForDomain = make(map[string]map[string]interface{})
+		}
+
 		exportDom := models.ExportDomain{
 			Name:    d.Name,
-			Records: recordMap[d.ID],
-		}
-		if exportDom.Records == nil {
-			exportDom.Records = []models.ExportRecord{}
+			Records: recordsForDomain,
 		}
 		resp.Domains = append(resp.Domains, exportDom)
 	}

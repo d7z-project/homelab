@@ -351,52 +351,60 @@
                 >
                   <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
-                      <button
-                        mat-icon-button
-                        (click)="toggleRecord(element)"
-                        [matTooltip]="element.enabled ? '禁用记录' : '启用记录'"
-                        [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
-                      >
-                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                          >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                      @if (element.type !== 'SOA') {
+                        <button
+                          mat-icon-button
+                          (click)="toggleRecord(element)"
+                          [matTooltip]="element.enabled ? '禁用记录' : '启用记录'"
+                          [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
                         >
-                      </button>
+                          <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                            >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                          >
+                        </button>
+                      }
                       <button mat-icon-button (click)="editRecord(element)" matTooltip="编辑">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >edit</mat-icon
                         >
                       </button>
-                      <button
-                        mat-icon-button
-                        color="warn"
-                        (click)="deleteRecord(element)"
-                        matTooltip="删除"
-                      >
-                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                          >delete_outline</mat-icon
+                      @if (element.type !== 'SOA') {
+                        <button
+                          mat-icon-button
+                          color="warn"
+                          (click)="deleteRecord(element)"
+                          matTooltip="删除"
                         >
-                      </button>
+                          <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                            >delete_outline</mat-icon
+                          >
+                        </button>
+                      }
                     } @else {
                       <button mat-icon-button [matMenuTriggerFor]="recordMenu">
                         <mat-icon>more_vert</mat-icon>
                       </button>
                       <mat-menu #recordMenu="matMenu">
                         <ng-template matMenuContent>
-                          <button mat-menu-item (click)="toggleRecord(element)">
-                            <mat-icon
-                              [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
-                              >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
-                            >
-                            <span>{{ element.enabled ? '禁用记录' : '启用记录' }}</span>
-                          </button>
+                          @if (element.type !== 'SOA') {
+                            <button mat-menu-item (click)="toggleRecord(element)">
+                              <mat-icon
+                                [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                                >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                              >
+                              <span>{{ element.enabled ? '禁用记录' : '启用记录' }}</span>
+                            </button>
+                          }
                           <button mat-menu-item (click)="editRecord(element)">
                             <mat-icon>edit</mat-icon>
                             <span>编辑</span>
                           </button>
-                          <button mat-menu-item (click)="deleteRecord(element)">
-                            <mat-icon color="warn">delete_outline</mat-icon>
-                            <span class="text-error">删除</span>
-                          </button>
+                          @if (element.type !== 'SOA') {
+                            <button mat-menu-item (click)="deleteRecord(element)">
+                              <mat-icon color="warn">delete_outline</mat-icon>
+                              <span class="text-error">删除</span>
+                            </button>
+                          }
                         </ng-template>
                       </mat-menu>
                     }

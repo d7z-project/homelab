@@ -51,6 +51,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
               [(ngModel)]="record.name"
               placeholder="例如: www 或 @"
               required
+              [disabled]="isEdit && record.type === 'SOA'"
               pattern="^(@|[\\-a-zA-Z0-9\\*_]+(\\.[\\-a-zA-Z0-9\\*_]+)*)$"
               #nameInput="ngModel"
             />
@@ -65,7 +66,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
 
           <mat-form-field appearance="outline" class="w-32">
             <mat-label>记录类型</mat-label>
-            <mat-select [(ngModel)]="record.type">
+            <mat-select [(ngModel)]="record.type" (selectionChange)="onTypeChange()" [disabled]="isEdit && record.type === 'SOA'">
               @for (t of recordTypes; track t) {
                 <mat-option [value]="t">{{ t }}</mat-option>
               }
@@ -73,7 +74,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
           </mat-form-field>
         </div>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="outline" class="w-full" *ngIf="['SOA', 'SRV', 'CAA'].indexOf(record.type || '') === -1">
           <mat-label>记录值 (Value)</mat-label>
           <input
             matInput
@@ -92,6 +93,99 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
             <mat-error>无效的 IPv6 地址</mat-error>
           }
         </mat-form-field>
+
+        <!-- SOA specific fields -->
+        @if (record.type === 'SOA') {
+          <div class="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="flex gap-4">
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>主名称服务器 (MNAME)</mat-label>
+                <input matInput [(ngModel)]="soaMname" (ngModelChange)="syncValue()" required placeholder="例如: ns1.hover.com." #soaMnameInput="ngModel" pattern="^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}\\.?$" />
+                @if (soaMnameInput.errors?.['pattern']) { <mat-error>格式不正确</mat-error> }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>负责人邮箱 (RNAME)</mat-label>
+                <input matInput [(ngModel)]="soaRname" (ngModelChange)="syncValue()" required placeholder="例如: admin.example.com." #soaRnameInput="ngModel" pattern="^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}\\.?$" />
+                <mat-hint>邮箱中的 @ 需替换为 .</mat-hint>
+                @if (soaRnameInput.errors?.['pattern']) { <mat-error>格式不正确</mat-error> }
+              </mat-form-field>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <mat-form-field appearance="outline">
+                <mat-label>序列号 (SERIAL)</mat-label>
+                <input matInput [value]="soaSerial" disabled />
+                <mat-hint>系统自动更新</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>刷新间隔 (REFRESH)</mat-label>
+                <input matInput [value]="soaRefresh" disabled />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>重试间隔 (RETRY)</mat-label>
+                <input matInput [value]="soaRetry" disabled />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>过期时间 (EXPIRE)</mat-label>
+                <input matInput [value]="soaExpire" disabled />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>最小 TTL (MINIMUM)</mat-label>
+                <input matInput [value]="soaMinimum" disabled />
+              </mat-form-field>
+            </div>
+
+            <div class="p-3 bg-info-container text-on-info-container rounded-xl text-xs flex gap-2">
+              <mat-icon class="text-sm h-4 w-4">info</mat-icon>
+              <span>提示: SOA 记录仅支持修改 MNAME 和 RNAME，其余字段由系统维护。</span>
+            </div>
+          </div>
+        }
+
+        <!-- SRV specific fields -->
+        @if (record.type === 'SRV') {
+          <div class="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline">
+                <mat-label>权重 (Weight)</mat-label>
+                <input matInput type="number" [(ngModel)]="srvWeight" (ngModelChange)="syncValue()" min="0" max="65535" required />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>端口 (Port)</mat-label>
+                <input matInput type="number" [(ngModel)]="srvPort" (ngModelChange)="syncValue()" min="0" max="65535" required />
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>目标主机 (Target)</mat-label>
+              <input matInput [(ngModel)]="srvTarget" (ngModelChange)="syncValue()" required placeholder="例如: server.example.com." />
+            </mat-form-field>
+          </div>
+        }
+
+        <!-- CAA specific fields -->
+        @if (record.type === 'CAA') {
+          <div class="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline">
+                <mat-label>标志 (Flags)</mat-label>
+                <input matInput type="number" [(ngModel)]="caaFlags" (ngModelChange)="syncValue()" min="0" max="255" required />
+                <mat-hint>通常为 0</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>标签 (Tag)</mat-label>
+                <mat-select [(ngModel)]="caaTag" (selectionChange)="syncValue()">
+                  <mat-option value="issue">issue (允许特定 CA 颁发证书)</mat-option>
+                  <mat-option value="issuewild">issuewild (允许颁发泛域名证书)</mat-option>
+                  <mat-option value="iodef">iodef (CA 报告违规通知 URL)</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>CA 域名或 URL</mat-label>
+              <input matInput [(ngModel)]="caaValue" (ngModelChange)="syncValue()" required placeholder='例如: letsencrypt.org' />
+            </mat-form-field>
+          </div>
+        }
 
         <div class="flex gap-4">
           <mat-form-field appearance="outline" class="flex-1">
@@ -114,7 +208,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
           @if (record.type === 'MX' || record.type === 'SRV') {
             <mat-form-field appearance="outline" class="w-32">
               <mat-label>优先级</mat-label>
-              <input matInput type="number" [(ngModel)]="record.priority" />
+              <input matInput type="number" [(ngModel)]="record.priority" (ngModelChange)="syncValue()" min="0" max="65535" />
             </mat-form-field>
           }
         </div>
@@ -127,6 +221,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
           <mat-slide-toggle
             color="primary"
             [(ngModel)]="record.enabled"
+            [disabled]="record.type === 'SOA'"
           >
           </mat-slide-toggle>
         </div>
@@ -169,6 +264,25 @@ export class CreateRecordDialogComponent {
   domains: ModelsDomain[] = [];
   recordTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
 
+  // SOA parts
+  soaMname = '';
+  soaRname = '';
+  soaSerial = '';
+  soaRefresh = '';
+  soaRetry = '';
+  soaExpire = '';
+  soaMinimum = '';
+
+  // SRV parts (Priority is handled by record.priority)
+  srvWeight = 0;
+  srvPort = 0;
+  srvTarget = '';
+
+  // CAA parts
+  caaFlags = 0;
+  caaTag = 'issue';
+  caaValue = '';
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: { record: ModelsRecord | null; domains: ModelsDomain[]; defaultDomainId?: string },
@@ -177,10 +291,76 @@ export class CreateRecordDialogComponent {
     if (data.record) {
       this.isEdit = true;
       this.record = { ...data.record };
+      if (this.record.type === 'SOA') {
+        if (!this.recordTypes.includes('SOA')) {
+          this.recordTypes.push('SOA');
+        }
+      }
+      this.parseValue();
     } else if (data.defaultDomainId) {
       this.record.domainId = data.defaultDomainId;
     } else if (this.domains.length > 0) {
       this.record.domainId = this.domains[0].id || '';
+    }
+  }
+
+  onTypeChange() {
+    this.record.value = '';
+    this.syncValue();
+  }
+
+  parseValue() {
+    if (!this.record.value) return;
+    const parts = this.record.value.split(/\s+/);
+    
+    if (this.record.type === 'SOA') {
+      if (parts.length >= 2) {
+        this.soaMname = parts[0];
+        this.soaRname = parts[1];
+        this.soaSerial = parts[2] || '';
+        this.soaRefresh = parts[3] || '';
+        this.soaRetry = parts[4] || '';
+        this.soaExpire = parts[5] || '';
+        this.soaMinimum = parts[6] || '';
+      }
+    } else if (this.record.type === 'SRV') {
+      if (parts.length >= 2) {
+        this.srvWeight = parseInt(parts[0]) || 0;
+        this.srvPort = parseInt(parts[1]) || 0;
+        this.srvTarget = parts.slice(2).join(' ');
+      }
+    } else if (this.record.type === 'CAA') {
+      if (parts.length >= 2) {
+        this.caaFlags = parseInt(parts[0]) || 0;
+        this.caaTag = parts[1] || 'issue';
+        // Handle potentially quoted values
+        let val = parts.slice(2).join(' ');
+        if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.substring(1, val.length - 1);
+        }
+        this.caaValue = val;
+      }
+    }
+  }
+
+  ensureTrailingDot(val: string): string {
+    if (!val) return '';
+    val = val.trim();
+    return val.endsWith('.') ? val : val + '.';
+  }
+
+  syncValue() {
+    if (this.record.type === 'SOA') {
+      const mname = this.ensureTrailingDot(this.soaMname);
+      const rname = this.ensureTrailingDot(this.soaRname);
+      this.record.value = `${mname} ${rname} ${this.soaSerial} ${this.soaRefresh} ${this.soaRetry} ${this.soaExpire} ${this.soaMinimum}`.trim();
+    } else if (this.record.type === 'SRV') {
+      const target = this.ensureTrailingDot(this.srvTarget);
+      this.record.value = `${this.srvWeight} ${this.srvPort} ${target}`.trim();
+    } else if (this.record.type === 'CAA') {
+      this.record.value = `${this.caaFlags} ${this.caaTag} "${this.caaValue}"`;
+    } else if (this.record.type === 'CNAME' || this.record.type === 'MX' || this.record.type === 'NS') {
+      this.record.value = this.ensureTrailingDot(this.record.value || '');
     }
   }
 
@@ -194,6 +374,8 @@ export class CreateRecordDialogComponent {
         return '别名域名, 如 example.com.';
       case 'MX':
         return '邮件服务器, 如 mail.example.com.';
+      case 'SOA':
+        return 'ns1.example.com. admin.example.com. 2026030301 7200 3600 1209600 3600';
       default:
         return '记录内容...';
     }
@@ -212,12 +394,32 @@ export class CreateRecordDialogComponent {
 
   isValid(): boolean {
     const name = this.record.name?.trim();
-    if (!name || !this.record.domainId || !this.record.type || !this.record.value) return false;
+    if (!name || !this.record.domainId || !this.record.type) return false;
     if (this.record.ttl === undefined || this.record.ttl < 1) return false;
+
+    // Value must exist (either directly or via parts)
+    if (!this.record.value && this.record.type !== 'SOA' && this.record.type !== 'SRV' && this.record.type !== 'CAA') return false;
 
     // Type-specific value validation
     if (this.record.type === 'A' && !this.isValidIPv4()) return false;
     if (this.record.type === 'AAAA' && !this.isValidIPv6()) return false;
+    
+    if (this.record.type === 'SOA') {
+      const dnsPattern = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}\.?$/i;
+      if (!dnsPattern.test(this.soaMname) || !dnsPattern.test(this.soaRname)) return false;
+    }
+
+    if (this.record.type === 'SRV') {
+      if (this.srvWeight < 0 || this.srvWeight > 65535) return false;
+      if (this.srvPort < 0 || this.srvPort > 65535) return false;
+      if (!this.srvTarget) return false;
+      if (this.record.priority === undefined || this.record.priority < 0 || this.record.priority > 65535) return false;
+    }
+
+    if (this.record.type === 'CAA') {
+      if (this.caaFlags < 0 || this.caaFlags > 255) return false;
+      if (!this.caaValue) return false;
+    }
 
     // Basic name pattern check
     const namePattern = /^(@|[\\-a-zA-Z0-9\\*_]+(\\.[\\-a-zA-Z0-9\\*_]+)*)$/;

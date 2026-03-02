@@ -8,7 +8,6 @@ export * from './modelsAuditLog';
 export * from './modelsDnsExportResponse';
 export * from './modelsDomain';
 export * from './modelsExportDomain';
-export * from './modelsExportRecord';
 export * from './modelsLoginRequest';
 export * from './modelsLoginResponse';
 export * from './modelsPolicyRule';

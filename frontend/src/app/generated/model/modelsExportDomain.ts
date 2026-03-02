@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsExportRecord } from './modelsExportRecord';
 
 
 export interface ModelsExportDomain { 
     name?: string;
-    records?: Array<ModelsExportRecord>;
+    records?: { [key: string]: { [key: string]: any; }; };
 }
 
