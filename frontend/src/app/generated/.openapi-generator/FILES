@@ -11,12 +11,15 @@ index.ts
 model/auditLogsGet200Response.ts
 model/commonPaginatedResponse.ts
 model/controllersAuthInfo.ts
-model/controllersSimulatePermissionsRequest.ts
 model/dnsDomainsGet200Response.ts
 model/dnsRecordsGet200Response.ts
 model/models.ts
+model/modelsAuditCleanupResponse.ts
 model/modelsAuditLog.ts
+model/modelsDnsExportResponse.ts
 model/modelsDomain.ts
+model/modelsExportDomain.ts
+model/modelsExportRecord.ts
 model/modelsLoginRequest.ts
 model/modelsLoginResponse.ts
 model/modelsPolicyRule.ts
@@ -25,6 +28,7 @@ model/modelsResourcePermissions.ts
 model/modelsRole.ts
 model/modelsRoleBinding.ts
 model/modelsServiceAccount.ts
+model/modelsSimulatePermissionsRequest.ts
 model/rbacRolebindingsGet200Response.ts
 model/rbacRolesGet200Response.ts
 model/rbacServiceaccountsGet200Response.ts

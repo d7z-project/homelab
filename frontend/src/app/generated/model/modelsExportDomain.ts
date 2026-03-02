@@ -7,12 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsPolicyRule } from './modelsPolicyRule';
+import { ModelsExportRecord } from './modelsExportRecord';
 
 
-export interface ModelsRole { 
-    id?: string;
+export interface ModelsExportDomain { 
     name?: string;
-    rules?: Array<ModelsPolicyRule>;
+    records?: Array<ModelsExportRecord>;
 }
 

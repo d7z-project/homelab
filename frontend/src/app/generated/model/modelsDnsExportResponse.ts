@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsExportDomain } from './modelsExportDomain';
 
 
-export interface ControllersSimulatePermissionsRequest { 
-    resource?: string;
-    serviceAccountName?: string;
-    verb?: string;
+export interface ModelsDnsExportResponse { 
+    domains?: Array<ModelsExportDomain>;
 }
 

@@ -21,18 +21,18 @@ var (
 
 var saLastUsed common.SyncMap[string, time.Time]
 
-func UpdateSALastUsed(saName string) {
+func UpdateSALastUsed(saID string) {
 	now := time.Now()
-	if lastUpdate, ok := saLastUsed.Load(saName); ok {
+	if lastUpdate, ok := saLastUsed.Load(saID); ok {
 		if now.Sub(lastUpdate) < 5*time.Minute {
 			return // Skip if updated recently
 		}
 	}
-	saLastUsed.Store(saName, now)
+	saLastUsed.Store(saID, now)
 
 	go func() {
 		ctx := context.Background()
-		sa, err := rbacrepo.GetServiceAccount(ctx, saName)
+		sa, err := rbacrepo.GetServiceAccount(ctx, saID)
 		if err == nil && sa != nil {
 			sa.LastUsedAt = now.Format(time.RFC3339)
 			_ = rbacrepo.SaveServiceAccount(ctx, sa)
@@ -78,8 +78,8 @@ func GetTokenSA(ctx context.Context, token string) (string, error) {
 	return rbacrepo.GetTokenSA(ctx, token)
 }
 
-func GetPermissions(ctx context.Context, saName, verb, resource string) (*models.ResourcePermissions, error) {
-	if saName == "root" {
+func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.ResourcePermissions, error) {
+	if saID == "root" {
 		return &models.ResourcePermissions{
 			AllowedAll: true,
 			MatchedRule: &models.PolicyRule{Resource: "*", Verbs: []string{"*"}},
@@ -94,9 +94,9 @@ func GetPermissions(ctx context.Context, saName, verb, resource string) (*models
 	perms := &models.ResourcePermissions{}
 
 	for _, rb := range rbs {
-		if rb.Enabled && rb.ServiceAccountName == saName {
-			for _, roleName := range rb.RoleNames {
-				role, err := rbacrepo.GetRole(ctx, roleName)
+		if rb.Enabled && rb.ServiceAccountID == saID {
+			for _, roleID := range rb.RoleIDs {
+				role, err := rbacrepo.GetRole(ctx, roleID)
 				if err != nil {
 					continue
 				}

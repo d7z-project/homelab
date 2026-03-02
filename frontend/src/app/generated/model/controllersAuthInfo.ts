@@ -10,7 +10,7 @@
 
 
 export interface ControllersAuthInfo { 
-    name?: string;
+    id?: string;
     type?: string;
 }
 

@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { FormsModule } from '@angular/forms';
 import { RbacService, ModelsServiceAccount, ModelsResourcePermissions } from '../../generated';
 import { firstValueFrom } from 'rxjs';
@@ -43,14 +43,28 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           <!-- Configuration Card -->
           <div class="bg-surface border border-outline-variant rounded-3xl p-6 sm:p-8 shadow-sm">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- ServiceAccount Searchable Autocomplete -->
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
                 <mat-label>目标服务账号 (ServiceAccount)</mat-label>
-                <mat-select [(ngModel)]="selectedSa">
-                  @for (sa of saList(); track sa.name) {
-                    <mat-option [value]="sa.name">{{ sa.name }}</mat-option>
+                <input
+                  matInput
+                  [matAutocomplete]="saAuto"
+                  [(ngModel)]="saSearchValue"
+                  (input)="onSaSearch($any($event.target).value)"
+                  placeholder="搜索账号 ID 或名称..."
+                  required
+                />
+                <mat-autocomplete #saAuto="matAutocomplete" [displayWith]="displaySaFn.bind(this)" (optionSelected)="onSaSelected($event)">
+                  @for (sa of filteredSa(); track sa.id) {
+                    <mat-option [value]="sa">
+                      <div class="flex flex-col py-1">
+                        <span class="font-medium">{{ sa.name || '未命名账号' }}</span>
+                        <span class="text-[10px] text-outline font-mono">{{ sa.id }}</span>
+                      </div>
+                    </mat-option>
                   }
-                </mat-select>
-                <mat-hint>选择要模拟的账号</mat-hint>
+                </mat-autocomplete>
+                <mat-hint>当前已选 ID: <code class="font-bold text-primary">{{ selectedSaID() || '未选择' }}</code></mat-hint>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
@@ -99,7 +113,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 color="primary"
                 class="!rounded-2xl !px-12"
                 (click)="simulate()"
-                [disabled]="loading() || !selectedSa() || !verb() || !resource()"
+                [disabled]="loading() || !selectedSaID() || !verb() || !resource()"
               >
                 @if (loading()) {
                   <mat-spinner diameter="20" class="mr-2"></mat-spinner>
@@ -155,7 +169,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                             : '拒绝访问'
                       }}
                     </h2>
-                    <p class="text-sm opacity-60">基于当前 {{ selectedSa() }} 的角色绑定计算得出</p>
+                    <p class="text-sm opacity-60">基于当前所选账号计算得出</p>
                   </div>
                 </div>
 
@@ -271,7 +285,10 @@ export class RbacSimulatorComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
 
   saList = signal<ModelsServiceAccount[]>([]);
-  selectedSa = signal('');
+  saSearchValue = '';
+  filteredSa = signal<ModelsServiceAccount[]>([]);
+  selectedSaID = signal('');
+  
   verb = signal('read');
   resource = signal('');
   suggestions = signal<string[]>([]);
@@ -280,16 +297,28 @@ export class RbacSimulatorComponent implements OnInit {
   result = signal<ModelsResourcePermissions | null>(null);
 
   ngOnInit() {
-    this.loadSAs();
+    this.onSaSearch(''); // Load initial 50
   }
 
-  async loadSAs() {
+  displaySaFn(sa: any): string {
+    if (typeof sa === 'string') return sa;
+    return sa ? (sa.name || sa.id) : '';
+  }
+
+  async onSaSearch(val: string) {
+    if (typeof val !== 'string') return;
     try {
-      const data = await firstValueFrom(this.rbacService.rbacServiceaccountsGet(0, 1000, ''));
-      this.saList.set(data.items || []);
-    } catch (err) {
-      this.snackBar.open('获取服务账号列表失败', '关闭', { duration: 3000 });
+      const data = await firstValueFrom(this.rbacService.rbacServiceaccountsGet(1, 50, val));
+      this.filteredSa.set(data.items || []);
+    } catch (e) {
+      this.filteredSa.set([]);
     }
+  }
+
+  onSaSelected(event: MatAutocompleteSelectedEvent) {
+    const sa = event.option.value as ModelsServiceAccount;
+    this.selectedSaID.set(sa.id || '');
+    this.saSearchValue = sa.name || sa.id || '';
   }
 
   async onResourceInput() {
@@ -317,7 +346,7 @@ export class RbacSimulatorComponent implements OnInit {
     try {
       const res = await firstValueFrom(
         this.rbacService.rbacSimulatePost({
-          serviceAccountName: this.selectedSa(),
+          serviceAccountId: this.selectedSaID(),
           verb: this.verb(),
           resource: this.resource(),
         }),

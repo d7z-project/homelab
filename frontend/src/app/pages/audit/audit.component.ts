@@ -1,42 +1,48 @@
-import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { FormsModule } from '@angular/forms';
-import { AuditService, ModelsAuditLog } from '../../generated';
-import { firstValueFrom } from 'rxjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { UiService } from '../../ui.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { AuditService, ModelsAuditLog, AuthService, ControllersAuthInfo } from '../../generated';
+import { firstValueFrom } from 'rxjs';
+import { UiService } from '../../ui.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuditDetailDialogComponent } from './audit-detail-dialog.component';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
-import { AuditDetailDialogComponent } from './audit-detail-dialog.component';
+import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 
 @Component({
   selector: 'app-audit',
   standalone: true,
   imports: [
     CommonModule,
+    MatCardModule,
     MatTableModule,
     MatIconModule,
-    MatProgressSpinnerModule,
     MatButtonModule,
+    MatChipsModule,
     MatTooltipModule,
+    MatProgressSpinnerModule,
     MatDialogModule,
-    FormsModule,
   ],
   templateUrl: './audit.component.html',
 })
-export class AuditComponent implements OnInit {
+export class AuditComponent implements OnInit, OnDestroy {
   private auditService = inject(AuditService);
+  private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
-  public uiService = inject(UiService);
   private dialog = inject(MatDialog);
+  public uiService = inject(UiService);
   private breakpointObserver = inject(BreakpointObserver);
+
+  private scrollListener?: () => void;
 
   isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
@@ -45,86 +51,150 @@ export class AuditComponent implements OnInit {
 
   logs = signal<ModelsAuditLog[]>([]);
   total = signal(0);
-  page = signal(0);
-  pageSize = signal(50);
+  page = signal(1);
+  pageSize = signal(20);
+  search = signal('');
   loading = signal(false);
   loadingMore = signal(false);
+  showScrollTop = signal(false);
 
-  search = signal('');
+  // User auth state
+  authInfo = signal<ControllersAuthInfo | null>(null);
+  isRoot = computed(() => this.authInfo()?.type === 'root');
 
-  // Use computed for table columns to ensure stability and proper initialization
   displayedColumns = computed(() =>
     this.isHandset()
-      ? ['timestamp', 'action', 'resource', 'status']
-      : ['timestamp', 'subject', 'action', 'resource', 'targetId', 'message', 'status'],
+      ? ['timestamp', 'subject', 'action', 'status']
+      : ['timestamp', 'subject', 'action', 'resource', 'targetId', 'status', 'actions'],
   );
 
   constructor() {}
 
-  hasMore = computed(() => this.logs().length < this.total());
-
-  openSearch() {
-    this.uiService.openSearch({
-      placeholder: '搜索审计日志...',
-      value: this.search(),
-      onSearch: (v) => {
-        this.search.set(v);
-        this.refresh();
-      },
-    });
+  ngOnInit(): void {
+    this.loadAuthInfo();
+    this.loadLogs(true);
+    this.setupScrollListener();
   }
 
-  ngOnInit() {
-    this.refresh();
-  }
-
-  onSearchChange(event: any) {
-    this.refresh();
-  }
-
-  clearSearch() {
-    this.search.set('');
-    this.refresh();
-  }
-
-  async refresh() {
-    this.loading.set(true);
-    this.page.set(0);
-    try {
-      const data = await firstValueFrom(
-        this.auditService.auditLogsGet(this.page(), this.pageSize(), this.search()),
-      );
-      this.logs.set(data.items || []);
-      this.total.set(data.total || 0);
-    } catch (err) {
-      this.snackBar.open('加载日志失败', '关闭', { duration: 3000 });
-    } finally {
-      this.loading.set(false);
+  ngOnDestroy(): void {
+    if (this.scrollListener) {
+      const scrollElement = document.querySelector('mat-sidenav-content');
+      scrollElement?.removeEventListener('scroll', this.scrollListener);
     }
   }
 
-  async loadMore() {
-    if (!this.hasMore()) return;
-    this.loadingMore.set(true);
-    this.page.update((p) => p + 1);
+  async loadAuthInfo() {
     try {
-      const data = await firstValueFrom(
+      const info = await firstValueFrom(this.authService.infoGet());
+      this.authInfo.set(info);
+    } catch (e) {}
+  }
+
+  private setupScrollListener() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (!scrollElement) return;
+
+    this.scrollListener = () => {
+      this.showScrollTop.set(scrollElement.scrollTop > 300);
+      const atBottom =
+        scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
+
+      if (atBottom && this.hasMore() && !this.loadingMore() && !this.loading()) {
+        this.loadMore();
+      }
+    };
+    scrollElement.addEventListener('scroll', this.scrollListener);
+  }
+
+  scrollToTop() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (scrollElement) {
+      scrollElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  async loadLogs(reset = false) {
+    if (reset) {
+      this.loading.set(true);
+      this.page.set(1);
+    }
+
+    try {
+      const res = await firstValueFrom(
         this.auditService.auditLogsGet(this.page(), this.pageSize(), this.search()),
       );
-      this.logs.update((prev) => [...prev, ...(data.items || [])]);
+      if (reset) {
+        this.logs.set(res.items || []);
+      } else {
+        const currentLogs = this.logs();
+        const newItems = (res.items || []).filter(
+          (newItem) => !currentLogs.some((existing) => existing.id === newItem.id),
+        );
+        this.logs.update((prev) => [...prev, ...newItems]);
+      }
+      this.total.set(res.total || 0);
     } catch (err) {
-      this.page.update((p) => p - 1);
-      this.snackBar.open('加载更多失败', '关闭', { duration: 3000 });
+      this.snackBar.open('加载审计日志失败', '重试', { duration: 3000 }).onAction().subscribe(() => this.loadLogs(reset));
     } finally {
+      this.loading.set(false);
       this.loadingMore.set(false);
     }
   }
 
+  loadMore() {
+    if (this.loadingMore() || !this.hasMore()) return;
+    this.loadingMore.set(true);
+    this.page.update((p) => p + 1);
+    this.loadLogs();
+  }
+
+  hasMore = computed(() => this.logs().length < this.total());
+
+  onSearch(term: string) {
+    this.search.set(term);
+    this.loadLogs(true);
+  }
+
+  openSearch() {
+    this.uiService.openSearch({
+      placeholder: '搜索操作人、动作、资源或目标...',
+      value: this.search(),
+      onSearch: (v) => this.onSearch(v),
+    });
+  }
+
   showDetail(log: ModelsAuditLog) {
+    this.dialog.open(AuditDetailDialogComponent, {
+      data: log,
+      maxWidth: '90vw',
+      width: '600px',
+    });
+  }
+
+  async cleanup() {
     requestAnimationFrame(() => {
-      this.dialog.open(AuditDetailDialogComponent, {
-        maxWidth: '95vw',
-        data: log,
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: '清理审计日志',
+          message: '确定要清理 30 天前的所有历史日志吗？此操作不可撤销。',
+          confirmText: '清理 30 天前日志',
+          color: 'warn'
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(async result => {
+        if (result) {
+          this.loading.set(true);
+          try {
+            const res = await firstValueFrom(this.auditService.auditLogsCleanupPost(30));
+            this.snackBar.open(`清理成功，已删除 ${res.deleted} 条记录`, '关闭', { duration: 3000 });
+            this.loadLogs(true);
+          } catch (err: any) {
+            this.snackBar.open(err.error?.message || '清理失败', '关闭', { duration: 3000 });
+          } finally {
+            this.loading.set(false);
+          }
+        }
       });
     });
   }

@@ -7,12 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsPolicyRule } from './modelsPolicyRule';
 
 
-export interface ModelsRole { 
-    id?: string;
-    name?: string;
-    rules?: Array<ModelsPolicyRule>;
+export interface ModelsSimulatePermissionsRequest { 
+    resource?: string;
+    serviceAccountId?: string;
+    verb?: string;
 }
 

@@ -12,12 +12,8 @@
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "ApiKeyAuth": []
                     }
-                ],
-                "description": "Retrieve a paginated list of audit logs",
-                "consumes": [
-                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -29,19 +25,19 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number (0-based)",
+                        "description": "Page number",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Number of items per page",
+                        "description": "Items per page",
                         "name": "pageSize",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Search query by subject, action or resource",
+                        "description": "Search query",
                         "name": "search",
                         "in": "query"
                     }
@@ -71,8 +67,46 @@
                 }
             }
         },
+        "/audit/logs/cleanup": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audit"
+                ],
+                "summary": "Cleanup old audit logs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Logs older than these days will be deleted",
+                        "name": "days",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AuditCleanupResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/dns/domains": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -125,6 +159,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -158,6 +197,11 @@
         },
         "/dns/domains/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -196,6 +240,14 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "dns"
                 ],
@@ -219,8 +271,38 @@
                 }
             }
         },
+        "/dns/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns all domains and their associated records without internal IDs. Requires a valid token but no specific permissions.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dns"
+                ],
+                "summary": "Export all DNS domains and records",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DnsExportResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/dns/records": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -279,6 +361,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -312,6 +399,11 @@
         },
         "/dns/records/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -350,6 +442,14 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "dns"
                 ],
@@ -375,6 +475,11 @@
         },
         "/info": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -427,6 +532,11 @@
         },
         "/logout": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -446,6 +556,11 @@
         },
         "/rbac/resources/suggest": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -476,6 +591,11 @@
         },
         "/rbac/rolebindings": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -498,7 +618,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Search by name",
+                        "description": "Search by name or id",
                         "name": "search",
                         "in": "query"
                     }
@@ -528,6 +648,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -559,8 +684,13 @@
                 }
             }
         },
-        "/rbac/rolebindings/{name}": {
+        "/rbac/rolebindings/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -574,8 +704,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Binding Name",
-                        "name": "name",
+                        "description": "Role Binding ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -599,6 +729,14 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "rbac"
                 ],
@@ -606,8 +744,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Binding Name",
-                        "name": "name",
+                        "description": "Role Binding ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -624,6 +762,11 @@
         },
         "/rbac/roles": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -646,7 +789,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Search by name",
+                        "description": "Search by name or id",
                         "name": "search",
                         "in": "query"
                     }
@@ -676,6 +819,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -707,8 +855,13 @@
                 }
             }
         },
-        "/rbac/roles/{name}": {
+        "/rbac/roles/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -722,8 +875,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Name",
-                        "name": "name",
+                        "description": "Role ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -747,6 +900,14 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "rbac"
                 ],
@@ -754,8 +915,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Name",
-                        "name": "name",
+                        "description": "Role ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -772,6 +933,11 @@
         },
         "/rbac/serviceaccounts": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -794,7 +960,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Search by name",
+                        "description": "Search by name or id",
                         "name": "search",
                         "in": "query"
                     }
@@ -824,6 +990,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -855,8 +1026,13 @@
                 }
             }
         },
-        "/rbac/serviceaccounts/{name}": {
+        "/rbac/serviceaccounts/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -870,8 +1046,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service Account Name",
-                        "name": "name",
+                        "description": "Service Account ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -895,6 +1071,14 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "rbac"
                 ],
@@ -902,8 +1086,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service Account Name",
-                        "name": "name",
+                        "description": "Service Account ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -918,8 +1102,13 @@
                 }
             }
         },
-        "/rbac/serviceaccounts/{name}/reset": {
+        "/rbac/serviceaccounts/{id}/reset": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -930,8 +1119,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service Account Name",
-                        "name": "name",
+                        "description": "Service Account ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -948,6 +1137,11 @@
         },
         "/rbac/simulate": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -965,7 +1159,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.SimulatePermissionsRequest"
+                            "$ref": "#/definitions/models.SimulatePermissionsRequest"
                         }
                     }
                 ],
@@ -981,6 +1175,11 @@
         },
         "/rbac/verbs/suggest": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1029,7 +1228,7 @@
         "controllers.AuthInfo": {
             "type": "object",
             "properties": {
-                "name": {
+                "id": {
                     "type": "string"
                 },
                 "type": {
@@ -1037,17 +1236,11 @@
                 }
             }
         },
-        "controllers.SimulatePermissionsRequest": {
+        "models.AuditCleanupResponse": {
             "type": "object",
             "properties": {
-                "resource": {
-                    "type": "string"
-                },
-                "serviceAccountName": {
-                    "type": "string"
-                },
-                "verb": {
-                    "type": "string"
+                "deleted": {
+                    "type": "integer"
                 }
             }
         },
@@ -1093,6 +1286,17 @@
                 }
             }
         },
+        "models.DnsExportResponse": {
+            "type": "object",
+            "properties": {
+                "domains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ExportDomain"
+                    }
+                }
+            }
+        },
         "models.Domain": {
             "type": "object",
             "properties": {
@@ -1117,6 +1321,40 @@
                 },
                 "updatedAt": {
                     "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "models.ExportDomain": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ExportRecord"
+                    }
+                }
+            }
+        },
+        "models.ExportRecord": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "ttl": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }
@@ -1219,6 +1457,9 @@
         "models.Role": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1236,16 +1477,19 @@
                 "enabled": {
                     "type": "boolean"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
-                "roleNames": {
+                "roleIds": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "serviceAccountName": {
+                "serviceAccountId": {
                     "type": "string"
                 }
             }
@@ -1256,6 +1500,9 @@
                 "comments": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "lastUsedAt": {
                     "type": "string"
                 },
@@ -1263,6 +1510,20 @@
                     "type": "string"
                 },
                 "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SimulatePermissionsRequest": {
+            "type": "object",
+            "properties": {
+                "resource": {
+                    "type": "string"
+                },
+                "serviceAccountId": {
+                    "type": "string"
+                },
+                "verb": {
                     "type": "string"
                 }
             }

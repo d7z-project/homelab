@@ -16,8 +16,9 @@ import (
 // @Produce json
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
-// @Param search query string false "Search by name"
+// @Param search query string false "Search by name or id"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.ServiceAccount}
+// @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [get]
 func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
@@ -38,6 +39,7 @@ func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param sa body models.ServiceAccount true "Service Account"
 // @Success 200 {object} models.ServiceAccount
+// @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [post]
 func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	var sa models.ServiceAccount
@@ -59,19 +61,20 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param name path string true "Service Account Name"
+// @Param id path string true "Service Account ID"
 // @Param sa body models.ServiceAccount true "Service Account"
 // @Success 200 {object} models.ServiceAccount
-// @Router /rbac/serviceaccounts/{name} [put]
+// @Security ApiKeyAuth
+// @Router /rbac/serviceaccounts/{id} [put]
 func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	id := chi.URLParam(r, "id")
 	var sa models.ServiceAccount
 	if err := render.Bind(r, &sa); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	res, err := rbacservice.UpdateServiceAccount(r.Context(), name, &sa)
+	res, err := rbacservice.UpdateServiceAccount(r.Context(), id, &sa)
 	if err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -82,12 +85,14 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteServiceAccountHandler godoc
 // @Summary Delete a service account
 // @Tags rbac
-// @Param name path string true "Service Account Name"
+// @Produce json
+// @Param id path string true "Service Account ID"
 // @Success 200 {string} string "success"
-// @Router /rbac/serviceaccounts/{name} [delete]
+// @Security ApiKeyAuth
+// @Router /rbac/serviceaccounts/{id} [delete]
 func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
-	if err := rbacservice.DeleteServiceAccount(r.Context(), name); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := rbacservice.DeleteServiceAccount(r.Context(), id); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -100,8 +105,9 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
-// @Param search query string false "Search by name"
+// @Param search query string false "Search by name or id"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Role}
+// @Security ApiKeyAuth
 // @Router /rbac/roles [get]
 func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
@@ -122,6 +128,7 @@ func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param role body models.Role true "Role"
 // @Success 200 {object} models.Role
+// @Security ApiKeyAuth
 // @Router /rbac/roles [post]
 func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 	var role models.Role
@@ -143,19 +150,20 @@ func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param name path string true "Role Name"
+// @Param id path string true "Role ID"
 // @Param role body models.Role true "Role"
 // @Success 200 {object} models.Role
-// @Router /rbac/roles/{name} [put]
+// @Security ApiKeyAuth
+// @Router /rbac/roles/{id} [put]
 func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	id := chi.URLParam(r, "id")
 	var role models.Role
 	if err := render.Bind(r, &role); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	res, err := rbacservice.UpdateRole(r.Context(), name, &role)
+	res, err := rbacservice.UpdateRole(r.Context(), id, &role)
 	if err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -166,12 +174,14 @@ func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteRoleHandler godoc
 // @Summary Delete a role
 // @Tags rbac
-// @Param name path string true "Role Name"
+// @Produce json
+// @Param id path string true "Role ID"
 // @Success 200 {string} string "success"
-// @Router /rbac/roles/{name} [delete]
+// @Security ApiKeyAuth
+// @Router /rbac/roles/{id} [delete]
 func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
-	if err := rbacservice.DeleteRole(r.Context(), name); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := rbacservice.DeleteRole(r.Context(), id); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -184,8 +194,9 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
-// @Param search query string false "Search by name"
+// @Param search query string false "Search by name or id"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.RoleBinding}
+// @Security ApiKeyAuth
 // @Router /rbac/rolebindings [get]
 func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
@@ -206,6 +217,7 @@ func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param rb body models.RoleBinding true "Role Binding"
 // @Success 200 {object} models.RoleBinding
+// @Security ApiKeyAuth
 // @Router /rbac/rolebindings [post]
 func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 	var rb models.RoleBinding
@@ -227,19 +239,20 @@ func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param name path string true "Role Binding Name"
+// @Param id path string true "Role Binding ID"
 // @Param rb body models.RoleBinding true "Role Binding"
 // @Success 200 {object} models.RoleBinding
-// @Router /rbac/rolebindings/{name} [put]
+// @Security ApiKeyAuth
+// @Router /rbac/rolebindings/{id} [put]
 func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	id := chi.URLParam(r, "id")
 	var rb models.RoleBinding
 	if err := render.Bind(r, &rb); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	res, err := rbacservice.UpdateRoleBinding(r.Context(), name, &rb)
+	res, err := rbacservice.UpdateRoleBinding(r.Context(), id, &rb)
 	if err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -250,12 +263,14 @@ func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteRoleBindingHandler godoc
 // @Summary Delete a role binding
 // @Tags rbac
-// @Param name path string true "Role Binding Name"
+// @Produce json
+// @Param id path string true "Role Binding ID"
 // @Success 200 {string} string "success"
-// @Router /rbac/rolebindings/{name} [delete]
+// @Security ApiKeyAuth
+// @Router /rbac/rolebindings/{id} [delete]
 func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
-	if err := rbacservice.DeleteRoleBinding(r.Context(), name); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := rbacservice.DeleteRoleBinding(r.Context(), id); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -266,12 +281,13 @@ func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Reset a service account token
 // @Tags rbac
 // @Produce json
-// @Param name path string true "Service Account Name"
+// @Param id path string true "Service Account ID"
 // @Success 200 {object} models.ServiceAccount
-// @Router /rbac/serviceaccounts/{name}/reset [post]
+// @Security ApiKeyAuth
+// @Router /rbac/serviceaccounts/{id}/reset [post]
 func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
-	res, err := rbacservice.ResetServiceAccountToken(r.Context(), name)
+	id := chi.URLParam(r, "id")
+	res, err := rbacservice.ResetServiceAccountToken(r.Context(), id)
 	if err != nil {
 		common.BadRequestError(w, r, http.StatusNotFound, err.Error())
 		return
@@ -279,32 +295,23 @@ func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, res)
 }
 
-type SimulatePermissionsRequest struct {
-	ServiceAccountName string `json:"serviceAccountName"`
-	Verb               string `json:"verb"`
-	Resource           string `json:"resource"`
-}
-
-func (s *SimulatePermissionsRequest) Bind(r *http.Request) error {
-	return nil
-}
-
 // SimulatePermissionsHandler godoc
 // @Summary Simulate permissions for a service account
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param request body SimulatePermissionsRequest true "Simulation Request"
+// @Param request body models.SimulatePermissionsRequest true "Simulation Request"
 // @Success 200 {object} models.ResourcePermissions
+// @Security ApiKeyAuth
 // @Router /rbac/simulate [post]
 func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
-	var req SimulatePermissionsRequest
+	var req models.SimulatePermissionsRequest
 	if err := render.Bind(r, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	res, err := rbacservice.SimulatePermissions(r.Context(), req.ServiceAccountName, req.Verb, req.Resource)
+	res, err := rbacservice.SimulatePermissions(r.Context(), req.ServiceAccountID, req.Verb, req.Resource)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -318,6 +325,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param prefix query string false "Prefix to filter resources"
 // @Success 200 {array} string
+// @Security ApiKeyAuth
 // @Router /rbac/resources/suggest [get]
 func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 	prefix := r.URL.Query().Get("prefix")
@@ -335,6 +343,7 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param resource query string false "Resource prefix"
 // @Success 200 {array} string
+// @Security ApiKeyAuth
 // @Router /rbac/verbs/suggest [get]
 func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
 	resource := r.URL.Query().Get("resource")
@@ -354,16 +363,16 @@ func RBACRouter(r chi.Router) {
 		r.Post("/simulate", SimulatePermissionsHandler)
 		r.Get("/serviceaccounts", ListServiceAccountsHandler)
 		r.Post("/serviceaccounts", CreateServiceAccountHandler)
-		r.Put("/serviceaccounts/{name}", UpdateServiceAccountHandler)
-		r.Delete("/serviceaccounts/{name}", DeleteServiceAccountHandler)
-		r.Post("/serviceaccounts/{name}/reset", ResetServiceAccountTokenHandler)
+		r.Put("/serviceaccounts/{id}", UpdateServiceAccountHandler)
+		r.Delete("/serviceaccounts/{id}", DeleteServiceAccountHandler)
+		r.Post("/serviceaccounts/{id}/reset", ResetServiceAccountTokenHandler)
 		r.Get("/roles", ListRolesHandler)
 		r.Post("/roles", CreateRoleHandler)
-		r.Put("/roles/{name}", UpdateRoleHandler)
-		r.Delete("/roles/{name}", DeleteRoleHandler)
+		r.Put("/roles/{id}", UpdateRoleHandler)
+		r.Delete("/roles/{id}", DeleteRoleHandler)
 		r.Get("/rolebindings", ListRoleBindingsHandler)
 		r.Post("/rolebindings", CreateRoleBindingHandler)
-		r.Put("/rolebindings/{name}", UpdateRoleBindingHandler)
-		r.Delete("/rolebindings/{name}", DeleteRoleBindingHandler)
+		r.Put("/rolebindings/{id}", UpdateRoleBindingHandler)
+		r.Delete("/rolebindings/{id}", DeleteRoleBindingHandler)
 	})
 }

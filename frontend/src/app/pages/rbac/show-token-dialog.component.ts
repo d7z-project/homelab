@@ -13,9 +13,14 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     <h2 mat-dialog-title class="!pt-6">ServiceAccount 已就绪</h2>
     <mat-dialog-content style="min-width: 350px; max-width: 550px;">
       <div class="space-y-4 pt-2">
-        <p class="text-on-surface opacity-80">
-          账号 <strong>{{ data.name }}</strong> 的访问令牌已生成。
-        </p>
+        <div class="flex flex-col gap-1 text-on-surface opacity-80">
+          <p>
+            账号 ID: <strong class="font-mono text-primary">{{ data.id }}</strong>
+          </p>
+          <p>
+            显示名称: <strong>{{ data.name || '-' }}</strong>
+          </p>
+        </div>
         <div class="bg-surface-container rounded-2xl p-5 space-y-4 border border-outline-variant">
           <div class="flex items-start gap-3 text-primary">
             <mat-icon
@@ -50,7 +55,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class ShowTokenDialogComponent {
   private snackBar = inject(MatSnackBar);
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { name: string; token: string }) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { id: string; name: string; token: string }) {}
 
   copyToken() {
     navigator.clipboard.writeText(this.data.token);

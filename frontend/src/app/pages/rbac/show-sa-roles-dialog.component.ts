@@ -23,12 +23,12 @@ import { ModelsRole } from '../../generated';
     <mat-dialog-content>
       <div class="py-2">
         <p class="text-sm text-outline mb-4">
-          账号 <strong>{{ data.saName }}</strong> 当前拥有的权限详情：
+          账号 ID: <strong class="font-mono">{{ data.saID }}</strong> 当前拥有的权限详情：
         </p>
 
         @if (data.roles.length > 0) {
           <div class="space-y-4">
-            @for (role of data.roles; track role.name) {
+            @for (role of data.roles; track role.id) {
               <div
                 class="border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest"
               >
@@ -38,6 +38,7 @@ import { ModelsRole } from '../../generated';
                     >shield</mat-icon
                   >
                   <span class="font-bold text-sm text-on-surface">{{ role.name }}</span>
+                  <span class="text-[10px] text-outline font-mono ml-auto opacity-60">{{ role.id }}</span>
                 </div>
                 <div class="p-4 space-y-3">
                   @for (rule of role.rules; track rule) {
@@ -85,5 +86,5 @@ import { ModelsRole } from '../../generated';
   `,
 })
 export class ShowSaRolesDialogComponent {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { saName: string; roles: ModelsRole[] }) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { saID: string; roles: ModelsRole[] }) {}
 }

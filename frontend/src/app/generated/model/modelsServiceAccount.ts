@@ -11,6 +11,7 @@
 
 export interface ModelsServiceAccount { 
     comments?: string;
+    id?: string;
     lastUsedAt?: string;
     name?: string;
     token?: string;

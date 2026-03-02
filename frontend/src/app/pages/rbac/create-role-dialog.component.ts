@@ -39,22 +39,31 @@ import { firstValueFrom } from 'rxjs';
       class="flex flex-col gap-6 !pb-4"
       style="min-width: 350px; max-width: 800px;"
     >
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>角色名称</mat-label>
-        <input
-          matInput
-          [(ngModel)]="role.name"
-          [disabled]="isEdit"
-          placeholder="例如: dns-admin"
-          autofocus
-        />
-        @if (!isEdit) {
-          <mat-hint>全局唯一的身份标识</mat-hint>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        @if (isEdit) {
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>角色 ID (只读)</mat-label>
+            <input matInput [value]="role.id" disabled />
+          </mat-form-field>
+        } @else {
+          <div class="flex items-center px-4 py-3 bg-surface-container rounded-2xl border border-outline-variant/30 mb-4">
+            <mat-icon class="mr-3 text-outline">info</mat-icon>
+            <span class="text-xs text-outline">角色 ID 将在创建时由系统自动生成 (UUID)</span>
+          </div>
         }
-        @if (isDuplicate()) {
-          <mat-error>角色名称已存在</mat-error>
-        }
-      </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>角色名称 (显示名称)</mat-label>
+          <input
+            matInput
+            [(ngModel)]="role.name"
+            placeholder="例如: DNS 管理员"
+            autofocus
+            required
+          />
+          <mat-hint>描述该角色的用途</mat-hint>
+        </mat-form-field>
+      </div>
 
       <div class="space-y-4">
         <div class="flex items-center justify-between px-1">
@@ -175,16 +184,17 @@ export class CreateRoleDialogComponent {
 
   isEdit = false;
   role: ModelsRole = {
+    id: '',
     name: '',
     rules: [],
   };
-  existingNames: string[] = [];
+  existingIDs: string[] = [];
 
   resourceSuggestions = signal<string[]>([]);
   verbSuggestions = signal<string[]>([]);
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { role: ModelsRole | null; existingNames?: string[] },
+    @Inject(MAT_DIALOG_DATA) public data: { role: ModelsRole | null; existingIDs?: string[] },
   ) {
     if (data.role) {
       this.isEdit = true;
@@ -194,7 +204,7 @@ export class CreateRoleDialogComponent {
     if (!this.role.rules || this.role.rules.length === 0) {
       this.addRule();
     }
-    this.existingNames = data.existingNames || [];
+    this.existingIDs = data.existingIDs || [];
   }
 
   addRule() {
@@ -208,11 +218,13 @@ export class CreateRoleDialogComponent {
 
   isDuplicate(): boolean {
     if (this.isEdit) return false;
-    return this.existingNames.includes(this.role.name?.trim() || '');
+    if (!this.role.id) return false;
+    return this.existingIDs.includes(this.role.id.trim());
   }
 
   isValid(): boolean {
-    if (!this.role.name || this.isDuplicate()) return false;
+    if (!this.role.name?.trim()) return false;
+    if (this.isEdit && !this.role.id) return false;
     if (!this.role.rules || this.role.rules.length === 0) return false;
     return this.role.rules.every((r) => r.resource && r.verbs && r.verbs.length > 0);
   }

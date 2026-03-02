@@ -56,10 +56,12 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 		return nil, errors.New("permission denied: " + resource)
 	}
 
-	// Check if domain already exists
-	_, total, _ := dnsrepo.ListDomains(ctx, 0, 1, domain.Name)
-	if total > 0 {
-		return nil, errors.New("domain already exists")
+	// Check if domain already exists (exact match)
+	existingDomains, _, _ := dnsrepo.ListDomains(ctx, 0, 1000, domain.Name)
+	for _, ed := range existingDomains {
+		if strings.EqualFold(ed.Name, domain.Name) {
+			return nil, errors.New("domain already exists")
+		}
 	}
 
 	domain.ID = uuid.New().String()
@@ -285,6 +287,57 @@ func DeleteRecord(ctx context.Context, id string) error {
 	}
 	commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Name+"."+domain.Name, message, true)
 	return nil
+}
+
+func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
+	// Fetch all domains
+	domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch all records
+	allRecords, _, err := dnsrepo.ListRecords(ctx, "", 0, 10000, "")
+	if err != nil {
+		return nil, err
+	}
+
+	// Map active records to domain IDs
+	recordMap := make(map[string][]models.ExportRecord)
+	for _, r := range allRecords {
+		if r.Status != "active" {
+			continue
+		}
+		exportRec := models.ExportRecord{
+			Name:     r.Name,
+			Type:     r.Type,
+			Value:    r.Value,
+			TTL:      r.TTL,
+			Priority: r.Priority,
+		}
+		recordMap[r.DomainID] = append(recordMap[r.DomainID], exportRec)
+	}
+
+	// Construct response with only active domains
+	resp := &models.DnsExportResponse{
+		Domains: make([]models.ExportDomain, 0),
+	}
+
+	for _, d := range domains {
+		if d.Status != "active" {
+			continue
+		}
+		exportDom := models.ExportDomain{
+			Name:    d.Name,
+			Records: recordMap[d.ID],
+		}
+		if exportDom.Records == nil {
+			exportDom.Records = []models.ExportRecord{}
+		}
+		resp.Domains = append(resp.Domains, exportDom)
+	}
+
+	return resp, nil
 }
 
 func validateRecord(ctx context.Context, record *models.Record) error {

@@ -59,12 +59,16 @@
                 >
                   名称
                 </th>
-                <td
-                  mat-cell
-                  *matCellDef="let element"
-                  class="py-4 font-mono font-medium !pl-6 text-primary/80"
-                >
-                  {{ element.name }}
+                <td mat-cell *matCellDef="let element" class="py-4 font-medium !pl-6 text-primary">
+                  {{ element.name || element.id }}
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+                  账号 ID
+                </th>
+                <td mat-cell *matCellDef="let element" class="py-4 font-mono text-xs text-outline">
+                  {{ element.id }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="comments">
@@ -120,7 +124,7 @@
                     @if (!isHandset()) {
                       <button
                         mat-icon-button
-                        (click)="showSaRoles(element.name)"
+                        (click)="showSaRoles(element)"
                         matTooltip="生效权限"
                       >
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
@@ -129,7 +133,7 @@
                       </button>
                       <button
                         mat-icon-button
-                        (click)="resetToken(element.name)"
+                        (click)="resetToken(element)"
                         matTooltip="重置令牌"
                       >
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
@@ -144,7 +148,7 @@
                       <button
                         mat-icon-button
                         color="warn"
-                        (click)="deleteSA(element.name)"
+                        (click)="deleteSA(element)"
                         matTooltip="删除"
                       >
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
@@ -157,11 +161,11 @@
                       </button>
                       <mat-menu #saMenu="matMenu">
                         <ng-template matMenuContent>
-                          <button mat-menu-item (click)="showSaRoles(element.name)">
+                          <button mat-menu-item (click)="showSaRoles(element)">
                             <mat-icon>manage_accounts</mat-icon>
                             <span>生效权限</span>
                           </button>
-                          <button mat-menu-item (click)="resetToken(element.name)">
+                          <button mat-menu-item (click)="resetToken(element)">
                             <mat-icon>key</mat-icon>
                             <span>重置令牌</span>
                           </button>
@@ -169,7 +173,7 @@
                             <mat-icon>edit</mat-icon>
                             <span>编辑</span>
                           </button>
-                          <button mat-menu-item (click)="deleteSA(element.name)">
+                          <button mat-menu-item (click)="deleteSA(element)">
                             <mat-icon color="warn">delete_outline</mat-icon>
                             <span class="text-error">删除</span>
                           </button>
@@ -251,13 +255,9 @@
                   *matHeaderCellDef
                   class="!pl-6 bg-surface-container-low font-bold"
                 >
-                  角色名称
+                  名称
                 </th>
-                <td
-                  mat-cell
-                  *matCellDef="let element"
-                  class="py-4 font-medium !pl-6 text-primary/80"
-                >
+                <td mat-cell *matCellDef="let element" class="py-4 font-medium !pl-6 text-primary">
                   {{ element.name }}
                 </td>
               </ng-container>
@@ -308,7 +308,7 @@
                           >edit</mat-icon
                         >
                       </button>
-                      <button mat-icon-button color="warn" (click)="deleteRole(element.name)">
+                      <button mat-icon-button color="warn" (click)="deleteRole(element)">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >delete_outline</mat-icon
                         >
@@ -323,7 +323,7 @@
                             <mat-icon>edit</mat-icon>
                             <span>编辑</span>
                           </button>
-                          <button mat-menu-item (click)="deleteRole(element.name)">
+                          <button mat-menu-item (click)="deleteRole(element)">
                             <mat-icon color="warn">delete_outline</mat-icon>
                             <span class="text-error">删除</span>
                           </button>
@@ -404,35 +404,31 @@
                   *matHeaderCellDef
                   class="!pl-6 bg-surface-container-low font-bold"
                 >
-                  绑定ID
+                  绑定名称
                 </th>
-                <td
-                  mat-cell
-                  *matCellDef="let element"
-                  class="py-4 font-medium !pl-6 text-primary/80"
-                >
+                <td mat-cell *matCellDef="let element" class="py-4 font-medium !pl-6 text-primary">
                   {{ element.name }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="sa">
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                  账号
+                  服务账号
                 </th>
                 <td mat-cell *matCellDef="let element" class="text-sm">
-                  {{ element.serviceAccountName }}
+                  {{ getSaName(element.serviceAccountId) }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="role">
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                  角色
+                  赋予角色
                 </th>
                 <td mat-cell *matCellDef="let element">
                   <div class="flex flex-wrap gap-1.5 py-3">
-                    @for (roleName of element.roleNames; track roleName) {
+                    @for (roleId of element.roleIds; track roleId) {
                       <span
                         class="text-[10px] px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-medium border border-outline-variant shadow-sm"
                       >
-                        {{ roleName }}
+                        {{ getRoleName(roleId) }}
                       </span>
                     }
                   </div>
@@ -471,7 +467,7 @@
                           >edit</mat-icon
                         >
                       </button>
-                      <button mat-icon-button color="warn" (click)="deleteRB(element.name)">
+                      <button mat-icon-button color="warn" (click)="deleteRB(element)">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >delete_outline</mat-icon
                         >
@@ -493,7 +489,7 @@
                             <mat-icon>edit</mat-icon>
                             <span>编辑</span>
                           </button>
-                          <button mat-menu-item (click)="deleteRB(element.name)">
+                          <button mat-menu-item (click)="deleteRB(element)">
                             <mat-icon color="warn">delete_outline</mat-icon>
                             <span class="text-error">删除</span>
                           </button>

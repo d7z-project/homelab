@@ -19,6 +19,9 @@ func Router(r chi.Router) {
 			r.Get("/info", controllers.InfoHandler)
 			r.Post("/logout", controllers.LogoutHandler)
 
+			// Simple DNS query without specific permissions
+			r.Get("/dns/export", controllers.ExportHandler)
+
 			r.Group(func(r chi.Router) {
 				r.Use(middlewares.RequirePermission("admin", "rbac"))
 				r.Use(middlewares.AuditMiddleware("rbac"))
@@ -27,8 +30,9 @@ func Router(r chi.Router) {
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "audit"))
-				r.Get("/audit/logs", controllers.ListAuditLogsHandler)
+				r.Use(middlewares.RequirePermission("*", "audit"))
+				r.Use(middlewares.AuditMiddleware("audit"))
+				controllers.AuditRouter(r)
 			})
 
 			r.Group(func(r chi.Router) {

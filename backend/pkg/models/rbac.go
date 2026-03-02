@@ -21,6 +21,7 @@ type PolicyRule struct {
 }
 
 type Role struct {
+	ID    string       `json:"id"`
 	Name  string       `json:"name"`
 	Rules []PolicyRule `json:"rules"`
 }
@@ -30,6 +31,7 @@ func (ro *Role) Bind(r *http.Request) error {
 }
 
 type ServiceAccount struct {
+	ID         string `json:"id"`
 	Name       string `json:"name"`
 	Token      string `json:"token"`
 	Comments   string `json:"comments"`
@@ -41,10 +43,11 @@ func (s *ServiceAccount) Bind(r *http.Request) error {
 }
 
 type RoleBinding struct {
-	Name               string   `json:"name"`
-	RoleNames          []string `json:"roleNames"`
-	ServiceAccountName string   `json:"serviceAccountName"`
-	Enabled            bool     `json:"enabled"`
+	ID               string   `json:"id"`
+	Name             string   `json:"name"`
+	RoleIDs          []string `json:"roleIds"`
+	ServiceAccountID string   `json:"serviceAccountId"`
+	Enabled          bool     `json:"enabled"`
 }
 
 func (rb *RoleBinding) Bind(r *http.Request) error {
@@ -68,4 +71,14 @@ func (p *ResourcePermissions) IsAllowed(resourceName string) bool {
 		}
 	}
 	return false
+}
+
+type SimulatePermissionsRequest struct {
+	ServiceAccountID string `json:"serviceAccountId"`
+	Verb             string `json:"verb"`
+	Resource         string `json:"resource"`
+}
+
+func (s *SimulatePermissionsRequest) Bind(r *http.Request) error {
+	return nil
 }

@@ -35,3 +35,23 @@ type Record struct {
 func (rc *Record) Bind(r *http.Request) error {
 	return nil
 }
+
+// DnsExportResponse 包含所有 DNS 配置的导出结果
+type DnsExportResponse struct {
+	Domains []ExportDomain `json:"domains"`
+}
+
+// ExportDomain 导出的域名信息，不含 ID 和业务状态
+type ExportDomain struct {
+	Name    string         `json:"name"`
+	Records []ExportRecord `json:"records"`
+}
+
+// ExportRecord 导出的解析记录信息，不含 ID 和业务状态
+type ExportRecord struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Value    string `json:"value"`
+	TTL      int    `json:"ttl"`
+	Priority int    `json:"priority"`
+}

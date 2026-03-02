@@ -104,8 +104,9 @@ body {
   width: 100% !important;
 }
 
-/* Sticky Header Logic for RBAC */
-.rbac-tabs-integrated .mat-mdc-tab-header {
+/* Sticky Header Logic for Integrated Tabs */
+.rbac-tabs-integrated .mat-mdc-tab-header,
+.dns-tabs-integrated .mat-mdc-tab-header {
   position: sticky !important;
   top: 0;
   z-index: 30 !important;
@@ -115,8 +116,37 @@ body {
 }
 
 /* If toolbar is STICKY, tabs should stick right BELOW it */
-.has-sticky-toolbar .rbac-tabs-integrated .mat-mdc-tab-header {
+.has-sticky-toolbar .rbac-tabs-integrated .mat-mdc-tab-header,
+.has-sticky-toolbar .dns-tabs-integrated .mat-mdc-tab-header {
   top: var(--header-height);
+}
+
+/* Compact Form Field for Info Bars */
+.no-subscript-compact .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+.no-subscript-compact .mat-mdc-text-field-wrapper {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.no-subscript-compact .mat-mdc-form-field-flex {
+  height: 32px !important;
+  align-items: center !important;
+}
+
+.no-subscript-compact .mat-mdc-select-value {
+  font-size: 12px !important;
+}
+
+.no-subscript-compact .mat-mdc-form-field-infix {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  min-height: auto !important;
 }
 
 /* Custom Scrollbar */

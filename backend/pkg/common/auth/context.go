@@ -13,7 +13,7 @@ var (
 
 type AuthContext struct {
 	Type string // "root" or "sa"
-	Name string // ServiceAccount name if Type is "sa"
+	ID   string // ServiceAccount ID if Type is "sa"
 }
 
 type contextKey string

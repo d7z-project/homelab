@@ -25,21 +25,36 @@ import { ModelsServiceAccount } from '../../generated';
     <mat-dialog-content style="min-width: 320px; max-width: 500px;">
       <div class="pt-3 space-y-5">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>ServiceAccount 名称</mat-label>
+          <mat-label>账号 ID (唯一标识)</mat-label>
           <input
             matInput
-            [(ngModel)]="sa.name"
+            [(ngModel)]="sa.id"
             placeholder="例如: backup-agent"
             [disabled]="isEdit"
             autofocus
-            (keyup.enter)="confirm()"
+            required
+            pattern="^[a-zA-Z0-9_\\-]+$"
+            #idInput="ngModel"
           />
           @if (!isEdit) {
-            <mat-hint>创建后名称不可修改</mat-hint>
+            <mat-hint>仅允许字母、数字、中划线和下划线</mat-hint>
+          }
+          @if (!isEdit && idInput.errors?.['pattern']) {
+            <mat-error>ID 格式不正确</mat-error>
           }
           @if (!isEdit && isDuplicate()) {
-            <mat-error>名称已存在</mat-error>
+            <mat-error>ID 已存在</mat-error>
           }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>显示名称</mat-label>
+          <input
+            matInput
+            [(ngModel)]="sa.name"
+            placeholder="例如: 备份代理"
+            (keyup.enter)="confirm()"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
@@ -59,7 +74,7 @@ import { ModelsServiceAccount } from '../../generated';
         mat-flat-button
         color="primary"
         (click)="confirm()"
-        [disabled]="!sa.name?.trim() || (!isEdit && isDuplicate())"
+        [disabled]="!sa.id?.trim() || (!isEdit && (isDuplicate() || idInput.errors?.['pattern']))"
         class="!ml-2"
       >
         {{ isEdit ? '保存修改' : '确认创建' }}
@@ -71,28 +86,29 @@ export class CreateSaDialogComponent {
   private dialogRef = inject(MatDialogRef<CreateSaDialogComponent>);
   isEdit = false;
   sa: ModelsServiceAccount = {
+    id: '',
     name: '',
     comments: '',
   };
-  existingNames: string[] = [];
+  existingIDs: string[] = [];
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public data: { sa: ModelsServiceAccount | null; existingNames?: string[] },
+    public data: { sa: ModelsServiceAccount | null; existingIDs?: string[] },
   ) {
     if (data.sa) {
       this.isEdit = true;
       this.sa = { ...data.sa };
     }
-    this.existingNames = data.existingNames || [];
+    this.existingIDs = data.existingIDs || [];
   }
 
   isDuplicate(): boolean {
-    return this.existingNames.includes(this.sa.name?.trim() || '');
+    return this.existingIDs.includes(this.sa.id?.trim() || '');
   }
 
   confirm() {
-    if (this.sa.name?.trim() && (this.isEdit || !this.isDuplicate())) {
+    if (this.sa.id?.trim() && (this.isEdit || !this.isDuplicate())) {
       this.dialogRef.close(this.sa);
     }
   }

@@ -12,19 +12,15 @@ definitions:
     type: object
   controllers.AuthInfo:
     properties:
-      name:
+      id:
         type: string
       type:
         type: string
     type: object
-  controllers.SimulatePermissionsRequest:
+  models.AuditCleanupResponse:
     properties:
-      resource:
-        type: string
-      serviceAccountName:
-        type: string
-      verb:
-        type: string
+      deleted:
+        type: integer
     type: object
   models.AuditLog:
     properties:
@@ -56,6 +52,13 @@ definitions:
       userAgent:
         type: string
     type: object
+  models.DnsExportResponse:
+    properties:
+      domains:
+        items:
+          $ref: '#/definitions/models.ExportDomain'
+        type: array
+    type: object
   models.Domain:
     properties:
       comments:
@@ -74,6 +77,28 @@ definitions:
         type: string
       updatedAt:
         description: 更新时间
+        type: string
+    type: object
+  models.ExportDomain:
+    properties:
+      name:
+        type: string
+      records:
+        items:
+          $ref: '#/definitions/models.ExportRecord'
+        type: array
+    type: object
+  models.ExportRecord:
+    properties:
+      name:
+        type: string
+      priority:
+        type: integer
+      ttl:
+        type: integer
+      type:
+        type: string
+      value:
         type: string
     type: object
   models.LoginRequest:
@@ -141,6 +166,8 @@ definitions:
     type: object
   models.Role:
     properties:
+      id:
+        type: string
       name:
         type: string
       rules:
@@ -152,24 +179,37 @@ definitions:
     properties:
       enabled:
         type: boolean
+      id:
+        type: string
       name:
         type: string
-      roleNames:
+      roleIds:
         items:
           type: string
         type: array
-      serviceAccountName:
+      serviceAccountId:
         type: string
     type: object
   models.ServiceAccount:
     properties:
       comments:
         type: string
+      id:
+        type: string
       lastUsedAt:
         type: string
       name:
         type: string
       token:
+        type: string
+    type: object
+  models.SimulatePermissionsRequest:
+    properties:
+      resource:
+        type: string
+      serviceAccountId:
+        type: string
+      verb:
         type: string
     type: object
 info:
@@ -180,19 +220,16 @@ info:
 paths:
   /audit/logs:
     get:
-      consumes:
-      - application/json
-      description: Retrieve a paginated list of audit logs
       parameters:
-      - description: Page number (0-based)
+      - description: Page number
         in: query
         name: page
         type: integer
-      - description: Number of items per page
+      - description: Items per page
         in: query
         name: pageSize
         type: integer
-      - description: Search query by subject, action or resource
+      - description: Search query
         in: query
         name: search
         type: string
@@ -211,8 +248,28 @@ paths:
                   type: array
               type: object
       security:
-      - BearerAuth: []
+      - ApiKeyAuth: []
       summary: List audit logs
+      tags:
+      - audit
+  /audit/logs/cleanup:
+    post:
+      parameters:
+      - description: Logs older than these days will be deleted
+        in: query
+        name: days
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuditCleanupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cleanup old audit logs
       tags:
       - audit
   /dns/domains:
@@ -244,6 +301,8 @@ paths:
                     $ref: '#/definitions/models.Domain'
                   type: array
               type: object
+      security:
+      - ApiKeyAuth: []
       summary: List all DNS domains
       tags:
       - dns
@@ -264,6 +323,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Domain'
+      security:
+      - ApiKeyAuth: []
       summary: Create a DNS domain
       tags:
       - dns
@@ -275,11 +336,15 @@ paths:
         name: id
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: success
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Delete a DNS domain
       tags:
       - dns
@@ -305,7 +370,25 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Domain'
+      security:
+      - ApiKeyAuth: []
       summary: Update a DNS domain
+      tags:
+      - dns
+  /dns/export:
+    get:
+      description: Returns all domains and their associated records without internal
+        IDs. Requires a valid token but no specific permissions.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DnsExportResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Export all DNS domains and records
       tags:
       - dns
   /dns/records:
@@ -341,6 +424,8 @@ paths:
                     $ref: '#/definitions/models.Record'
                   type: array
               type: object
+      security:
+      - ApiKeyAuth: []
       summary: List all DNS records
       tags:
       - dns
@@ -361,6 +446,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Record'
+      security:
+      - ApiKeyAuth: []
       summary: Create a DNS record
       tags:
       - dns
@@ -372,11 +459,15 @@ paths:
         name: id
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: success
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Delete a DNS record
       tags:
       - dns
@@ -402,6 +493,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Record'
+      security:
+      - ApiKeyAuth: []
       summary: Update a DNS record
       tags:
       - dns
@@ -414,6 +507,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/controllers.AuthInfo'
+      security:
+      - ApiKeyAuth: []
       summary: Get current user info
       tags:
       - auth
@@ -447,6 +542,8 @@ paths:
           description: success
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Logout
       tags:
       - auth
@@ -466,6 +563,8 @@ paths:
             items:
               type: string
             type: array
+      security:
+      - ApiKeyAuth: []
       summary: Suggest RBAC resources
       tags:
       - rbac
@@ -480,7 +579,7 @@ paths:
         in: query
         name: pageSize
         type: integer
-      - description: Search by name
+      - description: Search by name or id
         in: query
         name: search
         type: string
@@ -498,6 +597,8 @@ paths:
                     $ref: '#/definitions/models.RoleBinding'
                   type: array
               type: object
+      security:
+      - ApiKeyAuth: []
       summary: List all role bindings
       tags:
       - rbac
@@ -518,22 +619,28 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.RoleBinding'
+      security:
+      - ApiKeyAuth: []
       summary: Create a role binding
       tags:
       - rbac
-  /rbac/rolebindings/{name}:
+  /rbac/rolebindings/{id}:
     delete:
       parameters:
-      - description: Role Binding Name
+      - description: Role Binding ID
         in: path
-        name: name
+        name: id
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: success
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Delete a role binding
       tags:
       - rbac
@@ -541,9 +648,9 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Role Binding Name
+      - description: Role Binding ID
         in: path
-        name: name
+        name: id
         required: true
         type: string
       - description: Role Binding
@@ -559,6 +666,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.RoleBinding'
+      security:
+      - ApiKeyAuth: []
       summary: Update a role binding
       tags:
       - rbac
@@ -573,7 +682,7 @@ paths:
         in: query
         name: pageSize
         type: integer
-      - description: Search by name
+      - description: Search by name or id
         in: query
         name: search
         type: string
@@ -591,6 +700,8 @@ paths:
                     $ref: '#/definitions/models.Role'
                   type: array
               type: object
+      security:
+      - ApiKeyAuth: []
       summary: List all roles
       tags:
       - rbac
@@ -611,22 +722,28 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Role'
+      security:
+      - ApiKeyAuth: []
       summary: Create a role
       tags:
       - rbac
-  /rbac/roles/{name}:
+  /rbac/roles/{id}:
     delete:
       parameters:
-      - description: Role Name
+      - description: Role ID
         in: path
-        name: name
+        name: id
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: success
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Delete a role
       tags:
       - rbac
@@ -634,9 +751,9 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Role Name
+      - description: Role ID
         in: path
-        name: name
+        name: id
         required: true
         type: string
       - description: Role
@@ -652,6 +769,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Role'
+      security:
+      - ApiKeyAuth: []
       summary: Update a role
       tags:
       - rbac
@@ -666,7 +785,7 @@ paths:
         in: query
         name: pageSize
         type: integer
-      - description: Search by name
+      - description: Search by name or id
         in: query
         name: search
         type: string
@@ -684,6 +803,8 @@ paths:
                     $ref: '#/definitions/models.ServiceAccount'
                   type: array
               type: object
+      security:
+      - ApiKeyAuth: []
       summary: List all service accounts
       tags:
       - rbac
@@ -704,22 +825,28 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ServiceAccount'
+      security:
+      - ApiKeyAuth: []
       summary: Create a service account
       tags:
       - rbac
-  /rbac/serviceaccounts/{name}:
+  /rbac/serviceaccounts/{id}:
     delete:
       parameters:
-      - description: Service Account Name
+      - description: Service Account ID
         in: path
-        name: name
+        name: id
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: success
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
       summary: Delete a service account
       tags:
       - rbac
@@ -727,9 +854,9 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Service Account Name
+      - description: Service Account ID
         in: path
-        name: name
+        name: id
         required: true
         type: string
       - description: Service Account
@@ -745,15 +872,17 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ServiceAccount'
+      security:
+      - ApiKeyAuth: []
       summary: Update a service account
       tags:
       - rbac
-  /rbac/serviceaccounts/{name}/reset:
+  /rbac/serviceaccounts/{id}/reset:
     post:
       parameters:
-      - description: Service Account Name
+      - description: Service Account ID
         in: path
-        name: name
+        name: id
         required: true
         type: string
       produces:
@@ -763,6 +892,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ServiceAccount'
+      security:
+      - ApiKeyAuth: []
       summary: Reset a service account token
       tags:
       - rbac
@@ -776,7 +907,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/controllers.SimulatePermissionsRequest'
+          $ref: '#/definitions/models.SimulatePermissionsRequest'
       produces:
       - application/json
       responses:
@@ -784,6 +915,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResourcePermissions'
+      security:
+      - ApiKeyAuth: []
       summary: Simulate permissions for a service account
       tags:
       - rbac
@@ -803,6 +936,8 @@ paths:
             items:
               type: string
             type: array
+      security:
+      - ApiKeyAuth: []
       summary: Suggest RBAC verbs for a resource
       tags:
       - rbac

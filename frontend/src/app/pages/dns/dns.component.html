@@ -7,21 +7,14 @@
     </div>
   }
 
-  <!-- mat-tab-group with integrated sticky header class -->
   <mat-tab-group
+    animationDuration="250ms"
+    class="dns-tabs-integrated"
     [selectedIndex]="selectedTabIndex()"
     (selectedIndexChange)="onTabChange($event)"
-    color="primary"
-    animationDuration="250ms"
-    class="rbac-tabs-integrated"
   >
     <!-- Domains Tab -->
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon class="mr-2">language</mat-icon>
-        <span>域名管理</span>
-      </ng-template>
-
+    <mat-tab label="域名管理">
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
@@ -30,7 +23,7 @@
           >
             <div class="flex items-center gap-4">
               <span class="flex items-center gap-1.5"
-                ><mat-icon class="!w-4 !h-4 !text-[14px]">analytics</mat-icon> 共
+                ><mat-icon class="!w-4 !h-4 !text-[14px]">language</mat-icon> 共
                 {{ domainTotal() }} 个域名</span
               >
               @if (domainSearch()) {
@@ -52,7 +45,7 @@
             <span class="opacity-60">已加载 {{ domains().length }}</span>
           </div>
 
-          <!-- Domains Table -->
+          <!-- Table Card -->
           <div
             class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
           >
@@ -65,12 +58,8 @@
                 >
                   域名名称
                 </th>
-                <td
-                  mat-cell
-                  *matCellDef="let d"
-                  class="py-4 font-mono font-medium !pl-6 text-primary"
-                >
-                  {{ d.name }}
+                <td mat-cell *matCellDef="let element" class="py-4 font-medium !pl-6 text-primary">
+                  {{ element.name }}
                 </td>
               </ng-container>
 
@@ -78,16 +67,16 @@
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
                   状态
                 </th>
-                <td mat-cell *matCellDef="let d">
+                <td mat-cell *matCellDef="let element">
                   <span
+                    class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
                     [class]="
-                      'px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider ' +
-                      (d.status === 'active'
-                        ? 'bg-primary-container text-on-primary-container'
-                        : 'bg-outline-variant text-outline')
+                      element.status === 'active'
+                        ? 'bg-primary/5 text-primary border-primary/20'
+                        : 'bg-surface-container-high text-outline border-outline-variant'
                     "
                   >
-                    {{ d.status === 'active' ? 'ACTIVE' : 'DISABLED' }}
+                    {{ element.status === 'active' ? '运行中' : '已禁用' }}
                   </span>
                 </td>
               </ng-container>
@@ -96,17 +85,21 @@
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
                   备注
                 </th>
-                <td mat-cell *matCellDef="let d" class="text-sm text-outline">
-                  {{ d.comments || '-' }}
+                <td
+                  mat-cell
+                  *matCellDef="let element"
+                  class="py-4 text-sm text-outline whitespace-pre-wrap max-w-xs"
+                >
+                  {{ element.comments || '-' }}
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="updatedAt">
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                  更新时间
+                  最后更新
                 </th>
-                <td mat-cell *matCellDef="let d" class="text-xs text-outline">
-                  {{ d.updatedAt | date: 'MM-dd HH:mm' }}
+                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono">
+                  {{ element.updatedAt | date: 'yyyy-MM-dd HH:mm' }}
                 </td>
               </ng-container>
 
@@ -115,22 +108,67 @@
                   mat-header-cell
                   *matHeaderCellDef
                   class="text-right !pr-6 bg-surface-container-low font-bold"
-                ></th>
-                <td mat-cell *matCellDef="let d" class="text-right !pr-6">
-                  <button mat-icon-button [matMenuTriggerFor]="menu">
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
-                  <mat-menu #menu="matMenu" xPosition="before">
-                    <button mat-menu-item (click)="editDomain(d)">
-                      <mat-icon>edit</mat-icon>
-                      <span>编辑配置</span>
-                    </button>
-                    <mat-divider></mat-divider>
-                    <button mat-menu-item (click)="deleteDomain(d)" class="text-error">
-                      <mat-icon color="warn">delete</mat-icon>
-                      <span>彻底删除</span>
-                    </button>
-                  </mat-menu>
+                  style="width: 1px; white-space: nowrap"
+                >
+                  操作
+                </th>
+                <td
+                  mat-cell
+                  *matCellDef="let element"
+                  class="text-right !pr-6"
+                  style="white-space: nowrap"
+                >
+                  <div class="flex justify-end gap-1">
+                    @if (!isHandset()) {
+                      <button
+                        mat-icon-button
+                        (click)="onTabChange(1); onDomainFilterChange(element.id!)"
+                        matTooltip="管理记录"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >list_alt</mat-icon
+                        >
+                      </button>
+                      <button mat-icon-button (click)="editDomain(element)" matTooltip="编辑">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >edit</mat-icon
+                        >
+                      </button>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="deleteDomain(element)"
+                        matTooltip="删除"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >delete_outline</mat-icon
+                        >
+                      </button>
+                    } @else {
+                      <button mat-icon-button [matMenuTriggerFor]="domainMenu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #domainMenu="matMenu">
+                        <ng-template matMenuContent>
+                          <button
+                            mat-menu-item
+                            (click)="onTabChange(1); onDomainFilterChange(element.id!)"
+                          >
+                            <mat-icon>list_alt</mat-icon>
+                            <span>管理记录</span>
+                          </button>
+                          <button mat-menu-item (click)="editDomain(element)">
+                            <mat-icon>edit</mat-icon>
+                            <span>编辑</span>
+                          </button>
+                          <button mat-menu-item (click)="deleteDomain(element)">
+                            <mat-icon color="warn">delete_outline</mat-icon>
+                            <span class="text-error">删除</span>
+                          </button>
+                        </ng-template>
+                      </mat-menu>
+                    }
+                  </div>
                 </td>
               </ng-container>
 
@@ -141,13 +179,12 @@
                 class="hover:bg-surface-container-low/50 transition-colors"
               ></tr>
 
-              <!-- Row shown when there is no matching data. -->
               <tr class="mat-mdc-row" *matNoDataRow>
                 <td
                   class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
                   [attr.colspan]="displayedDomainColumns().length"
                 >
-                  没有找到匹配的域名数据
+                  没有找到匹配的域名
                 </td>
               </tr>
             </table>
@@ -163,37 +200,37 @@
     </mat-tab>
 
     <!-- Records Tab -->
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon class="mr-2">layers</mat-icon>
-        <span>解析记录</span>
-      </ng-template>
-
+    <mat-tab label="解析记录">
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
-          <!-- Data Info Bar with Filter -->
+          <!-- Data Info Bar -->
           <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-3 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
+            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
           >
-            <div class="flex items-center gap-4 flex-wrap w-full sm:w-auto">
-              <!-- Domain Filter Select -->
-              <mat-form-field appearance="outline" class="w-full sm:w-64" subscriptSizing="dynamic">
-                <mat-label>筛选域名</mat-label>
-                <mat-select
-                  [value]="selectedDomainId()"
-                  (selectionChange)="onDomainFilterChange($event.value)"
-                >
-                  <mat-option value="">所有域名</mat-option>
-                  @for (d of domains(); track d.id) {
-                    <mat-option [value]="d.id">{{ d.name }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-
+            <div class="flex items-center gap-4">
               <span class="flex items-center gap-1.5"
-                ><mat-icon class="!w-4 !h-4 !text-[14px]">analytics</mat-icon> 共
+                ><mat-icon class="!w-4 !h-4 !text-[14px]">layers</mat-icon> 共
                 {{ recordTotal() }} 条记录</span
               >
+
+              @if (!isHandset()) {
+                <mat-form-field
+                  appearance="outline"
+                  class="!w-48 no-subscript-compact"
+                  subscriptSizing="dynamic"
+                >
+                  <mat-select
+                    [value]="selectedDomainId()"
+                    (selectionChange)="onDomainFilterChange($event.value)"
+                    placeholder="筛选域名"
+                  >
+                    <mat-option value="">所有域名</mat-option>
+                    @for (d of domains(); track d.id) {
+                      <mat-option [value]="d.id">{{ d.name }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
 
               @if (recordSearch()) {
                 <div
@@ -211,10 +248,38 @@
                 </div>
               }
             </div>
-            <span class="opacity-60 whitespace-nowrap">已加载 {{ records().length }}</span>
+
+            <div class="flex items-center gap-4">
+              @if (isHandset()) {
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="domainFilterMenu"
+                  class="!w-8 !h-8 !min-w-0"
+                >
+                  <mat-icon class="!text-[18px]">filter_list</mat-icon>
+                </button>
+                <mat-menu #domainFilterMenu="matMenu">
+                  <button mat-menu-item (click)="onDomainFilterChange('')">
+                    <mat-icon [class.text-primary]="selectedDomainId() === ''">{{
+                      selectedDomainId() === '' ? 'check' : ''
+                    }}</mat-icon>
+                    <span>所有域名</span>
+                  </button>
+                  @for (d of domains(); track d.id) {
+                    <button mat-menu-item (click)="onDomainFilterChange(d.id!)">
+                      <mat-icon [class.text-primary]="selectedDomainId() === d.id">{{
+                        selectedDomainId() === d.id ? 'check' : ''
+                      }}</mat-icon>
+                      <span>{{ d.name }}</span>
+                    </button>
+                  }
+                </mat-menu>
+              }
+              <span class="opacity-60">已加载 {{ records().length }}</span>
+            </div>
           </div>
 
-          <!-- Records Table -->
+          <!-- Table Card -->
           <div
             class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
           >
@@ -227,12 +292,8 @@
                 >
                   主机记录
                 </th>
-                <td
-                  mat-cell
-                  *matCellDef="let r"
-                  class="py-4 font-mono font-medium !pl-6 text-primary"
-                >
-                  {{ r.name }}
+                <td mat-cell *matCellDef="let element" class="py-4 font-medium !pl-6">
+                  {{ element.name }}
                 </td>
               </ng-container>
 
@@ -240,14 +301,12 @@
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
                   类型
                 </th>
-                <td mat-cell *matCellDef="let r">
+                <td mat-cell *matCellDef="let element">
                   <span
-                    [class]="
-                      'px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider ' +
-                      getRecordTypeClass(r.type)
-                    "
+                    class="px-2 py-0.5 rounded text-[10px] font-bold font-mono border"
+                    [class]="getRecordTypeClass(element.type)"
                   >
-                    {{ r.type }}
+                    {{ element.type }}
                   </span>
                 </td>
               </ng-container>
@@ -258,11 +317,10 @@
                 </th>
                 <td
                   mat-cell
-                  *matCellDef="let r"
-                  class="font-mono text-xs max-w-[120px] truncate"
-                  [matTooltip]="r.value"
+                  *matCellDef="let element"
+                  class="py-4 text-sm font-mono opacity-80 break-all max-w-[200px]"
                 >
-                  {{ r.value }}
+                  {{ element.value }}
                 </td>
               </ng-container>
 
@@ -270,21 +328,23 @@
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
                   TTL
                 </th>
-                <td mat-cell *matCellDef="let r" class="text-xs text-outline">{{ r.ttl }}s</td>
+                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono">
+                  {{ element.ttl }}
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
                   状态
                 </th>
-                <td mat-cell *matCellDef="let r">
+                <td mat-cell *matCellDef="let element">
                   <mat-icon
-                    [class]="
-                      r.status === 'active' ? 'text-primary opacity-80' : 'text-outline opacity-20'
-                    "
-                    class="!text-[18px]"
+                    class="scale-75"
+                    [class.text-primary]="element.status === 'active'"
+                    [class.text-outline]="element.status !== 'active'"
+                    [class.opacity-30]="element.status !== 'active'"
                   >
-                    {{ r.status === 'active' ? 'check_circle' : 'pause_circle' }}
+                    {{ element.status === 'active' ? 'check_circle' : 'pause_circle' }}
                   </mat-icon>
                 </td>
               </ng-container>
@@ -294,38 +354,48 @@
                   mat-header-cell
                   *matHeaderCellDef
                   class="text-right !pr-6 bg-surface-container-low font-bold"
-                ></th>
-                <td mat-cell *matCellDef="let r" class="text-right !pr-6">
+                  style="width: 1px; white-space: nowrap"
+                >
+                  操作
+                </th>
+                <td
+                  mat-cell
+                  *matCellDef="let element"
+                  class="text-right !pr-6"
+                  style="white-space: nowrap"
+                >
                   <div class="flex justify-end gap-1">
                     @if (!isHandset()) {
-                      <button mat-icon-button (click)="editRecord(r)" matTooltip="编辑">
+                      <button mat-icon-button (click)="editRecord(element)" matTooltip="编辑">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >edit</mat-icon
                         >
                       </button>
                       <button
                         mat-icon-button
-                        (click)="deleteRecord(r)"
-                        matTooltip="删除"
                         color="warn"
+                        (click)="deleteRecord(element)"
+                        matTooltip="删除"
                       >
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >delete_outline</mat-icon
                         >
                       </button>
                     } @else {
-                      <button mat-icon-button [matMenuTriggerFor]="recMenu">
+                      <button mat-icon-button [matMenuTriggerFor]="recordMenu">
                         <mat-icon>more_vert</mat-icon>
                       </button>
-                      <mat-menu #recMenu="matMenu">
-                        <button mat-menu-item (click)="editRecord(r)">
-                          <mat-icon>edit</mat-icon>
-                          <span>编辑记录</span>
-                        </button>
-                        <button mat-menu-item (click)="deleteRecord(r)" class="text-error">
-                          <mat-icon color="warn">delete_outline</mat-icon>
-                          <span>删除记录</span>
-                        </button>
+                      <mat-menu #recordMenu="matMenu">
+                        <ng-template matMenuContent>
+                          <button mat-menu-item (click)="editRecord(element)">
+                            <mat-icon>edit</mat-icon>
+                            <span>编辑</span>
+                          </button>
+                          <button mat-menu-item (click)="deleteRecord(element)">
+                            <mat-icon color="warn">delete_outline</mat-icon>
+                            <span class="text-error">删除</span>
+                          </button>
+                        </ng-template>
                       </mat-menu>
                     }
                   </div>
@@ -339,13 +409,12 @@
                 class="hover:bg-surface-container-low/50 transition-colors"
               ></tr>
 
-              <!-- Row shown when there is no matching data. -->
               <tr class="mat-mdc-row" *matNoDataRow>
                 <td
                   class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
                   [attr.colspan]="displayedRecordColumns().length"
                 >
-                  没有找到匹配的解析记录
+                  没有找到匹配的记录
                 </td>
               </tr>
             </table>
@@ -376,8 +445,8 @@
             ? '清除搜索'
             : '正在筛选'
           : uiService.searchConfig()
-            ? '搜索内容'
-            : '关闭'
+            ? '关闭'
+            : '搜索'
       "
     >
       <mat-icon>{{
@@ -393,7 +462,7 @@
         <span class="ml-2 font-medium">{{
           hasSearchContent()
             ? uiService.searchConfig()
-              ? '清除筛选'
+              ? '清除搜索'
               : '正在筛选'
             : uiService.searchConfig()
               ? '收起搜索'
@@ -402,7 +471,7 @@
       }
     </button>
 
-    <!-- Main Action FAB -->
+    <!-- Main Action/ScrollTop FAB -->
     @if (fabConfig()) {
       <button
         mat-fab
@@ -411,6 +480,7 @@
         (click)="showScrollTop() ? scrollToTop() : fabConfig()?.action()"
         [disabled]="loading()"
         class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
+        [matTooltip]="showScrollTop() ? '回到顶部' : ''"
       >
         <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig()?.icon }}</mat-icon>
         @if (!isHandset()) {

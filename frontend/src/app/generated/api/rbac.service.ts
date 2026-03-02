@@ -17,8 +17,6 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
-import { ControllersSimulatePermissionsRequest } from '../model/controllersSimulatePermissionsRequest';
-// @ts-ignore
 import { ModelsResourcePermissions } from '../model/modelsResourcePermissions';
 // @ts-ignore
 import { ModelsRole } from '../model/modelsRole';
@@ -26,6 +24,8 @@ import { ModelsRole } from '../model/modelsRole';
 import { ModelsRoleBinding } from '../model/modelsRoleBinding';
 // @ts-ignore
 import { ModelsServiceAccount } from '../model/modelsServiceAccount';
+// @ts-ignore
+import { ModelsSimulatePermissionsRequest } from '../model/modelsSimulatePermissionsRequest';
 // @ts-ignore
 import { RbacRolebindingsGet200Response } from '../model/rbacRolebindingsGet200Response';
 // @ts-ignore
@@ -75,6 +75,9 @@ export class RbacService extends BaseService {
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
         ]);
@@ -119,7 +122,7 @@ export class RbacService extends BaseService {
      * @endpoint get /rbac/rolebindings
      * @param page Page number
      * @param pageSize Items per page
-     * @param search Search by name
+     * @param search Search by name or id
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -159,6 +162,9 @@ export class RbacService extends BaseService {
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -201,24 +207,27 @@ export class RbacService extends BaseService {
 
     /**
      * Delete a role binding
-     * @endpoint delete /rbac/rolebindings/{name}
-     * @param name Role Binding Name
+     * @endpoint delete /rbac/rolebindings/{id}
+     * @param id Role Binding ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacRolebindingsNameDelete(name: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public rbacRolebindingsNameDelete(name: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public rbacRolebindingsNameDelete(name: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public rbacRolebindingsNameDelete(name: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (name === null || name === undefined) {
-            throw new Error('Required parameter name was null or undefined when calling rbacRolebindingsNameDelete.');
+    public rbacRolebindingsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public rbacRolebindingsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public rbacRolebindingsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public rbacRolebindingsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling rbacRolebindingsIdDelete.');
         }
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
-            '*/*'
+            'application/json'
         ]);
         if (localVarHttpHeaderAcceptSelected !== undefined) {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
@@ -240,7 +249,7 @@ export class RbacService extends BaseService {
             }
         }
 
-        let localVarPath = `/rbac/rolebindings/${this.configuration.encodeParam({name: "name", value: name, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/rbac/rolebindings/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('delete', `${basePath}${localVarPath}`,
             {
@@ -257,25 +266,28 @@ export class RbacService extends BaseService {
 
     /**
      * Update a role binding
-     * @endpoint put /rbac/rolebindings/{name}
-     * @param name Role Binding Name
+     * @endpoint put /rbac/rolebindings/{id}
+     * @param id Role Binding ID
      * @param rb Role Binding
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacRolebindingsNamePut(name: string, rb: ModelsRoleBinding, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRoleBinding>;
-    public rbacRolebindingsNamePut(name: string, rb: ModelsRoleBinding, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRoleBinding>>;
-    public rbacRolebindingsNamePut(name: string, rb: ModelsRoleBinding, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRoleBinding>>;
-    public rbacRolebindingsNamePut(name: string, rb: ModelsRoleBinding, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (name === null || name === undefined) {
-            throw new Error('Required parameter name was null or undefined when calling rbacRolebindingsNamePut.');
+    public rbacRolebindingsIdPut(id: string, rb: ModelsRoleBinding, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRoleBinding>;
+    public rbacRolebindingsIdPut(id: string, rb: ModelsRoleBinding, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRoleBinding>>;
+    public rbacRolebindingsIdPut(id: string, rb: ModelsRoleBinding, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRoleBinding>>;
+    public rbacRolebindingsIdPut(id: string, rb: ModelsRoleBinding, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling rbacRolebindingsIdPut.');
         }
         if (rb === null || rb === undefined) {
-            throw new Error('Required parameter rb was null or undefined when calling rbacRolebindingsNamePut.');
+            throw new Error('Required parameter rb was null or undefined when calling rbacRolebindingsIdPut.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -309,7 +321,7 @@ export class RbacService extends BaseService {
             }
         }
 
-        let localVarPath = `/rbac/rolebindings/${this.configuration.encodeParam({name: "name", value: name, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/rbac/rolebindings/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsRoleBinding>('put', `${basePath}${localVarPath}`,
             {
@@ -342,6 +354,9 @@ export class RbacService extends BaseService {
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -396,7 +411,7 @@ export class RbacService extends BaseService {
      * @endpoint get /rbac/roles
      * @param page Page number
      * @param pageSize Items per page
-     * @param search Search by name
+     * @param search Search by name or id
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -436,6 +451,9 @@ export class RbacService extends BaseService {
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -478,24 +496,27 @@ export class RbacService extends BaseService {
 
     /**
      * Delete a role
-     * @endpoint delete /rbac/roles/{name}
-     * @param name Role Name
+     * @endpoint delete /rbac/roles/{id}
+     * @param id Role ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacRolesNameDelete(name: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public rbacRolesNameDelete(name: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public rbacRolesNameDelete(name: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public rbacRolesNameDelete(name: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (name === null || name === undefined) {
-            throw new Error('Required parameter name was null or undefined when calling rbacRolesNameDelete.');
+    public rbacRolesIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public rbacRolesIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public rbacRolesIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public rbacRolesIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling rbacRolesIdDelete.');
         }
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
-            '*/*'
+            'application/json'
         ]);
         if (localVarHttpHeaderAcceptSelected !== undefined) {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
@@ -517,7 +538,7 @@ export class RbacService extends BaseService {
             }
         }
 
-        let localVarPath = `/rbac/roles/${this.configuration.encodeParam({name: "name", value: name, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/rbac/roles/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('delete', `${basePath}${localVarPath}`,
             {
@@ -534,25 +555,28 @@ export class RbacService extends BaseService {
 
     /**
      * Update a role
-     * @endpoint put /rbac/roles/{name}
-     * @param name Role Name
+     * @endpoint put /rbac/roles/{id}
+     * @param id Role ID
      * @param role Role
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacRolesNamePut(name: string, role: ModelsRole, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRole>;
-    public rbacRolesNamePut(name: string, role: ModelsRole, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRole>>;
-    public rbacRolesNamePut(name: string, role: ModelsRole, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRole>>;
-    public rbacRolesNamePut(name: string, role: ModelsRole, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (name === null || name === undefined) {
-            throw new Error('Required parameter name was null or undefined when calling rbacRolesNamePut.');
+    public rbacRolesIdPut(id: string, role: ModelsRole, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRole>;
+    public rbacRolesIdPut(id: string, role: ModelsRole, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRole>>;
+    public rbacRolesIdPut(id: string, role: ModelsRole, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRole>>;
+    public rbacRolesIdPut(id: string, role: ModelsRole, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling rbacRolesIdPut.');
         }
         if (role === null || role === undefined) {
-            throw new Error('Required parameter role was null or undefined when calling rbacRolesNamePut.');
+            throw new Error('Required parameter role was null or undefined when calling rbacRolesIdPut.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -586,7 +610,7 @@ export class RbacService extends BaseService {
             }
         }
 
-        let localVarPath = `/rbac/roles/${this.configuration.encodeParam({name: "name", value: name, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/rbac/roles/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsRole>('put', `${basePath}${localVarPath}`,
             {
@@ -619,6 +643,9 @@ export class RbacService extends BaseService {
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -673,7 +700,7 @@ export class RbacService extends BaseService {
      * @endpoint get /rbac/serviceaccounts
      * @param page Page number
      * @param pageSize Items per page
-     * @param search Search by name
+     * @param search Search by name or id
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -713,6 +740,9 @@ export class RbacService extends BaseService {
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -755,24 +785,27 @@ export class RbacService extends BaseService {
 
     /**
      * Delete a service account
-     * @endpoint delete /rbac/serviceaccounts/{name}
-     * @param name Service Account Name
+     * @endpoint delete /rbac/serviceaccounts/{id}
+     * @param id Service Account ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacServiceaccountsNameDelete(name: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public rbacServiceaccountsNameDelete(name: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public rbacServiceaccountsNameDelete(name: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public rbacServiceaccountsNameDelete(name: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (name === null || name === undefined) {
-            throw new Error('Required parameter name was null or undefined when calling rbacServiceaccountsNameDelete.');
+    public rbacServiceaccountsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public rbacServiceaccountsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public rbacServiceaccountsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public rbacServiceaccountsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling rbacServiceaccountsIdDelete.');
         }
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
-            '*/*'
+            'application/json'
         ]);
         if (localVarHttpHeaderAcceptSelected !== undefined) {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
@@ -794,7 +827,7 @@ export class RbacService extends BaseService {
             }
         }
 
-        let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({name: "name", value: name, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('delete', `${basePath}${localVarPath}`,
             {
@@ -811,25 +844,28 @@ export class RbacService extends BaseService {
 
     /**
      * Update a service account
-     * @endpoint put /rbac/serviceaccounts/{name}
-     * @param name Service Account Name
+     * @endpoint put /rbac/serviceaccounts/{id}
+     * @param id Service Account ID
      * @param sa Service Account
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacServiceaccountsNamePut(name: string, sa: ModelsServiceAccount, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsServiceAccount>;
-    public rbacServiceaccountsNamePut(name: string, sa: ModelsServiceAccount, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsServiceAccount>>;
-    public rbacServiceaccountsNamePut(name: string, sa: ModelsServiceAccount, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsServiceAccount>>;
-    public rbacServiceaccountsNamePut(name: string, sa: ModelsServiceAccount, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (name === null || name === undefined) {
-            throw new Error('Required parameter name was null or undefined when calling rbacServiceaccountsNamePut.');
+    public rbacServiceaccountsIdPut(id: string, sa: ModelsServiceAccount, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsServiceAccount>;
+    public rbacServiceaccountsIdPut(id: string, sa: ModelsServiceAccount, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsServiceAccount>>;
+    public rbacServiceaccountsIdPut(id: string, sa: ModelsServiceAccount, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsServiceAccount>>;
+    public rbacServiceaccountsIdPut(id: string, sa: ModelsServiceAccount, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling rbacServiceaccountsIdPut.');
         }
         if (sa === null || sa === undefined) {
-            throw new Error('Required parameter sa was null or undefined when calling rbacServiceaccountsNamePut.');
+            throw new Error('Required parameter sa was null or undefined when calling rbacServiceaccountsIdPut.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -863,7 +899,7 @@ export class RbacService extends BaseService {
             }
         }
 
-        let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({name: "name", value: name, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsServiceAccount>('put', `${basePath}${localVarPath}`,
             {
@@ -881,21 +917,24 @@ export class RbacService extends BaseService {
 
     /**
      * Reset a service account token
-     * @endpoint post /rbac/serviceaccounts/{name}/reset
-     * @param name Service Account Name
+     * @endpoint post /rbac/serviceaccounts/{id}/reset
+     * @param id Service Account ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacServiceaccountsNameResetPost(name: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsServiceAccount>;
-    public rbacServiceaccountsNameResetPost(name: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsServiceAccount>>;
-    public rbacServiceaccountsNameResetPost(name: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsServiceAccount>>;
-    public rbacServiceaccountsNameResetPost(name: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (name === null || name === undefined) {
-            throw new Error('Required parameter name was null or undefined when calling rbacServiceaccountsNameResetPost.');
+    public rbacServiceaccountsIdResetPost(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsServiceAccount>;
+    public rbacServiceaccountsIdResetPost(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsServiceAccount>>;
+    public rbacServiceaccountsIdResetPost(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsServiceAccount>>;
+    public rbacServiceaccountsIdResetPost(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling rbacServiceaccountsIdResetPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -920,7 +959,7 @@ export class RbacService extends BaseService {
             }
         }
 
-        let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({name: "name", value: name, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/reset`;
+        let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/reset`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsServiceAccount>('post', `${basePath}${localVarPath}`,
             {
@@ -952,6 +991,9 @@ export class RbacService extends BaseService {
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -1009,15 +1051,18 @@ export class RbacService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacSimulatePost(request: ControllersSimulatePermissionsRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsResourcePermissions>;
-    public rbacSimulatePost(request: ControllersSimulatePermissionsRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsResourcePermissions>>;
-    public rbacSimulatePost(request: ControllersSimulatePermissionsRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsResourcePermissions>>;
-    public rbacSimulatePost(request: ControllersSimulatePermissionsRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public rbacSimulatePost(request: ModelsSimulatePermissionsRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsResourcePermissions>;
+    public rbacSimulatePost(request: ModelsSimulatePermissionsRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsResourcePermissions>>;
+    public rbacSimulatePost(request: ModelsSimulatePermissionsRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsResourcePermissions>>;
+    public rbacSimulatePost(request: ModelsSimulatePermissionsRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (request === null || request === undefined) {
             throw new Error('Required parameter request was null or undefined when calling rbacSimulatePost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -1092,6 +1137,9 @@ export class RbacService extends BaseService {
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'

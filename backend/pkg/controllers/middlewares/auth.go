@@ -33,13 +33,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// 2. Check if it's a ServiceAccount token
-		saName, err := authservice.GetTokenSA(r.Context(), token)
-		if err == nil && saName != "" {
+		saID, err := authservice.GetTokenSA(r.Context(), token)
+		if err == nil && saID != "" {
 			ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
 				Type: "sa",
-				Name: saName,
+				ID:   saID,
 			})
-			authservice.UpdateSALastUsed(saName)
+			authservice.UpdateSALastUsed(saID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
@@ -68,8 +68,8 @@ func RequirePermission(verb string, resource string) func(http.Handler) http.Han
 				return
 			}
 
-			if ac.Name != "" {
-				perms, err := authservice.GetPermissions(r.Context(), ac.Name, verb, resource)
+			if ac.ID != "" {
+				perms, err := authservice.GetPermissions(r.Context(), ac.ID, verb, resource)
 				if err == nil && perms != nil && (perms.AllowedAll || len(perms.AllowedInstances) > 0) {
 					if perms.MatchedRule != nil {
 						w.Header().Set("X-Matched-Policy", perms.MatchedRule.Resource)

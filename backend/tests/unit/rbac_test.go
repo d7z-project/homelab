@@ -14,10 +14,11 @@ func TestRBACFullWorkflow(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 1. 创建 ServiceAccount
-	saName := "test-sa"
+	// 1. 创建 ServiceAccount (使用显式 ID)
+	saID := "test-sa-01"
 	sa, err := rbacservice.CreateServiceAccount(ctx, &models.ServiceAccount{
-		Name: saName,
+		ID:   saID,
+		Name: "Test SA",
 	})
 	if err != nil {
 		t.Fatalf("CreateServiceAccount failed: %v", err)
@@ -25,11 +26,13 @@ func TestRBACFullWorkflow(t *testing.T) {
 	if sa.Token == "" {
 		t.Error("Expected token to be generated")
 	}
+	if sa.ID != saID {
+		t.Errorf("Expected ID %s, got %s", saID, sa.ID)
+	}
 
-	// 2. 创建 Role
-	roleName := "dns-manager"
-	_, err = rbacservice.CreateRole(ctx, &models.Role{
-		Name: roleName,
+	// 2. 创建 Role (UUID 自动生成)
+	role, err := rbacservice.CreateRole(ctx, &models.Role{
+		Name: "DNS Manager",
 		Rules: []models.PolicyRule{
 			{
 				Resource: "dns/example.com",
@@ -40,40 +43,46 @@ func TestRBACFullWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateRole failed: %v", err)
 	}
+	if role.ID == "" {
+		t.Error("Expected Role UUID to be generated")
+	}
+	roleID := role.ID
 
 	// 3. 创建 RoleBinding (初始禁用)
-	rbName := "test-binding"
-	_, err = rbacservice.CreateRoleBinding(ctx, &models.RoleBinding{
-		Name:               rbName,
-		ServiceAccountName: saName,
-		RoleNames:          []string{roleName},
-		Enabled:            false,
+	rb, err := rbacservice.CreateRoleBinding(ctx, &models.RoleBinding{
+		Name:             "Test Binding",
+		ServiceAccountID: saID,
+		RoleIDs:          []string{roleID},
+		Enabled:          false,
 	})
 	if err != nil {
 		t.Fatalf("CreateRoleBinding failed: %v", err)
 	}
+	if rb.ID == "" {
+		t.Error("Expected RoleBinding UUID to be generated")
+	}
+	rbID := rb.ID
 
 	// 4. 模拟权限 (应为空，因为 Binding 已禁用)
-	perms, _ := rbacservice.SimulatePermissions(ctx, saName, "get", "dns")
+	perms, _ := rbacservice.SimulatePermissions(ctx, saID, "get", "dns")
 	if perms.AllowedAll || len(perms.AllowedInstances) > 0 {
 		t.Error("Expected no permissions for disabled binding")
 	}
 
 	// 5. 启用 Binding 并再次模拟
-	_, _ = rbacservice.UpdateRoleBinding(ctx, rbName, &models.RoleBinding{
-		Name:               rbName,
-		ServiceAccountName: saName,
-		RoleNames:          []string{roleName},
-		Enabled:            true,
+	_, _ = rbacservice.UpdateRoleBinding(ctx, rbID, &models.RoleBinding{
+		ID:               rbID,
+		Name:             "Test Binding",
+		ServiceAccountID: saID,
+		RoleIDs:          []string{roleID},
+		Enabled:          true,
 	})
 
-	perms, err = rbacservice.SimulatePermissions(ctx, saName, "get", "dns")
+	perms, err = rbacservice.SimulatePermissions(ctx, saID, "get", "dns")
 	if err != nil {
 		t.Fatalf("SimulatePermissions failed: %v", err)
 	}
 	
-	// 根据 GetPermissions 逻辑，dns/example.com 匹配 resource="dns" 
-	// 应将 "example.com" 加入 AllowedInstances
 	found := false
 	for _, inst := range perms.AllowedInstances {
 		if inst == "example.com" {
@@ -87,7 +96,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 
 	// 6. 重置 Token 验证
 	oldToken := sa.Token
-	resetSA, err := rbacservice.ResetServiceAccountToken(ctx, saName)
+	resetSA, err := rbacservice.ResetServiceAccountToken(ctx, saID)
 	if err != nil {
 		t.Fatalf("Reset token failed: %v", err)
 	}
@@ -96,13 +105,42 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	// 7. 级联删除验证: 删除 Role
-	err = rbacservice.DeleteRole(ctx, roleName)
+	err = rbacservice.DeleteRole(ctx, roleID)
 	if err != nil {
 		t.Fatalf("DeleteRole failed: %v", err)
 	}
 	// RoleBinding 应该被删除 (因为它是唯一的 Role)
-	rbResp, _ := rbacservice.ListRoleBindings(ctx, 1, 10, rbName)
+	rbResp, _ := rbacservice.ListRoleBindings(ctx, 1, 10, "")
 	if rbResp.Total > 0 {
 		t.Error("RoleBinding should be deleted after its only role is removed")
+	}
+}
+
+func TestServiceAccountIDValidation(t *testing.T) {
+	teardown := tests.SetupTestDB()
+	defer teardown()
+
+	ctx := context.Background()
+
+	invalidIDs := []string{"", "invalid id", "测试账号", "sa@123"}
+	for _, id := range invalidIDs {
+		_, err := rbacservice.CreateServiceAccount(ctx, &models.ServiceAccount{
+			ID:   id,
+			Name: "Invalid Test",
+		})
+		if err == nil {
+			t.Errorf("Expected error for invalid SA ID '%s', but got nil", id)
+		}
+	}
+
+	validIDs := []string{"sa-1", "SA_02", "123-abc"}
+	for _, id := range validIDs {
+		_, err := rbacservice.CreateServiceAccount(ctx, &models.ServiceAccount{
+			ID:   id,
+			Name: "Valid Test",
+		})
+		if err != nil {
+			t.Errorf("Expected success for valid SA ID '%s', but got error: %v", id, err)
+		}
 	}
 }

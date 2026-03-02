@@ -18,6 +18,7 @@ import (
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Domain}
+// @Security ApiKeyAuth
 // @Router /dns/domains [get]
 func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
@@ -38,6 +39,7 @@ func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param domain body models.Domain true "Domain"
 // @Success 200 {object} models.Domain
+// @Security ApiKeyAuth
 // @Router /dns/domains [post]
 func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	var domain models.Domain
@@ -62,6 +64,7 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Domain ID"
 // @Param domain body models.Domain true "Domain"
 // @Success 200 {object} models.Domain
+// @Security ApiKeyAuth
 // @Router /dns/domains/{id} [put]
 func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -82,8 +85,10 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteDomainHandler godoc
 // @Summary Delete a DNS domain
 // @Tags dns
+// @Produce json
 // @Param id path string true "Domain ID"
 // @Success 200 {string} string "success"
+// @Security ApiKeyAuth
 // @Router /dns/domains/{id} [delete]
 func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -103,6 +108,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name or value"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Record}
+// @Security ApiKeyAuth
 // @Router /dns/records [get]
 func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
@@ -124,6 +130,7 @@ func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param record body models.Record true "Record"
 // @Success 200 {object} models.Record
+// @Security ApiKeyAuth
 // @Router /dns/records [post]
 func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	var record models.Record
@@ -148,6 +155,7 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Record ID"
 // @Param record body models.Record true "Record"
 // @Success 200 {object} models.Record
+// @Security ApiKeyAuth
 // @Router /dns/records/{id} [put]
 func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -168,8 +176,10 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteRecordHandler godoc
 // @Summary Delete a DNS record
 // @Tags dns
+// @Produce json
 // @Param id path string true "Record ID"
 // @Success 200 {string} string "success"
+// @Security ApiKeyAuth
 // @Router /dns/records/{id} [delete]
 func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -178,6 +188,23 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	common.Success(w, r, "success")
+}
+
+// ExportHandler godoc
+// @Summary Export all DNS domains and records
+// @Description Returns all domains and their associated records without internal IDs. Requires a valid token but no specific permissions.
+// @Tags dns
+// @Produce json
+// @Success 200 {object} models.DnsExportResponse
+// @Security ApiKeyAuth
+// @Router /dns/export [get]
+func ExportHandler(w http.ResponseWriter, r *http.Request) {
+	res, err := dnsservice.ExportAll(r.Context())
+	if err != nil {
+		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+	common.Success(w, r, res)
 }
 
 // DNSRouter registers the DNS routes

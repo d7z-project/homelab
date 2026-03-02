@@ -24,23 +24,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	sessionID, err := authservice.Login(r.Context(), req.Password, req.Totp)
 	if err != nil {
-		if err == authservice.ErrTotpRequired {
-			common.UnauthorizedError(w, r, 10001, "TOTP Required")
-			return
-		}
-		if err == authservice.ErrUnauthorized {
-			common.UnauthorizedError(w, r, 10000, "Unauthorized")
-			return
-		}
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	common.Success(w, r, models.LoginResponse{
-		SessionID: sessionID,
-	})
+	common.Success(w, r, &models.LoginResponse{SessionID: sessionID})
 }
 
 // LogoutHandler godoc
@@ -48,28 +39,22 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags auth
 // @Produce json
 // @Success 200 {string} string "success"
+// @Security ApiKeyAuth
 // @Router /logout [post]
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	sessionID := r.Header.Get("Authorization")
-	if len(sessionID) > 7 && sessionID[:7] == "Bearer " {
-		sessionID = sessionID[7:]
-	}
-	if sessionID == "" {
-		common.Success(w, r, nil)
-		return
+	authHeader := r.Header.Get("Authorization")
+	token := authHeader
+	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		token = authHeader[7:]
 	}
 
-	err := authservice.Logout(r.Context(), sessionID)
-	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
+	_ = authservice.Logout(r.Context(), token)
 	common.Success(w, r, nil)
 }
 
 type AuthInfo struct {
 	Type string `json:"type"`
-	Name string `json:"name,omitempty"`
+	ID   string `json:"id,omitempty"`
 }
 
 // InfoHandler godoc
@@ -77,6 +62,7 @@ type AuthInfo struct {
 // @Tags auth
 // @Produce json
 // @Success 200 {object} AuthInfo
+// @Security ApiKeyAuth
 // @Router /info [get]
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	ac := commonauth.FromContext(r.Context())
@@ -87,6 +73,6 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	common.Success(w, r, AuthInfo{
 		Type: ac.Type,
-		Name: ac.Name,
+		ID:   ac.ID,
 	})
 }

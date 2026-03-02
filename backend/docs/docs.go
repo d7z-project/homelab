@@ -19,12 +19,8 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "ApiKeyAuth": []
                     }
-                ],
-                "description": "Retrieve a paginated list of audit logs",
-                "consumes": [
-                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -36,19 +32,19 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number (0-based)",
+                        "description": "Page number",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Number of items per page",
+                        "description": "Items per page",
                         "name": "pageSize",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Search query by subject, action or resource",
+                        "description": "Search query",
                         "name": "search",
                         "in": "query"
                     }
@@ -78,8 +74,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/audit/logs/cleanup": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audit"
+                ],
+                "summary": "Cleanup old audit logs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Logs older than these days will be deleted",
+                        "name": "days",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AuditCleanupResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/dns/domains": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -132,6 +166,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -165,6 +204,11 @@ const docTemplate = `{
         },
         "/dns/domains/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -203,6 +247,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "dns"
                 ],
@@ -226,8 +278,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/dns/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns all domains and their associated records without internal IDs. Requires a valid token but no specific permissions.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dns"
+                ],
+                "summary": "Export all DNS domains and records",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DnsExportResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/dns/records": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -286,6 +368,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -319,6 +406,11 @@ const docTemplate = `{
         },
         "/dns/records/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -357,6 +449,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "dns"
                 ],
@@ -382,6 +482,11 @@ const docTemplate = `{
         },
         "/info": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -434,6 +539,11 @@ const docTemplate = `{
         },
         "/logout": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -453,6 +563,11 @@ const docTemplate = `{
         },
         "/rbac/resources/suggest": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -483,6 +598,11 @@ const docTemplate = `{
         },
         "/rbac/rolebindings": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -505,7 +625,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search by name",
+                        "description": "Search by name or id",
                         "name": "search",
                         "in": "query"
                     }
@@ -535,6 +655,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -566,8 +691,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/rbac/rolebindings/{name}": {
+        "/rbac/rolebindings/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -581,8 +711,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Binding Name",
-                        "name": "name",
+                        "description": "Role Binding ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -606,6 +736,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "rbac"
                 ],
@@ -613,8 +751,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Binding Name",
-                        "name": "name",
+                        "description": "Role Binding ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -631,6 +769,11 @@ const docTemplate = `{
         },
         "/rbac/roles": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -653,7 +796,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search by name",
+                        "description": "Search by name or id",
                         "name": "search",
                         "in": "query"
                     }
@@ -683,6 +826,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -714,8 +862,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/rbac/roles/{name}": {
+        "/rbac/roles/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -729,8 +882,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Name",
-                        "name": "name",
+                        "description": "Role ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -754,6 +907,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "rbac"
                 ],
@@ -761,8 +922,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role Name",
-                        "name": "name",
+                        "description": "Role ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -779,6 +940,11 @@ const docTemplate = `{
         },
         "/rbac/serviceaccounts": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -801,7 +967,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search by name",
+                        "description": "Search by name or id",
                         "name": "search",
                         "in": "query"
                     }
@@ -831,6 +997,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -862,8 +1033,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/rbac/serviceaccounts/{name}": {
+        "/rbac/serviceaccounts/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -877,8 +1053,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service Account Name",
-                        "name": "name",
+                        "description": "Service Account ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -902,6 +1078,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "rbac"
                 ],
@@ -909,8 +1093,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service Account Name",
-                        "name": "name",
+                        "description": "Service Account ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -925,8 +1109,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/rbac/serviceaccounts/{name}/reset": {
+        "/rbac/serviceaccounts/{id}/reset": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -937,8 +1126,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service Account Name",
-                        "name": "name",
+                        "description": "Service Account ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -955,6 +1144,11 @@ const docTemplate = `{
         },
         "/rbac/simulate": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -972,7 +1166,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.SimulatePermissionsRequest"
+                            "$ref": "#/definitions/models.SimulatePermissionsRequest"
                         }
                     }
                 ],
@@ -988,6 +1182,11 @@ const docTemplate = `{
         },
         "/rbac/verbs/suggest": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1036,7 +1235,7 @@ const docTemplate = `{
         "controllers.AuthInfo": {
             "type": "object",
             "properties": {
-                "name": {
+                "id": {
                     "type": "string"
                 },
                 "type": {
@@ -1044,17 +1243,11 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.SimulatePermissionsRequest": {
+        "models.AuditCleanupResponse": {
             "type": "object",
             "properties": {
-                "resource": {
-                    "type": "string"
-                },
-                "serviceAccountName": {
-                    "type": "string"
-                },
-                "verb": {
-                    "type": "string"
+                "deleted": {
+                    "type": "integer"
                 }
             }
         },
@@ -1100,6 +1293,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DnsExportResponse": {
+            "type": "object",
+            "properties": {
+                "domains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ExportDomain"
+                    }
+                }
+            }
+        },
         "models.Domain": {
             "type": "object",
             "properties": {
@@ -1124,6 +1328,40 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "models.ExportDomain": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ExportRecord"
+                    }
+                }
+            }
+        },
+        "models.ExportRecord": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "ttl": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }
@@ -1226,6 +1464,9 @@ const docTemplate = `{
         "models.Role": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1243,16 +1484,19 @@ const docTemplate = `{
                 "enabled": {
                     "type": "boolean"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
-                "roleNames": {
+                "roleIds": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "serviceAccountName": {
+                "serviceAccountId": {
                     "type": "string"
                 }
             }
@@ -1263,6 +1507,9 @@ const docTemplate = `{
                 "comments": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "lastUsedAt": {
                     "type": "string"
                 },
@@ -1270,6 +1517,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SimulatePermissionsRequest": {
+            "type": "object",
+            "properties": {
+                "resource": {
+                    "type": "string"
+                },
+                "serviceAccountId": {
+                    "type": "string"
+                },
+                "verb": {
                     "type": "string"
                 }
             }

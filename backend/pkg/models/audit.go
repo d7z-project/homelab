@@ -12,3 +12,7 @@ type AuditLog struct {
 	IPAddress string `json:"ipAddress"`
 	UserAgent string `json:"userAgent"`
 }
+
+type AuditCleanupResponse struct {
+	Deleted int `json:"deleted"`
+}

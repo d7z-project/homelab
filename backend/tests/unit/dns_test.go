@@ -103,3 +103,88 @@ func TestCreateDomainPermissions(t *testing.T) {
 		t.Errorf("Expected allowed creation, but got error: %v", err)
 	}
 }
+
+func TestDNSExportFiltering(t *testing.T) {
+	teardown := tests.SetupTestDB()
+	defer teardown()
+
+	perms := &models.ResourcePermissions{AllowedAll: true}
+	ctx := auth.WithPermissions(context.Background(), perms)
+
+	// 1. 创建并禁用域名 (不应导出)
+	inactiveDomain, err := dnsservice.CreateDomain(ctx, &models.Domain{
+		Name:   "inactive-export.com",
+		Status: "inactive",
+	})
+	if err != nil {
+		t.Fatalf("Failed to create inactive domain: %v", err)
+	}
+	_, err = dnsservice.CreateRecord(ctx, &models.Record{
+		DomainID: inactiveDomain.ID,
+		Name:     "www",
+		Type:     "A",
+		Value:    "1.1.1.1",
+		Status:   "active",
+	})
+	if err != nil {
+		t.Fatalf("Failed to create record for inactive domain: %v", err)
+	}
+
+	// 2. 创建激活域名及其记录
+	activeDomain, err := dnsservice.CreateDomain(ctx, &models.Domain{
+		Name:   "active-export.com",
+		Status: "active",
+	})
+	if err != nil {
+		t.Fatalf("Failed to create active domain: %v", err)
+	}
+	// 激活记录 (应导出)
+	_, err = dnsservice.CreateRecord(ctx, &models.Record{
+		DomainID: activeDomain.ID,
+		Name:     "www",
+		Type:     "A",
+		Value:    "2.2.2.2",
+		Status:   "active",
+	})
+	if err != nil {
+		t.Fatalf("Failed to create active record: %v", err)
+	}
+	// 禁用记录 (不应导出)
+	_, err = dnsservice.CreateRecord(ctx, &models.Record{
+		DomainID: activeDomain.ID,
+		Name:     "api",
+		Type:     "A",
+		Value:    "3.3.3.3",
+		Status:   "inactive",
+	})
+	if err != nil {
+		t.Fatalf("Failed to create inactive record: %v", err)
+	}
+
+	// 执行导出
+	export, err := dnsservice.ExportAll(ctx)
+	if err != nil {
+		t.Fatalf("ExportAll failed: %v", err)
+	}
+
+	// 验证域名过滤
+	foundActive := false
+	for _, dom := range export.Domains {
+		if dom.Name == "inactive-export.com" {
+			t.Error("Export included inactive domain: inactive-export.com")
+		}
+		if dom.Name == "active-export.com" {
+			foundActive = true
+			// 验证记录过滤
+			if len(dom.Records) != 1 {
+				t.Errorf("Expected 1 exported record for active-export.com, got %d", len(dom.Records))
+			} else if dom.Records[0].Name != "www" {
+				t.Errorf("Expected record www, got %s", dom.Records[0].Name)
+			}
+		}
+	}
+
+	if !foundActive {
+		t.Error("Export did not include active domain: active-export.com")
+	}
+}

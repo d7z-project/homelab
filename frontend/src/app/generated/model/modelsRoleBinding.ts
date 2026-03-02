@@ -11,8 +11,9 @@
 
 export interface ModelsRoleBinding { 
     enabled?: boolean;
+    id?: string;
     name?: string;
-    roleNames?: Array<string>;
-    serviceAccountName?: string;
+    roleIds?: Array<string>;
+    serviceAccountId?: string;
 }
 

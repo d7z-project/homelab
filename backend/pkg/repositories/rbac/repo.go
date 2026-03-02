@@ -28,9 +28,9 @@ func init() {
 	tokenCache, _ = lru.New[string, string](4096)
 }
 
-func InvalidateCache(roleName string) {
-	if roleName != "" {
-		roleCache.Remove(roleName)
+func InvalidateCache(roleID string) {
+	if roleID != "" {
+		roleCache.Remove(roleID)
 	} else {
 		roleCache.Purge()
 	}
@@ -41,9 +41,9 @@ func InvalidateCache(roleName string) {
 
 // ServiceAccount Repo
 
-func GetServiceAccount(ctx context.Context, name string) (*models.ServiceAccount, error) {
+func GetServiceAccount(ctx context.Context, id string) (*models.ServiceAccount, error) {
 	db := common.DB.Child("auth", "serviceaccounts")
-	data, err := db.Get(ctx, name)
+	data, err := db.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -62,22 +62,23 @@ func SaveServiceAccount(ctx context.Context, sa *models.ServiceAccount) error {
 	}
 	if sa.Token != "" {
 		tokenDB := common.DB.Child("auth", "tokens")
-		err = tokenDB.Put(ctx, sa.Token, sa.Name, kv.TTLKeep)
+		// Token points to SA ID
+		err = tokenDB.Put(ctx, sa.Token, sa.ID, kv.TTLKeep)
 		if err != nil {
 			return err
 		}
-		tokenCache.Add(sa.Token, sa.Name)
+		tokenCache.Add(sa.Token, sa.ID)
 	}
-	return db.Put(ctx, sa.Name, string(data), kv.TTLKeep)
+	return db.Put(ctx, sa.ID, string(data), kv.TTLKeep)
 }
 
-func DeleteServiceAccount(ctx context.Context, name string) error {
-	sa, err := GetServiceAccount(ctx, name)
+func DeleteServiceAccount(ctx context.Context, id string) error {
+	sa, err := GetServiceAccount(ctx, id)
 	if err == nil && sa.Token != "" {
 		common.DB.Child("auth", "tokens").Delete(ctx, sa.Token)
 		tokenCache.Remove(sa.Token)
 	}
-	_, err = common.DB.Child("auth", "serviceaccounts").Delete(ctx, name)
+	_, err = common.DB.Child("auth", "serviceaccounts").Delete(ctx, id)
 	return err
 }
 
@@ -92,7 +93,7 @@ func ListServiceAccounts(ctx context.Context, page uint64, pageSize uint, search
 	for _, v := range items {
 		var sa models.ServiceAccount
 		if err := json.Unmarshal([]byte(v.Value), &sa); err == nil {
-			if search == "" || strings.Contains(strings.ToLower(sa.Name), search) {
+			if search == "" || strings.Contains(strings.ToLower(sa.Name), search) || strings.Contains(strings.ToLower(sa.ID), search) {
 				res = append(res, sa)
 			}
 		}
@@ -112,24 +113,24 @@ func ListServiceAccounts(ctx context.Context, page uint64, pageSize uint, search
 // Token Repo
 
 func GetTokenSA(ctx context.Context, token string) (string, error) {
-	if saName, ok := tokenCache.Get(token); ok {
-		return saName, nil
+	if saID, ok := tokenCache.Get(token); ok {
+		return saID, nil
 	}
-	saName, err := common.DB.Child("auth", "tokens").Get(ctx, token)
-	if err == nil && saName != "" {
-		tokenCache.Add(token, saName)
+	saID, err := common.DB.Child("auth", "tokens").Get(ctx, token)
+	if err == nil && saID != "" {
+		tokenCache.Add(token, saID)
 	}
-	return saName, err
+	return saID, err
 }
 
 // Role Repo
 
-func GetRole(ctx context.Context, name string) (*models.Role, error) {
-	if val, ok := roleCache.Get(name); ok {
+func GetRole(ctx context.Context, id string) (*models.Role, error) {
+	if val, ok := roleCache.Get(id); ok {
 		return val, nil
 	}
 	db := common.DB.Child("auth", "roles")
-	data, err := db.Get(ctx, name)
+	data, err := db.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func GetRole(ctx context.Context, name string) (*models.Role, error) {
 	if err := json.Unmarshal([]byte(data), &role); err != nil {
 		return nil, err
 	}
-	roleCache.Add(name, &role)
+	roleCache.Add(id, &role)
 	return &role, nil
 }
 
@@ -147,17 +148,17 @@ func SaveRole(ctx context.Context, role *models.Role) error {
 	if err != nil {
 		return err
 	}
-	err = db.Put(ctx, role.Name, string(data), kv.TTLKeep)
+	err = db.Put(ctx, role.ID, string(data), kv.TTLKeep)
 	if err == nil {
-		InvalidateCache(role.Name)
+		InvalidateCache(role.ID)
 	}
 	return err
 }
 
-func DeleteRole(ctx context.Context, name string) error {
-	_, err := common.DB.Child("auth", "roles").Delete(ctx, name)
+func DeleteRole(ctx context.Context, id string) error {
+	_, err := common.DB.Child("auth", "roles").Delete(ctx, id)
 	if err == nil {
-		InvalidateCache(name)
+		InvalidateCache(id)
 	}
 	return err
 }
@@ -173,7 +174,7 @@ func ListRoles(ctx context.Context, page uint64, pageSize uint, search string) (
 	for _, v := range items {
 		var role models.Role
 		if err := json.Unmarshal([]byte(v.Value), &role); err == nil {
-			if search == "" || strings.Contains(strings.ToLower(role.Name), search) {
+			if search == "" || strings.Contains(strings.ToLower(role.Name), search) || strings.Contains(strings.ToLower(role.ID), search) {
 				res = append(res, role)
 			}
 		}
@@ -198,16 +199,16 @@ func SaveRoleBinding(ctx context.Context, rb *models.RoleBinding) error {
 	if err != nil {
 		return err
 	}
-	err = db.Put(ctx, rb.Name, string(data), kv.TTLKeep)
+	err = db.Put(ctx, rb.ID, string(data), kv.TTLKeep)
 	if err == nil {
 		InvalidateCache("")
 	}
 	return err
 }
 
-func GetRoleBinding(ctx context.Context, name string) (*models.RoleBinding, error) {
+func GetRoleBinding(ctx context.Context, id string) (*models.RoleBinding, error) {
 	db := common.DB.Child("auth", "rolebindings")
-	data, err := db.Get(ctx, name)
+	data, err := db.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -218,8 +219,8 @@ func GetRoleBinding(ctx context.Context, name string) (*models.RoleBinding, erro
 	return &rb, nil
 }
 
-func DeleteRoleBinding(ctx context.Context, name string) error {
-	_, err := common.DB.Child("auth", "rolebindings").Delete(ctx, name)
+func DeleteRoleBinding(ctx context.Context, id string) error {
+	_, err := common.DB.Child("auth", "rolebindings").Delete(ctx, id)
 	if err == nil {
 		InvalidateCache("")
 	}
@@ -237,7 +238,7 @@ func ListRoleBindings(ctx context.Context, page uint64, pageSize uint, search st
 	for _, v := range items {
 		var rb models.RoleBinding
 		if err := json.Unmarshal([]byte(v.Value), &rb); err == nil {
-			if search == "" || strings.Contains(strings.ToLower(rb.Name), search) {
+			if search == "" || strings.Contains(strings.ToLower(rb.Name), search) || strings.Contains(strings.ToLower(rb.ID), search) {
 				res = append(res, rb)
 			}
 		}

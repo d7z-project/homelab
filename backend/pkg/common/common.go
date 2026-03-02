@@ -27,6 +27,7 @@ func (rd *Response) Render(_ http.ResponseWriter, _ *http.Request) error {
 }
 
 func Success(w http.ResponseWriter, r *http.Request, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, data)
 }

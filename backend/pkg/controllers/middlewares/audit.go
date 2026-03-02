@@ -15,8 +15,8 @@ func AuditMiddleware(resource string) func(http.Handler) http.Handler {
 			subject := "anonymous"
 			if ac := commonauth.FromContext(r.Context()); ac != nil {
 				subject = ac.Type
-				if ac.Name != "" {
-					subject = ac.Name
+				if ac.ID != "" {
+					subject = ac.ID
 				}
 			}
 
