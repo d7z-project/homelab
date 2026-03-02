@@ -41,13 +41,13 @@ func CleanupLogs(ctx context.Context, days int) (int, error) {
 	}
 
 	count, err := auditrepo.CleanupLogs(ctx, days)
-	
+
 	message := fmt.Sprintf("Cleaned up %d audit logs older than %d days", count, days)
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("CleanupLogs", "system/audit", message+" (Error: "+err.Error()+")", false)
 		return count, err
 	}
-	
+
 	commonaudit.FromContext(ctx).Log("CleanupLogs", "system/audit", message, true)
 	return count, nil
 }

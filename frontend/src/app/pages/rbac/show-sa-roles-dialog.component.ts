@@ -38,7 +38,9 @@ import { ModelsRole } from '../../generated';
                     >shield</mat-icon
                   >
                   <span class="font-bold text-sm text-on-surface">{{ role.name }}</span>
-                  <span class="text-[10px] text-outline font-mono ml-auto opacity-60">{{ role.id }}</span>
+                  <span class="text-[10px] text-outline font-mono ml-auto opacity-60">{{
+                    role.id
+                  }}</span>
                 </div>
                 <div class="p-4 space-y-3">
                   @for (rule of role.rules; track rule) {

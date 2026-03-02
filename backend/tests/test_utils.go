@@ -14,7 +14,7 @@ func SetupTestDB() func() {
 	if err != nil {
 		log.Fatalf("failed to create test db: %v", err)
 	}
-	
+
 	// 保存旧的 DB 引用以便恢复（如果需要）
 	oldDB := common.DB
 	common.DB = db

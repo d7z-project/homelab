@@ -53,7 +53,7 @@ func init() {
 	RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]string, error) {
 		// prefix is everything after "dns/"
 		parts := strings.Split(prefix, "/")
-		
+
 		// Get all domains to match against the first part
 		domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
 		if err != nil {

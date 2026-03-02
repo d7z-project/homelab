@@ -69,7 +69,7 @@
               [class.nav-item-active-parent]="currentPath().startsWith(item.link)"
             >
               <mat-panel-title class="flex items-center gap-4">
-                <mat-icon class="text-on-surface-variant scale-90">{{ item.icon }}</mat-icon>
+                <mat-icon class="text-on-surface-variant">{{ item.icon }}</mat-icon>
                 <span class="text-sm font-medium">{{ item.label }}</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
@@ -85,7 +85,7 @@
                   "
                   (click)="onMenuClick(child, $event)"
                 >
-                  <mat-icon matListItemIcon class="!mr-3 !text-xs opacity-60 scale-75">{{
+                  <mat-icon matListItemIcon class="!mr-3 !text-[18px] opacity-70">{{
                     child.icon
                   }}</mat-icon>
                   <span matListItemTitle class="text-xs font-medium">{{ child.label }}</span>

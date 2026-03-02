@@ -33,7 +33,12 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
       <div class="pt-3 space-y-4">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>所属域名</mat-label>
-          <mat-select [(ngModel)]="record.domainId" [disabled]="isEdit" required #domainId="ngModel">
+          <mat-select
+            [(ngModel)]="record.domainId"
+            [disabled]="isEdit"
+            required
+            #domainId="ngModel"
+          >
             @for (d of domains; track d.id) {
               <mat-option [value]="d.id">{{ d.name }}</mat-option>
             }
@@ -66,7 +71,11 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
 
           <mat-form-field appearance="outline" class="w-32">
             <mat-label>记录类型</mat-label>
-            <mat-select [(ngModel)]="record.type" (selectionChange)="onTypeChange()" [disabled]="isEdit && record.type === 'SOA'">
+            <mat-select
+              [(ngModel)]="record.type"
+              (selectionChange)="onTypeChange()"
+              [disabled]="isEdit && record.type === 'SOA'"
+            >
               @for (t of recordTypes; track t) {
                 <mat-option [value]="t">{{ t }}</mat-option>
               }
@@ -74,25 +83,27 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
           </mat-form-field>
         </div>
 
-        <mat-form-field appearance="outline" class="w-full" *ngIf="['SOA', 'SRV', 'CAA'].indexOf(record.type || '') === -1">
-          <mat-label>记录值 (Value)</mat-label>
-          <input
-            matInput
-            [(ngModel)]="record.value"
-            [placeholder]="getValuePlaceholder()"
-            required
-            #valueInput="ngModel"
-          />
-          @if (valueInput.errors?.['required']) {
-            <mat-error>请输入记录值</mat-error>
-          }
-          @if (record.type === 'A' && !isValidIPv4()) {
-            <mat-error>无效的 IPv4 地址</mat-error>
-          }
-          @if (record.type === 'AAAA' && !isValidIPv6()) {
-            <mat-error>无效的 IPv6 地址</mat-error>
-          }
-        </mat-form-field>
+        @if (!['SOA', 'SRV', 'CAA'].includes(record.type || '')) {
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>记录值 (Value)</mat-label>
+            <input
+              matInput
+              [(ngModel)]="record.value"
+              [placeholder]="getValuePlaceholder()"
+              required
+              #valueInput="ngModel"
+            />
+            @if (valueInput.errors?.['required']) {
+              <mat-error>请输入记录值</mat-error>
+            }
+            @if (record.type === 'A' && !isValidIPv4()) {
+              <mat-error>无效的 IPv4 地址</mat-error>
+            }
+            @if (record.type === 'AAAA' && !isValidIPv6()) {
+              <mat-error>无效的 IPv6 地址</mat-error>
+            }
+          </mat-form-field>
+        }
 
         <!-- SOA specific fields -->
         @if (record.type === 'SOA') {
@@ -100,17 +111,37 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
             <div class="flex gap-4">
               <mat-form-field appearance="outline" class="flex-1">
                 <mat-label>主名称服务器 (MNAME)</mat-label>
-                <input matInput [(ngModel)]="soaMname" (ngModelChange)="syncValue()" required placeholder="例如: ns1.hover.com." #soaMnameInput="ngModel" pattern="^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}\\.?$" />
-                @if (soaMnameInput.errors?.['pattern']) { <mat-error>格式不正确</mat-error> }
+                <input
+                  matInput
+                  [(ngModel)]="soaMname"
+                  (ngModelChange)="syncValue()"
+                  required
+                  placeholder="例如: ns1.hover.com."
+                  #soaMnameInput="ngModel"
+                  pattern="^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}\\.?$"
+                />
+                @if (soaMnameInput.errors?.['pattern']) {
+                  <mat-error>格式不正确</mat-error>
+                }
               </mat-form-field>
               <mat-form-field appearance="outline" class="flex-1">
                 <mat-label>负责人邮箱 (RNAME)</mat-label>
-                <input matInput [(ngModel)]="soaRname" (ngModelChange)="syncValue()" required placeholder="例如: admin.example.com." #soaRnameInput="ngModel" pattern="^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}\\.?$" />
+                <input
+                  matInput
+                  [(ngModel)]="soaRname"
+                  (ngModelChange)="syncValue()"
+                  required
+                  placeholder="例如: admin.example.com."
+                  #soaRnameInput="ngModel"
+                  pattern="^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}\\.?$"
+                />
                 <mat-hint>邮箱中的 @ 需替换为 .</mat-hint>
-                @if (soaRnameInput.errors?.['pattern']) { <mat-error>格式不正确</mat-error> }
+                @if (soaRnameInput.errors?.['pattern']) {
+                  <mat-error>格式不正确</mat-error>
+                }
               </mat-form-field>
             </div>
-            
+
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>序列号 (SERIAL)</mat-label>
@@ -148,16 +179,38 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
             <div class="grid grid-cols-2 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>权重 (Weight)</mat-label>
-                <input matInput type="number" [(ngModel)]="srvWeight" (ngModelChange)="syncValue()" min="0" max="65535" required />
+                <input
+                  matInput
+                  type="number"
+                  [(ngModel)]="srvWeight"
+                  (ngModelChange)="syncValue()"
+                  min="0"
+                  max="65535"
+                  required
+                />
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>端口 (Port)</mat-label>
-                <input matInput type="number" [(ngModel)]="srvPort" (ngModelChange)="syncValue()" min="0" max="65535" required />
+                <input
+                  matInput
+                  type="number"
+                  [(ngModel)]="srvPort"
+                  (ngModelChange)="syncValue()"
+                  min="0"
+                  max="65535"
+                  required
+                />
               </mat-form-field>
             </div>
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>目标主机 (Target)</mat-label>
-              <input matInput [(ngModel)]="srvTarget" (ngModelChange)="syncValue()" required placeholder="例如: server.example.com." />
+              <input
+                matInput
+                [(ngModel)]="srvTarget"
+                (ngModelChange)="syncValue()"
+                required
+                placeholder="例如: server.example.com."
+              />
             </mat-form-field>
           </div>
         }
@@ -168,7 +221,15 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
             <div class="grid grid-cols-2 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>标志 (Flags)</mat-label>
-                <input matInput type="number" [(ngModel)]="caaFlags" (ngModelChange)="syncValue()" min="0" max="255" required />
+                <input
+                  matInput
+                  type="number"
+                  [(ngModel)]="caaFlags"
+                  (ngModelChange)="syncValue()"
+                  min="0"
+                  max="255"
+                  required
+                />
                 <mat-hint>通常为 0</mat-hint>
               </mat-form-field>
               <mat-form-field appearance="outline">
@@ -182,7 +243,13 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
             </div>
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>CA 域名或 URL</mat-label>
-              <input matInput [(ngModel)]="caaValue" (ngModelChange)="syncValue()" required placeholder='例如: letsencrypt.org' />
+              <input
+                matInput
+                [(ngModel)]="caaValue"
+                (ngModelChange)="syncValue()"
+                required
+                placeholder="例如: letsencrypt.org"
+              />
             </mat-form-field>
           </div>
         }
@@ -208,7 +275,14 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
           @if (record.type === 'MX' || record.type === 'SRV') {
             <mat-form-field appearance="outline" class="w-32">
               <mat-label>优先级</mat-label>
-              <input matInput type="number" [(ngModel)]="record.priority" (ngModelChange)="syncValue()" min="0" max="65535" />
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="record.priority"
+                (ngModelChange)="syncValue()"
+                min="0"
+                max="65535"
+              />
             </mat-form-field>
           }
         </div>
@@ -312,25 +386,25 @@ export class CreateRecordDialogComponent {
   parseValue() {
     if (!this.record.value) return;
     const parts = this.record.value.split(/\s+/);
-    
+
     if (this.record.type === 'SOA') {
-      if (parts.length >= 2) {
+      if (parts.length >= 7) {
         this.soaMname = parts[0];
         this.soaRname = parts[1];
-        this.soaSerial = parts[2] || '';
-        this.soaRefresh = parts[3] || '';
-        this.soaRetry = parts[4] || '';
-        this.soaExpire = parts[5] || '';
-        this.soaMinimum = parts[6] || '';
+        this.soaSerial = parts[2];
+        this.soaRefresh = parts[3];
+        this.soaRetry = parts[4];
+        this.soaExpire = parts[5];
+        this.soaMinimum = parts[6];
       }
     } else if (this.record.type === 'SRV') {
-      if (parts.length >= 2) {
+      if (parts.length >= 3) {
         this.srvWeight = parseInt(parts[0]) || 0;
         this.srvPort = parseInt(parts[1]) || 0;
         this.srvTarget = parts.slice(2).join(' ');
       }
     } else if (this.record.type === 'CAA') {
-      if (parts.length >= 2) {
+      if (parts.length >= 3) {
         this.caaFlags = parseInt(parts[0]) || 0;
         this.caaTag = parts[1] || 'issue';
         // Handle potentially quoted values
@@ -353,13 +427,18 @@ export class CreateRecordDialogComponent {
     if (this.record.type === 'SOA') {
       const mname = this.ensureTrailingDot(this.soaMname);
       const rname = this.ensureTrailingDot(this.soaRname);
-      this.record.value = `${mname} ${rname} ${this.soaSerial} ${this.soaRefresh} ${this.soaRetry} ${this.soaExpire} ${this.soaMinimum}`.trim();
+      this.record.value =
+        `${mname} ${rname} ${this.soaSerial} ${this.soaRefresh} ${this.soaRetry} ${this.soaExpire} ${this.soaMinimum}`.trim();
     } else if (this.record.type === 'SRV') {
       const target = this.ensureTrailingDot(this.srvTarget);
       this.record.value = `${this.srvWeight} ${this.srvPort} ${target}`.trim();
     } else if (this.record.type === 'CAA') {
       this.record.value = `${this.caaFlags} ${this.caaTag} "${this.caaValue}"`;
-    } else if (this.record.type === 'CNAME' || this.record.type === 'MX' || this.record.type === 'NS') {
+    } else if (
+      this.record.type === 'CNAME' ||
+      this.record.type === 'MX' ||
+      this.record.type === 'NS'
+    ) {
       this.record.value = this.ensureTrailingDot(this.record.value || '');
     }
   }
@@ -388,7 +467,8 @@ export class CreateRecordDialogComponent {
   }
 
   isValidIPv6(): boolean {
-    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
+    const ipv6Regex =
+      /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
     return ipv6Regex.test(this.record.value || '');
   }
 
@@ -398,12 +478,18 @@ export class CreateRecordDialogComponent {
     if (this.record.ttl === undefined || this.record.ttl < 1) return false;
 
     // Value must exist (either directly or via parts)
-    if (!this.record.value && this.record.type !== 'SOA' && this.record.type !== 'SRV' && this.record.type !== 'CAA') return false;
+    if (
+      !this.record.value &&
+      this.record.type !== 'SOA' &&
+      this.record.type !== 'SRV' &&
+      this.record.type !== 'CAA'
+    )
+      return false;
 
     // Type-specific value validation
     if (this.record.type === 'A' && !this.isValidIPv4()) return false;
     if (this.record.type === 'AAAA' && !this.isValidIPv6()) return false;
-    
+
     if (this.record.type === 'SOA') {
       const dnsPattern = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}\.?$/i;
       if (!dnsPattern.test(this.soaMname) || !dnsPattern.test(this.soaRname)) return false;
@@ -413,7 +499,12 @@ export class CreateRecordDialogComponent {
       if (this.srvWeight < 0 || this.srvWeight > 65535) return false;
       if (this.srvPort < 0 || this.srvPort > 65535) return false;
       if (!this.srvTarget) return false;
-      if (this.record.priority === undefined || this.record.priority < 0 || this.record.priority > 65535) return false;
+      if (
+        this.record.priority === undefined ||
+        this.record.priority < 0 ||
+        this.record.priority > 65535
+      )
+        return false;
     }
 
     if (this.record.type === 'CAA') {

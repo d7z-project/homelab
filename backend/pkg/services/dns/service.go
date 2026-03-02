@@ -22,11 +22,10 @@ var (
 )
 
 const (
-	defaultSOAMaster  = "ns1.hover.com."
 	defaultSOARefresh = 7200
-	defaultSOARetry    = 3600
-	defaultSOAExpire   = 1209600
-	defaultSOAMinimum  = 3600
+	defaultSOARetry   = 3600
+	defaultSOAExpire  = 1209600
+	defaultSOAMinimum = 3600
 )
 
 func generateSOASerial() string {
@@ -303,7 +302,7 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 		commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+domain.Name, message, false)
 		return nil, err
 	}
-	
+
 	// Update SOA serial
 	updateSOASerial(ctx, domain.ID)
 
@@ -353,7 +352,7 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 		record.Value = fmt.Sprintf("%s %s %s %d %d %d %d",
 			mname, rname, incrementSerial(existing.Value),
 			defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
-		
+
 		// SOA must always be enabled
 		record.Enabled = true
 	}
@@ -424,7 +423,7 @@ func DeleteRecord(ctx context.Context, id string) error {
 		return errors.New("SOA records cannot be deleted")
 	}
 
-	message := fmt.Sprintf("Deleted record: %s/%s -> %s (TTL: %d, enabled: %v, priority: %d) in %s", 
+	message := fmt.Sprintf("Deleted record: %s/%s -> %s (TTL: %d, enabled: %v, priority: %d) in %s",
 		existing.Name, existing.Type, existing.Value, existing.TTL, existing.Enabled, existing.Priority, domain.Name)
 
 	if err := dnsrepo.DeleteRecord(ctx, id); err != nil {
@@ -484,7 +483,7 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		if !r.Enabled {
 			continue
 		}
-		
+
 		if _, ok := domainMap[r.DomainID]; !ok {
 			domainMap[r.DomainID] = make(map[string]map[string]interface{})
 		}

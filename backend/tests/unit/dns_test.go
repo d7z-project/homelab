@@ -179,7 +179,7 @@ func TestDNSExportFiltering(t *testing.T) {
 			// dom.Records is map[name]map[type][]ExportRecord
 			foundWWW := false
 			foundSOA := false
-			
+
 			if types, ok := dom.Records["www"]; ok {
 				if _, ok := types["A"]; ok {
 					foundWWW = true

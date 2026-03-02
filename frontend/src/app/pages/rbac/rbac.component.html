@@ -133,20 +133,12 @@
                           >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
                         >
                       </button>
-                      <button
-                        mat-icon-button
-                        (click)="showSaRoles(element)"
-                        matTooltip="生效权限"
-                      >
+                      <button mat-icon-button (click)="showSaRoles(element)" matTooltip="生效权限">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >manage_accounts</mat-icon
                         >
                       </button>
-                      <button
-                        mat-icon-button
-                        (click)="resetToken(element)"
-                        matTooltip="重置令牌"
-                      >
+                      <button mat-icon-button (click)="resetToken(element)" matTooltip="重置令牌">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >key</mat-icon
                         >

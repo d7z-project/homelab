@@ -68,6 +68,18 @@ export class AuditComponent implements OnInit, OnDestroy {
       : ['timestamp', 'subject', 'action', 'resource', 'targetId', 'status', 'actions'],
   );
 
+  fabConfig = computed(() => {
+    if (this.isRoot()) {
+      return {
+        icon: 'delete_sweep',
+        label: '清理日志',
+        action: () => this.cleanup(),
+        color: 'warn' as const,
+      };
+    }
+    return null;
+  });
+
   constructor() {}
 
   ngOnInit(): void {
@@ -134,7 +146,10 @@ export class AuditComponent implements OnInit, OnDestroy {
       }
       this.total.set(res.total || 0);
     } catch (err) {
-      this.snackBar.open('加载审计日志失败', '重试', { duration: 3000 }).onAction().subscribe(() => this.loadLogs(reset));
+      this.snackBar
+        .open('加载审计日志失败', '重试', { duration: 3000 })
+        .onAction()
+        .subscribe(() => this.loadLogs(reset));
     } finally {
       this.loading.set(false);
       this.loadingMore.set(false);
@@ -178,16 +193,18 @@ export class AuditComponent implements OnInit, OnDestroy {
           title: '清理审计日志',
           message: '确定要清理 30 天前的所有历史日志吗？此操作不可撤销。',
           confirmText: '清理 30 天前日志',
-          color: 'warn'
-        }
+          color: 'warn',
+        },
       });
 
-      dialogRef.afterClosed().subscribe(async result => {
+      dialogRef.afterClosed().subscribe(async (result) => {
         if (result) {
           this.loading.set(true);
           try {
             const res = await firstValueFrom(this.auditService.auditLogsCleanupPost(30));
-            this.snackBar.open(`清理成功，已删除 ${res.deleted} 条记录`, '关闭', { duration: 3000 });
+            this.snackBar.open(`清理成功，已删除 ${res.deleted} 条记录`, '关闭', {
+              duration: 3000,
+            });
             this.loadLogs(true);
           } catch (err: any) {
             this.snackBar.open(err.error?.message || '清理失败', '关闭', { duration: 3000 });

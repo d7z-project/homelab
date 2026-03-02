@@ -20,7 +20,8 @@ func Router(r chi.Router) {
 			r.Post("/logout", controllers.LogoutHandler)
 			r.Get("/dns/export", controllers.ExportHandler)
 
-			r.Group(func(r chi.Router) {				r.Use(middlewares.RequirePermission("admin", "rbac"))
+			r.Group(func(r chi.Router) {
+				r.Use(middlewares.RequirePermission("admin", "rbac"))
 				r.Use(middlewares.AuditMiddleware("rbac"))
 				controllers.RBACRouter(r)
 			})

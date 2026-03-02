@@ -63,7 +63,6 @@
                 </td>
               </ng-container>
 
-
               <ng-container matColumnDef="comments">
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
                   备注
@@ -109,7 +108,8 @@
                         [matTooltip]="element.enabled ? '禁用解析' : '启用解析'"
                         [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
                       >
-                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                        <mat-icon
+                          class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
                         >
                       </button>
@@ -333,7 +333,6 @@
                 </td>
               </ng-container>
 
-
               <ng-container matColumnDef="actions">
                 <th
                   mat-header-cell
@@ -358,7 +357,8 @@
                           [matTooltip]="element.enabled ? '禁用记录' : '启用记录'"
                           [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
                         >
-                          <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          <mat-icon
+                            class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                             >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
                           >
                         </button>
@@ -375,7 +375,8 @@
                           (click)="deleteRecord(element)"
                           matTooltip="删除"
                         >
-                          <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          <mat-icon
+                            class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                             >delete_outline</mat-icon
                           >
                         </button>
@@ -389,7 +390,9 @@
                           @if (element.type !== 'SOA') {
                             <button mat-menu-item (click)="toggleRecord(element)">
                               <mat-icon
-                                [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                                [class]="
+                                  element.enabled ? 'text-primary' : 'text-outline opacity-40'
+                                "
                                 >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
                               >
                               <span>{{ element.enabled ? '禁用记录' : '启用记录' }}</span>

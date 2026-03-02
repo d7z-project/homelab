@@ -70,9 +70,7 @@ import { ModelsServiceAccount } from '../../generated';
         </mat-form-field>
 
         <div class="py-2">
-          <mat-checkbox [(ngModel)]="sa.enabled" color="primary">
-            启用此账号
-          </mat-checkbox>
+          <mat-checkbox [(ngModel)]="sa.enabled" color="primary"> 启用此账号 </mat-checkbox>
         </div>
       </div>
     </mat-dialog-content>

@@ -82,7 +82,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SimulatePermissions failed: %v", err)
 	}
-	
+
 	found := false
 	for _, inst := range perms.AllowedInstances {
 		if inst == "example.com" {
@@ -100,7 +100,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 	sa.Enabled = false
 	_, _ = rbacservice.UpdateServiceAccount(ctx, saID, sa)
-	
+
 	// 验证禁用后权限模拟应为空
 	perms, _ = rbacservice.SimulatePermissions(ctx, saID, "get", "dns")
 	if perms.AllowedAll || len(perms.AllowedInstances) > 0 {

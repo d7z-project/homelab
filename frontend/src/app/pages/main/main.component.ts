@@ -114,6 +114,9 @@ import { UiService } from '../../ui.service';
       ::ng-deep .mat-expansion-panel-header {
         font-family: inherit !important;
       }
+      ::ng-deep .mat-expansion-indicator::after {
+        font-size: 18px !important;
+      }
     `,
   ],
 })

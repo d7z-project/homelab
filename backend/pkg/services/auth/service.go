@@ -89,7 +89,7 @@ func IsSAEnabled(ctx context.Context, saID string) bool {
 func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.ResourcePermissions, error) {
 	if saID == "root" {
 		return &models.ResourcePermissions{
-			AllowedAll: true,
+			AllowedAll:  true,
 			MatchedRule: &models.PolicyRule{Resource: "*", Verbs: []string{"*"}},
 		}, nil
 	}
@@ -117,7 +117,7 @@ func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.R
 					// Check if any verb in this rule matches requested verb
 					if matchVerb(rule.Verbs, verb) {
 						res := rule.Resource
-						
+
 						// Case 1: Full Wildcard
 						if res == "*" || res == "**" {
 							perms.AllowedAll = true
@@ -137,8 +137,8 @@ func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.R
 							perms.AllowedAll = true
 							perms.MatchedRule = &rule
 							return perms, nil
-						} 
-						
+						}
+
 						// Case 3: Instance Suggestion (e.g., resource "dns" matches rule "dns/a")
 						if strings.HasPrefix(cleanedRes, resource+"/") {
 							inst := strings.TrimPrefix(cleanedRes, resource+"/")

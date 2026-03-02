@@ -86,14 +86,10 @@ export class DnsComponent implements OnInit, OnDestroy {
 
   // Controlled signals for stability
   displayedDomainColumns = computed(() =>
-    this.isHandset()
-      ? ['name', 'actions']
-      : ['name', 'comments', 'updatedAt', 'actions'],
+    this.isHandset() ? ['name', 'actions'] : ['name', 'comments', 'updatedAt', 'actions'],
   );
   displayedRecordColumns = computed(() =>
-    this.isHandset()
-      ? ['name', 'type', 'actions']
-      : ['name', 'type', 'value', 'ttl', 'actions'],
+    this.isHandset() ? ['name', 'type', 'actions'] : ['name', 'type', 'value', 'ttl', 'actions'],
   );
 
   hasSearchContent = computed(() => {
@@ -225,7 +221,7 @@ export class DnsComponent implements OnInit, OnDestroy {
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
     this.updateQueryParams();
-    
+
     // Refresh data for the selected tab
     if (index === 0) {
       this.domainPage.set(1);

@@ -63,11 +63,7 @@ import { ModelsDomain } from '../../generated';
             <span class="font-medium">解析状态</span>
             <span class="text-xs text-outline">禁用后该域名下的所有记录将停止解析</span>
           </div>
-          <mat-slide-toggle
-            color="primary"
-            [(ngModel)]="domain.enabled"
-          >
-          </mat-slide-toggle>
+          <mat-slide-toggle color="primary" [(ngModel)]="domain.enabled"> </mat-slide-toggle>
         </div>
 
         <mat-form-field appearance="outline" class="w-full">

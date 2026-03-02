@@ -8,7 +8,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { FormsModule } from '@angular/forms';
 import { RbacService, ModelsServiceAccount, ModelsResourcePermissions } from '../../generated';
 import { firstValueFrom } from 'rxjs';
@@ -54,7 +57,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                   placeholder="搜索账号 ID 或名称..."
                   required
                 />
-                <mat-autocomplete #saAuto="matAutocomplete" [displayWith]="displaySaFn.bind(this)" (optionSelected)="onSaSelected($event)">
+                <mat-autocomplete
+                  #saAuto="matAutocomplete"
+                  [displayWith]="displaySaFn.bind(this)"
+                  (optionSelected)="onSaSelected($event)"
+                >
                   @for (sa of filteredSa(); track sa.id) {
                     <mat-option [value]="sa">
                       <div class="flex flex-col py-1">
@@ -64,7 +71,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                     </mat-option>
                   }
                 </mat-autocomplete>
-                <mat-hint>当前已选 ID: <code class="font-bold text-primary">{{ selectedSaID() || '未选择' }}</code></mat-hint>
+                <mat-hint
+                  >当前已选 ID:
+                  <code class="font-bold text-primary">{{
+                    selectedSaID() || '未选择'
+                  }}</code></mat-hint
+                >
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
@@ -288,7 +300,7 @@ export class RbacSimulatorComponent implements OnInit {
   saSearchValue = '';
   filteredSa = signal<ModelsServiceAccount[]>([]);
   selectedSaID = signal('');
-  
+
   verb = signal('read');
   resource = signal('');
   suggestions = signal<string[]>([]);
@@ -302,7 +314,7 @@ export class RbacSimulatorComponent implements OnInit {
 
   displaySaFn(sa: any): string {
     if (typeof sa === 'string') return sa;
-    return sa ? (sa.name || sa.id) : '';
+    return sa ? sa.name || sa.id : '';
   }
 
   async onSaSearch(val: string) {

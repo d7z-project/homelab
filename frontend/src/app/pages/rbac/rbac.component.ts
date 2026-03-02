@@ -127,11 +127,11 @@ export class RbacComponent implements OnInit, OnDestroy {
 
   // Helper mappings for RoleBinding display
   getSaName(id: string): string {
-    return this.serviceAccounts().find(s => s.id === id)?.name || id;
+    return this.serviceAccounts().find((s) => s.id === id)?.name || id;
   }
 
   getRoleName(id: string): string {
-    return this.roles().find(r => r.id === id)?.name || id;
+    return this.roles().find((r) => r.id === id)?.name || id;
   }
 
   hasSearchContent = computed(() => {
@@ -279,7 +279,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
     this.updateQueryParams();
-    
+
     // Refresh data for the selected tab
     if (index === 0) {
       this.saPage.set(0);
@@ -299,7 +299,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       this.saPage.set(0);
       this.rolePage.set(0);
       this.rbPage.set(0);
-      
+
       // We load them in order to ensure lookups work
       await this.loadServiceAccounts(true);
       await this.loadRoles(true);
@@ -491,9 +491,7 @@ export class RbacComponent implements OnInit, OnDestroy {
         if (updatedRB && updatedRB.id) {
           this.loading.set(true);
           try {
-            await firstValueFrom(
-              this.rbacService.rbacRolebindingsIdPut(updatedRB.id, updatedRB),
-            );
+            await firstValueFrom(this.rbacService.rbacRolebindingsIdPut(updatedRB.id, updatedRB));
             this.snackBar.open('绑定已更新', '关闭', { duration: 2000 });
             this.rbPage.set(0);
             await this.loadRoleBindings(true);
@@ -581,9 +579,7 @@ export class RbacComponent implements OnInit, OnDestroy {
         if (result) {
           this.loading.set(true);
           try {
-            const res = await firstValueFrom(
-              this.rbacService.rbacServiceaccountsIdResetPost(id),
-            );
+            const res = await firstValueFrom(this.rbacService.rbacServiceaccountsIdResetPost(id));
             this.snackBar.open('令牌已重置', '关闭', { duration: 2000 });
             requestAnimationFrame(() => {
               this.dialog.open(ShowTokenDialogComponent, {

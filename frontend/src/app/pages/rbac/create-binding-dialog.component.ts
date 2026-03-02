@@ -4,14 +4,25 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { FormsModule } from '@angular/forms';
 import { ModelsServiceAccount, ModelsRole, ModelsRoleBinding, RbacService } from '../../generated';
-import { firstValueFrom, Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError } from 'rxjs';
+import {
+  firstValueFrom,
+  Subject,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  of,
+  catchError,
+} from 'rxjs';
 
 @Component({
   selector: 'app-create-binding-dialog',
@@ -62,7 +73,11 @@ import { firstValueFrom, Subject, debounceTime, distinctUntilChanged, switchMap,
             [disabled]="isEdit"
             required
           />
-          <mat-autocomplete #saAuto="matAutocomplete" [displayWith]="displaySaFn.bind(this)" (optionSelected)="onSaSelected($event)">
+          <mat-autocomplete
+            #saAuto="matAutocomplete"
+            [displayWith]="displaySaFn.bind(this)"
+            (optionSelected)="onSaSelected($event)"
+          >
             @for (sa of filteredSa(); track sa.id) {
               <mat-option [value]="sa">
                 <div class="flex flex-col py-1">
@@ -72,7 +87,12 @@ import { firstValueFrom, Subject, debounceTime, distinctUntilChanged, switchMap,
               </mat-option>
             }
           </mat-autocomplete>
-          <mat-hint>当前已选 ID: <code class="font-bold text-primary">{{ binding.serviceAccountId || '未选择' }}</code></mat-hint>
+          <mat-hint
+            >当前已选 ID:
+            <code class="font-bold text-primary">{{
+              binding.serviceAccountId || '未选择'
+            }}</code></mat-hint
+          >
         </mat-form-field>
 
         <!-- Roles Chip Grid with Autocomplete -->
@@ -96,7 +116,10 @@ import { firstValueFrom, Subject, debounceTime, distinctUntilChanged, switchMap,
               #roleInput
             />
           </mat-chip-grid>
-          <mat-autocomplete #roleAuto="matAutocomplete" (optionSelected)="onRoleSelected($event, roleInput)">
+          <mat-autocomplete
+            #roleAuto="matAutocomplete"
+            (optionSelected)="onRoleSelected($event, roleInput)"
+          >
             @for (role of filteredRoles(); track role.id) {
               <mat-option [value]="role">
                 <div class="flex flex-col py-1">
@@ -109,7 +132,9 @@ import { firstValueFrom, Subject, debounceTime, distinctUntilChanged, switchMap,
           <mat-hint>可搜索并添加多个角色</mat-hint>
         </mat-form-field>
 
-        <div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30">
+        <div
+          class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30"
+        >
           <div class="flex flex-col">
             <span class="text-sm font-bold">启用此绑定</span>
             <span class="text-xs text-outline">禁用后此账号将暂时失去该组权限</span>
@@ -124,7 +149,12 @@ import { firstValueFrom, Subject, debounceTime, distinctUntilChanged, switchMap,
         mat-flat-button
         color="primary"
         [mat-dialog-close]="binding"
-        [disabled]="!binding.name || !binding.serviceAccountId || !binding.roleIds || binding.roleIds.length === 0"
+        [disabled]="
+          !binding.name ||
+          !binding.serviceAccountId ||
+          !binding.roleIds ||
+          binding.roleIds.length === 0
+        "
         class="!ml-2 px-8 rounded-full"
       >
         <mat-icon class="mr-1">check</mat-icon>
@@ -148,26 +178,31 @@ export class CreateBindingDialogComponent implements OnInit {
   saSearchValue = '';
   filteredSa = signal<ModelsServiceAccount[]>([]);
   filteredRoles = signal<ModelsRole[]>([]);
-  
+
   // Store full objects for name mapping in chips
   private roleLookup = new Map<string, string>();
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { binding?: ModelsRoleBinding; serviceAccounts: ModelsServiceAccount[]; roles: ModelsRole[] },
+    @Inject(MAT_DIALOG_DATA)
+    public data: {
+      binding?: ModelsRoleBinding;
+      serviceAccounts: ModelsServiceAccount[];
+      roles: ModelsRole[];
+    },
   ) {
     if (data.binding) {
       this.isEdit = true;
       this.binding = JSON.parse(JSON.stringify(data.binding));
       if (!this.binding.roleIds) this.binding.roleIds = [];
     }
-    
+
     // Initialize lookup from current cache
-    data.roles.forEach(r => this.roleLookup.set(r.id!, r.name!));
+    data.roles.forEach((r) => this.roleLookup.set(r.id!, r.name!));
     this.filteredSa.set(data.serviceAccounts.slice(0, 50));
     this.filteredRoles.set(data.roles.slice(0, 50));
 
     if (this.isEdit && this.binding.serviceAccountId) {
-      const sa = data.serviceAccounts.find(s => s.id === this.binding.serviceAccountId);
+      const sa = data.serviceAccounts.find((s) => s.id === this.binding.serviceAccountId);
       if (sa) this.saSearchValue = sa.name || sa.id || '';
     }
   }
@@ -176,7 +211,7 @@ export class CreateBindingDialogComponent implements OnInit {
 
   displaySaFn(sa: any): string {
     if (typeof sa === 'string') return sa;
-    return sa ? (sa.name || sa.id) : '';
+    return sa ? sa.name || sa.id : '';
   }
 
   async onSaSearch(val: string) {
@@ -196,7 +231,7 @@ export class CreateBindingDialogComponent implements OnInit {
     const res = await firstValueFrom(this.rbacService.rbacRolesGet(1, 50, val));
     this.filteredRoles.set(res.items || []);
     // Update lookup for new roles found
-    res.items?.forEach(r => this.roleLookup.set(r.id!, r.name!));
+    res.items?.forEach((r) => this.roleLookup.set(r.id!, r.name!));
   }
 
   onRoleSelected(event: MatAutocompleteSelectedEvent, input: HTMLInputElement) {
@@ -210,7 +245,7 @@ export class CreateBindingDialogComponent implements OnInit {
   }
 
   removeRole(id: string) {
-    this.binding.roleIds = this.binding.roleIds?.filter(rid => rid !== id);
+    this.binding.roleIds = this.binding.roleIds?.filter((rid) => rid !== id);
   }
 
   getRoleName(id: string): string {

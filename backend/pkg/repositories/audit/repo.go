@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
+	"sort"
 	"strings"
 	"time"
-	"sort"
 
 	"github.com/google/uuid"
 	"gopkg.d7z.net/middleware/kv"
@@ -56,7 +56,7 @@ func SaveLog(ctx context.Context, log *models.AuditLog) error {
 func ListLogs(ctx context.Context, page, pageSize int, search string) ([]models.AuditLog, int, error) {
 	indexDB := common.DB.Child("system", "audit", "index")
 	indexItems, _ := indexDB.List(ctx, "")
-	
+
 	var yearMonths []string
 	for _, item := range indexItems {
 		yearMonths = append(yearMonths, item.Key)
@@ -80,13 +80,13 @@ func ListLogs(ctx context.Context, page, pageSize int, search string) ([]models.
 	// Iterate backwards through gathered items for newest first
 	// Note: inside a single month, items are sorted ascending by timestamp key.
 	// We need to reverse them. Since we append months descending, and items within month ascending,
-	// we actually need to reverse the items *within* the month before appending, or just collect all 
+	// we actually need to reverse the items *within* the month before appending, or just collect all
 	// and reverse the whole list if we want strictly descending by time across all.
 	// Actually, a simpler way is just to collect all, then sort or reverse.
 	// Let's just collect all, and since we need them descending, we will reverse the whole slice.
 	// Wait, allItems is constructed by appending month by month (newest month first).
 	// Within a month, items are ascending. So we must reverse items WITHIN the month.
-	
+
 	var properlySortedItems []kv.Pair
 	for i := len(yearMonths) - 1; i >= 0; i-- {
 		parts := strings.Split(yearMonths[i], "-")
@@ -136,14 +136,14 @@ func CleanupLogs(ctx context.Context, days int) (int, error) {
 	cutoff := time.Now().AddDate(0, 0, -days)
 	indexDB := common.DB.Child("system", "audit", "index")
 	indexItems, _ := indexDB.List(ctx, "")
-	
+
 	deletedCount := 0
 	for _, item := range indexItems {
 		parts := strings.Split(item.Key, "-")
 		if len(parts) == 2 {
 			db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
 			logs, _ := db.List(ctx, "")
-			
+
 			monthHasRecords := false
 			for _, logItem := range logs {
 				var log models.AuditLog
@@ -157,7 +157,7 @@ func CleanupLogs(ctx context.Context, days int) (int, error) {
 					}
 				}
 			}
-			
+
 			if !monthHasRecords {
 				indexDB.Delete(ctx, item.Key)
 			}

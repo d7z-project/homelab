@@ -2,12 +2,12 @@ package unit
 
 import (
 	"context"
+	"fmt"
 	"homelab/pkg/models"
-	auditservice "homelab/pkg/services/audit"
 	auditrepo "homelab/pkg/repositories/audit"
+	auditservice "homelab/pkg/services/audit"
 	"homelab/tests"
 	"testing"
-	"fmt"
 	"time"
 )
 
@@ -45,7 +45,7 @@ func TestAuditLogsWorkflow(t *testing.T) {
 	if resp.Total != 25 {
 		t.Errorf("Expected total 25, got %d", resp.Total)
 	}
-	
+
 	// 验证顺序 (最新优先)
 	firstLog := items[0].(models.AuditLog)
 	if firstLog.Subject != "user-25" {

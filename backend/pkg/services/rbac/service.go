@@ -375,7 +375,7 @@ func DeleteRoleBinding(ctx context.Context, id string) error {
 		return errors.New("RoleBinding not found")
 	}
 
-	message := fmt.Sprintf("Deleted RoleBinding: %s (name: %s, SA: %s, Roles: %v, enabled: %v)", 
+	message := fmt.Sprintf("Deleted RoleBinding: %s (name: %s, SA: %s, Roles: %v, enabled: %v)",
 		existing.ID, existing.Name, existing.ServiceAccountID, existing.RoleIDs, existing.Enabled)
 	if err := rbacrepo.DeleteRoleBinding(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRoleBinding", id, message, false)

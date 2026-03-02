@@ -46,7 +46,9 @@ import { firstValueFrom } from 'rxjs';
             <input matInput [value]="role.id" disabled />
           </mat-form-field>
         } @else {
-          <div class="flex items-center px-4 py-3 bg-surface-container rounded-2xl border border-outline-variant/30 mb-4">
+          <div
+            class="flex items-center px-4 py-3 bg-surface-container rounded-2xl border border-outline-variant/30 mb-4"
+          >
             <mat-icon class="mr-3 text-outline">info</mat-icon>
             <span class="text-xs text-outline">角色 ID 将在创建时由系统自动生成 (UUID)</span>
           </div>
