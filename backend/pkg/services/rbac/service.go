@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
 	"regexp"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +23,10 @@ var (
 // Service Accounts
 
 func ListServiceAccounts(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
+
 	sas, total, err := rbacrepo.ListServiceAccounts(ctx, uint64(page-1), uint(pageSize), search)
 	if err != nil {
 		return nil, err
@@ -39,6 +45,9 @@ func ListServiceAccounts(ctx context.Context, page, pageSize int, search string)
 }
 
 func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*models.ServiceAccount, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	if sa.ID == "" {
 		return nil, errors.New("id is required")
 	}
@@ -57,7 +66,7 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 
 	sa.Enabled = true
 
-	message := fmt.Sprintf("Created ServiceAccount: %s (%s)", sa.Name, sa.ID)
+	message := fmt.Sprintf("Created ServiceAccount: %s (id: %s, enabled: %v, comments: '%s')", sa.Name, sa.ID, sa.Enabled, sa.Comments)
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.ID, message, false)
 		return nil, err
@@ -67,6 +76,9 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 }
 
 func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAccount) (*models.ServiceAccount, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	if sa.ID != id {
 		return nil, errors.New("id in body does not match path")
 	}
@@ -80,7 +92,23 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 		sa.Token = existing.Token
 	}
 
-	message := fmt.Sprintf("Updated ServiceAccount: %s (%s)", sa.Name, sa.ID)
+	changes := []string{}
+	if existing.Name != sa.Name {
+		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, sa.Name))
+	}
+	if existing.Enabled != sa.Enabled {
+		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, sa.Enabled))
+	}
+	if existing.Comments != sa.Comments {
+		changes = append(changes, fmt.Sprintf("comments: '%s' -> '%s'", existing.Comments, sa.Comments))
+	}
+	message := fmt.Sprintf("Updated ServiceAccount: %s", sa.ID)
+	if len(changes) > 0 {
+		message += ": " + strings.Join(changes, ", ")
+	} else {
+		message += " (no changes)"
+	}
+
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.ID, message, false)
 		return nil, err
@@ -90,6 +118,15 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 }
 
 func DeleteServiceAccount(ctx context.Context, id string) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return errors.New("permission denied: rbac")
+	}
+
+	existing, err := rbacrepo.GetServiceAccount(ctx, id)
+	if err != nil {
+		return errors.New("ServiceAccount not found")
+	}
+
 	// Cascade delete RoleBindings
 	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
 	if err == nil {
@@ -100,7 +137,7 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 		}
 	}
 
-	message := fmt.Sprintf("Deleted ServiceAccount: %s", id)
+	message := fmt.Sprintf("Deleted ServiceAccount: %s (name: %s, enabled: %v, comments: '%s')", existing.ID, existing.Name, existing.Enabled, existing.Comments)
 	if err := rbacrepo.DeleteServiceAccount(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteServiceAccount", id, message, false)
 		return err
@@ -110,6 +147,9 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 }
 
 func ResetServiceAccountToken(ctx context.Context, id string) (*models.ServiceAccount, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	sa, err := rbacrepo.GetServiceAccount(ctx, id)
 	if err != nil {
 		return nil, errors.New("service account not found")
@@ -128,6 +168,9 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*models.ServiceAc
 // Roles
 
 func ListRoles(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	roles, total, err := rbacrepo.ListRoles(ctx, uint64(page-1), uint(pageSize), search)
 	if err != nil {
 		return nil, err
@@ -146,6 +189,9 @@ func ListRoles(ctx context.Context, page, pageSize int, search string) (*common.
 }
 
 func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	if role.ID == "" {
 		role.ID = uuid.New().String()
 	}
@@ -155,7 +201,7 @@ func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 		return nil, errors.New("Role ID already exists")
 	}
 
-	message := fmt.Sprintf("Created Role: %s (%s) with %d rules", role.Name, role.ID, len(role.Rules))
+	message := fmt.Sprintf("Created Role: %s (id: %s) with rules: %+v", role.Name, role.ID, role.Rules)
 	if err := rbacrepo.SaveRole(ctx, role); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRole", role.ID, message, false)
 		return nil, err
@@ -165,16 +211,27 @@ func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 }
 
 func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	if role.ID != id {
 		return nil, errors.New("id in body does not match path")
 	}
 
-	_, err := rbacrepo.GetRole(ctx, id)
+	existing, err := rbacrepo.GetRole(ctx, id)
 	if err != nil {
 		return nil, errors.New("Role not found")
 	}
 
-	message := fmt.Sprintf("Updated Role: %s (%s)", role.Name, role.ID)
+	changes := []string{}
+	if existing.Name != role.Name {
+		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, role.Name))
+	}
+	// For rules, just log the change if it happened (simplified)
+	// Comparing rules can be complex, for now we just log they were updated
+	changes = append(changes, fmt.Sprintf("rules updated: %+v -> %+v", existing.Rules, role.Rules))
+
+	message := fmt.Sprintf("Updated Role: %s: %s", role.ID, strings.Join(changes, ", "))
 	if err := rbacrepo.SaveRole(ctx, role); err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateRole", role.ID, message, false)
 		return nil, err
@@ -184,6 +241,15 @@ func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role
 }
 
 func DeleteRole(ctx context.Context, id string) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return errors.New("permission denied: rbac")
+	}
+
+	existing, err := rbacrepo.GetRole(ctx, id)
+	if err != nil {
+		return errors.New("Role not found")
+	}
+
 	// Cascade update/delete RoleBindings
 	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
 	if err == nil {
@@ -208,7 +274,7 @@ func DeleteRole(ctx context.Context, id string) error {
 		}
 	}
 
-	message := fmt.Sprintf("Deleted Role: %s", id)
+	message := fmt.Sprintf("Deleted Role: %s (name: %s) with rules: %+v", existing.ID, existing.Name, existing.Rules)
 	if err := rbacrepo.DeleteRole(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRole", id, message, false)
 		return err
@@ -220,6 +286,9 @@ func DeleteRole(ctx context.Context, id string) error {
 // Role Bindings
 
 func ListRoleBindings(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	rbs, total, err := rbacrepo.ListRoleBindings(ctx, uint64(page-1), uint(pageSize), search)
 	if err != nil {
 		return nil, err
@@ -238,6 +307,9 @@ func ListRoleBindings(ctx context.Context, page, pageSize int, search string) (*
 }
 
 func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.RoleBinding, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	if rb.ID == "" {
 		rb.ID = uuid.New().String()
 	}
@@ -247,8 +319,8 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 		return nil, errors.New("RoleBinding ID already exists")
 	}
 
-	message := fmt.Sprintf("Created RoleBinding: %s (%s) (SA: %s -> Roles: %v)",
-		rb.Name, rb.ID, rb.ServiceAccountID, rb.RoleIDs)
+	message := fmt.Sprintf("Created RoleBinding: %s (id: %s, SA: %s, Roles: %v, enabled: %v)",
+		rb.Name, rb.ID, rb.ServiceAccountID, rb.RoleIDs, rb.Enabled)
 	if err := rbacrepo.SaveRoleBinding(ctx, rb); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.ID, message, false)
 		return nil, err
@@ -258,6 +330,9 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 }
 
 func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (*models.RoleBinding, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
+	}
 	if rb.ID != id {
 		return nil, errors.New("id in body does not match path")
 	}
@@ -267,10 +342,20 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 		return nil, errors.New("RoleBinding not found")
 	}
 
-	message := fmt.Sprintf("Updated RoleBinding: %s (%s)", rb.Name, rb.ID)
-	if existing.Enabled != rb.Enabled {
-		message += fmt.Sprintf(" (Status: %v -> %v)", existing.Enabled, rb.Enabled)
+	changes := []string{}
+	if existing.Name != rb.Name {
+		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, rb.Name))
 	}
+	if existing.Enabled != rb.Enabled {
+		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, rb.Enabled))
+	}
+	if existing.ServiceAccountID != rb.ServiceAccountID {
+		changes = append(changes, fmt.Sprintf("SA: %s -> %s", existing.ServiceAccountID, rb.ServiceAccountID))
+	}
+	// Simplified role list comparison
+	changes = append(changes, fmt.Sprintf("roles: %v -> %v", existing.RoleIDs, rb.RoleIDs))
+
+	message := fmt.Sprintf("Updated RoleBinding %s: %s", rb.ID, strings.Join(changes, ", "))
 
 	if err := rbacrepo.SaveRoleBinding(ctx, rb); err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateRoleBinding", rb.ID, message, false)
@@ -281,7 +366,17 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 }
 
 func DeleteRoleBinding(ctx context.Context, id string) error {
-	message := fmt.Sprintf("Deleted RoleBinding: %s", id)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return errors.New("permission denied: rbac")
+	}
+
+	existing, err := rbacrepo.GetRoleBinding(ctx, id)
+	if err != nil {
+		return errors.New("RoleBinding not found")
+	}
+
+	message := fmt.Sprintf("Deleted RoleBinding: %s (name: %s, SA: %s, Roles: %v, enabled: %v)", 
+		existing.ID, existing.Name, existing.ServiceAccountID, existing.RoleIDs, existing.Enabled)
 	if err := rbacrepo.DeleteRoleBinding(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRoleBinding", id, message, false)
 		return err

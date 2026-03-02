@@ -17,8 +17,14 @@
 
 ### 3. 业务服务层 (Services) - `pkg/services/{module}/`
 - **职责**：编排业务流程、执行参数校验、调用 Repository。
-- **审计规范**：所有修改类操作（C/U/D）必须通过 `commonaudit.FromContext(ctx).Log(action, targetID, success)` 手动上报。
-- **鉴权集成**：通过 `commonauth.PermissionsFromContext(ctx).IsAllowed(id)` 执行精确拦截。
+- **审计规范**：所有修改类操作（C/U/D）必须通过 `commonaudit.FromContext(ctx).Log(action, targetID, message, success)` 手动上报。
+  - **创建 (C)**：`message` 必须包含新创建实体的核心属性。
+  - **更新 (U)**：`message` 必须记录发生变化的字段及其 **新旧值对照**（格式：`field: old -> new`）。
+  - **删除 (D)**：`message` 必须记录 **被删除实体的完整快照**，以便追溯。
+- **权限与过滤规范**：
+  - **写入拦截**：通过 `commonauth.PermissionsFromContext(ctx).IsAllowed(resource)` 执行精确拦截。
+  - **列表过滤**：所有 `List` 类操作必须在 Service 层根据当前上下文权限进行 **细粒度过滤**。仅返回用户拥有权限的资源实例，严禁在 Controller 层返回全量数据后再由前端过滤。
+  - **公共功能例外**：`/dns/export` 为公共只读功能，所有有效 ServiceAccount 均可访问，但其内容受账户对各域名实例的 `dns/<domain>` 权限过滤。
 
 ### 4. 控制器层 (Controllers) - `pkg/controllers/`
 - **职责**：解析请求、调用 Service、返回标准响应。
@@ -27,7 +33,7 @@
   - 使用 `common.Success` / `common.Error` 进行响应渲染。
 - **中间件规范**：
   - `AuthMiddleware`：负责身份识别（Root Session 或 ServiceAccount Token）。
-  - `RequirePermission(verb, resource)`：负责资源准入，并在鉴权成功后于响应头注入 `X-Matched-Policy` 以实现权限溯源。
+  - `RequirePermission(verb, resource)`：负责资源准入（粗粒度），并在鉴权成功后于响应头注入 `X-Matched-Policy` 以实现权限溯源。
 
 ---
 
@@ -38,6 +44,7 @@
 ### 1. 资源层级 (Resource Hierarchy)
 - **DNS 模块**：遵循 `dns/<domain>/<host>/<type>` 格式。
   - 示例：`dns/example.com/www/A`。
+- **RBAC 模块**：资源标识符为 `rbac`。
 - **通配符支持**：支持 `*`（当前层级）和 `**`（递归后续所有层级）。
 
 ### 2. 权限评估逻辑
@@ -52,41 +59,24 @@
 项目采用“路由准入 + 业务拦截”的双层权限防御体系。
 
 ### 1. 路由准入：粗粒度拦截 (Controller 层)
-在 `route.go` 中注册路由时，必须通过 `RequirePermission` 中间件声明该接口所需的基础权限。
-- **职责**：检查当前用户是否具备操作该类资源的基本资格。
-- **示例**：
-  ```go
-  // 仅允许拥有 dns 资源 list 权限的用户进入
-  r.With(middlewares.RequirePermission("list", "dns")).Get("/domains", controllers.ListDomainsHandler)
-  ```
+在 `route.go` 中注册路由时，通过 `RequirePermission` 中间件声明该接口所需的基础权限。
+- **示例**：`r.With(middlewares.RequirePermission("admin", "dns")).Group(...)`。
 
 ### 2. 业务拦截：细粒度检查 (Service 层)
-Service 层负责针对具体资源实例的精确权限判定。
-- **职责**：防止“越权访问”，例如用户有权管理 A 域名，但尝试修改 B 域名。
+Service 层负责针对具体资源实例的精确权限判定与数据过滤。
 - **实现模式**：
   ```go
-  func UpdateDomain(ctx context.Context, id string, ...) {
-      existing := repo.Get(id)
-      // 构建精确资源路径进行校验
-      resource := fmt.Sprintf("dns/%s", existing.Name)
-      if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
-          return nil, errors.New("permission denied: " + resource)
+  func ListDomains(ctx context.Context, ...) {
+      all := repo.List(...)
+      perms := commonauth.PermissionsFromContext(ctx)
+      // 过滤逻辑
+      for _, d := range all {
+          if perms.IsAllowed("dns/" + d.Name) {
+              res = append(res, d)
+          }
       }
-      // 执行后续逻辑...
+      return res
   }
-  ```
-
-### 3. 自动化测试中的权限 Mock
-为了在不启动完整 RBAC 数据库的情况下测试 Service 逻辑，必须使用 `commonauth` 提供的注入工具。
-- **Mock 全局权限**：
-  ```go
-  ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
-  ```
-- **Mock 精确实例权限**：
-  ```go
-  ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{
-      AllowedInstances: []string{"dns/example.com"},
-  })
   ```
 
 ---
@@ -97,7 +87,7 @@ Service 层负责针对具体资源实例的精确权限判定。
 
 ### 1. 现代控制流 (Modern Control Flow)
 - **强制规范**：禁止使用过时的 `*ngIf` 和 `*ngFor` 指令。
-- **标准语法**：统一使用 Angular 17+ 的 `@if`, `@else`, `@for (item of list; track item.id)` 语法，以获得最佳的类型安全和渲染性能。
+- **标准语法**：统一使用 Angular 17+ 的 `@if`, `@else`, `@for (item of list; track item.id)` 语法。
 
 ### 2. 交互式状态更新
 对于无法预定义的交互式状态（如侧边栏开关、手动控制工具栏），必须遵循：
@@ -107,25 +97,27 @@ Service 层负责针对具体资源实例的精确权限判定。
 
 ## 测试框架与质量保证
 
-项目建立了完善的自动化测试体系，确保功能逻辑的正确性。
+项目建立了完善的自动化测试体系。
 
 ### 1. 后端功能测试 - `backend/tests/unit/`
-- **环境隔离**：所有测试必须通过 `tests.SetupTestDB()` 初始化 **内存数据库 (`memory://`)**，禁止污染本地存储。
-- **覆盖要求**：Service 层核心业务逻辑、RBAC 权限模拟、联级删除逻辑必须具备 100% 的功能测试覆盖。
-
-### 2. 运行测试
-- 执行 `cd backend && go test ./tests/...` 运行所有后端功能验证。
+- **环境隔离**：所有测试通过 `tests.SetupTestDB()` 初始化 **内存数据库 (`memory://`)**。
+- **安全测试**：必须包含针对 RBAC 权限过滤、细粒度拦截及审计日志内容的验证用例。
+- **覆盖要求**：核心业务逻辑必须具备 100% 的功能测试覆盖。
 
 ---
 
-## 核心开发工作流
+## 核心开发工作流 (Core Workflow)
 
-### 1. 后端逻辑开发
-1. 在 `models/` 定义数据结构并实现 `Bind` 接口。
-2. 在 `repositories/` 实现存储。
-3. 在 `services/` 编写业务逻辑及权限检查。
-4. 在 `controllers/` 暴露 Handler，使用 `render.Bind` 处理输入。
+### 1. 迭代开发循环
+1. **后端实现**：遵循 Models -> Repositories -> Services (含权限与审计) -> Controllers 流程。
+2. **逻辑验证**：执行 `go test ./tests/unit/...` 确保后端业务逻辑与权限拦截正确。
+3. **API 同步 (强制)**：运行 `make backend-generate`。每次修改后端 API 或 Model 后 **必须** 执行此命令，以同步更新 Swagger 文档及前端 `generated/` 强类型客户端代码。
+4. **前端适配**：利用生成的最新 API 客户端更新前端页面逻辑。
+5. **全栈构建验证 (强制)**：交付前 **必须** 执行 `make all`（或分别执行 `backend-build` 与 `frontend-build`）。确保后端编译无误、API 定义一致、且前端无类型冲突导致的编译失败。
 
-### 2. API 同步与前端联动
-1. 运行 `make backend-generate`：同步 Swagger 文档并更新前端 `generated/` 代码。
-2. 前端开发：利用生成的强类型 Service 客户端，采用 `@if`/`@for` 编写页面。
+### 2. 交付标准
+- [ ] 后端单元测试 100% 通过（含安全与审计测试）。
+- [ ] OpenAPI 文档已同步，前端 `generated/` 代码为最新。
+- [ ] **全栈构建成功**：前后端均可正常编译通过，无类型定义冲突。
+- [ ] 审计日志与权限拦截已按规范实现且验证通过。
+

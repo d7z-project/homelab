@@ -18,14 +18,10 @@ func Router(r chi.Router) {
 			r.Use(middlewares.AuthMiddleware)
 			r.Get("/info", controllers.InfoHandler)
 			r.Post("/logout", controllers.LogoutHandler)
-
-			// Simple DNS query without specific permissions
 			r.Get("/dns/export", controllers.ExportHandler)
 
-			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "rbac"))
+			r.Group(func(r chi.Router) {				r.Use(middlewares.RequirePermission("admin", "rbac"))
 				r.Use(middlewares.AuditMiddleware("rbac"))
-				r.Get("/rbac/resources/suggest", controllers.SuggestResourcesHandler)
 				controllers.RBACRouter(r)
 			})
 

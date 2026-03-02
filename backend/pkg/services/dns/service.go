@@ -24,14 +24,33 @@ var (
 // Domain Service
 
 func ListDomains(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	domains, total, err := dnsrepo.ListDomains(ctx, page-1, pageSize, search)
+	domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, search)
 	if err != nil {
 		return nil, err
 	}
 
-	var items []interface{}
+	perms := commonauth.PermissionsFromContext(ctx)
+	var filteredDomains []models.Domain
 	for _, d := range domains {
-		items = append(items, d)
+		resource := fmt.Sprintf("dns/%s", d.Name)
+		if perms.IsAllowed(resource) {
+			filteredDomains = append(filteredDomains, d)
+		}
+	}
+
+	total := len(filteredDomains)
+	start := (page - 1) * pageSize
+	if start >= total {
+		return &common.PaginatedResponse{Items: []interface{}{}, Total: total, Page: page}, nil
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	var items []interface{}
+	for i := start; i < end; i++ {
+		items = append(items, filteredDomains[i])
 	}
 
 	return &common.PaginatedResponse{
@@ -68,7 +87,7 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 	domain.CreatedAt = time.Now()
 	domain.UpdatedAt = time.Now()
 
-	message := fmt.Sprintf("Created domain %s (enabled: %v)", domain.Name, domain.Enabled)
+	message := fmt.Sprintf("Created domain %s (enabled: %v, comments: '%s')", domain.Name, domain.Enabled, domain.Comments)
 	if err := dnsrepo.SaveDomain(ctx, domain); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, false)
 		return nil, err
@@ -89,7 +108,6 @@ func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*model
 		return nil, errors.New("permission denied: " + resource)
 	}
 
-	message := fmt.Sprintf("Updated domain %s", existing.Name)
 	changes := []string{}
 	if existing.Enabled != domain.Enabled {
 		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, domain.Enabled))
@@ -97,8 +115,11 @@ func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*model
 	if existing.Comments != domain.Comments {
 		changes = append(changes, fmt.Sprintf("comments: '%s' -> '%s'", existing.Comments, domain.Comments))
 	}
+	message := fmt.Sprintf("Updated domain %s", existing.Name)
 	if len(changes) > 0 {
-		message += " (" + strings.Join(changes, ", ") + ")"
+		message += ": " + strings.Join(changes, ", ")
+	} else {
+		message += " (no changes)"
 	}
 
 	domain.ID = id
@@ -126,7 +147,7 @@ func DeleteDomain(ctx context.Context, id string) error {
 		return errors.New("permission denied: " + resource)
 	}
 
-	message := fmt.Sprintf("Deleted domain %s and all its records", existing.Name)
+	message := fmt.Sprintf("Deleted domain %s (enabled: %v, comments: '%s') and all its records", existing.Name, existing.Enabled, existing.Comments)
 
 	// Delete associated records first
 	if err := dnsrepo.DeleteRecordsByDomain(ctx, id); err != nil {
@@ -144,25 +165,46 @@ func DeleteDomain(ctx context.Context, id string) error {
 // Record Service
 
 func ListRecords(ctx context.Context, domainID string, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	// If domainID is provided, check permission for that domain
-	if domainID != "" {
-		existing, err := dnsrepo.GetDomain(ctx, domainID)
-		if err == nil {
-			resource := fmt.Sprintf("dns/%s", existing.Name)
-			if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
-				return nil, errors.New("permission denied for domain " + existing.Name)
-			}
-		}
-	}
-
-	records, total, err := dnsrepo.ListRecords(ctx, domainID, page-1, pageSize, search)
+	records, _, err := dnsrepo.ListRecords(ctx, domainID, 0, 10000, search)
 	if err != nil {
 		return nil, err
 	}
 
-	var items []interface{}
+	perms := commonauth.PermissionsFromContext(ctx)
+	domainCache := make(map[string]*models.Domain)
+
+	var filteredRecords []models.Record
 	for _, r := range records {
-		items = append(items, r)
+		domain, ok := domainCache[r.DomainID]
+		if !ok {
+			domain, _ = dnsrepo.GetDomain(ctx, r.DomainID)
+			domainCache[r.DomainID] = domain
+		}
+		if domain == nil {
+			continue
+		}
+
+		// Check if user has permission for this specific record or its domain
+		resourceDomain := fmt.Sprintf("dns/%s", domain.Name)
+		resourceRecord := fmt.Sprintf("dns/%s/%s/%s", domain.Name, r.Name, r.Type)
+		if perms.IsAllowed(resourceDomain) || perms.IsAllowed(resourceRecord) {
+			filteredRecords = append(filteredRecords, r)
+		}
+	}
+
+	total := len(filteredRecords)
+	start := (page - 1) * pageSize
+	if start >= total {
+		return &common.PaginatedResponse{Items: []interface{}{}, Total: total, Page: page}, nil
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	var items []interface{}
+	for i := start; i < end; i++ {
+		items = append(items, filteredRecords[i])
 	}
 
 	return &common.PaginatedResponse{
@@ -190,8 +232,8 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 
 	record.ID = uuid.New().String()
 
-	message := fmt.Sprintf("Created record %s in %s: %s -> %s (TTL: %d, enabled: %v)",
-		record.Type, domain.Name, record.Name, record.Value, record.TTL, record.Enabled)
+	message := fmt.Sprintf("Created record %s in %s: %s -> %s (TTL: %d, enabled: %v, priority: %d)",
+		record.Type, domain.Name, record.Name, record.Value, record.TTL, record.Enabled, record.Priority)
 
 	if err := dnsrepo.SaveRecord(ctx, record); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+domain.Name, message, false)
@@ -227,7 +269,6 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 		return nil, err
 	}
 
-	message := fmt.Sprintf("Updated record %s in %s", existing.Name, domain.Name)
 	changes := []string{}
 	if existing.Name != record.Name {
 		changes = append(changes, fmt.Sprintf("host: %s -> %s", existing.Name, record.Name))
@@ -244,8 +285,14 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 	if existing.Enabled != record.Enabled {
 		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, record.Enabled))
 	}
+	if existing.Priority != record.Priority {
+		changes = append(changes, fmt.Sprintf("priority: %d -> %d", existing.Priority, record.Priority))
+	}
+	message := fmt.Sprintf("Updated record %s in %s", existing.Name, domain.Name)
 	if len(changes) > 0 {
-		message += " (" + strings.Join(changes, ", ") + ")"
+		message += ": " + strings.Join(changes, ", ")
+	} else {
+		message += " (no changes)"
 	}
 
 	if err := dnsrepo.SaveRecord(ctx, record); err != nil {
@@ -273,7 +320,8 @@ func DeleteRecord(ctx context.Context, id string) error {
 		return errors.New("permission denied: " + resource)
 	}
 
-	message := fmt.Sprintf("Deleted %s record: %s in %s", existing.Type, existing.Name, domain.Name)
+	message := fmt.Sprintf("Deleted record: %s/%s -> %s (TTL: %d, enabled: %v, priority: %d) in %s", 
+		existing.Name, existing.Type, existing.Value, existing.TTL, existing.Enabled, existing.Priority, domain.Name)
 
 	if err := dnsrepo.DeleteRecord(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Name+"."+domain.Name, message, false)
@@ -289,6 +337,8 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	perms := commonauth.PermissionsFromContext(ctx)
 
 	// Fetch all records
 	allRecords, _, err := dnsrepo.ListRecords(ctx, "", 0, 10000, "")
@@ -312,7 +362,7 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		recordMap[r.DomainID] = append(recordMap[r.DomainID], exportRec)
 	}
 
-	// Construct response with only enabled domains
+	// Construct response with only enabled domains and those allowed by permissions
 	resp := &models.DnsExportResponse{
 		Domains: make([]models.ExportDomain, 0),
 	}
@@ -321,6 +371,12 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		if !d.Enabled {
 			continue
 		}
+		// Permission check: dns/<domain-name>
+		resource := fmt.Sprintf("dns/%s", d.Name)
+		if !perms.IsAllowed(resource) {
+			continue
+		}
+
 		exportDom := models.ExportDomain{
 			Name:    d.Name,
 			Records: recordMap[d.ID],
