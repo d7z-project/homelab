@@ -29,6 +29,10 @@ export const authInterceptor: HttpInterceptorFn = (
     tap({
       error: (err: any) => {
         if (err instanceof HttpErrorResponse && err.status === 401) {
+          // If the error code is 10001 (TOTP required), let the login component handle it
+          if (err.error && err.error.code === 10001) {
+            return;
+          }
           localStorage.clear();
           router.navigate(['/login']);
         }

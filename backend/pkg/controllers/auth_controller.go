@@ -41,7 +41,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionID, err := authservice.Login(ctx, req.Password, req.Totp, ip, ua)
 	if err != nil {
-		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
+		if err == authservice.ErrTotpRequired {
+			common.UnauthorizedError(w, r, 10001, "totp required")
+			return
+		}
+		common.UnauthorizedError(w, r, 10000, err.Error())
 		return
 	}
 

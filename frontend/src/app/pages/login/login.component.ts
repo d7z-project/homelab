@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -6,6 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../generated';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -32,16 +33,41 @@ import { HttpErrorResponse } from '@angular/common/http';
     MatCardModule,
 
     MatIconModule,
+
+    MatProgressBarModule,
   ],
 
   templateUrl: './login.component.html',
+  styles: [
+    `
+      .brand-panel {
+        background-color: #0f172a; /* Slate 900 */
+        position: relative;
+      }
+
+      .brand-content {
+        max-width: 400px;
+      }
+
+      .brand-logo-icon {
+        color: #6366f1; /* Indigo 500 */
+        filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.2));
+      }
+    `,
+  ],
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
+  @ViewChild('totpInput') totpInput?: ElementRef;
+
   validateForm!: FormGroup;
 
   loading = false;
 
   showTotp = false;
+
+  totpProgress = 0;
+
+  private progressInterval: any;
 
   private fb = inject(FormBuilder);
 
@@ -63,7 +89,10 @@ export class LoginComponent implements OnInit {
 
   async submitForm(): Promise<void> {
     if (this.validateForm.valid) {
-      this.loading = true;
+      requestAnimationFrame(() => {
+        this.loading = true;
+        this.cdr.detectChanges();
+      });
 
       try {
         const res = await firstValueFrom(
@@ -83,15 +112,23 @@ export class LoginComponent implements OnInit {
           const apiError = err.error;
 
           if (apiError.code === 10001) {
-            this.showTotp = true;
-
-            this.validateForm.get('totp')?.setValidators([Validators.required]);
-
-            this.validateForm.get('totp')?.updateValueAndValidity();
-
-            errorMsg = '请输入 TOTP 验证码';
-
-            this.snackBar.open(errorMsg, '关闭', { duration: 3000 });
+            requestAnimationFrame(() => {
+              this.showTotp = true;
+              this.startProgressTimer();
+              this.validateForm.get('totp')?.setValidators([Validators.required]);
+              this.validateForm.get('totp')?.updateValueAndValidity();
+              this.cdr.detectChanges();
+            });
+            
+            // 更明确的安全校验提示
+            this.snackBar.open('身份核验通过，请输入 2FA 动态验证码', '了解', { 
+              duration: 5000,
+              panelClass: ['security-snack'] 
+            });
+            
+            setTimeout(() => {
+              this.totpInput?.nativeElement.focus();
+            }, 100);
 
             return;
           } else if (apiError.code === 10000) {
@@ -103,9 +140,10 @@ export class LoginComponent implements OnInit {
 
         this.snackBar.open(errorMsg, '关闭', { duration: 3000 });
       } finally {
-        this.loading = false;
-
-        this.cdr.detectChanges();
+        requestAnimationFrame(() => {
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       }
     } else {
       Object.values(this.validateForm.controls).forEach((control) => {
@@ -116,5 +154,46 @@ export class LoginComponent implements OnInit {
         }
       });
     }
+  }
+
+  resetLogin(): void {
+    requestAnimationFrame(() => {
+      this.showTotp = false;
+      this.stopProgressTimer();
+      this.validateForm.get('totp')?.clearValidators();
+      this.validateForm.get('totp')?.setValue('');
+      this.validateForm.get('totp')?.updateValueAndValidity();
+      this.cdr.detectChanges();
+    });
+  }
+
+  private startProgressTimer(): void {
+    this.stopProgressTimer();
+    this.updateProgress();
+    this.progressInterval = setInterval(() => {
+      this.updateProgress();
+    }, 100);
+  }
+
+  private stopProgressTimer(): void {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
+  }
+
+  private updateProgress(): void {
+    requestAnimationFrame(() => {
+      const now = new Date();
+      const seconds = now.getSeconds() % 30;
+      const milliseconds = now.getMilliseconds();
+      // 30s = 30000ms
+      this.totpProgress = ((seconds * 1000 + milliseconds) / 30000) * 100;
+      this.cdr.detectChanges();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.stopProgressTimer();
   }
 }
