@@ -17,6 +17,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { firstValueFrom } from 'rxjs';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -46,6 +47,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
     MatInputModule,
     MatSelectModule,
     MatDividerModule,
+    MatSlideToggleModule,
     PageHeaderComponent,
   ],
   templateUrl: './dns.component.html',
@@ -86,14 +88,14 @@ export class DnsComponent implements OnInit, OnDestroy {
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
 
-  // Controlled signals for stability
+  // Controlled signals for stability - Enabled column at START
   displayedDomainColumns = computed(() =>
-    this.isHandset() ? ['name', 'actions'] : ['name', 'comments', 'updatedAt', 'actions'],
+    this.isHandset() ? ['enabled', 'name', 'actions'] : ['enabled', 'name', 'comments', 'updatedAt', 'actions'],
   );
   displayedRecordColumns = computed(() =>
     this.isHandset()
-      ? ['name', 'type', 'value', 'actions']
-      : ['name', 'type', 'value', 'ttl', 'actions'],
+      ? ['enabled', 'name', 'type', 'actions']
+      : ['enabled', 'name', 'type', 'value', 'ttl', 'actions'],
   );
 
   getDomainName(domainId: string | undefined): string {

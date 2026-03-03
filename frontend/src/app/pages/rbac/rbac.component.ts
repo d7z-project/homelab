@@ -29,6 +29,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { firstValueFrom } from 'rxjs';
 import { CreateSaDialogComponent } from './create-sa-dialog.component';
 import { ShowTokenDialogComponent } from './show-token-dialog.component';
@@ -61,6 +62,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
     MatFormFieldModule,
     MatInputModule,
     MatDividerModule,
+    MatSlideToggleModule,
     PageHeaderComponent,
   ],
   templateUrl: './rbac.component.html',
@@ -105,11 +107,11 @@ export class RbacComponent implements OnInit, OnDestroy {
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
 
-  // Focus on NAMES for display, IDs are technical
+  // Enabled toggle column added at the START
   displayedSaColumns = computed(() =>
     this.isHandset()
-      ? ['name', 'id', 'actions']
-      : ['name', 'id', 'comments', 'token', 'lastUsedAt', 'actions'],
+      ? ['enabled', 'name', 'id', 'actions']
+      : ['enabled', 'name', 'id', 'comments', 'token', 'lastUsedAt', 'actions'],
   );
 
   async toggleSa(sa: ModelsServiceAccount) {
@@ -119,9 +121,10 @@ export class RbacComponent implements OnInit, OnDestroy {
       const updated = { ...sa, enabled: !sa.enabled };
       await firstValueFrom(this.rbacService.rbacServiceaccountsIdPut(sa.id, updated));
       this.snackBar.open(`账号已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
-      this.saPage.set(0);
+      // Keep silent refresh or just update local state if preferred, but list reload is safer
       await this.loadServiceAccounts(true);
     } catch (err) {
+      // Revert local UI state if reload is not used
       this.snackBar.open('操作失败', '关闭', { duration: 3000 });
     } finally {
       this.loading.set(false);
@@ -131,8 +134,23 @@ export class RbacComponent implements OnInit, OnDestroy {
     this.isHandset() ? ['name', 'actions'] : ['name', 'rules', 'actions'],
   );
   displayedRbColumns = computed(() =>
-    this.isHandset() ? ['name', 'sa', 'role', 'actions'] : ['name', 'sa', 'role', 'actions'],
+    this.isHandset() ? ['enabled', 'name', 'sa', 'role', 'actions'] : ['enabled', 'name', 'sa', 'role', 'actions'],
   );
+
+  async toggleRb(rb: ModelsRoleBinding) {
+    if (!rb.id) return;
+    this.loading.set(true);
+    try {
+      const updated = { ...rb, enabled: !rb.enabled };
+      await firstValueFrom(this.rbacService.rbacRolebindingsIdPut(rb.id, updated));
+      this.snackBar.open(`绑定已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      await this.loadRoleBindings(true);
+    } catch (err) {
+      this.snackBar.open('操作失败', '关闭', { duration: 3000 });
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   // Helper mappings for RoleBinding display
   getSaName(id: string): string {
@@ -687,22 +705,6 @@ export class RbacComponent implements OnInit, OnDestroy {
         }
       });
     });
-  }
-
-  async toggleRb(rb: ModelsRoleBinding) {
-    if (!rb.id) return;
-    this.loading.set(true);
-    try {
-      const updated = { ...rb, enabled: !rb.enabled };
-      await firstValueFrom(this.rbacService.rbacRolebindingsIdPut(rb.id, updated));
-      this.snackBar.open(`绑定已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
-      this.rbPage.set(0);
-      await this.loadRoleBindings(true);
-    } catch (err) {
-      this.snackBar.open('操作失败', '关闭', { duration: 3000 });
-    } finally {
-      this.loading.set(false);
-    }
   }
 
   deleteRB(rb: ModelsRoleBinding) {

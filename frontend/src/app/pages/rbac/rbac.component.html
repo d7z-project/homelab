@@ -52,15 +52,36 @@
             class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
           >
             <table mat-table [dataSource]="serviceAccounts()" class="w-full bg-transparent">
+              <!-- Enabled Column (FIRST) -->
+              <ng-container matColumnDef="enabled">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!pl-6 bg-surface-container-low font-bold text-center"
+                  style="width: 1px"
+                >
+                  状态
+                </th>
+                <td mat-cell *matCellDef="let element" class="!pl-6 text-center">
+                  <mat-slide-toggle
+                    [checked]="element.enabled"
+                    (click)="$event.stopPropagation(); toggleSa(element)"
+                    color="primary"
+                    class="scale-75"
+                  >
+                  </mat-slide-toggle>
+                </td>
+              </ng-container>
+
               <ng-container matColumnDef="name">
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!pl-6 bg-surface-container-low font-bold"
+                  class="bg-surface-container-low font-bold"
                 >
                   名称
                 </th>
-                <td mat-cell *matCellDef="let element" class="py-4 font-medium !pl-6 text-primary">
+                <td mat-cell *matCellDef="let element" class="py-4 font-medium text-primary">
                   {{ element.name || element.id }}
                 </td>
               </ng-container>
@@ -123,17 +144,6 @@
                 >
                   <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
-                      <button
-                        mat-icon-button
-                        (click)="toggleSa(element)"
-                        [matTooltip]="element.enabled ? '禁用' : '启用'"
-                        [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
-                      >
-                        <mat-icon
-                          class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                          >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
-                        >
-                      </button>
                       <button mat-icon-button (click)="showSaRoles(element)" matTooltip="生效权限">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >manage_accounts</mat-icon
@@ -165,13 +175,6 @@
                       </button>
                       <mat-menu #saMenu="matMenu">
                         <ng-template matMenuContent>
-                          <button mat-menu-item (click)="toggleSa(element)">
-                            <mat-icon
-                              [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
-                              >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
-                            >
-                            <span>{{ element.enabled ? '禁用' : '启用' }}</span>
-                          </button>
                           <button mat-menu-item (click)="showSaRoles(element)">
                             <mat-icon>manage_accounts</mat-icon>
                             <span>生效权限</span>
@@ -411,15 +414,36 @@
             class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
           >
             <table mat-table [dataSource]="roleBindings()" class="w-full bg-transparent">
+              <!-- Enabled Column (FIRST) -->
+              <ng-container matColumnDef="enabled">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!pl-6 bg-surface-container-low font-bold text-center"
+                  style="width: 1px"
+                >
+                  状态
+                </th>
+                <td mat-cell *matCellDef="let element" class="!pl-6 text-center">
+                  <mat-slide-toggle
+                    [checked]="element.enabled"
+                    (click)="$event.stopPropagation(); toggleRb(element)"
+                    color="primary"
+                    class="scale-75"
+                  >
+                  </mat-slide-toggle>
+                </td>
+              </ng-container>
+
               <ng-container matColumnDef="name">
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!pl-6 bg-surface-container-low font-bold"
+                  class="bg-surface-container-low font-bold"
                 >
                   绑定名称
                 </th>
-                <td mat-cell *matCellDef="let element" class="py-4 font-medium !pl-6 text-primary">
+                <td mat-cell *matCellDef="let element" class="py-4 font-medium text-primary">
                   {{ element.name }}
                 </td>
               </ng-container>
@@ -464,17 +488,6 @@
                 >
                   <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
-                      <button
-                        mat-icon-button
-                        (click)="toggleRb(element)"
-                        [matTooltip]="element.enabled ? '禁用' : '启用'"
-                        [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
-                      >
-                        <mat-icon
-                          class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                          >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
-                        >
-                      </button>
                       <button mat-icon-button (click)="editRB(element)">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >edit</mat-icon
@@ -491,13 +504,6 @@
                       </button>
                       <mat-menu #rbMenu="matMenu">
                         <ng-template matMenuContent>
-                          <button mat-menu-item (click)="toggleRb(element)">
-                            <mat-icon
-                              [class]="element.enabled ? 'text-primary' : 'text-outline opacity-40'"
-                              >{{ element.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
-                            >
-                            <span>{{ element.enabled ? '禁用' : '启用' }}</span>
-                          </button>
                           <button mat-menu-item (click)="editRB(element)">
                             <mat-icon>edit</mat-icon>
                             <span>编辑</span>
