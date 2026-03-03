@@ -1,5 +1,7 @@
 package models
 
+import "net/http"
+
 type AuditLog struct {
 	ID        string `json:"id"`
 	Timestamp string `json:"timestamp"` // RFC3339 format
@@ -13,6 +15,14 @@ type AuditLog struct {
 	UserAgent string `json:"userAgent"`
 }
 
+func (a *AuditLog) Bind(r *http.Request) error {
+	return nil
+}
+
 type AuditCleanupResponse struct {
 	Deleted int `json:"deleted"`
+}
+
+func (a *AuditCleanupResponse) Bind(r *http.Request) error {
+	return nil
 }

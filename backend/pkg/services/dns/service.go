@@ -122,13 +122,10 @@ func ListDomains(ctx context.Context, page, pageSize int, search string) (*commo
 }
 
 func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, error) {
-	if domain.Name == "" {
-		return nil, errors.New("domain name is required")
+	if err := domain.Bind(nil); err != nil {
+		return nil, err
 	}
-	domain.Name = strings.ToLower(domain.Name)
-	if !domainRegex.MatchString(domain.Name) {
-		return nil, errors.New("invalid domain name format")
-	}
+	// Structural validation is now in models.Domain.Bind
 
 	// Permission check for creating domain: dns/<name>
 	resource := fmt.Sprintf("dns/%s", domain.Name)
@@ -173,8 +170,10 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 	commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, true)
 	return domain, nil
 }
-
 func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*models.Domain, error) {
+	if err := domain.Bind(nil); err != nil {
+		return nil, err
+	}
 	existing, err := dnsrepo.GetDomain(ctx, id)
 	if err != nil {
 		return nil, errors.New("domain not found")
@@ -293,6 +292,9 @@ func ListRecords(ctx context.Context, domainID string, page, pageSize int, searc
 }
 
 func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, error) {
+	if err := record.Bind(nil); err != nil {
+		return nil, err
+	}
 	domain, err := dnsrepo.GetDomain(ctx, record.DomainID)
 	if err != nil {
 		return nil, errors.New("domain not found")
@@ -331,6 +333,9 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 }
 
 func UpdateRecord(ctx context.Context, id string, record *models.Record) (*models.Record, error) {
+	if err := record.Bind(nil); err != nil {
+		return nil, err
+	}
 	existing, err := dnsrepo.GetRecord(ctx, id)
 	if err != nil {
 		return nil, errors.New("record not found")
@@ -630,15 +635,7 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 }
 
 func validateRecord(ctx context.Context, record *models.Record) error {
-	if record.Name == "" {
-		return errors.New("record name is required")
-	}
-	if record.Type == "" {
-		return errors.New("record type is required")
-	}
-	if record.Value == "" {
-		return errors.New("record value is required")
-	}
+	// Basic non-empty checks moved to models.Record.Bind
 
 	// Validate Value based on Type
 	switch record.Type {

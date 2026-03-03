@@ -1,9 +1,17 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
+
+var orchIdRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 // VarDefinition 描述一个工作流的输入变量
 type VarDefinition struct {
@@ -31,6 +39,51 @@ type Workflow struct {
 }
 
 func (w *Workflow) Bind(r *http.Request) error {
+	w.Name = strings.TrimSpace(w.Name)
+	if w.Name == "" {
+		return errors.New("workflow name is required")
+	}
+	if w.ServiceAccountID == "" {
+		return errors.New("service account is required")
+	}
+
+	// Validate Variable Keys
+	for k, v := range w.Vars {
+		if !orchIdRegex.MatchString(k) {
+			return fmt.Errorf("invalid variable key '%s': only lowercase letters, numbers and underscores are allowed", k)
+		}
+		if w.CronEnabled && v.Required && v.Default == "" {
+			return fmt.Errorf("cron job cannot be enabled when workflow has required variable without default: %s", k)
+		}
+	}
+
+	if w.CronEnabled {
+		if _, err := cron.ParseStandard(w.CronExpr); err != nil {
+			return fmt.Errorf("invalid cron expression: %v", err)
+		}
+	}
+
+	if len(w.Steps) == 0 {
+		return errors.New("at least one step is required")
+	}
+
+	stepIDs := make(map[string]bool)
+	for i, step := range w.Steps {
+		if step.ID == "" {
+			return fmt.Errorf("step %d: ID is required", i+1)
+		}
+		if !orchIdRegex.MatchString(step.ID) {
+			return fmt.Errorf("step %d: invalid ID '%s': only lowercase letters, numbers and underscores are allowed", i+1, step.ID)
+		}
+		if stepIDs[step.ID] {
+			return fmt.Errorf("step %d: duplicate ID '%s'", i+1, step.ID)
+		}
+		stepIDs[step.ID] = true
+		if step.Type == "" {
+			return fmt.Errorf("step %d (%s): type is required", i+1, step.ID)
+		}
+	}
+
 	return nil
 }
 

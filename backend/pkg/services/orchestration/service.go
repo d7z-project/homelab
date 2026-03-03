@@ -10,83 +10,33 @@ import (
 	repo "homelab/pkg/repositories/orchestration"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/expr-lang/expr"
 	"github.com/google/uuid"
-	"github.com/robfig/cron/v3"
 )
 
-var idRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
-
 func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
-	if workflow.ServiceAccountID == "" {
-		return fmt.Errorf("service account is required")
-	}
-
-	// Validate Variable Keys
-	for k := range workflow.Vars {
-		if !idRegex.MatchString(k) {
-			return fmt.Errorf("invalid variable key '%s': only lowercase letters, numbers and underscores are allowed", k)
-		}
-	}
-
-	if workflow.CronEnabled {
-		if _, err := cron.ParseStandard(workflow.CronExpr); err != nil {
-			return fmt.Errorf("invalid cron expression: %v", err)
-		}
-		for k, v := range workflow.Vars {
-			if v.Required && v.Default == "" {
-				return fmt.Errorf("cron job cannot be enabled when workflow has required variable without default: %s", k)
-			}
-		}
+	// Call Bind to ensure structural validation and normalization is applied
+	if err := workflow.Bind(nil); err != nil {
+		return err
 	}
 
 	stepIDs := make(map[string]bool)
-	stepOutputs := make(map[string]map[string]bool)
+	for _, step := range workflow.Steps {
+		stepIDs[step.ID] = true
+	}
 
 	for _, step := range workflow.Steps {
-		if step.ID == "" {
-			return fmt.Errorf("step ID cannot be empty")
-		}
-		if !idRegex.MatchString(step.ID) {
-			return fmt.Errorf("invalid step ID '%s': only lowercase letters, numbers and underscores are allowed", step.ID)
-		}
-		if stepIDs[step.ID] {
-			return fmt.Errorf("duplicate step ID: %s", step.ID)
-		}
-		stepIDs[step.ID] = true
-
-		processor, ok := GetProcessor(step.Type)
-		if !ok {
+		if _, ok := GetProcessor(step.Type); !ok {
 			return fmt.Errorf("step %s: processor not found: %s", step.ID, step.Type)
 		}
 
-		manifest := processor.Manifest()
-		outputs := make(map[string]bool)
-		for _, op := range manifest.OutputParams {
-			outputs[op.Name] = true
-		}
-		stepOutputs[step.ID] = outputs
-
-		// Validate 'if' condition syntax (basic compile check)
+		// Validate 'if' condition syntax
 		if step.If != "" {
-			// Replace variables with placeholders for compilation check
 			checkIf := paramRegex.ReplaceAllStringFunc(step.If, func(match string) string {
-				submatches := paramRegex.FindStringSubmatch(match)
-				if len(submatches) < 3 {
-					return match
-				}
-				sID := submatches[1]
-
-				// Optional: Check if referenced step exists and has that output
-				if _, ok := stepIDs[sID]; !ok {
-					// We can't strictly error here if steps can be unordered,
-					// but our executor is linear.
-				}
-				return "true" // Placeholder
+				return "true" // Placeholder for compilation check
 			})
 			if _, err := expr.Compile(checkIf, expr.AsBool()); err != nil {
 				return fmt.Errorf("step %s: invalid 'if' expression: %v", step.ID, err)
@@ -97,12 +47,20 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 		for k, v := range step.Params {
 			matches := paramRegex.FindAllStringSubmatch(v, -1)
 			for _, match := range matches {
-				if len(match) < 3 {
+				if len(match) < 5 {
 					continue
 				}
 				sID := match[1]
-				if !stepIDs[sID] {
-					return fmt.Errorf("step %s: param %s references unknown step %s", step.ID, k, sID)
+				varKey := match[3]
+
+				if sID != "" {
+					if !stepIDs[sID] {
+						return fmt.Errorf("step %s: param %s references unknown step %s", step.ID, k, sID)
+					}
+				} else if varKey != "" {
+					if _, ok := workflow.Vars[varKey]; !ok {
+						return fmt.Errorf("step %s: param %s references unknown variable %s", step.ID, k, varKey)
+					}
 				}
 			}
 		}
@@ -111,6 +69,9 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 }
 
 func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Workflow, error) {
+	if err := workflow.Bind(nil); err != nil {
+		return nil, err
+	}
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
 		return nil, err
 	}
@@ -133,6 +94,9 @@ func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Wor
 }
 
 func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (*models.Workflow, error) {
+	if err := workflow.Bind(nil); err != nil {
+		return nil, err
+	}
 	old, err := repo.GetWorkflow(ctx, id)
 	if err != nil {
 		return nil, err
@@ -146,6 +110,7 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
 		return nil, err
 	}
+
 	changes := []string{}
 	if old.Enabled != workflow.Enabled {
 		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", old.Enabled, workflow.Enabled))
@@ -156,24 +121,14 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 	if old.Name != workflow.Name {
 		changes = append(changes, fmt.Sprintf("name: %s -> %s", old.Name, workflow.Name))
 	}
-	if old.Description != workflow.Description {
-		changes = append(changes, "description updated")
-	}
 	if old.ServiceAccountID != workflow.ServiceAccountID {
 		changes = append(changes, fmt.Sprintf("serviceAccountID: %s -> %s", old.ServiceAccountID, workflow.ServiceAccountID))
 	}
 	if old.CronEnabled != workflow.CronEnabled {
 		changes = append(changes, fmt.Sprintf("cronEnabled: %v -> %v", old.CronEnabled, workflow.CronEnabled))
 	}
-	if old.CronExpr != workflow.CronExpr {
-		changes = append(changes, fmt.Sprintf("cronExpr: %s -> %s", old.CronExpr, workflow.CronExpr))
-	}
 	if old.WebhookEnabled != workflow.WebhookEnabled {
 		changes = append(changes, fmt.Sprintf("webhookEnabled: %v -> %v", old.WebhookEnabled, workflow.WebhookEnabled))
-	}
-	// (Simplified check for vars change just to log it)
-	if len(old.Vars) != len(workflow.Vars) {
-		changes = append(changes, "vars defined changed")
 	}
 
 	old.Enabled = workflow.Enabled
@@ -294,9 +249,6 @@ func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
 
 func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID string, triggerSource string, inputs map[string]string) (string, error) {
 	// Permission check for the workflow itself
-	// Note: For Cron/Webhook, the trigger might not have a user context, 
-	// but the workflow is executed with a ServiceAccount.
-	// If it's a Manual trigger, we verify the current user has permission.
 	if triggerSource == "Manual" {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + workflow.ID) {
 			return "", fmt.Errorf("permission denied: orchestration/%s", workflow.ID)
@@ -443,6 +395,9 @@ type ProbeRequest struct {
 }
 
 func (p *ProbeRequest) Bind(r *http.Request) error {
+	if p.ProcessorID == "" {
+		return fmt.Errorf("processorId is required")
+	}
 	return nil
 }
 

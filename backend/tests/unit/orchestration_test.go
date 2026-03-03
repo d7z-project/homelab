@@ -370,30 +370,31 @@ func TestOrchestrationEngine(t *testing.T) {
 	t.Run("ID and Key Validation", func(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 		
-		// Invalid Var Key
+		// Invalid Var Key (contains capitals)
 		wf1 := &models.Workflow{
 			Name: "Invalid Var",
 			ServiceAccountID: "sa",
 			Vars: map[string]models.VarDefinition{
-				"Invalid-Key": {Required: true},
+				"Invalid_Key": {Required: true},
 			},
+			Steps: []models.Step{{ID: "s1", Type: "test/mock"}},
 		}
 		err := orchestration.ValidateWorkflow(ctx, wf1)
 		if err == nil {
-			t.Error("Expected error for invalid variable key")
+			t.Error("Expected error for invalid variable key (capitals)")
 		}
 
-		// Invalid Step ID
+		// Invalid Step ID (contains capitals)
 		wf2 := &models.Workflow{
 			Name: "Invalid Step",
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
-				{ID: "Step-1", Type: "test/mock"},
+				{ID: "Step_1", Type: "test/mock"},
 			},
 		}
 		err = orchestration.ValidateWorkflow(ctx, wf2)
 		if err == nil {
-			t.Error("Expected error for invalid step ID")
+			t.Error("Expected error for invalid step ID (capitals)")
 		}
 
 		// Valid
@@ -415,10 +416,17 @@ func TestOrchestrationEngine(t *testing.T) {
 
 	t.Run("RBAC Filtering", func(t *testing.T) {
 		// Create 2 workflows (IDs will be generated)
-		wf1 := &models.Workflow{Name: "WF 1", ServiceAccountID: "sa"}
-		wf2 := &models.Workflow{Name: "WF 2", ServiceAccountID: "sa"}
-		wf1, _ = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf1)
-		wf2, _ = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf2)
+		wf1 := &models.Workflow{Name: "WF 1", ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
+		wf2 := &models.Workflow{Name: "WF 2", ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
+		var err error
+		wf1, err = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf1)
+		if err != nil {
+			t.Fatalf("Failed to create wf1: %v", err)
+		}
+		wf2, err = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf2)
+		if err != nil {
+			t.Fatalf("Failed to create wf2: %v", err)
+		}
 
 		// Mock user with permission only for wf1.ID
 		userCtx := tests.SetupMockContext("user1", []models.PolicyRule{
@@ -432,7 +440,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// GetWorkflow wf2 should fail
-		_, err := orchestration.GetWorkflow(userCtx, wf2.ID)
+		_, err = orchestration.GetWorkflow(userCtx, wf2.ID)
 		if err == nil {
 			t.Error("Expected GetWorkflow wf2 to fail due to RBAC")
 		}
@@ -444,8 +452,13 @@ func TestOrchestrationEngine(t *testing.T) {
 			Name:             "Webhook WF",
 			ServiceAccountID: "sa",
 			WebhookEnabled:   true,
+			Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},
 		}
-		wf, _ = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf)
+		var err error
+		wf, err = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf)
+		if err != nil {
+			t.Fatalf("Create failed: %v", err)
+		}
 		
 		initialToken := wf.WebhookToken
 		if initialToken == "" {

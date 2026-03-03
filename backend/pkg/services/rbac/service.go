@@ -45,14 +45,11 @@ func ListServiceAccounts(ctx context.Context, page, pageSize int, search string)
 }
 
 func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*models.ServiceAccount, error) {
+	if err := sa.Bind(nil); err != nil {
+		return nil, err
+	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, errors.New("permission denied: rbac")
-	}
-	if sa.ID == "" {
-		return nil, errors.New("id is required")
-	}
-	if !idRegex.MatchString(sa.ID) {
-		return nil, errors.New("id only allows alphanumeric characters, hyphens and underscores")
 	}
 
 	existing, _ := rbacrepo.GetServiceAccount(ctx, sa.ID)
@@ -80,6 +77,9 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 }
 
 func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAccount) (*models.ServiceAccount, error) {
+	if err := sa.Bind(nil); err != nil {
+		return nil, err
+	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, errors.New("permission denied: rbac")
 	}
@@ -197,11 +197,14 @@ func ListRoles(ctx context.Context, page, pageSize int, search string) (*common.
 }
 
 func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
-	}
 	if role.ID == "" {
 		role.ID = uuid.New().String()
+	}
+	if err := role.Bind(nil); err != nil {
+		return nil, err
+	}
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, errors.New("permission denied: rbac")
 	}
 
 	existing, _ := rbacrepo.GetRole(ctx, role.ID)
@@ -219,6 +222,9 @@ func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 }
 
 func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role, error) {
+	if err := role.Bind(nil); err != nil {
+		return nil, err
+	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, errors.New("permission denied: rbac")
 	}
@@ -315,6 +321,9 @@ func ListRoleBindings(ctx context.Context, page, pageSize int, search string) (*
 }
 
 func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.RoleBinding, error) {
+	if err := rb.Bind(nil); err != nil {
+		return nil, err
+	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, errors.New("permission denied: rbac")
 	}
@@ -338,6 +347,9 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 }
 
 func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (*models.RoleBinding, error) {
+	if err := rb.Bind(nil); err != nil {
+		return nil, err
+	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, errors.New("permission denied: rbac")
 	}
@@ -396,9 +408,7 @@ func DeleteRoleBinding(ctx context.Context, id string) error {
 // Simulation
 
 func SimulatePermissions(ctx context.Context, saID, verb, resource string) (*models.ResourcePermissions, error) {
-	if saID == "" || verb == "" || resource == "" {
-		return nil, errors.New("saID, verb and resource are required")
-	}
+	// Basic non-empty checks moved to models.SimulatePermissionsRequest.Bind
 
 	return authservice.GetPermissions(ctx, saID, verb, resource)
 }

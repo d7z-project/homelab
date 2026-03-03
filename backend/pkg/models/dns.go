@@ -1,9 +1,15 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 )
+
+var domainRegex = regexp.MustCompile(`^([\-a-zA-Z0-9]+([\-a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$`)
 
 // Domain 代表一个 DNS 域名
 type Domain struct {
@@ -16,6 +22,13 @@ type Domain struct {
 }
 
 func (d *Domain) Bind(r *http.Request) error {
+	d.Name = strings.TrimSpace(strings.ToLower(d.Name))
+	if d.Name == "" {
+		return errors.New("domain name is required")
+	}
+	if !domainRegex.MatchString(d.Name) {
+		return fmt.Errorf("invalid domain format: %s", d.Name)
+	}
 	return nil
 }
 
@@ -33,6 +46,32 @@ type Record struct {
 }
 
 func (rc *Record) Bind(r *http.Request) error {
+	rc.Name = strings.TrimSpace(rc.Name)
+	rc.Type = strings.ToUpper(strings.TrimSpace(rc.Type))
+	rc.Value = strings.TrimSpace(rc.Value)
+
+	if rc.Name == "" {
+		return errors.New("record name is required (use @ for root)")
+	}
+	if rc.Type == "" {
+		return errors.New("record type is required")
+	}
+	if rc.Value == "" {
+		return errors.New("record value is required")
+	}
+
+	validTypes := map[string]bool{
+		"A": true, "AAAA": true, "CNAME": true, "MX": true,
+		"TXT": true, "NS": true, "SRV": true, "CAA": true, "SOA": true,
+	}
+	if !validTypes[rc.Type] {
+		return fmt.Errorf("unsupported record type: %s", rc.Type)
+	}
+
+	if rc.TTL <= 0 {
+		rc.TTL = 600 // Default TTL
+	}
+
 	return nil
 }
 

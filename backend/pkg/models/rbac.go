@@ -1,6 +1,14 @@
 package models
 
-import "net/http"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
+)
+
+var rbacIdRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
 
 type LoginRequest struct {
 	Password string `json:"password"`
@@ -8,6 +16,9 @@ type LoginRequest struct {
 }
 
 func (l *LoginRequest) Bind(r *http.Request) error {
+	if l.Password == "" {
+		return errors.New("password is required")
+	}
 	return nil
 }
 
@@ -27,6 +38,16 @@ type Role struct {
 }
 
 func (ro *Role) Bind(r *http.Request) error {
+	ro.ID = strings.TrimSpace(ro.ID)
+	if ro.ID == "" {
+		return nil // ID is optional on create (UUID generated)
+	}
+	if !rbacIdRegex.MatchString(ro.ID) {
+		return fmt.Errorf("invalid role ID format: %s", ro.ID)
+	}
+	if len(ro.Rules) == 0 {
+		return errors.New("at least one policy rule is required")
+	}
 	return nil
 }
 
@@ -40,6 +61,13 @@ type ServiceAccount struct {
 }
 
 func (s *ServiceAccount) Bind(r *http.Request) error {
+	s.ID = strings.TrimSpace(s.ID)
+	if s.ID == "" {
+		return errors.New("service account ID is required")
+	}
+	if !rbacIdRegex.MatchString(s.ID) {
+		return fmt.Errorf("invalid service account ID format: %s", s.ID)
+	}
 	return nil
 }
 
@@ -52,6 +80,16 @@ type RoleBinding struct {
 }
 
 func (rb *RoleBinding) Bind(r *http.Request) error {
+	rb.Name = strings.TrimSpace(rb.Name)
+	if rb.Name == "" {
+		return errors.New("role binding name is required")
+	}
+	if rb.ServiceAccountID == "" {
+		return errors.New("service account ID is required")
+	}
+	if len(rb.RoleIDs) == 0 {
+		return errors.New("at least one role must be assigned")
+	}
 	return nil
 }
 
@@ -83,6 +121,9 @@ type Session struct {
 }
 
 func (s *Session) Bind(r *http.Request) error {
+	if s.ID == "" {
+		return errors.New("session ID is required")
+	}
 	return nil
 }
 
@@ -93,5 +134,14 @@ type SimulatePermissionsRequest struct {
 }
 
 func (s *SimulatePermissionsRequest) Bind(r *http.Request) error {
+	if s.ServiceAccountID == "" {
+		return errors.New("service account ID is required")
+	}
+	if s.Verb == "" {
+		return errors.New("verb is required")
+	}
+	if s.Resource == "" {
+		return errors.New("resource is required")
+	}
 	return nil
 }
