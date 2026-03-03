@@ -70,7 +70,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "test-user", workflow, nil)
+		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "test-user", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -127,7 +127,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, nil)
+		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -166,14 +166,14 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Start first instance
-		id1, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, nil)
+		id1, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("First execution failed: %v", err)
 		}
 		defer orchestration.GlobalExecutor.Cancel(id1)
 
 		// Try to start second instance immediately
-		_, err = orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, nil)
+		_, err = orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err == nil {
 			t.Error("Expected second execution to fail due to concurrency control")
 		}
@@ -200,7 +200,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, nil)
+		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -328,7 +328,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, nil)
+		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}

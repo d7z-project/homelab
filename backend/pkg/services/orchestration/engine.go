@@ -77,6 +77,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	e.runningTasks.Store(instance.ID, cancel)
 
 	logger := NewTaskLogger()
+	logger.Logf("Workspace created at: %s", workspace)
 
 	go func() {
 		defer e.activeWorkflows.Delete(workflow.ID)
@@ -97,7 +98,8 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 	defer e.runningTasks.Delete(instance.ID)
 	defer logger.Close()
 	defer func() {
-		if instance.Status != "Running" {
+		if instance.Workspace != "" {
+			logger.Logf("Cleaning up workspace: %s", instance.Workspace)
 			_ = os.RemoveAll(instance.Workspace)
 		}
 	}()
