@@ -4,6 +4,7 @@ api/api.ts
 api/audit.service.ts
 api/auth.service.ts
 api/dns.service.ts
+api/orchestration.service.ts
 api/rbac.service.ts
 configuration.ts
 encoder.ts
@@ -19,6 +20,7 @@ model/modelsAuditLog.ts
 model/modelsDnsExportResponse.ts
 model/modelsDomain.ts
 model/modelsExportDomain.ts
+model/modelsLogEntry.ts
 model/modelsLoginRequest.ts
 model/modelsLoginResponse.ts
 model/modelsPolicyRule.ts
@@ -29,6 +31,11 @@ model/modelsRoleBinding.ts
 model/modelsServiceAccount.ts
 model/modelsSession.ts
 model/modelsSimulatePermissionsRequest.ts
+model/modelsStep.ts
+model/modelsStepManifest.ts
+model/modelsTaskInstance.ts
+model/modelsWorkflow.ts
+model/orchestrationProbeRequest.ts
 model/rbacRolebindingsGet200Response.ts
 model/rbacRolesGet200Response.ts
 model/rbacServiceaccountsGet200Response.ts

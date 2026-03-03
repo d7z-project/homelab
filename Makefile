@@ -5,7 +5,7 @@ BIN_DIR       := bin
 
 .PHONY: all fmt clean help backend-run backend-build backend-gen frontend-run frontend-build frontend-gen frontend-install client-go-gen
 
-all: backend-build frontend-build client-go-gen ## 构建并编译前后端及 Go 客户端
+all: frontend-build backend-build client-go-gen ## 构建并编译前后端及 Go 客户端
 
 # --- 后端 (Go) ---
 backend-gen: ## 生成 Swagger 文档

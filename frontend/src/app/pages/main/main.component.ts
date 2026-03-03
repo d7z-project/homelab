@@ -192,6 +192,15 @@ export class MainComponent {
           { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
         ],
       },
+      {
+        link: '/orchestration',
+        icon: 'schema',
+        label: '任务编排',
+        children: [
+          { link: '/orchestration', queryParams: { tab: 'workflow' }, icon: 'view_kanban', label: '工作流模板' },
+          { link: '/orchestration', queryParams: { tab: 'instance' }, icon: 'history', label: '运行记录' },
+        ],
+      },
       { link: '/audit', icon: 'history', label: '审计日志' },
     ];
 

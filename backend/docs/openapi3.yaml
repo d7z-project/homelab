@@ -364,6 +364,211 @@ paths:
       summary: Logout
       tags:
       - auth
+  /orchestration/instances:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/models.TaskInstance"
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all task instances
+      tags:
+      - orchestration
+  /orchestration/instances/{id}/cancel:
+    post:
+      parameters:
+      - description: Instance ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel a task instance
+      tags:
+      - orchestration
+  /orchestration/instances/{id}/logs:
+    get:
+      parameters:
+      - description: Instance ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: logs
+      security:
+      - ApiKeyAuth: []
+      summary: Get task instance logs
+      tags:
+      - orchestration
+  /orchestration/manifests:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/models.StepManifest"
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all step manifests
+      tags:
+      - orchestration
+  /orchestration/probe:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/orchestration.ProbeRequest"
+        description: Probe Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Probe a processor
+      tags:
+      - orchestration
+      x-codegen-request-body-name: req
+  /orchestration/workflows:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/models.Workflow"
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all workflows
+      tags:
+      - orchestration
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Workflow"
+        description: Workflow
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Workflow"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a workflow
+      tags:
+      - orchestration
+      x-codegen-request-body-name: workflow
+  /orchestration/workflows/{id}:
+    delete:
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a workflow
+      tags:
+      - orchestration
+    put:
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Workflow"
+        description: Workflow
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Workflow"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a workflow
+      tags:
+      - orchestration
+      x-codegen-request-body-name: workflow
+  /orchestration/workflows/{workflowId}/run:
+    post:
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: instanceId
+      security:
+      - ApiKeyAuth: []
+      summary: Run a workflow
+      tags:
+      - orchestration
   /rbac/resources/suggest:
     get:
       parameters:
@@ -1065,6 +1270,145 @@ components:
         serviceAccountId:
           type: string
         verb:
+          type: string
+      type: object
+    models.Step:
+      example:
+        name: name
+        id: id
+        params:
+          key: params
+        type: type
+      properties:
+        id:
+          description: "步骤 ID，用于 ${{ steps.ID.outputs.key }}"
+          type: string
+        name:
+          description: 步骤显示名称
+          type: string
+        params:
+          additionalProperties:
+            type: string
+          description: 输入参数，支持模板字符串
+          type: object
+        type:
+          description: 处理器类型 (如 core/fetch/http)
+          type: string
+      type: object
+    models.StepManifest:
+      example:
+        requiredParams:
+        - requiredParams
+        - requiredParams
+        outputParams:
+        - outputParams
+        - outputParams
+        name: name
+        optionalParams:
+        - optionalParams
+        - optionalParams
+        id: id
+      properties:
+        id:
+          description: 处理器唯一标识 (如 core/fetch/http)
+          type: string
+        name:
+          description: 显示名称
+          type: string
+        optionalParams:
+          description: 可选参数名
+          items:
+            type: string
+          type: array
+        outputParams:
+          description: 该节点输出的 Key 列表
+          items:
+            type: string
+          type: array
+        requiredParams:
+          description: 必选参数名
+          items:
+            type: string
+          type: array
+      type: object
+    models.TaskInstance:
+      example:
+        outputs:
+          key: outputs
+        workspace: workspace
+        startedAt: startedAt
+        id: id
+        error: error
+        userId: userId
+        workflowId: workflowId
+        finishedAt: finishedAt
+        status: status
+      properties:
+        error:
+          type: string
+        finishedAt:
+          type: string
+        id:
+          type: string
+        outputs:
+          additionalProperties:
+            type: string
+          description: 任务最终输出
+          type: object
+        startedAt:
+          type: string
+        status:
+          description: "Pending, Running, Success, Failed, Cancelled"
+          type: string
+        userId:
+          description: 触发者 ID
+          type: string
+        workflowId:
+          type: string
+        workspace:
+          type: string
+      type: object
+    models.Workflow:
+      example:
+        createdAt: createdAt
+        name: name
+        description: description
+        id: id
+        steps:
+        - name: name
+          id: id
+          params:
+            key: params
+          type: type
+        - name: name
+          id: id
+          params:
+            key: params
+          type: type
+        updatedAt: updatedAt
+      properties:
+        createdAt:
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        steps:
+          items:
+            $ref: "#/components/schemas/models.Step"
+          type: array
+        updatedAt:
+          type: string
+      type: object
+    orchestration.ProbeRequest:
+      properties:
+        params:
+          additionalProperties:
+            type: string
+          type: object
+        processorId:
           type: string
       type: object
     _audit_logs_get_200_response:

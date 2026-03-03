@@ -91,6 +91,16 @@ definitions:
           type: object
         type: object
     type: object
+  models.LogEntry:
+    properties:
+      message:
+        type: string
+      stepId:
+        description: 关联的步骤 ID，空字符串代表引擎级日志
+        type: string
+      timestamp:
+        type: string
+    type: object
   models.LoginRequest:
     properties:
       password:
@@ -215,6 +225,104 @@ definitions:
       serviceAccountId:
         type: string
       verb:
+        type: string
+    type: object
+  models.Step:
+    properties:
+      id:
+        description: 步骤 ID，用于 ${{ steps.ID.outputs.key }}
+        type: string
+      name:
+        description: 步骤显示名称
+        type: string
+      params:
+        additionalProperties:
+          type: string
+        description: 输入参数，支持模板字符串
+        type: object
+      type:
+        description: 处理器类型 (如 core/fetch/http)
+        type: string
+    type: object
+  models.StepManifest:
+    properties:
+      id:
+        description: 处理器唯一标识 (如 core/fetch/http)
+        type: string
+      name:
+        description: 显示名称
+        type: string
+      optionalParams:
+        description: 可选参数名
+        items:
+          type: string
+        type: array
+      outputParams:
+        description: 该节点输出的 Key 列表
+        items:
+          type: string
+        type: array
+      requiredParams:
+        description: 必选参数名
+        items:
+          type: string
+        type: array
+    type: object
+  models.TaskInstance:
+    properties:
+      error:
+        type: string
+      finishedAt:
+        type: string
+      id:
+        type: string
+      logs:
+        description: 任务日志
+        items:
+          $ref: '#/definitions/models.LogEntry'
+        type: array
+      outputs:
+        additionalProperties:
+          type: string
+        description: 任务最终输出
+        type: object
+      startedAt:
+        type: string
+      status:
+        description: Pending, Running, Success, Failed, Cancelled
+        type: string
+      userId:
+        description: 触发者 ID
+        type: string
+      workflowId:
+        type: string
+      workspace:
+        type: string
+    type: object
+  models.Workflow:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/models.Step'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  orchestration.ProbeRequest:
+    properties:
+      params:
+        additionalProperties:
+          type: string
+        type: object
+      processorId:
         type: string
     type: object
 info:
@@ -588,6 +696,208 @@ paths:
       summary: Logout
       tags:
       - auth
+  /orchestration/instances:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.TaskInstance'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List all task instances
+      tags:
+      - orchestration
+  /orchestration/instances/{id}/cancel:
+    post:
+      parameters:
+      - description: Instance ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel a task instance
+      tags:
+      - orchestration
+  /orchestration/instances/{id}/logs:
+    get:
+      parameters:
+      - description: Instance ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: logs
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get task instance logs
+      tags:
+      - orchestration
+  /orchestration/manifests:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.StepManifest'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List all step manifests
+      tags:
+      - orchestration
+  /orchestration/probe:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Probe Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/orchestration.ProbeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Probe a processor
+      tags:
+      - orchestration
+  /orchestration/workflows:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Workflow'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List all workflows
+      tags:
+      - orchestration
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Workflow
+        in: body
+        name: workflow
+        required: true
+        schema:
+          $ref: '#/definitions/models.Workflow'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Workflow'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a workflow
+      tags:
+      - orchestration
+  /orchestration/workflows/{id}:
+    delete:
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a workflow
+      tags:
+      - orchestration
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workflow
+        in: body
+        name: workflow
+        required: true
+        schema:
+          $ref: '#/definitions/models.Workflow'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Workflow'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a workflow
+      tags:
+      - orchestration
+  /orchestration/workflows/{workflowId}/run:
+    post:
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: workflowId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: instanceId
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Run a workflow
+      tags:
+      - orchestration
   /rbac/resources/suggest:
     get:
       parameters:

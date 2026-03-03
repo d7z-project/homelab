@@ -36,6 +36,8 @@
     "@fontsource/noto-sans-sc": "^5.2.9",
     "@fontsource/roboto": "^5.2.9",
     "@fontsource/roboto-mono": "^5.2.8",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "material-icons": "^1.13.14",
     "prettier": "^3.8.1",
     "rxjs": "~7.8.0",

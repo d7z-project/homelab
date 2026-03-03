@@ -2,3 +2,4 @@
 *.iml
 backend/assets/static/*
 bin/**
+frontend/temp-oas3

@@ -41,6 +41,12 @@ func Router(r chi.Router) {
 				r.Use(middlewares.AuditMiddleware("dns"))
 				controllers.DNSRouter(r)
 			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(middlewares.RequirePermission("admin", "orchestration"))
+				r.Use(middlewares.AuditMiddleware("orchestration"))
+				controllers.OrchestrationRouter(r)
+			})
 		})
 	})
 }

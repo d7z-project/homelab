@@ -1,6 +1,14 @@
 /* 1. Core Material Theme */
 @import '@angular/material/prebuilt-themes/azure-blue.css';
 
+/* 1.1 Xterm CSS */
+@import '@xterm/xterm/css/xterm.css';
+
+/* 1.2 Full-screen Dialog Overrides */
+.full-screen-dialog .mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 0 !important;
+}
+
 /* 2. Fonts */
 @import '@fontsource/roboto/400.css';
 @import '@fontsource/roboto/500.css';
