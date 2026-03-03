@@ -103,16 +103,6 @@
                   style="white-space: nowrap"
                 >
                   <div class="flex justify-end items-center gap-1">
-                    @if (!isHandset()) {
-                      <mat-slide-toggle
-                        [checked]="wf.enabled"
-                        (click)="$event.stopPropagation(); toggleWorkflow(wf)"
-                        color="primary"
-                        class="scale-75 mr-1"
-                        matTooltip="启用/禁用工作流"
-                      >
-                      </mat-slide-toggle>
-                    }
                     <button
                       mat-icon-button
                       (click)="runWorkflow(wf)"
@@ -171,6 +161,17 @@
                           >delete_outline</mat-icon
                         >
                       </button>
+                      <button
+                        mat-icon-button
+                        (click)="toggleWorkflow(wf)"
+                        [matTooltip]="wf.enabled ? '禁用工作流' : '启用工作流'"
+                        [class]="wf.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                      >
+                        <mat-icon
+                          class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >{{ wf.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                        >
+                      </button>
                     } @else {
                       <button mat-icon-button [matMenuTriggerFor]="wfMenu" class="text-outline">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
@@ -178,29 +179,23 @@
                         >
                       </button>
                       <mat-menu #wfMenu="matMenu" class="rounded-2xl overflow-hidden">
-                        <div
-                          class="px-4 py-2 flex items-center justify-between border-b border-outline-variant/30 mb-1"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <span class="text-[10px] font-bold uppercase tracking-wider text-outline"
-                            >状态控制</span
-                          >
-                          <mat-slide-toggle
-                            [checked]="wf.enabled"
-                            (click)="$event.stopPropagation(); toggleWorkflow(wf)"
-                            color="primary"
-                            class="scale-75"
-                          >
-                          </mat-slide-toggle>
-                        </div>
-                        <button mat-menu-item (click)="editWorkflow(wf)">
-                          <mat-icon>edit</mat-icon>
-                          <span>编辑模板</span>
-                        </button>
-                        <button mat-menu-item (click)="deleteWorkflow(wf)" class="text-error">
-                          <mat-icon color="warn">delete_outline</mat-icon>
-                          <span class="text-error">彻底删除</span>
-                        </button>
+                        <ng-template matMenuContent>
+                          <button mat-menu-item (click)="toggleWorkflow(wf)">
+                            <mat-icon
+                              [class]="wf.enabled ? 'text-primary' : 'text-outline opacity-40'"
+                              >{{ wf.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+                            >
+                            <span>{{ wf.enabled ? '禁用' : '启用' }}</span>
+                          </button>
+                          <button mat-menu-item (click)="editWorkflow(wf)">
+                            <mat-icon>edit</mat-icon>
+                            <span>编辑模板</span>
+                          </button>
+                          <button mat-menu-item (click)="deleteWorkflow(wf)" class="text-error">
+                            <mat-icon color="warn">delete_outline</mat-icon>
+                            <span class="text-error">彻底删除</span>
+                          </button>
+                        </ng-template>
                       </mat-menu>
                     }
                   </div>
