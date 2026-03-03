@@ -88,6 +88,7 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 		sa.Token = existing.Token
 	}
 
+	sa.ID = id
 	changes := []string{}
 	if existing.Name != sa.Name {
 		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, sa.Name))
@@ -224,6 +225,7 @@ func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role
 		return nil, errors.New("Role not found")
 	}
 
+	role.ID = id
 	changes := []string{}
 	if existing.Name != role.Name {
 		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, role.Name))
@@ -349,6 +351,7 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 		return nil, errors.New("RoleBinding not found")
 	}
 
+	rb.ID = id
 	changes := []string{}
 	if existing.Name != rb.Name {
 		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, rb.Name))
