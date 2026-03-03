@@ -215,16 +215,16 @@ export class MainComponent {
     ];
 
     // Add session management if root
+    if (this.uiService.userType() === 'root') {
+      items.push({
+        link: '/sessions',
+        icon: 'admin_panel_settings',
+        label: '管理会话',
+      });
+    }
+
     const rbacItem = items.find((i) => i.link === '/rbac');
     if (rbacItem && rbacItem.children) {
-      if (this.uiService.userType() === 'root') {
-        rbacItem.children.push({
-          link: '/rbac',
-          queryParams: { tab: 'session' },
-          icon: 'admin_panel_settings',
-          label: '管理会话',
-        });
-      }
       rbacItem.children.push({
         link: '/rbac/simulator',
         icon: 'psychology',
