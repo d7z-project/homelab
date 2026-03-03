@@ -83,7 +83,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   private refreshTimer?: any;
 
   displayedWorkflowColumns = computed(() =>
-    this.isHandset() ? ['name', 'actions'] : ['name', 'description', 'steps', 'actions'],
+    this.isHandset() ? ['enabled', 'name', 'actions'] : ['enabled', 'name', 'description', 'steps', 'actions'],
   );
   displayedInstanceColumns = computed(() =>
     this.isHandset()
