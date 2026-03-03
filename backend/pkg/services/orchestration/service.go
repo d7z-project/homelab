@@ -141,6 +141,7 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 			workflow.WebhookToken = GenerateWebhookToken()
 		}
 	}
+	workflow.ID = id
 	workflow.CreatedAt = old.CreatedAt
 	workflow.UpdatedAt = time.Now()
 
