@@ -2,6 +2,9 @@
 
 [中文版](README_ZH.md)
 
+> [!WARNING]
+> This project is a product of "vibe coding". It is not recommended for production environments.
+
 A modern, secure infrastructure management system for homelab environments.
 
 ## Features
