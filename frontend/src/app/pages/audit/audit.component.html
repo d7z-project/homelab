@@ -23,6 +23,9 @@
             ><mat-icon class="!w-4 !h-4 !text-[14px]">analytics</mat-icon> 共
             {{ total() }} 条记录</span
           >
+          <button mat-icon-button (click)="loadLogs(true)" [disabled]="loading()" matTooltip="刷新列表" class="!w-8 !h-8">
+            <mat-icon class="!text-[16px]">refresh</mat-icon>
+          </button>
           @if (search()) {
             <div
               class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group"
@@ -162,7 +165,7 @@
             <td mat-cell *matCellDef="let element" class="!pr-8 text-right">
               <button
                 mat-icon-button
-                (click)="showDetail(element)"
+                (click)="showDetail(element, $event)"
                 class="hover:bg-surface-container-high transition-colors"
               >
                 <mat-icon

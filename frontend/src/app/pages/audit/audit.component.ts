@@ -178,7 +178,10 @@ export class AuditComponent implements OnInit, OnDestroy {
     });
   }
 
-  showDetail(log: ModelsAuditLog) {
+  showDetail(log: ModelsAuditLog, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
     this.dialog.open(AuditDetailDialogComponent, {
       data: log,
       maxWidth: '90vw',
