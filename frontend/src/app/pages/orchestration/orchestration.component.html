@@ -18,14 +18,16 @@
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
-          <div
-            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
+          <app-page-header
+            title="工作流模板"
+            subtitle="编排自动化运维任务，支持多触发器和变量注入"
+            icon="schema"
+            [total]="workflows().length"
+            unit="个模板"
+            [loading]="loading()"
+            (refresh)="refreshAll()"
           >
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5">
-                <mat-icon class="!w-4 !h-4 !text-[14px]">schema</mat-icon> 共
-                {{ workflows().length }} 个模板
-              </span>
+            <div chips>
               @if (uiService.searchConfig()?.value) {
                 <div
                   class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
@@ -42,10 +44,7 @@
                 </div>
               }
             </div>
-            <button mat-icon-button (click)="refreshAll()" [disabled]="loading()" class="!w-8 !h-8">
-              <mat-icon class="!text-[16px]" [class.animate-spin]="loading()">refresh</mat-icon>
-            </button>
-          </div>
+          </app-page-header>
 
           <!-- Workflows Table -->
           <div
@@ -231,19 +230,15 @@
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
-          <div
-            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
-          >
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5">
-                <mat-icon class="!w-4 !h-4 !text-[14px]">history</mat-icon> 共
-                {{ instances().length }} 条记录
-              </span>
-            </div>
-            <button mat-icon-button (click)="refreshAll()" [disabled]="loading()" class="!w-8 !h-8">
-              <mat-icon class="!text-[16px]" [class.animate-spin]="loading()">refresh</mat-icon>
-            </button>
-          </div>
+          <app-page-header
+            title="运行记录"
+            subtitle="追踪任务执行状态，查看实时流水线日志"
+            icon="history"
+            [total]="instances().length"
+            unit="个实例"
+            [loading]="loading()"
+            (refresh)="refreshAll()"
+          ></app-page-header>
 
           <!-- Table Card -->
           <div

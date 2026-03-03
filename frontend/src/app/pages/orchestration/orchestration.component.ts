@@ -34,6 +34,7 @@ import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateWorkflowDialogComponent } from './create-workflow-dialog.component';
 import { RunWorkflowDialogComponent } from './run-workflow-dialog.component';
 import { TaskDetailDialogComponent } from './task-detail-dialog.component';
+import { PageHeaderComponent } from '../../shared/page-header.component';
 
 @Component({
   selector: 'app-orchestration',
@@ -53,6 +54,7 @@ import { TaskDetailDialogComponent } from './task-detail-dialog.component';
     MatMenuModule,
     MatChipsModule,
     MatSlideToggleModule,
+    PageHeaderComponent,
   ],
   templateUrl: './orchestration.component.html',
 })

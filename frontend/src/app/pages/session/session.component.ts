@@ -15,6 +15,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { UiService } from '../../ui.service';
 import { UaPipe } from '../../ua.pipe';
+import { PageHeaderComponent } from '../../shared/page-header.component';
 
 @Component({
   selector: 'app-session',
@@ -28,6 +29,7 @@ import { UaPipe } from '../../ua.pipe';
     MatProgressSpinnerModule,
     MatTooltipModule,
     UaPipe,
+    PageHeaderComponent,
   ],
   template: `
     <div class="animate-in fade-in duration-500 pb-20">
@@ -40,22 +42,15 @@ import { UaPipe } from '../../ua.pipe';
       <div class="min-h-[calc(100vh-64px)] bg-surface-container-lowest py-8 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-6">
           <!-- Header Area -->
-          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
-            <div class="space-y-1">
-              <h1 class="text-3xl font-bold tracking-tight text-on-surface">管理会话</h1>
-              <p class="text-outline text-sm">监控并管理所有活跃的管理员登录会话</p>
-            </div>
-
-            <div class="flex items-center gap-4 px-4 py-2 bg-surface-container-low rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium">
-              <span class="flex items-center gap-1.5">
-                <mat-icon class="!w-4 !h-4 !text-[14px]">admin_panel_settings</mat-icon>
-                共 {{ sessions().length }} 个活跃会话
-              </span>
-              <button mat-icon-button (click)="loadSessions()" [disabled]="loading()" matTooltip="刷新列表" class="!w-8 !h-8">
-                <mat-icon class="!text-[16px]">refresh</mat-icon>
-              </button>
-            </div>
-          </div>
+          <app-page-header
+            title="管理会话"
+            subtitle="监控并管理所有活跃的管理员登录会话"
+            icon="admin_panel_settings"
+            [total]="sessions().length"
+            [loading]="loading()"
+            unit="个活跃会话"
+            (refresh)="loadSessions()"
+          ></app-page-header>
 
           <!-- Table Card -->
           <div class="bg-surface border border-outline-variant rounded-[32px] overflow-hidden shadow-sm transition-shadow hover:shadow-md">

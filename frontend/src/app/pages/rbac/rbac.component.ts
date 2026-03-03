@@ -41,6 +41,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { LogoutDialogComponent } from '../main/logout-dialog.component';
 import { UiService } from '../../ui.service';
+import { PageHeaderComponent } from '../../shared/page-header.component';
 
 @Component({
   selector: 'app-rbac',
@@ -60,6 +61,7 @@ import { UiService } from '../../ui.service';
     MatFormFieldModule,
     MatInputModule,
     MatDividerModule,
+    PageHeaderComponent,
   ],
   templateUrl: './rbac.component.html',
 })

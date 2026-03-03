@@ -18,14 +18,16 @@
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
-          <div
-            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
+          <app-page-header
+            title="域名管理"
+            subtitle="管理您的 DNS 根域名空间及全局配置"
+            icon="language"
+            [total]="domainTotal()"
+            unit="个域名"
+            [loading]="loading()"
+            (refresh)="loadDomains(true)"
           >
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5"
-                ><mat-icon class="!w-4 !h-4 !text-[14px]">language</mat-icon> 共
-                {{ domainTotal() }} 个域名</span
-              >
+            <div chips>
               @if (domainSearch()) {
                 <div
                   class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
@@ -42,8 +44,7 @@
                 </div>
               }
             </div>
-            <span class="opacity-60">已加载 {{ domains().length }}</span>
-          </div>
+          </app-page-header>
 
           <!-- Table Card -->
           <div
@@ -204,19 +205,20 @@
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
-          <div
-            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
+          <app-page-header
+            title="解析记录"
+            subtitle="精细化管理所有域名下的 A, CNAME, TXT 等资源记录"
+            icon="layers"
+            [total]="recordTotal()"
+            unit="条记录"
+            [loading]="loading()"
+            (refresh)="loadRecords(true)"
           >
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5"
-                ><mat-icon class="!w-4 !h-4 !text-[14px]">layers</mat-icon> 共
-                {{ recordTotal() }} 条记录</span
-              >
-
+            <div chips class="flex items-center gap-2">
               @if (!isHandset()) {
                 <mat-form-field
                   appearance="outline"
-                  class="!w-48 no-subscript-compact"
+                  class="!w-48 no-subscript-compact ml-2"
                   subscriptSizing="dynamic"
                 >
                   <mat-select
@@ -263,9 +265,7 @@
                   </button>
                 </div>
               }
-            </div>
 
-            <div class="flex items-center gap-4">
               @if (isHandset()) {
                 <button
                   mat-icon-button
@@ -291,9 +291,8 @@
                   }
                 </mat-menu>
               }
-              <span class="opacity-60">已加载 {{ records().length }}</span>
             </div>
-          </div>
+          </app-page-header>
 
           <!-- Table Card -->
           <div

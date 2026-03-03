@@ -17,6 +17,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
+import { PageHeaderComponent } from '../../shared/page-header.component';
 
 @Component({
   selector: 'app-audit',
@@ -31,6 +32,7 @@ import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
     MatTooltipModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    PageHeaderComponent,
   ],
   templateUrl: './audit.component.html',
 })

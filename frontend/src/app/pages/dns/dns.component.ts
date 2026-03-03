@@ -25,6 +25,7 @@ import { UiService } from '../../ui.service';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateDomainDialogComponent } from './create-domain-dialog.component';
 import { CreateRecordDialogComponent } from './create-record-dialog.component';
+import { PageHeaderComponent } from '../../shared/page-header.component';
 
 @Component({
   selector: 'app-dns',
@@ -45,6 +46,7 @@ import { CreateRecordDialogComponent } from './create-record-dialog.component';
     MatInputModule,
     MatSelectModule,
     MatDividerModule,
+    PageHeaderComponent,
   ],
   templateUrl: './dns.component.html',
 })

@@ -19,14 +19,16 @@
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
-          <div
-            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
+          <app-page-header
+            title="服务账号"
+            subtitle="管理用于 API 访问和自动化任务的系统账号"
+            icon="account_circle"
+            [total]="saTotal()"
+            unit="个账号"
+            [loading]="loading()"
+            (refresh)="loadServiceAccounts(true)"
           >
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5"
-                ><mat-icon class="!w-4 !h-4 !text-[14px]">analytics</mat-icon> 共
-                {{ saTotal() }} 个账号</span
-              >
+            <div chips>
               @if (saSearch()) {
                 <div
                   class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
@@ -43,8 +45,7 @@
                 </div>
               }
             </div>
-            <span class="opacity-60">已加载 {{ serviceAccounts().length }}</span>
-          </div>
+          </app-page-header>
 
           <!-- Table Card -->
           <div
@@ -227,14 +228,16 @@
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
-          <div
-            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
+          <app-page-header
+            title="角色管理"
+            subtitle="定义精细化的资源操作权限模板"
+            icon="shield_person"
+            [total]="roleTotal()"
+            unit="个角色"
+            [loading]="loading()"
+            (refresh)="loadRoles(true)"
           >
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5"
-                ><mat-icon class="!w-4 !h-4 !text-[14px]">shield_person</mat-icon> 共
-                {{ roleTotal() }} 个角色</span
-              >
+            <div chips>
               @if (roleSearch()) {
                 <div
                   class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
@@ -251,8 +254,7 @@
                 </div>
               }
             </div>
-            <span class="opacity-60">已加载 {{ roles().length }}</span>
-          </div>
+          </app-page-header>
 
           <!-- Table Card -->
           <div
@@ -376,14 +378,16 @@
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <!-- Data Info Bar -->
-          <div
-            class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium tracking-wide"
+          <app-page-header
+            title="权限绑定"
+            subtitle="将角色赋予特定服务账号，实现权限落地"
+            icon="link"
+            [total]="rbTotal()"
+            unit="个绑定"
+            [loading]="loading()"
+            (refresh)="loadRoleBindings(true)"
           >
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5"
-                ><mat-icon class="!w-4 !h-4 !text-[14px]">link</mat-icon> 共
-                {{ rbTotal() }} 个绑定</span
-              >
+            <div chips>
               @if (rbSearch()) {
                 <div
                   class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
@@ -400,8 +404,7 @@
                 </div>
               }
             </div>
-            <span class="opacity-60">已加载 {{ roleBindings().length }}</span>
-          </div>
+          </app-page-header>
 
           <!-- Table Card -->
           <div

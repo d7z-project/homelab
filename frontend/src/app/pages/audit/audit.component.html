@@ -10,22 +10,15 @@
   <div class="min-h-[calc(100vh-64px)] bg-surface-container-lowest py-8 px-4 sm:px-8">
     <div class="max-w-7xl mx-auto space-y-6">
       <!-- Header Area -->
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
-        <div class="space-y-1">
-          <h1 class="text-3xl font-bold tracking-tight text-on-surface">审计日志</h1>
-          <p class="text-outline text-sm">系统关键操作的完整追踪与安全审计记录</p>
-        </div>
-
-        <div
-          class="flex items-center gap-4 px-4 py-2 bg-surface-container-low rounded-2xl border border-outline-variant/30 text-xs text-outline font-medium"
-        >
-          <span class="flex items-center gap-1.5"
-            ><mat-icon class="!w-4 !h-4 !text-[14px]">analytics</mat-icon> 共
-            {{ total() }} 条记录</span
-          >
-          <button mat-icon-button (click)="loadLogs(true)" [disabled]="loading()" matTooltip="刷新列表" class="!w-8 !h-8">
-            <mat-icon class="!text-[16px]">refresh</mat-icon>
-          </button>
+      <app-page-header
+        title="审计日志"
+        subtitle="系统关键操作的完整追踪与安全审计记录"
+        icon="history"
+        [total]="total()"
+        [loading]="loading()"
+        (refresh)="loadLogs(true)"
+      >
+        <div chips>
           @if (search()) {
             <div
               class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group"
@@ -41,7 +34,7 @@
             </div>
           }
         </div>
-      </div>
+      </app-page-header>
 
       <!-- Table Card -->
       <div
