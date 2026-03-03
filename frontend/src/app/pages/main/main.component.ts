@@ -149,14 +149,12 @@ export class MainComponent {
       )
       .subscribe();
 
-    // The MAGIC fix: Listen to route data changes synchronously at the parent level
+    // Sync toolbar config from route data
     this.router.events
       .pipe(
         filter((e) => e instanceof ActivationEnd && e.snapshot.firstChild === null),
         map((e) => (e as ActivationEnd).snapshot.data),
         tap((data) => {
-          // Wrap in requestAnimationFrame to ensure the state update happens after the current check cycle,
-          // which avoids the NG0100: ExpressionChangedAfterItHasBeenCheckedError.
           requestAnimationFrame(() => {
             const config = data['toolbar'];
             if (config) {
@@ -181,6 +179,7 @@ export class MainComponent {
           { link: '/rbac', queryParams: { tab: 'sa' }, icon: 'account_circle', label: '服务账号' },
           { link: '/rbac', queryParams: { tab: 'role' }, icon: 'shield_person', label: '角色管理' },
           { link: '/rbac', queryParams: { tab: 'binding' }, icon: 'link', label: '权限绑定' },
+          { link: '/rbac/simulator', icon: 'psychology', label: '权限模拟器' },
         ],
       },
       {
@@ -211,24 +210,23 @@ export class MainComponent {
           },
         ],
       },
-      { link: '/audit', icon: 'history', label: '审计日志' },
+      {
+        link: '/system',
+        icon: 'settings',
+        label: '系统管理',
+        children: [
+          { link: '/audit', icon: 'history', label: '审计日志' },
+        ],
+      },
     ];
 
     // Add session management if root
-    if (this.uiService.userType() === 'root') {
-      items.push({
+    const systemItem = items.find((i) => i.link === '/system');
+    if (systemItem && systemItem.children && this.uiService.userType() === 'root') {
+      systemItem.children.push({
         link: '/sessions',
         icon: 'admin_panel_settings',
         label: '管理会话',
-      });
-    }
-
-    const rbacItem = items.find((i) => i.link === '/rbac');
-    if (rbacItem && rbacItem.children) {
-      rbacItem.children.push({
-        link: '/rbac/simulator',
-        icon: 'psychology',
-        label: '权限模拟器',
       });
     }
 
@@ -260,7 +258,11 @@ export class MainComponent {
     const url = this.currentPath();
     const item = this.menuItems().find((m) => {
       const linkPath = m.link.split('?')[0];
-      return url === linkPath || url.startsWith(linkPath + '/');
+      if (url === linkPath) return true;
+      if (m.children) {
+        return m.children.some((c: any) => c.link === url || url.startsWith(c.link + '/'));
+      }
+      return url.startsWith(linkPath + '/');
     });
     return item ? item.label : '系统';
   });
