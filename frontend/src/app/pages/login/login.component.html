@@ -1,22 +1,14 @@
 <div class="flex h-screen w-screen overflow-hidden bg-surface">
-  <div
-    class="flex-2 relative hidden md:flex flex-col items-center justify-center brand-panel"
-  >
+  <div class="flex-2 relative hidden md:flex flex-col items-center justify-center brand-panel">
     <!-- 左侧简约品牌区域 -->
     <div class="brand-content text-center p-10 animate-in fade-in duration-700">
       <div class="mb-10">
-        <mat-icon class="brand-logo-icon !text-[100px] !w-28 !h-28"
-          >home_work</mat-icon
-        >
+        <mat-icon class="brand-logo-icon !text-[100px] !w-28 !h-28">home_work</mat-icon>
       </div>
       <h1 class="text-white text-5xl font-light tracking-widest uppercase mb-4">HOMELAB</h1>
-      <p class="text-slate-400 text-sm tracking-[0.3em] uppercase font-light">
-        云基础设施管理系统
-      </p>
+      <p class="text-slate-400 text-sm tracking-[0.3em] uppercase font-light">云基础设施管理系统</p>
     </div>
-    <div
-      class="absolute bottom-10 text-slate-600 text-[10px] tracking-[0.2em] uppercase"
-    >
+    <div class="absolute bottom-10 text-slate-600 text-[10px] tracking-[0.2em] uppercase">
       &copy; 2026 HOMELAB 基础设施系统
     </div>
   </div>
@@ -41,7 +33,12 @@
           <mat-form-field appearance="outline" class="w-full animate-in fade-in duration-300">
             <mat-label>访问密码</mat-label>
             <mat-icon matPrefix class="text-outline">lock_outline</mat-icon>
-            <input matInput type="password" formControlName="password" placeholder="请输入系统密码" />
+            <input
+              matInput
+              type="password"
+              formControlName="password"
+              placeholder="请输入系统密码"
+            />
             @if (validateForm.get('password')?.hasError('required')) {
               <mat-error>请输入系统密码以验证身份</mat-error>
             }
@@ -57,7 +54,7 @@
               <mat-icon class="!mr-1">arrow_back</mat-icon>
               返回修改密码
             </button>
-            
+
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
               <mat-label>2FA 动态验证码</mat-label>
               <mat-icon matPrefix class="text-outline">verified_user</mat-icon>
@@ -79,8 +76,12 @@
                 class="!h-1 rounded-full opacity-60"
               ></mat-progress-bar>
               <div class="flex justify-between mt-1 px-0.5">
-                <span class="text-[10px] text-outline uppercase tracking-tighter">验证码有效期</span>
-                <span class="text-[10px] text-primary font-mono">{{ 30 - (totpProgress * 30 / 100) | number:'1.0-0' }}s</span>
+                <span class="text-[10px] text-outline uppercase tracking-tighter"
+                  >验证码有效期</span
+                >
+                <span class="text-[10px] text-primary font-mono"
+                  >{{ 30 - (totpProgress * 30) / 100 | number: '1.0-0' }}s</span
+                >
               </div>
             </div>
           </div>

@@ -1,6 +1,12 @@
 import { Component, Inject, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -27,7 +33,11 @@ import { ModelsWorkflow } from '../../generated';
         @for (key of varKeys; track key) {
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>{{ key }}</mat-label>
-            <input matInput [formControlName]="key" [placeholder]="data.workflow.vars?.[key]?.default || ''">
+            <input
+              matInput
+              [formControlName]="key"
+              [placeholder]="data.workflow.vars?.[key]?.default || ''"
+            />
             <mat-hint>{{ data.workflow.vars?.[key]?.description }}</mat-hint>
           </mat-form-field>
         }
@@ -35,9 +45,11 @@ import { ModelsWorkflow } from '../../generated';
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" [disabled]="!form.valid" (click)="submit()">立即运行</button>
+      <button mat-flat-button color="primary" [disabled]="!form.valid" (click)="submit()">
+        立即运行
+      </button>
     </mat-dialog-actions>
-  `
+  `,
 })
 export class RunWorkflowDialogComponent implements OnInit {
   private fb = inject(FormBuilder);

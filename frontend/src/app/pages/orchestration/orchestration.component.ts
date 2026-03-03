@@ -1,4 +1,12 @@
-import { Component, OnInit, inject, signal, computed, OnDestroy, HostListener } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  signal,
+  computed,
+  OnDestroy,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -74,7 +82,9 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     this.isHandset() ? ['name', 'actions'] : ['name', 'description', 'steps', 'actions'],
   );
   displayedInstanceColumns = computed(() =>
-    this.isHandset() ? ['id', 'status', 'actions'] : ['id', 'workflowId', 'status', 'startedAt', 'actions'],
+    this.isHandset()
+      ? ['id', 'status', 'actions']
+      : ['id', 'workflowId', 'status', 'startedAt', 'actions'],
   );
 
   fabConfig = computed(() => {
@@ -130,7 +140,10 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     try {
       await Promise.all([this.loadWorkflows(), this.loadInstances()]);
     } catch (err) {
-      this.snackBar.open('加载失败', '重试').onAction().subscribe(() => this.refreshAll());
+      this.snackBar
+        .open('加载失败', '重试')
+        .onAction()
+        .subscribe(() => this.refreshAll());
     } finally {
       this.loading.set(false);
     }
@@ -155,7 +168,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     const data = await firstValueFrom(this.orchService.orchestrationInstancesGet());
     // Sort by startedAt descending
     const sorted = (data || []).sort((a, b) => {
-        return new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime();
+      return new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime();
     });
     this.instances.set(sorted);
   }
@@ -276,9 +289,13 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   private async executeRun(wf: ModelsWorkflow, inputs: { [key: string]: string }) {
     this.loading.set(true);
     try {
-      await firstValueFrom(this.orchService.orchestrationWorkflowsWorkflowIdRunPost(wf.id!, { inputs }));
-      this.snackBar.open('工作流已启动', '查看实例', { duration: 5000 })
-        .onAction().subscribe(() => this.onTabChange(1));
+      await firstValueFrom(
+        this.orchService.orchestrationWorkflowsWorkflowIdRunPost(wf.id!, { inputs }),
+      );
+      this.snackBar
+        .open('工作流已启动', '查看实例', { duration: 5000 })
+        .onAction()
+        .subscribe(() => this.onTabChange(1));
       await this.loadInstances();
     } catch (err) {
       this.snackBar.open('启动失败', '关闭', { duration: 2000 });
@@ -303,15 +320,18 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
 
   viewLogs(inst: ModelsTaskInstance) {
     requestAnimationFrame(() => {
-      this.dialog.open(TaskDetailDialogComponent, {
-        data: { instance: inst },
-        width: '100vw',
-        maxWidth: '100vw',
-        height: '100vh',
-        panelClass: 'full-screen-dialog',
-      }).afterClosed().subscribe(() => {
+      this.dialog
+        .open(TaskDetailDialogComponent, {
+          data: { instance: inst },
+          width: '100vw',
+          maxWidth: '100vw',
+          height: '100vh',
+          panelClass: 'full-screen-dialog',
+        })
+        .afterClosed()
+        .subscribe(() => {
           this.loadInstances();
-      });
+        });
     });
   }
 
@@ -319,10 +339,14 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     if (!wf.id) return;
     this.loading.set(true);
     try {
-      const newToken = await firstValueFrom(this.orchService.orchestrationWorkflowsIdWebhookResetPost(wf.id));
+      const newToken = await firstValueFrom(
+        this.orchService.orchestrationWorkflowsIdWebhookResetPost(wf.id),
+      );
       wf.webhookToken = newToken; // Update local ref
-      this.snackBar.open('Webhook Token 已重置', '复制新地址', { duration: 5000 })
-        .onAction().subscribe(() => this.copyWebhookUrl(wf));
+      this.snackBar
+        .open('Webhook Token 已重置', '复制新地址', { duration: 5000 })
+        .onAction()
+        .subscribe(() => this.copyWebhookUrl(wf));
     } catch (err) {
       this.snackBar.open('重置失败', '关闭', { duration: 2000 });
     } finally {
@@ -341,7 +365,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     if (!wf.id) return;
     const originalStatus = wf.enabled;
     const newStatus = !originalStatus;
-    
+
     // Optimistic update
     wf.enabled = newStatus;
 
@@ -356,17 +380,23 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
 
   getStatusClass(status: string | undefined): string {
     switch (status) {
-      case 'Success': return 'bg-success/10 text-success border-success/20';
-      case 'Failed': return 'bg-error/10 text-error border-error/20';
-      case 'Running': return 'bg-primary/10 text-primary border-primary/20';
-      case 'Cancelled': return 'bg-surface-container-high text-outline border-outline-variant/30';
-      default: return 'bg-surface-container text-on-surface border-outline-variant/30';
+      case 'Success':
+        return 'bg-success/10 text-success border-success/20';
+      case 'Failed':
+        return 'bg-error/10 text-error border-error/20';
+      case 'Running':
+        return 'bg-primary/10 text-primary border-primary/20';
+      case 'Cancelled':
+        return 'bg-surface-container-high text-outline border-outline-variant/30';
+      default:
+        return 'bg-surface-container text-on-surface border-outline-variant/30';
     }
   }
 
   openSearch() {
     this.uiService.openSearch({
-      placeholder: this.selectedTabIndex() === 0 ? '搜索工作流名称或描述...' : '搜索实例 ID 或工作流...',
+      placeholder:
+        this.selectedTabIndex() === 0 ? '搜索工作流名称或描述...' : '搜索实例 ID 或工作流...',
       value: '',
       onSearch: (val) => {
         // Implement local filtering or remote search if needed

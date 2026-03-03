@@ -41,7 +41,7 @@ func SaveLog(ctx context.Context, log *models.AuditLog) error {
 	// Update index for this year-month
 	yearMonth := t.Format("2006-01")
 	indexDB := common.DB.Child("system", "audit", "index")
-	_ = indexDB.Put(ctx, yearMonth, "1", kv.TTLKeep)
+	_, _ = indexDB.PutIfNotExists(ctx, yearMonth, "1", kv.TTLKeep)
 
 	db := getAuditDB(t)
 	key := fmt.Sprintf("%s-%s", log.Timestamp, log.ID)

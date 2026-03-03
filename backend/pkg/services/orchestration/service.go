@@ -130,36 +130,34 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 	if old.WebhookEnabled != workflow.WebhookEnabled {
 		changes = append(changes, fmt.Sprintf("webhookEnabled: %v -> %v", old.WebhookEnabled, workflow.WebhookEnabled))
 	}
-
-	old.Enabled = workflow.Enabled
-	old.Timeout = workflow.Timeout
-	old.Name = workflow.Name
-	old.Description = workflow.Description
-	old.ServiceAccountID = workflow.ServiceAccountID
-	old.CronEnabled = workflow.CronEnabled
-	old.CronExpr = workflow.CronExpr
-	old.WebhookEnabled = workflow.WebhookEnabled
-	if old.WebhookEnabled && old.WebhookToken == "" {
-		old.WebhookToken = GenerateWebhookToken()
+	// (Simplified check for vars change just to log it)
+	if len(old.Vars) != len(workflow.Vars) {
+		changes = append(changes, "vars defined changed")
 	}
-	old.Vars = workflow.Vars
-	old.Steps = workflow.Steps
-	old.UpdatedAt = time.Now()
 
-	message := fmt.Sprintf("Updated workflow %s", old.Name)
+	if workflow.WebhookEnabled && workflow.WebhookToken == "" {
+		workflow.WebhookToken = old.WebhookToken
+		if workflow.WebhookToken == "" {
+			workflow.WebhookToken = GenerateWebhookToken()
+		}
+	}
+	workflow.CreatedAt = old.CreatedAt
+	workflow.UpdatedAt = time.Now()
+
+	message := fmt.Sprintf("Updated workflow %s", workflow.Name)
 	if len(changes) > 0 {
 		message += ": " + strings.Join(changes, ", ")
 	} else {
 		message += " (no major changes)"
 	}
 
-	if err := repo.SaveWorkflow(ctx, old); err != nil {
+	if err := repo.SaveWorkflow(ctx, workflow); err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, false)
 		return nil, err
 	}
 	commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, true)
-	GlobalTriggerManager.UpdateTriggers(*old)
-	return old, nil
+	GlobalTriggerManager.UpdateTriggers(*workflow)
+	return workflow, nil
 }
 
 func ResetWebhookToken(ctx context.Context, id string) (string, error) {
@@ -290,6 +288,11 @@ func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]strin
 	workflow, err := repo.GetWorkflow(ctx, workflowID)
 	if err != nil {
 		return "", err
+	}
+
+	// Explicit permission check
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + workflowID) {
+		return "", fmt.Errorf("permission denied: orchestration/%s", workflowID)
 	}
 
 	authCtx := commonauth.FromContext(ctx)

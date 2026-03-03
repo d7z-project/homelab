@@ -139,7 +139,7 @@ func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /orchestration/workflows/{workflowId}/run [post]
 func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowId")
-	
+
 	var req models.RunWorkflowRequest
 	// Ignore errors, body is optional
 	_ = render.Bind(r, &req)

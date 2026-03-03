@@ -7,7 +7,7 @@
   - 支持引用工作流运行变量：`${{ vars.<var_key> }}`。
   - **可选语法**: `${{ ... ? }}` 标记，当变量不存在时解析为空字符串而非保留原样。
 - **并发控制 (Single Instance)**: 同一工作流在同一时间只能有一个实例运行，冲突时新请求直接失败，确保资源独占性。
-- **执行条件 (Conditional execution)**: 每一个步骤支持可选的 `if` 条件，使用 `go-expr` 表达式进行逻辑判断。
+- **执行条件 (Conditional execution)**: 每一个步骤 support 可选的 `if` 条件，使用 `go-expr` 表达式进行逻辑判断。
 - **触发器多样化**: 
   - **手动运行**: 支持通过 UI 交互式输入运行变量。
   - **定时任务 (Cron)**: 集成 `robfig/cron`，支持标准的 Crontab 表达式。
@@ -17,7 +17,7 @@
   - **超时中止**: 支持配置工作流级超时时间（默认 2h），超时自动触发 context cancel。
   - **Panic 恢复**: 引擎捕获所有执行过程中的 panic，记录堆栈信息并安全标记任务失败，防止程序崩溃。
   - **启动自愈**: 启动时自动清理僵尸任务状态及物理临时目录。
-- **全生命周期审计**: 所有工作流的 C/U/D 变更（含新旧值对比）及每一次触发记录均记录于系统审计日志。
+- **全生命周期审计**: 所有工作流的 C/U/D 变更及每一次触发记录均记录于系统审计日志。
 
 ---
 
@@ -35,39 +35,12 @@ type TaskContext struct {
 }
 ```
 
-### 2.2 数据模型 (Models Refined)
-```go
-type VarDefinition struct {
-    Description string `json:"description"`
-    Default     string `json:"default"`
-    Required    bool   `json:"required"`
-}
-
-type Step struct {
-    ID     string            `json:"id"`     // 命名限制：^[a-z0-9_]+$
-    Type   string            `json:"type"`   // 处理器类型
-    Name   string            `json:"name"`   // 支持变量插值
-    If     string            `json:"if"`     // go-expr 表达式
-    Params map[string]string `json:"params"` // 支持变量引用
-}
-
-type Workflow struct {
-    Enabled          bool                     `json:"enabled"`
-    Timeout          int                      `json:"timeout"`
-    ServiceAccountID string                   `json:"serviceAccountId"`
-    Vars             map[string]VarDefinition `json:"vars"`
-    // ... 其他触发器配置与步骤
-}
-```
-
 ---
 
 ## 3. 技术实施规格 (Technical Specifications)
 
 - **命名规范**: 变量键名 (Var Key) 和步骤 ID (Step ID) 强制遵循 `^[a-z0-9_]+$` 限制，确保模板解析路径唯一且无歧义。
-- **校验逻辑**:
-  - **静态校验**: 保存前检查变量引用闭环、Cron 表达式合法性、必填变量默认值约束。
-  - **动态校验**: 触发时检查必填参数缺失情况、并发状态、Webhook Token 匹配度。
+- **数据校验**: 遵循 `models.Bind` 标准进行基础格式校验。
 - **前端交互**: 
   - **响应式操作**: 大屏幕显示快捷图标，小屏幕收纳至菜单。
   - **运行弹窗**: 动态生成表单，支持运行前预填默认变量值。

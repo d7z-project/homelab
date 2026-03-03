@@ -17,8 +17,8 @@ import (
 var paramRegex = regexp.MustCompile(`\$\{\{\s*(?:steps\.([^.]+)\.outputs\.([^ \.?]+)|vars\.([^ \.?]+))\s*(\??)\s*\}\}`)
 
 type Executor struct {
-	runningTasks     sync.Map // instanceID -> cancelFunc
-	activeWorkflows  sync.Map // workflowID -> instanceID
+	runningTasks    sync.Map // instanceID -> cancelFunc
+	activeWorkflows sync.Map // workflowID -> instanceID
 }
 
 var GlobalExecutor = &Executor{}
@@ -187,7 +187,7 @@ func (e *Executor) resolveVariables(input string, stepOutputs map[string]map[str
 		if len(submatches) < 5 {
 			return match
 		}
-		
+
 		stepID := submatches[1]
 		outputKey := submatches[2]
 		varKey := submatches[3]

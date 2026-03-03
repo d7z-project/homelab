@@ -117,7 +117,10 @@ func ListDomains(ctx context.Context, page int, pageSize int, search string) ([]
 	}
 
 	total := len(res)
-	start := page * pageSize
+	start := (page - 1) * pageSize
+	if start < 0 {
+		start = 0
+	}
 	if start >= total {
 		return []models.Domain{}, total, nil
 	}
@@ -208,7 +211,10 @@ func ListRecords(ctx context.Context, domainID string, page int, pageSize int, s
 	}
 
 	total := len(res)
-	start := page * pageSize
+	start := (page - 1) * pageSize
+	if start < 0 {
+		start = 0
+	}
 	if start >= total {
 		return []models.Record{}, total, nil
 	}

@@ -32,6 +32,8 @@ func SetupTestDB() func() {
 
 	return func() {
 		db.Close()
+		// No need to restore oldDB here if it might be nil,
+		// but let's be safe.
 		common.DB = oldDB
 	}
 }

@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  ChangeDetectorRef,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -119,13 +127,13 @@ export class LoginComponent implements OnInit, OnDestroy {
               this.validateForm.get('totp')?.updateValueAndValidity();
               this.cdr.detectChanges();
             });
-            
+
             // 更明确的安全校验提示
-            this.snackBar.open('身份核验通过，请输入 2FA 动态验证码', '了解', { 
+            this.snackBar.open('身份核验通过，请输入 2FA 动态验证码', '了解', {
               duration: 5000,
-              panelClass: ['security-snack'] 
+              panelClass: ['security-snack'],
             });
-            
+
             setTimeout(() => {
               this.totpInput?.nativeElement.focus();
             }, 100);

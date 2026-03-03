@@ -170,6 +170,7 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 	commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, true)
 	return domain, nil
 }
+
 func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*models.Domain, error) {
 	if err := domain.Bind(nil); err != nil {
 		return nil, err

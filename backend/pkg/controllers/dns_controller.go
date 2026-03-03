@@ -11,7 +11,7 @@ import (
 )
 
 // ListDomainsHandler godoc
-// @Summary List all DNS domains
+// @Summary List all domains
 // @Tags dns
 // @Produce json
 // @Param page query int false "Page number"
@@ -33,7 +33,7 @@ func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateDomainHandler godoc
-// @Summary Create a DNS domain
+// @Summary Create a domain
 // @Tags dns
 // @Accept json
 // @Produce json
@@ -57,7 +57,7 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateDomainHandler godoc
-// @Summary Update a DNS domain
+// @Summary Update a domain
 // @Tags dns
 // @Accept json
 // @Produce json
@@ -83,7 +83,7 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteDomainHandler godoc
-// @Summary Delete a DNS domain
+// @Summary Delete a domain
 // @Tags dns
 // @Produce json
 // @Param id path string true "Domain ID"
@@ -100,10 +100,10 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListRecordsHandler godoc
-// @Summary List all DNS records
+// @Summary List all records
 // @Tags dns
 // @Produce json
-// @Param domainId query string false "Domain ID filter"
+// @Param domainId query string false "Filter by domain ID"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name or value"
@@ -111,9 +111,9 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /dns/records [get]
 func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
+	domainID := r.URL.Query().Get("domainId")
 	page, pageSize := getPaginationParams(r)
 	search := r.URL.Query().Get("search")
-	domainID := r.URL.Query().Get("domainId")
 
 	res, err := dnsservice.ListRecords(r.Context(), domainID, page, pageSize, search)
 	if err != nil {
@@ -124,7 +124,7 @@ func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateRecordHandler godoc
-// @Summary Create a DNS record
+// @Summary Create a record
 // @Tags dns
 // @Accept json
 // @Produce json
@@ -148,7 +148,7 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateRecordHandler godoc
-// @Summary Update a DNS record
+// @Summary Update a record
 // @Tags dns
 // @Accept json
 // @Produce json
@@ -174,7 +174,7 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteRecordHandler godoc
-// @Summary Delete a DNS record
+// @Summary Delete a record
 // @Tags dns
 // @Produce json
 // @Param id path string true "Record ID"
@@ -191,17 +191,14 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExportHandler godoc
-// @Summary Export all DNS domains and records
-// @Description Returns all domains and their associated records without internal IDs. Requires a valid token but no specific permissions.
+// @Summary Export all DNS configurations
+// @Description Returns all enabled DNS domains and records in a structured format.
 // @Tags dns
 // @Produce json
 // @Success 200 {object} models.DnsExportResponse
 // @Security ApiKeyAuth
 // @Router /dns/export [get]
 func ExportHandler(w http.ResponseWriter, r *http.Request) {
-	lastMod := dnsservice.GetLastModified()
-	w.Header().Set("Last-Modified", lastMod.UTC().Format(http.TimeFormat))
-
 	res, err := dnsservice.ExportAll(r.Context())
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())

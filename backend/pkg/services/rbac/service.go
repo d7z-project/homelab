@@ -10,23 +10,15 @@ import (
 	"homelab/pkg/models"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
-	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
 )
 
-var (
-	idRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
-)
-
-// Service Accounts
-
 func ListServiceAccounts(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, errors.New("permission denied: rbac")
 	}
-
 	sas, total, err := rbacrepo.ListServiceAccounts(ctx, uint64(page-1), uint(pageSize), search)
 	if err != nil {
 		return nil, err
@@ -104,15 +96,10 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, sa.Enabled))
 	}
 	if existing.Comments != sa.Comments {
-		changes = append(changes, fmt.Sprintf("comments: '%s' -> '%s'", existing.Comments, sa.Comments))
-	}
-	message := fmt.Sprintf("Updated ServiceAccount: %s", sa.ID)
-	if len(changes) > 0 {
-		message += ": " + strings.Join(changes, ", ")
-	} else {
-		message += " (no changes)"
+		changes = append(changes, "comments updated")
 	}
 
+	message := fmt.Sprintf("Updated ServiceAccount %s: %s", sa.ID, strings.Join(changes, ", "))
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.ID, message, false)
 		return nil, err

@@ -369,10 +369,10 @@ func TestOrchestrationEngine(t *testing.T) {
 
 	t.Run("ID and Key Validation", func(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
-		
+
 		// Invalid Var Key (contains capitals)
 		wf1 := &models.Workflow{
-			Name: "Invalid Var",
+			Name:             "Invalid Var",
 			ServiceAccountID: "sa",
 			Vars: map[string]models.VarDefinition{
 				"Invalid_Key": {Required: true},
@@ -386,7 +386,7 @@ func TestOrchestrationEngine(t *testing.T) {
 
 		// Invalid Step ID (contains capitals)
 		wf2 := &models.Workflow{
-			Name: "Invalid Step",
+			Name:             "Invalid Step",
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{ID: "Step_1", Type: "test/mock"},
@@ -399,7 +399,7 @@ func TestOrchestrationEngine(t *testing.T) {
 
 		// Valid
 		wf3 := &models.Workflow{
-			Name: "Valid Workflow",
+			Name:             "Valid Workflow",
 			ServiceAccountID: "sa",
 			Vars: map[string]models.VarDefinition{
 				"valid_key_123": {Required: true},
@@ -459,7 +459,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Create failed: %v", err)
 		}
-		
+
 		initialToken := wf.WebhookToken
 		if initialToken == "" {
 			t.Fatal("Initial token should be generated")

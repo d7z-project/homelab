@@ -72,13 +72,16 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	// 5. 启用 Binding 并再次模拟
-	_, _ = rbacservice.UpdateRoleBinding(adminCtx, rbID, &models.RoleBinding{
+	_, err = rbacservice.UpdateRoleBinding(adminCtx, rbID, &models.RoleBinding{
 		ID:               rbID,
 		Name:             "Test Binding",
 		ServiceAccountID: saID,
 		RoleIDs:          []string{roleID},
 		Enabled:          true,
 	})
+	if err != nil {
+		t.Fatalf("UpdateRoleBinding failed: %v", err)
+	}
 
 	perms, err = rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
 	if err != nil {
@@ -101,7 +104,10 @@ func TestRBACFullWorkflow(t *testing.T) {
 		t.Error("Expected ServiceAccount to be enabled by default")
 	}
 	sa.Enabled = false
-	_, _ = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
+	_, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
+	if err != nil {
+		t.Fatalf("UpdateServiceAccount (disable) failed: %v", err)
+	}
 
 	// 验证禁用后权限模拟应为空
 	perms, _ = rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
@@ -110,7 +116,10 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	sa.Enabled = true
-	_, _ = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
+	_, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
+	if err != nil {
+		t.Fatalf("UpdateServiceAccount (enable) failed: %v", err)
+	}
 
 	// 6. 重置 Token 验证
 	oldToken := sa.Token
