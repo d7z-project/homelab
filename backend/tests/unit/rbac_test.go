@@ -2,6 +2,7 @@ package unit
 
 import (
 	"context"
+	"homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	rbacservice "homelab/pkg/services/rbac"
 	"homelab/tests"
@@ -13,10 +14,11 @@ func TestRBACFullWorkflow(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
+	adminCtx := auth.WithPermissions(ctx, &models.ResourcePermissions{AllowedInstances: []string{"rbac"}})
 
 	// 1. 创建 ServiceAccount (使用显式 ID)
 	saID := "test-sa-01"
-	sa, err := rbacservice.CreateServiceAccount(ctx, &models.ServiceAccount{
+	sa, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{
 		ID:   saID,
 		Name: "Test SA",
 	})
@@ -31,7 +33,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	// 2. 创建 Role (UUID 自动生成)
-	role, err := rbacservice.CreateRole(ctx, &models.Role{
+	role, err := rbacservice.CreateRole(adminCtx, &models.Role{
 		Name: "DNS Manager",
 		Rules: []models.PolicyRule{
 			{
@@ -49,7 +51,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 	roleID := role.ID
 
 	// 3. 创建 RoleBinding (初始禁用)
-	rb, err := rbacservice.CreateRoleBinding(ctx, &models.RoleBinding{
+	rb, err := rbacservice.CreateRoleBinding(adminCtx, &models.RoleBinding{
 		Name:             "Test Binding",
 		ServiceAccountID: saID,
 		RoleIDs:          []string{roleID},
@@ -64,13 +66,13 @@ func TestRBACFullWorkflow(t *testing.T) {
 	rbID := rb.ID
 
 	// 4. 模拟权限 (应为空，因为 Binding 已禁用)
-	perms, _ := rbacservice.SimulatePermissions(ctx, saID, "get", "dns")
+	perms, _ := rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
 	if perms.AllowedAll || len(perms.AllowedInstances) > 0 {
 		t.Error("Expected no permissions for disabled binding")
 	}
 
 	// 5. 启用 Binding 并再次模拟
-	_, _ = rbacservice.UpdateRoleBinding(ctx, rbID, &models.RoleBinding{
+	_, _ = rbacservice.UpdateRoleBinding(adminCtx, rbID, &models.RoleBinding{
 		ID:               rbID,
 		Name:             "Test Binding",
 		ServiceAccountID: saID,
@@ -78,7 +80,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 		Enabled:          true,
 	})
 
-	perms, err = rbacservice.SimulatePermissions(ctx, saID, "get", "dns")
+	perms, err = rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
 	if err != nil {
 		t.Fatalf("SimulatePermissions failed: %v", err)
 	}
@@ -99,20 +101,20 @@ func TestRBACFullWorkflow(t *testing.T) {
 		t.Error("Expected ServiceAccount to be enabled by default")
 	}
 	sa.Enabled = false
-	_, _ = rbacservice.UpdateServiceAccount(ctx, saID, sa)
+	_, _ = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
 
 	// 验证禁用后权限模拟应为空
-	perms, _ = rbacservice.SimulatePermissions(ctx, saID, "get", "dns")
+	perms, _ = rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
 	if perms.AllowedAll || len(perms.AllowedInstances) > 0 {
 		t.Error("Expected no permissions for disabled ServiceAccount")
 	}
 
 	sa.Enabled = true
-	_, _ = rbacservice.UpdateServiceAccount(ctx, saID, sa)
+	_, _ = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
 
 	// 6. 重置 Token 验证
 	oldToken := sa.Token
-	resetSA, err := rbacservice.ResetServiceAccountToken(ctx, saID)
+	resetSA, err := rbacservice.ResetServiceAccountToken(adminCtx, saID)
 	if err != nil {
 		t.Fatalf("Reset token failed: %v", err)
 	}
@@ -121,12 +123,12 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	// 7. 级联删除验证: 删除 Role
-	err = rbacservice.DeleteRole(ctx, roleID)
+	err = rbacservice.DeleteRole(adminCtx, roleID)
 	if err != nil {
 		t.Fatalf("DeleteRole failed: %v", err)
 	}
 	// RoleBinding 应该被删除 (因为它是唯一的 Role)
-	rbResp, _ := rbacservice.ListRoleBindings(ctx, 1, 10, "")
+	rbResp, _ := rbacservice.ListRoleBindings(adminCtx, 1, 10, "")
 	if rbResp.Total > 0 {
 		t.Error("RoleBinding should be deleted after its only role is removed")
 	}
@@ -137,10 +139,11 @@ func TestServiceAccountIDValidation(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
+	adminCtx := auth.WithPermissions(ctx, &models.ResourcePermissions{AllowedInstances: []string{"rbac"}})
 
 	invalidIDs := []string{"", "invalid id", "测试账号", "sa@123"}
 	for _, id := range invalidIDs {
-		_, err := rbacservice.CreateServiceAccount(ctx, &models.ServiceAccount{
+		_, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{
 			ID:   id,
 			Name: "Invalid Test",
 		})
@@ -151,7 +154,7 @@ func TestServiceAccountIDValidation(t *testing.T) {
 
 	validIDs := []string{"sa-1", "SA_02", "123-abc"}
 	for _, id := range validIDs {
-		_, err := rbacservice.CreateServiceAccount(ctx, &models.ServiceAccount{
+		_, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{
 			ID:   id,
 			Name: "Valid Test",
 		})

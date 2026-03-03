@@ -24,6 +24,10 @@ func Router(r chi.Router) {
 				r.Use(middlewares.RequirePermission("admin", "rbac"))
 				r.Use(middlewares.AuditMiddleware("rbac"))
 				controllers.RBACRouter(r)
+
+				// Root Session Management
+				r.Get("/auth/sessions", controllers.ListSessionsHandler)
+				r.Delete("/auth/sessions/{id}", controllers.RevokeSessionHandler)
 			})
 
 			r.Group(func(r chi.Router) {

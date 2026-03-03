@@ -13,8 +13,7 @@ import (
 )
 
 var (
-	roleCache  *lru.Cache[string, *models.Role]
-	tokenCache *lru.Cache[string, string]
+	roleCache *lru.Cache[string, *models.Role]
 
 	rbCache struct {
 		rbs   []models.RoleBinding
@@ -25,14 +24,18 @@ var (
 
 func init() {
 	roleCache, _ = lru.New[string, *models.Role](1024)
-	tokenCache, _ = lru.New[string, string](4096)
+}
+
+func ClearCache() {
+	roleCache.Purge()
+	rbCache.mu.Lock()
+	rbCache.valid = false
+	rbCache.mu.Unlock()
 }
 
 func InvalidateCache(roleID string) {
 	if roleID != "" {
 		roleCache.Remove(roleID)
-	} else {
-		roleCache.Purge()
 	}
 	rbCache.mu.Lock()
 	rbCache.valid = false
@@ -60,25 +63,11 @@ func SaveServiceAccount(ctx context.Context, sa *models.ServiceAccount) error {
 	if err != nil {
 		return err
 	}
-	if sa.Token != "" {
-		tokenDB := common.DB.Child("auth", "tokens")
-		// Token points to SA ID
-		err = tokenDB.Put(ctx, sa.Token, sa.ID, kv.TTLKeep)
-		if err != nil {
-			return err
-		}
-		tokenCache.Add(sa.Token, sa.ID)
-	}
 	return db.Put(ctx, sa.ID, string(data), kv.TTLKeep)
 }
 
 func DeleteServiceAccount(ctx context.Context, id string) error {
-	sa, err := GetServiceAccount(ctx, id)
-	if err == nil && sa.Token != "" {
-		common.DB.Child("auth", "tokens").Delete(ctx, sa.Token)
-		tokenCache.Remove(sa.Token)
-	}
-	_, err = common.DB.Child("auth", "serviceaccounts").Delete(ctx, id)
+	_, err := common.DB.Child("auth", "serviceaccounts").Delete(ctx, id)
 	return err
 }
 
@@ -110,19 +99,6 @@ func ListServiceAccounts(ctx context.Context, page uint64, pageSize uint, search
 	return res[start:end], total, nil
 }
 
-// Token Repo
-
-func GetTokenSA(ctx context.Context, token string) (string, error) {
-	if saID, ok := tokenCache.Get(token); ok {
-		return saID, nil
-	}
-	saID, err := common.DB.Child("auth", "tokens").Get(ctx, token)
-	if err == nil && saID != "" {
-		tokenCache.Add(token, saID)
-	}
-	return saID, err
-}
-
 // Role Repo
 
 func GetRole(ctx context.Context, id string) (*models.Role, error) {
@@ -150,7 +126,8 @@ func SaveRole(ctx context.Context, role *models.Role) error {
 	}
 	err = db.Put(ctx, role.ID, string(data), kv.TTLKeep)
 	if err == nil {
-		InvalidateCache(role.ID)
+		roleCache.Add(role.ID, role)
+		InvalidateCache("")
 	}
 	return err
 }
@@ -193,19 +170,6 @@ func ListRoles(ctx context.Context, page uint64, pageSize uint, search string) (
 
 // RoleBinding Repo
 
-func SaveRoleBinding(ctx context.Context, rb *models.RoleBinding) error {
-	db := common.DB.Child("auth", "rolebindings")
-	data, err := json.Marshal(rb)
-	if err != nil {
-		return err
-	}
-	err = db.Put(ctx, rb.ID, string(data), kv.TTLKeep)
-	if err == nil {
-		InvalidateCache("")
-	}
-	return err
-}
-
 func GetRoleBinding(ctx context.Context, id string) (*models.RoleBinding, error) {
 	db := common.DB.Child("auth", "rolebindings")
 	data, err := db.Get(ctx, id)
@@ -217,6 +181,19 @@ func GetRoleBinding(ctx context.Context, id string) (*models.RoleBinding, error)
 		return nil, err
 	}
 	return &rb, nil
+}
+
+func SaveRoleBinding(ctx context.Context, rb *models.RoleBinding) error {
+	db := common.DB.Child("auth", "rolebindings")
+	data, err := json.Marshal(rb)
+	if err != nil {
+		return err
+	}
+	err = db.Put(ctx, rb.ID, string(data), kv.TTLKeep)
+	if err == nil {
+		InvalidateCache("")
+	}
+	return err
 }
 
 func DeleteRoleBinding(ctx context.Context, id string) error {
@@ -258,9 +235,9 @@ func ListRoleBindings(ctx context.Context, page uint64, pageSize uint, search st
 func ListRoleBindingsAll(ctx context.Context) ([]models.RoleBinding, error) {
 	rbCache.mu.RLock()
 	if rbCache.valid {
-		rbs := rbCache.rbs
+		res := rbCache.rbs
 		rbCache.mu.RUnlock()
-		return rbs, nil
+		return res, nil
 	}
 	rbCache.mu.RUnlock()
 

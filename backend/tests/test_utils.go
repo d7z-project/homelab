@@ -2,6 +2,9 @@ package tests
 
 import (
 	"homelab/pkg/common"
+	dnsrepo "homelab/pkg/repositories/dns"
+	rbacrepo "homelab/pkg/repositories/rbac"
+	dnsservice "homelab/pkg/services/dns"
 	"log"
 
 	"gopkg.d7z.net/middleware/kv"
@@ -10,6 +13,11 @@ import (
 // SetupTestDB 初始化一个内存数据库用于测试
 // 返回一个清理函数，用于在测试结束时关闭数据库
 func SetupTestDB() func() {
+	// Clear caches
+	dnsrepo.ClearCache()
+	rbacrepo.ClearCache()
+	dnsservice.ClearCache()
+
 	db, err := kv.NewKVFromURL("memory://")
 	if err != nil {
 		log.Fatalf("failed to create test db: %v", err)

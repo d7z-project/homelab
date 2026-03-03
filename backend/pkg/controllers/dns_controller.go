@@ -199,6 +199,9 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /dns/export [get]
 func ExportHandler(w http.ResponseWriter, r *http.Request) {
+	lastMod := dnsservice.GetLastModified()
+	w.Header().Set("Last-Modified", lastMod.UTC().Format(http.TimeFormat))
+
 	res, err := dnsservice.ExportAll(r.Context())
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())

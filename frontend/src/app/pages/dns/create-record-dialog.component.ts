@@ -60,7 +60,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
               pattern="^(@|[\\-a-zA-Z0-9\\*_]+(\\.[\\-a-zA-Z0-9\\*_]+)*)$"
               #nameInput="ngModel"
             />
-            <mat-hint>@ 表示主域名</mat-hint>
+            <mat-hint>&#64; 表示主域名</mat-hint>
             @if (nameInput.errors?.['required']) {
               <mat-error>请输入主机记录</mat-error>
             }
@@ -135,7 +135,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
                   #soaRnameInput="ngModel"
                   pattern="^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}\\.?$"
                 />
-                <mat-hint>邮箱中的 @ 需替换为 .</mat-hint>
+                <mat-hint>邮箱中的 &#64; 需替换为 .</mat-hint>
                 @if (soaRnameInput.errors?.['pattern']) {
                   <mat-error>格式不正确</mat-error>
                 }

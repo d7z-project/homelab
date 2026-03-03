@@ -2,6 +2,7 @@ package dns
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"homelab/pkg/common"
@@ -15,11 +16,26 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 var (
 	domainRegex = regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
+	exportCache *lru.Cache[string, exportCacheEntry]
 )
+
+type exportCacheEntry struct {
+	Response     *models.DnsExportResponse
+	LastModified time.Time
+}
+
+func init() {
+	exportCache, _ = lru.New[string, exportCacheEntry](128)
+}
+
+func ClearCache() {
+	exportCache.Purge()
+}
 
 const (
 	defaultSOARefresh = 7200
@@ -60,6 +76,10 @@ func incrementSerial(currentValue string) string {
 		return fmt.Sprintf("%s%02d", today, serialNum)
 	}
 	return today + "01"
+}
+
+func GetLastModified() time.Time {
+	return dnsrepo.GetLastModified()
 }
 
 // Domain Service
@@ -463,13 +483,23 @@ func getPart(value string, index int) string {
 }
 
 func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
+	perms := commonauth.PermissionsFromContext(ctx)
+	// Use JSON marshaled permissions as a stable cache key
+	permsData, _ := json.Marshal(perms)
+	cacheKey := string(permsData)
+	lastMod := dnsrepo.GetLastModified()
+
+	if entry, ok := exportCache.Get(cacheKey); ok {
+		if !entry.LastModified.Before(lastMod) {
+			return entry.Response, nil
+		}
+	}
+
 	// Fetch all domains
 	domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
 	if err != nil {
 		return nil, err
 	}
-
-	perms := commonauth.PermissionsFromContext(ctx)
 
 	// Fetch all records
 	allRecords, _, err := dnsrepo.ListRecords(ctx, "", 0, 10000, "")
@@ -589,6 +619,12 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		}
 		resp.Domains = append(resp.Domains, exportDom)
 	}
+
+	// Cache the result
+	exportCache.Add(cacheKey, exportCacheEntry{
+		Response:     resp,
+		LastModified: lastMod,
+	})
 
 	return resp, nil
 }

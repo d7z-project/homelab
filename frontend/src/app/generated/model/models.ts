@@ -16,6 +16,7 @@ export * from './modelsResourcePermissions';
 export * from './modelsRole';
 export * from './modelsRoleBinding';
 export * from './modelsServiceAccount';
+export * from './modelsSession';
 export * from './modelsSimulatePermissionsRequest';
 export * from './rbacRolebindingsGet200Response';
 export * from './rbacRolesGet200Response';

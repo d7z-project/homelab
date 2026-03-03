@@ -183,6 +183,26 @@ body {
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--mat-sys-outline);
+/* App Initialization Mask */
+.app-loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--mat-sys-surface-container-lowest);
+  z-index: 9999;
+  gap: 16px;
+}
+
+.app-loading-mask p {
+  margin: 0;
+  font-family: Roboto, 'Noto Sans SC', sans-serif;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 14px;
+  letter-spacing: 0.1px;
 }

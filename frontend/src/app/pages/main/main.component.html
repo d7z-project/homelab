@@ -47,7 +47,7 @@
     </div>
 
     <mat-nav-list class="mt-2">
-      @for (item of menuItems; track item.label) {
+      @for (item of menuItems(); track item.label) {
         @if (!item.children) {
           <a
             mat-list-item

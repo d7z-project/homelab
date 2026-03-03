@@ -27,6 +27,7 @@ model/modelsResourcePermissions.ts
 model/modelsRole.ts
 model/modelsRoleBinding.ts
 model/modelsServiceAccount.ts
+model/modelsSession.ts
 model/modelsSimulatePermissionsRequest.ts
 model/rbacRolebindingsGet200Response.ts
 model/rbacRolesGet200Response.ts

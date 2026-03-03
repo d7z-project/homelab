@@ -14,6 +14,8 @@ definitions:
     properties:
       id:
         type: string
+      sessionId:
+        type: string
       type:
         type: string
     type: object
@@ -193,6 +195,19 @@ definitions:
       token:
         type: string
     type: object
+  models.Session:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      ip:
+        type: string
+      userAgent:
+        type: string
+      userType:
+        type: string
+    type: object
   models.SimulatePermissionsRequest:
     properties:
       resource:
@@ -262,6 +277,42 @@ paths:
       summary: Cleanup old audit logs
       tags:
       - audit
+  /auth/sessions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Session'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List all active root sessions
+      tags:
+      - auth
+  /auth/sessions/{id}:
+    delete:
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Revoke a session
+      tags:
+      - auth
   /dns/domains:
     get:
       parameters:

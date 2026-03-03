@@ -12,8 +12,9 @@ var (
 )
 
 type AuthContext struct {
-	Type string // "root" or "sa"
-	ID   string // ServiceAccount ID if Type is "sa"
+	Type      string // "root" or "sa"
+	ID        string // ServiceAccount ID if Type is "sa"
+	SessionID string // UUID for revocation check
 }
 
 type contextKey string

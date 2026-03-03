@@ -170,11 +170,13 @@ export class DnsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.uiService.configureToolbar({ shadow: false });
     this.refreshAll();
     this.setupScrollListener();
   }
 
   ngOnDestroy(): void {
+    this.uiService.resetToolbar();
     if (this.scrollListener) {
       const scrollElement = document.querySelector('mat-sidenav-content');
       scrollElement?.removeEventListener('scroll', this.scrollListener);

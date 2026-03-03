@@ -1,12 +1,15 @@
 package controllers
 
 import (
+	"context"
 	"homelab/pkg/common"
+	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	authservice "homelab/pkg/services/auth"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
@@ -25,7 +28,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, err := authservice.Login(r.Context(), req.Password, req.Totp)
+	ip := GetIP(r)
+	ua := r.UserAgent()
+
+	// Inject logger for login phase
+	ctx := context.WithValue(r.Context(), commonaudit.LoggerContextKey, &commonaudit.AuditLogger{
+		Subject:   "anonymous",
+		Resource:  "auth",
+		IPAddress: ip,
+		UserAgent: ua,
+	})
+
+	sessionID, err := authservice.Login(ctx, req.Password, req.Totp, ip, ua)
 	if err != nil {
 		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
 		return
@@ -53,8 +67,9 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type AuthInfo struct {
-	Type string `json:"type"`
-	ID   string `json:"id,omitempty"`
+	Type      string `json:"type"`
+	ID        string `json:"id,omitempty"`
+	SessionID string `json:"sessionId,omitempty"`
 }
 
 // InfoHandler godoc
@@ -72,7 +87,41 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.Success(w, r, AuthInfo{
-		Type: ac.Type,
-		ID:   ac.ID,
+		Type:      ac.Type,
+		ID:        ac.ID,
+		SessionID: ac.SessionID,
 	})
+}
+
+// ListSessionsHandler godoc
+// @Summary List all active root sessions
+// @Tags auth
+// @Produce json
+// @Success 200 {array} models.Session
+// @Security ApiKeyAuth
+// @Router /auth/sessions [get]
+func ListSessionsHandler(w http.ResponseWriter, r *http.Request) {
+	res, err := authservice.ListSessions(r.Context())
+	if err != nil {
+		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
+		return
+	}
+	common.Success(w, r, res)
+}
+
+// RevokeSessionHandler godoc
+// @Summary Revoke a session
+// @Tags auth
+// @Produce json
+// @Param id path string true "Session ID"
+// @Success 200 {string} string "success"
+// @Security ApiKeyAuth
+// @Router /auth/sessions/{id} [delete]
+func RevokeSessionHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := authservice.RevokeSession(r.Context(), id); err != nil {
+		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
+		return
+	}
+	common.Success(w, r, "success")
 }

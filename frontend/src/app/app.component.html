@@ -1,1 +1,8 @@
-<router-outlet />
+@if (uiService.initializing()) {
+  <div class="app-loading-mask">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>正在初始化应用...</p>
+  </div>
+} @else {
+  <router-outlet />
+}

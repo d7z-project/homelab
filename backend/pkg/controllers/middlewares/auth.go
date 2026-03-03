@@ -2,18 +2,36 @@ package middlewares
 
 import (
 	"context"
+	"fmt"
 	"homelab/pkg/common"
+	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
+	"homelab/pkg/controllers"
 	"homelab/pkg/models"
 	authservice "homelab/pkg/services/auth"
 	"net/http"
+	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := controllers.GetIP(r)
+		ua := r.UserAgent()
+
+		// Inject a temporary logger for auth phase
+		authLogger := &commonaudit.AuditLogger{
+			Subject:   "anonymous",
+			Resource:  "auth",
+			IPAddress: ip,
+			UserAgent: ua,
+		}
+		r = r.WithContext(context.WithValue(r.Context(), commonaudit.LoggerContextKey, authLogger))
+
 		authHeader := r.Header.Get("Authorization")
 		token := authHeader
-		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		if len(authHeader) > 7 && strings.HasPrefix(authHeader, "Bearer ") {
 			token = authHeader[7:]
 		}
 
@@ -22,32 +40,44 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// 1. Check if it's a Root/Human session
-		isRoot, err := authservice.Verify(r.Context(), token)
-		if err == nil && isRoot {
-			ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
-				Type: "root",
-			})
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
-		}
-
-		// 2. Check if it's a ServiceAccount token
-		saID, err := authservice.GetTokenSA(r.Context(), token)
-		if err == nil && saID != "" {
-			// Check if SA is enabled
-			if !authservice.IsSAEnabled(r.Context(), saID) {
-				common.UnauthorizedError(w, r, 10001, "Service Account Disabled")
-				return
+		// Parse JWT
+		jwtToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
+			return []byte(common.Opts.JWTSecret), nil
+		})
 
-			ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
-				Type: "sa",
-				ID:   saID,
-			})
-			authservice.UpdateSALastUsed(saID)
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
+		if err == nil && jwtToken.Valid {
+			if claims, ok := jwtToken.Claims.(jwt.MapClaims); ok {
+				sub, _ := claims["sub"].(string)
+
+				if sub == "root" {
+					// 1. Root/Human session: Needs IP/UA and Revocation check
+					jti, _ := claims["jti"].(string)
+					isRoot, _ := authservice.Verify(r.Context(), token, ip, ua)
+					if isRoot {
+						ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
+							Type:      "root",
+							SessionID: jti,
+						})
+						next.ServeHTTP(w, r.WithContext(ctx))
+						return
+					}
+				} else if sub == "sa" {
+					// 2. ServiceAccount: Needs Enabled check and Token match, no IP/UA check
+					saID, _ := claims["sa_id"].(string)
+					if saID != "" && authservice.IsSAEnabled(r.Context(), saID, token) {
+						ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
+							Type: "sa",
+							ID:   saID,
+						})
+						authservice.UpdateSALastUsed(saID)
+						next.ServeHTTP(w, r.WithContext(ctx))
+						return
+					}
+				}
+			}
 		}
 
 		common.UnauthorizedError(w, r, 10000, "Unauthorized")

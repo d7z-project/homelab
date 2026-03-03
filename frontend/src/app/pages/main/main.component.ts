@@ -170,30 +170,51 @@ export class MainComponent {
       .subscribe();
   }
 
-  menuItems = [
-    { link: '/welcome', icon: 'dashboard', label: '控制面板' },
-    {
-      link: '/rbac',
-      icon: 'security',
-      label: 'RBAC 权限管理',
-      children: [
-        { link: '/rbac', queryParams: { tab: 'sa' }, icon: 'account_circle', label: '服务账号' },
-        { link: '/rbac', queryParams: { tab: 'role' }, icon: 'shield_person', label: '角色管理' },
-        { link: '/rbac', queryParams: { tab: 'binding' }, icon: 'link', label: '权限绑定' },
-        { link: '/rbac/simulator', icon: 'psychology', label: '权限模拟器' },
-      ],
-    },
-    {
-      link: '/dns',
-      icon: 'dns',
-      label: 'DNS 管理',
-      children: [
-        { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
-        { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
-      ],
-    },
-    { link: '/audit', icon: 'history', label: '审计日志' },
-  ];
+  menuItems = computed(() => {
+    const items: any[] = [
+      { link: '/welcome', icon: 'dashboard', label: '控制面板' },
+      {
+        link: '/rbac',
+        icon: 'security',
+        label: '权限管理',
+        children: [
+          { link: '/rbac', queryParams: { tab: 'sa' }, icon: 'account_circle', label: '服务账号' },
+          { link: '/rbac', queryParams: { tab: 'role' }, icon: 'shield_person', label: '角色管理' },
+          { link: '/rbac', queryParams: { tab: 'binding' }, icon: 'link', label: '权限绑定' },
+        ],
+      },
+      {
+        link: '/dns',
+        icon: 'dns',
+        label: 'DNS 管理',
+        children: [
+          { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
+          { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
+        ],
+      },
+      { link: '/audit', icon: 'history', label: '审计日志' },
+    ];
+
+    // Add session management if root
+    const rbacItem = items.find((i) => i.link === '/rbac');
+    if (rbacItem && rbacItem.children) {
+      if (this.uiService.userType() === 'root') {
+        rbacItem.children.push({
+          link: '/rbac',
+          queryParams: { tab: 'session' },
+          icon: 'admin_panel_settings',
+          label: '管理会话',
+        });
+      }
+      rbacItem.children.push({
+        link: '/rbac/simulator',
+        icon: 'psychology',
+        label: '权限模拟器',
+      });
+    }
+
+    return items;
+  });
 
   isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
@@ -218,7 +239,7 @@ export class MainComponent {
 
   currentPageLabel = computed(() => {
     const url = this.currentPath();
-    const item = this.menuItems.find((m) => {
+    const item = this.menuItems().find((m) => {
       const linkPath = m.link.split('?')[0];
       return url === linkPath || url.startsWith(linkPath + '/');
     });

@@ -61,7 +61,11 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 	}
 
 	if sa.Token == "" {
-		sa.Token = uuid.New().String()
+		token, err := authservice.CreateSAToken(sa.ID)
+		if err != nil {
+			return nil, err
+		}
+		sa.Token = token
 	}
 
 	sa.Enabled = true
@@ -155,7 +159,11 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*models.ServiceAc
 		return nil, errors.New("service account not found")
 	}
 
-	sa.Token = uuid.New().String()
+	token, err := authservice.CreateSAToken(sa.ID)
+	if err != nil {
+		return nil, err
+	}
+	sa.Token = token
 	message := fmt.Sprintf("Reset token for ServiceAccount: %s", sa.ID)
 	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
 		commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", sa.ID, message, false)

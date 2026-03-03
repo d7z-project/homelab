@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, OnDestroy, Pipe, PipeTransform } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -12,6 +12,7 @@ import {
   ModelsRole,
   ModelsRoleBinding,
   AuthService,
+  ModelsSession,
 } from '../../generated';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -35,6 +36,22 @@ import { map } from 'rxjs/operators';
 import { LogoutDialogComponent } from '../main/logout-dialog.component';
 import { UiService } from '../../ui.service';
 
+@Pipe({
+  name: 'ua',
+  standalone: true,
+})
+export class UaPipe implements PipeTransform {
+  transform(value: string | undefined): string {
+    if (!value) return '-';
+    if (value.includes('Firefox/')) return 'Firefox';
+    if (value.includes('Edg/')) return 'Edge';
+    if (value.includes('Chrome/')) return 'Chrome';
+    if (value.includes('Safari/')) return 'Safari';
+    if (value.includes('Postman')) return 'Postman';
+    return value.length > 20 ? value.substring(0, 20) + '...' : value;
+  }
+}
+
 @Component({
   selector: 'app-rbac',
   standalone: true,
@@ -53,6 +70,7 @@ import { UiService } from '../../ui.service';
     MatFormFieldModule,
     MatInputModule,
     MatDividerModule,
+    UaPipe,
   ],
   templateUrl: './rbac.component.html',
 })
@@ -76,6 +94,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   serviceAccounts = signal<ModelsServiceAccount[]>([]);
   roles = signal<ModelsRole[]>([]);
   roleBindings = signal<ModelsRoleBinding[]>([]);
+  sessions = signal<ModelsSession[]>([]);
 
   saTotal = signal(0);
   roleTotal = signal(0);
@@ -95,6 +114,11 @@ export class RbacComponent implements OnInit, OnDestroy {
   loadingMore = signal(false);
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
+
+  // Admin sessions columns
+  displayedSessionColumns = computed(() =>
+    this.isHandset() ? ['ip', 'actions'] : ['ip', 'userAgent', 'createdAt', 'actions'],
+  );
 
   // Focus on NAMES for display, IDs are technical
   displayedSaColumns = computed(() =>
@@ -211,10 +235,12 @@ export class RbacComponent implements OnInit, OnDestroy {
       if (params['tab'] === 'sa') this.selectedTabIndex.set(0);
       else if (params['tab'] === 'role') this.selectedTabIndex.set(1);
       else if (params['tab'] === 'binding') this.selectedTabIndex.set(2);
+      else if (params['tab'] === 'session') this.selectedTabIndex.set(3);
     });
   }
 
   ngOnInit(): void {
+    this.uiService.configureToolbar({ shadow: false });
     const params = this.route.snapshot.queryParams;
     if (params['pageSize']) this.pageSize.set(Number(params['pageSize']));
     this.refreshAll();
@@ -222,6 +248,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.uiService.resetToolbar();
     if (this.scrollListener) {
       const scrollElement = document.querySelector('mat-sidenav-content');
       scrollElement?.removeEventListener('scroll', this.scrollListener);
@@ -262,7 +289,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   }
 
   private updateQueryParams() {
-    const tabs = ['sa', 'role', 'binding'];
+    const tabs = ['sa', 'role', 'binding', 'session'];
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
@@ -290,6 +317,8 @@ export class RbacComponent implements OnInit, OnDestroy {
     } else if (index === 2) {
       this.rbPage.set(0);
       this.loadRoleBindings(true);
+    } else if (index === 3) {
+      this.loadSessions();
     }
   }
 
@@ -304,6 +333,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       await this.loadServiceAccounts(true);
       await this.loadRoles(true);
       await this.loadRoleBindings(true);
+      await this.loadSessions();
     } catch (err) {
       this.snackBar
         .open('加载数据失败', '重试', { duration: 3000 })
@@ -386,6 +416,54 @@ export class RbacComponent implements OnInit, OnDestroy {
     } finally {
       this.loadingMore.set(false);
     }
+  }
+
+  async loadSessions() {
+    try {
+      const data = await firstValueFrom(this.authService.authSessionsGet());
+      const currentId = this.uiService.sessionId();
+      let sorted = data || [];
+      if (currentId) {
+        sorted = [...sorted].sort((a, b) => {
+          if (a.id === currentId) return -1;
+          if (b.id === currentId) return 1;
+          return 0;
+        });
+      }
+      this.sessions.set(sorted);
+    } catch (err) {
+      console.warn('Failed to load sessions', err);
+    }
+  }
+
+  async revokeSession(session: ModelsSession) {
+    if (!session.id) return;
+
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: '吊销会话',
+          message: `确定要吊销会话 "${session.id}" 吗？该管理员将被强制下线。`,
+          confirmText: '确定吊销',
+          color: 'warn',
+        },
+      });
+
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result && session.id) {
+          this.loading.set(true);
+          try {
+            await firstValueFrom(this.authService.authSessionsIdDelete(session.id));
+            this.snackBar.open('会话已吊销', '关闭', { duration: 2000 });
+            await this.loadSessions();
+          } catch (err) {
+            this.snackBar.open('操作失败', '关闭', { duration: 2000 });
+          } finally {
+            this.loading.set(false);
+          }
+        }
+      });
+    });
   }
 
   toggleDrawer() {

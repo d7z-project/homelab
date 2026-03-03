@@ -11,6 +11,7 @@ var Opts = &Options{
 	DB:           "memory://",
 	RootPassword: "admin",
 	TotpAuth:     "",
+	JWTSecret:    "change-me-please",
 }
 
 type Options struct {
@@ -18,9 +19,14 @@ type Options struct {
 	DB           string `yaml:"db" env:"HOMELAB_DB"`
 	RootPassword string `yaml:"password" env:"HOMELAB_PASSWORD"`
 	TotpAuth     string `yaml:"totp_auth" env:"HOMELAB_TOTP_AUTH"`
+	JWTSecret    string `yaml:"jwt_secret" env:"HOMELAB_JWT_SECRET"`
+	SessionTTL   string `yaml:"session_ttl" env:"HOMELAB_SESSION_TTL"`
 }
 
 func (o *Options) ParseEnv() {
+	if o.SessionTTL == "" {
+		o.SessionTTL = "30m"
+	}
 	val := reflect.ValueOf(o).Elem()
 	typ := val.Type()
 

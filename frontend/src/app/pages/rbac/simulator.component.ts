@@ -301,7 +301,7 @@ export class RbacSimulatorComponent implements OnInit {
   filteredSa = signal<ModelsServiceAccount[]>([]);
   selectedSaID = signal('');
 
-  verb = signal('read');
+  verb = signal('');
   resource = signal('');
   suggestions = signal<string[]>([]);
   verbSuggestions = signal<string[]>([]);

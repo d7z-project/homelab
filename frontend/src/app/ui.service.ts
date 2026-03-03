@@ -11,6 +11,11 @@ export interface SearchConfig {
   providedIn: 'root',
 })
 export class UiService {
+  // Global loading state for initial app check
+  initializing = signal(true);
+  userType = signal<string | null>(null);
+  sessionId = signal<string | null>(null);
+
   // Sidenav state
   sidenavOpened = signal(false);
 

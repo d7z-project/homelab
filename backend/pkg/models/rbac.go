@@ -74,6 +74,18 @@ func (p *ResourcePermissions) IsAllowed(resourceName string) bool {
 	return false
 }
 
+type Session struct {
+	ID        string `json:"id"`
+	UserType  string `json:"userType"`
+	CreatedAt string `json:"createdAt"`
+	IP        string `json:"ip"`
+	UserAgent string `json:"userAgent"`
+}
+
+func (s *Session) Bind(r *http.Request) error {
+	return nil
+}
+
 type SimulatePermissionsRequest struct {
 	ServiceAccountID string `json:"serviceAccountId"`
 	Verb             string `json:"verb"`

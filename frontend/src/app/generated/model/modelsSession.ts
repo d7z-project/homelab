@@ -9,8 +9,11 @@
  */
 
 
-export interface ModelsLoginRequest { 
-    password?: string;
-    totp?: string;
+export interface ModelsSession { 
+    createdAt?: string;
+    id?: string;
+    ip?: string;
+    userAgent?: string;
+    userType?: string;
 }
 

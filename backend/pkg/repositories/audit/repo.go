@@ -109,7 +109,8 @@ func ListLogs(ctx context.Context, page, pageSize int, search string) ([]models.
 			match := strings.Contains(strings.ToLower(log.Subject), searchLower) ||
 				strings.Contains(strings.ToLower(log.Action), searchLower) ||
 				strings.Contains(strings.ToLower(log.Resource), searchLower) ||
-				strings.Contains(strings.ToLower(log.TargetID), searchLower)
+				strings.Contains(strings.ToLower(log.TargetID), searchLower) ||
+				strings.Contains(strings.ToLower(log.Message), searchLower)
 			if !match {
 				continue
 			}
