@@ -623,11 +623,7 @@ const docTemplate = `{
         },
         "/orchestration/instances": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
+                "description": "Retrieves a history of all triggered workflow instances and their current status.",
                 "produces": [
                     "application/json"
                 ],
@@ -644,6 +640,12 @@ const docTemplate = `{
                                 "$ref": "#/definitions/models.TaskInstance"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -655,6 +657,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Attempts to terminate a running task instance gracefully by sending a cancellation signal.",
                 "produces": [
                     "application/json"
                 ],
@@ -665,7 +668,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Instance ID",
+                        "description": "Task Instance ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -676,6 +679,12 @@ const docTemplate = `{
                         "description": "success",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Instance Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -688,6 +697,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Returns the full execution logs for a specific task instance in plain text.",
                 "produces": [
                     "text/plain"
                 ],
@@ -698,7 +708,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Instance ID",
+                        "description": "Task Instance ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -706,9 +716,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "logs",
+                        "description": "Log content",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Instance Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -721,6 +737,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Returns the specifications (inputs/outputs) for all registered task processors in the system.",
                 "produces": [
                     "application/json"
                 ],
@@ -748,6 +765,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Executes a specific processor in isolation within a temporary workspace. Useful for debugging or testing parameters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -757,10 +775,10 @@ const docTemplate = `{
                 "tags": [
                     "orchestration"
                 ],
-                "summary": "Probe a processor",
+                "summary": "Test a single processor",
                 "parameters": [
                     {
-                        "description": "Probe Request",
+                        "description": "Probe Configuration",
                         "name": "req",
                         "in": "body",
                         "required": true,
@@ -771,12 +789,104 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Processor Output Data",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/orchestration/webhooks/{token}": {
+            "get": {
+                "description": "Asynchronously triggers a workflow using its unique security token. No standard authentication required.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orchestration"
+                ],
+                "summary": "Trigger a workflow via webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Unique Webhook Token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "instanceId",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid Token",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Workflow Disabled",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Already Running",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Asynchronously triggers a workflow using its unique security token. No standard authentication required.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orchestration"
+                ],
+                "summary": "Trigger a workflow via webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Unique Webhook Token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "instanceId",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid Token",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Workflow Disabled",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Already Running",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -789,6 +899,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Retrieves a list of all defined workflow templates.",
                 "produces": [
                     "application/json"
                 ],
@@ -805,6 +916,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/models.Workflow"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -814,6 +937,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Creates a new workflow template with the provided steps and configuration.",
                 "consumes": [
                     "application/json"
                 ],
@@ -826,7 +950,7 @@ const docTemplate = `{
                 "summary": "Create a workflow",
                 "parameters": [
                     {
-                        "description": "Workflow",
+                        "description": "Workflow Configuration",
                         "name": "workflow",
                         "in": "body",
                         "required": true,
@@ -841,6 +965,69 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Workflow"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request (Validation Error)",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/orchestration/workflows/validate": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Checks if a workflow configuration is valid, including variable references and 'if' expressions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orchestration"
+                ],
+                "summary": "Validate a workflow configuration",
+                "parameters": [
+                    {
+                        "description": "Workflow to validate",
+                        "name": "workflow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Workflow"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -852,6 +1039,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Updates an existing workflow template. Performs validation on the new configuration.",
                 "consumes": [
                     "application/json"
                 ],
@@ -871,7 +1059,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Workflow",
+                        "description": "Updated Workflow Configuration",
                         "name": "workflow",
                         "in": "body",
                         "required": true,
@@ -886,6 +1074,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Workflow"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Workflow Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -895,6 +1095,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Deletes a workflow template and all its associated task instances and triggers.",
                 "produces": [
                     "application/json"
                 ],
@@ -917,6 +1118,52 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "404": {
+                        "description": "Workflow Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/orchestration/workflows/{id}/webhook/reset": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Regenerates the unique token used for Webhook triggering. The old token will be immediately invalidated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orchestration"
+                ],
+                "summary": "Reset a workflow webhook token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workflow ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "New Webhook Token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Workflow Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -928,20 +1175,32 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Triggers the immediate execution of a workflow template. Returns the generated instance ID.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "orchestration"
                 ],
-                "summary": "Run a workflow",
+                "summary": "Run a workflow manually",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Workflow ID",
+                        "description": "Workflow ID to execute",
                         "name": "workflowId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Workflow Inputs",
+                        "name": "req",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/models.RunWorkflowRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -949,6 +1208,24 @@ const docTemplate = `{
                         "description": "instanceId",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Workflow Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict (Already Running)",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1625,6 +1902,18 @@ const docTemplate = `{
                 }
             }
         },
+        "common.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.AuthInfo": {
             "type": "object",
             "properties": {
@@ -1777,6 +2066,21 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ParamDefinition": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "optional": {
+                    "description": "是否为可选参数",
+                    "type": "boolean"
+                }
+            }
+        },
         "models.PolicyRule": {
             "type": "object",
             "properties": {
@@ -1893,6 +2197,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.RunWorkflowRequest": {
+            "type": "object",
+            "properties": {
+                "inputs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "models.ServiceAccount": {
             "type": "object",
             "properties": {
@@ -1957,6 +2272,10 @@ const docTemplate = `{
                     "description": "步骤 ID，用于 ${{ steps.ID.outputs.key }}",
                     "type": "string"
                 },
+                "if": {
+                    "description": "条件表达式 (go-expr)，为空则总是执行",
+                    "type": "string"
+                },
                 "name": {
                     "description": "步骤显示名称",
                     "type": "string"
@@ -1977,6 +2296,10 @@ const docTemplate = `{
         "models.StepManifest": {
             "type": "object",
             "properties": {
+                "description": {
+                    "description": "处理器功能简述",
+                    "type": "string"
+                },
                 "id": {
                     "description": "处理器唯一标识 (如 core/fetch/http)",
                     "type": "string"
@@ -1985,25 +2308,18 @@ const docTemplate = `{
                     "description": "显示名称",
                     "type": "string"
                 },
-                "optionalParams": {
-                    "description": "可选参数名",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "outputParams": {
-                    "description": "该节点输出的 Key 列表",
+                    "description": "输出参数",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/models.ParamDefinition"
                     }
                 },
-                "requiredParams": {
-                    "description": "必选参数名",
+                "params": {
+                    "description": "输入参数列表 (包含必选和可选)",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/models.ParamDefinition"
                     }
                 }
             }
@@ -2019,6 +2335,13 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "inputs": {
+                    "description": "实际传入的变量值",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "logs": {
                     "description": "任务日志",
@@ -2053,19 +2376,52 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VarDefinition": {
+            "type": "object",
+            "properties": {
+                "default": {
+                    "description": "默认值 (可选变量的默认值为空)",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "变量描述",
+                    "type": "string"
+                },
+                "required": {
+                    "description": "是否必填",
+                    "type": "boolean"
+                }
+            }
+        },
         "models.Workflow": {
             "type": "object",
             "properties": {
                 "createdAt": {
                     "type": "string"
                 },
+                "cronEnabled": {
+                    "description": "是否启用定时触发",
+                    "type": "boolean"
+                },
+                "cronExpr": {
+                    "description": "Crontab 表达式",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
+                },
+                "enabled": {
+                    "description": "是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)",
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "serviceAccountId": {
+                    "description": "执行该工作流时使用的身份 (必填)",
                     "type": "string"
                 },
                 "steps": {
@@ -2074,7 +2430,26 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.Step"
                     }
                 },
+                "timeout": {
+                    "description": "超时时间 (秒)，默认 7200 (2h)，0 为不超时",
+                    "type": "integer"
+                },
                 "updatedAt": {
+                    "type": "string"
+                },
+                "vars": {
+                    "description": "工作流启动时接受的变量定义",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.VarDefinition"
+                    }
+                },
+                "webhookEnabled": {
+                    "description": "是否启用 Webhook 触发",
+                    "type": "boolean"
+                },
+                "webhookToken": {
+                    "description": "Webhook 触发令牌",
                     "type": "string"
                 }
             }

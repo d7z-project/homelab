@@ -3,6 +3,7 @@ package rbac
 import (
 	"context"
 	dnsrepo "homelab/pkg/repositories/dns"
+	orchrepo "homelab/pkg/repositories/orchestration"
 	"sort"
 	"strings"
 	"sync"
@@ -99,6 +100,29 @@ func init() {
 							res = append(res, d.Name+"/"+r.Name+"/"+r.Type)
 						}
 					}
+				}
+			}
+		}
+
+		return res, nil
+	}, standardVerbs)
+
+	RegisterResourceWithVerbs("orchestration", func(ctx context.Context, prefix string) ([]string, error) {
+		// Suggest static sub-resources
+		subs := []string{"workflows", "instances", "manifests", "probe"}
+		var res []string
+		for _, s := range subs {
+			if strings.HasPrefix(s, prefix) {
+				res = append(res, s)
+			}
+		}
+
+		// Suggest specific workflows
+		workflows, err := orchrepo.ListWorkflows(ctx)
+		if err == nil {
+			for _, wf := range workflows {
+				if strings.HasPrefix(wf.ID, prefix) {
+					res = append(res, wf.ID)
 				}
 			}
 		}

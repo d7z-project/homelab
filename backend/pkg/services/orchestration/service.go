@@ -4,24 +4,131 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/orchestration"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
+	"github.com/expr-lang/expr"
 	"github.com/google/uuid"
+	"github.com/robfig/cron/v3"
 )
 
+var idRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
+	if workflow.ServiceAccountID == "" {
+		return fmt.Errorf("service account is required")
+	}
+
+	// Validate Variable Keys
+	for k := range workflow.Vars {
+		if !idRegex.MatchString(k) {
+			return fmt.Errorf("invalid variable key '%s': only lowercase letters, numbers and underscores are allowed", k)
+		}
+	}
+
+	if workflow.CronEnabled {
+		if _, err := cron.ParseStandard(workflow.CronExpr); err != nil {
+			return fmt.Errorf("invalid cron expression: %v", err)
+		}
+		for k, v := range workflow.Vars {
+			if v.Required && v.Default == "" {
+				return fmt.Errorf("cron job cannot be enabled when workflow has required variable without default: %s", k)
+			}
+		}
+	}
+
+	stepIDs := make(map[string]bool)
+	stepOutputs := make(map[string]map[string]bool)
+
+	for _, step := range workflow.Steps {
+		if step.ID == "" {
+			return fmt.Errorf("step ID cannot be empty")
+		}
+		if !idRegex.MatchString(step.ID) {
+			return fmt.Errorf("invalid step ID '%s': only lowercase letters, numbers and underscores are allowed", step.ID)
+		}
+		if stepIDs[step.ID] {
+			return fmt.Errorf("duplicate step ID: %s", step.ID)
+		}
+		stepIDs[step.ID] = true
+
+		processor, ok := GetProcessor(step.Type)
+		if !ok {
+			return fmt.Errorf("step %s: processor not found: %s", step.ID, step.Type)
+		}
+
+		manifest := processor.Manifest()
+		outputs := make(map[string]bool)
+		for _, op := range manifest.OutputParams {
+			outputs[op.Name] = true
+		}
+		stepOutputs[step.ID] = outputs
+
+		// Validate 'if' condition syntax (basic compile check)
+		if step.If != "" {
+			// Replace variables with placeholders for compilation check
+			checkIf := paramRegex.ReplaceAllStringFunc(step.If, func(match string) string {
+				submatches := paramRegex.FindStringSubmatch(match)
+				if len(submatches) < 3 {
+					return match
+				}
+				sID := submatches[1]
+
+				// Optional: Check if referenced step exists and has that output
+				if _, ok := stepIDs[sID]; !ok {
+					// We can't strictly error here if steps can be unordered,
+					// but our executor is linear.
+				}
+				return "true" // Placeholder
+			})
+			if _, err := expr.Compile(checkIf, expr.AsBool()); err != nil {
+				return fmt.Errorf("step %s: invalid 'if' expression: %v", step.ID, err)
+			}
+		}
+
+		// Validate params for variable references
+		for k, v := range step.Params {
+			matches := paramRegex.FindAllStringSubmatch(v, -1)
+			for _, match := range matches {
+				if len(match) < 3 {
+					continue
+				}
+				sID := match[1]
+				if !stepIDs[sID] {
+					return fmt.Errorf("step %s: param %s references unknown step %s", step.ID, k, sID)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Workflow, error) {
+	if err := ValidateWorkflow(ctx, workflow); err != nil {
+		return nil, err
+	}
 	workflow.ID = uuid.New().String()
 	workflow.CreatedAt = time.Now()
 	workflow.UpdatedAt = time.Now()
 
+	if workflow.WebhookEnabled && workflow.WebhookToken == "" {
+		workflow.WebhookToken = GenerateWebhookToken()
+	}
+
+	message := fmt.Sprintf("Created workflow %s (Enabled: %v, Timeout: %ds, SA: %s, Cron: %v, Webhook: %v)", workflow.Name, workflow.Enabled, workflow.Timeout, workflow.ServiceAccountID, workflow.CronEnabled, workflow.WebhookEnabled)
 	if err := repo.SaveWorkflow(ctx, workflow); err != nil {
+		commonaudit.FromContext(ctx).Log("CreateWorkflow", workflow.ID, message, false)
 		return nil, err
 	}
+	commonaudit.FromContext(ctx).Log("CreateWorkflow", workflow.ID, message, true)
+	GlobalTriggerManager.UpdateTriggers(*workflow)
 	return workflow, nil
 }
 
@@ -31,22 +138,121 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 		return nil, err
 	}
 
+	// Permission check: orchestration/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
+		return nil, fmt.Errorf("permission denied: orchestration/%s", id)
+	}
+
+	if err := ValidateWorkflow(ctx, workflow); err != nil {
+		return nil, err
+	}
+	changes := []string{}
+	if old.Enabled != workflow.Enabled {
+		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", old.Enabled, workflow.Enabled))
+	}
+	if old.Timeout != workflow.Timeout {
+		changes = append(changes, fmt.Sprintf("timeout: %d -> %d", old.Timeout, workflow.Timeout))
+	}
+	if old.Name != workflow.Name {
+		changes = append(changes, fmt.Sprintf("name: %s -> %s", old.Name, workflow.Name))
+	}
+	if old.Description != workflow.Description {
+		changes = append(changes, "description updated")
+	}
+	if old.ServiceAccountID != workflow.ServiceAccountID {
+		changes = append(changes, fmt.Sprintf("serviceAccountID: %s -> %s", old.ServiceAccountID, workflow.ServiceAccountID))
+	}
+	if old.CronEnabled != workflow.CronEnabled {
+		changes = append(changes, fmt.Sprintf("cronEnabled: %v -> %v", old.CronEnabled, workflow.CronEnabled))
+	}
+	if old.CronExpr != workflow.CronExpr {
+		changes = append(changes, fmt.Sprintf("cronExpr: %s -> %s", old.CronExpr, workflow.CronExpr))
+	}
+	if old.WebhookEnabled != workflow.WebhookEnabled {
+		changes = append(changes, fmt.Sprintf("webhookEnabled: %v -> %v", old.WebhookEnabled, workflow.WebhookEnabled))
+	}
+	// (Simplified check for vars change just to log it)
+	if len(old.Vars) != len(workflow.Vars) {
+		changes = append(changes, "vars defined changed")
+	}
+
+	old.Enabled = workflow.Enabled
+	old.Timeout = workflow.Timeout
 	old.Name = workflow.Name
 	old.Description = workflow.Description
+	old.ServiceAccountID = workflow.ServiceAccountID
+	old.CronEnabled = workflow.CronEnabled
+	old.CronExpr = workflow.CronExpr
+	old.WebhookEnabled = workflow.WebhookEnabled
+	if old.WebhookEnabled && old.WebhookToken == "" {
+		old.WebhookToken = GenerateWebhookToken()
+	}
+	old.Vars = workflow.Vars
 	old.Steps = workflow.Steps
 	old.UpdatedAt = time.Now()
 
+	message := fmt.Sprintf("Updated workflow %s", old.Name)
+	if len(changes) > 0 {
+		message += ": " + strings.Join(changes, ", ")
+	} else {
+		message += " (no major changes)"
+	}
+
 	if err := repo.SaveWorkflow(ctx, old); err != nil {
+		commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, false)
 		return nil, err
 	}
+	commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, true)
+	GlobalTriggerManager.UpdateTriggers(*old)
 	return old, nil
 }
 
+func ResetWebhookToken(ctx context.Context, id string) (string, error) {
+	wf, err := repo.GetWorkflow(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	// Permission check: orchestration/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
+		return "", fmt.Errorf("permission denied: orchestration/%s", id)
+	}
+
+	wf.WebhookToken = GenerateWebhookToken()
+	wf.UpdatedAt = time.Now()
+
+	message := fmt.Sprintf("Reset webhook token for workflow %s", wf.Name)
+	if err := repo.SaveWorkflow(ctx, wf); err != nil {
+		commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, message, false)
+		return "", err
+	}
+	commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, message, true)
+	return wf.WebhookToken, nil
+}
+
 func GetWorkflow(ctx context.Context, id string) (*models.Workflow, error) {
-	return repo.GetWorkflow(ctx, id)
+	wf, err := repo.GetWorkflow(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Permission check: orchestration/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
+		return nil, fmt.Errorf("permission denied: orchestration/%s", id)
+	}
+	return wf, nil
 }
 
 func DeleteWorkflow(ctx context.Context, id string) error {
+	wf, err := repo.GetWorkflow(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Permission check: orchestration/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
+		return fmt.Errorf("permission denied: orchestration/%s", id)
+	}
+
 	// Cascade delete instances
 	instances, err := repo.ListTaskInstances(ctx)
 	if err == nil {
@@ -56,16 +262,79 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 			}
 		}
 	}
-	return repo.DeleteWorkflow(ctx, id)
+	GlobalTriggerManager.RemoveTriggers(id)
+
+	snapshot, _ := json.Marshal(wf)
+	message := fmt.Sprintf("Deleted workflow %s. Snapshot: %s", wf.Name, string(snapshot))
+	if err := repo.DeleteWorkflow(ctx, id); err != nil {
+		commonaudit.FromContext(ctx).Log("DeleteWorkflow", id, message, false)
+		return err
+	}
+	commonaudit.FromContext(ctx).Log("DeleteWorkflow", id, message, true)
+	return nil
 }
 
 func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
-	return repo.ListWorkflows(ctx)
+	all, err := repo.ListWorkflows(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	perms := commonauth.PermissionsFromContext(ctx)
+	var filtered []models.Workflow
+	for _, wf := range all {
+		if perms.IsAllowed("orchestration/" + wf.ID) {
+			filtered = append(filtered, wf)
+		}
+	}
+	return filtered, nil
 }
 
 // Task Instance Services
 
-func RunWorkflow(ctx context.Context, workflowID string) (string, error) {
+func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID string, triggerSource string, inputs map[string]string) (string, error) {
+	// Permission check for the workflow itself
+	// Note: For Cron/Webhook, the trigger might not have a user context, 
+	// but the workflow is executed with a ServiceAccount.
+	// If it's a Manual trigger, we verify the current user has permission.
+	if triggerSource == "Manual" {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + workflow.ID) {
+			return "", fmt.Errorf("permission denied: orchestration/%s", workflow.ID)
+		}
+	}
+
+	// Manual trigger always allowed, Cron/Webhook only if enabled
+	if triggerSource != "Manual" && !workflow.Enabled {
+		return "", fmt.Errorf("workflow is disabled")
+	}
+
+	// Validate and merge inputs
+	if inputs == nil {
+		inputs = make(map[string]string)
+	}
+	finalInputs := make(map[string]string)
+	for k, def := range workflow.Vars {
+		val, ok := inputs[k]
+		if !ok || val == "" {
+			if def.Required && def.Default == "" {
+				return "", fmt.Errorf("missing required variable: %s", k)
+			}
+			val = def.Default
+		}
+		finalInputs[k] = val
+	}
+
+	instanceID, err := GlobalExecutor.Execute(ctx, userID, workflow, finalInputs)
+	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Name, instanceID)
+	if err != nil {
+		commonaudit.FromContext(ctx).Log("TriggerWorkflow", workflow.ID, message+" Error: "+err.Error(), false)
+		return "", err
+	}
+	commonaudit.FromContext(ctx).Log("TriggerWorkflow", workflow.ID, message, true)
+	return instanceID, nil
+}
+
+func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]string) (string, error) {
 	workflow, err := repo.GetWorkflow(ctx, workflowID)
 	if err != nil {
 		return "", err
@@ -81,32 +350,71 @@ func RunWorkflow(ctx context.Context, workflowID string) (string, error) {
 		}
 	}
 
-	return GlobalExecutor.Execute(ctx, userID, workflow)
+	return TriggerWorkflow(ctx, workflow, userID, "Manual", inputs)
 }
 
 func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, error) {
-	return repo.GetTaskInstance(ctx, id)
+	inst, err := repo.GetTaskInstance(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Check permission for the parent workflow
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + inst.WorkflowID) {
+		return nil, fmt.Errorf("permission denied: orchestration/%s", inst.WorkflowID)
+	}
+	return inst, nil
 }
 
 func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
-	return repo.ListTaskInstances(ctx)
+	all, err := repo.ListTaskInstances(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	perms := commonauth.PermissionsFromContext(ctx)
+	var filtered []models.TaskInstance
+	for _, inst := range all {
+		if perms.IsAllowed("orchestration/" + inst.WorkflowID) {
+			filtered = append(filtered, inst)
+		}
+	}
+	return filtered, nil
 }
 
 func CancelTaskInstance(ctx context.Context, id string) error {
+	instance, err := repo.GetTaskInstance(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Check permission for the parent workflow
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + instance.WorkflowID) {
+		return fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
+	}
+
+	message := fmt.Sprintf("Requested cancellation of task instance %s", id)
 	if GlobalExecutor.Cancel(id) {
+		commonaudit.FromContext(ctx).Log("CancelTask", id, message, true)
 		return nil
 	}
 	// If not running, maybe it's already finished or doesn't exist
-	instance, err := repo.GetTaskInstance(ctx, id)
+	instance, err = repo.GetTaskInstance(ctx, id)
 	if err != nil {
+		commonaudit.FromContext(ctx).Log("CancelTask", id, message+" Error: instance not found", false)
 		return err
 	}
 	if instance.Status == "Running" {
 		instance.Status = "Cancelled"
 		now := time.Now()
 		instance.FinishedAt = &now
-		return repo.SaveTaskInstance(ctx, instance)
+		if err := repo.SaveTaskInstance(ctx, instance); err != nil {
+			commonaudit.FromContext(ctx).Log("CancelTask", id, message+" Error: "+err.Error(), false)
+			return err
+		}
+		commonaudit.FromContext(ctx).Log("CancelTask", id, message, true)
+		return nil
 	}
+	commonaudit.FromContext(ctx).Log("CancelTask", id, message+" (Task not in running state)", true)
 	return nil
 }
 
@@ -115,6 +423,12 @@ func GetTaskLogs(ctx context.Context, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// Check permission for the parent workflow
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + instance.WorkflowID) {
+		return "", fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
+	}
+
 	// Return logs as JSON string
 	data, err := json.Marshal(instance.Logs)
 	if err != nil {

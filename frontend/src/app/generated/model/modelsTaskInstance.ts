@@ -15,6 +15,10 @@ export interface ModelsTaskInstance {
     finishedAt?: string;
     id?: string;
     /**
+     * 实际传入的变量值
+     */
+    inputs?: { [key: string]: string; };
+    /**
      * 任务日志
      */
     logs?: Array<ModelsLogEntry>;

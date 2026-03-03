@@ -10,6 +10,14 @@ definitions:
       total:
         type: integer
     type: object
+  common.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
   controllers.AuthInfo:
     properties:
       id:
@@ -113,6 +121,16 @@ definitions:
       session_id:
         type: string
     type: object
+  models.ParamDefinition:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      optional:
+        description: 是否为可选参数
+        type: boolean
+    type: object
   models.PolicyRule:
     properties:
       resource:
@@ -190,6 +208,13 @@ definitions:
       serviceAccountId:
         type: string
     type: object
+  models.RunWorkflowRequest:
+    properties:
+      inputs:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
   models.ServiceAccount:
     properties:
       comments:
@@ -232,6 +257,9 @@ definitions:
       id:
         description: 步骤 ID，用于 ${{ steps.ID.outputs.key }}
         type: string
+      if:
+        description: 条件表达式 (go-expr)，为空则总是执行
+        type: string
       name:
         description: 步骤显示名称
         type: string
@@ -246,26 +274,24 @@ definitions:
     type: object
   models.StepManifest:
     properties:
+      description:
+        description: 处理器功能简述
+        type: string
       id:
         description: 处理器唯一标识 (如 core/fetch/http)
         type: string
       name:
         description: 显示名称
         type: string
-      optionalParams:
-        description: 可选参数名
-        items:
-          type: string
-        type: array
       outputParams:
-        description: 该节点输出的 Key 列表
+        description: 输出参数
         items:
-          type: string
+          $ref: '#/definitions/models.ParamDefinition'
         type: array
-      requiredParams:
-        description: 必选参数名
+      params:
+        description: 输入参数列表 (包含必选和可选)
         items:
-          type: string
+          $ref: '#/definitions/models.ParamDefinition'
         type: array
     type: object
   models.TaskInstance:
@@ -276,6 +302,11 @@ definitions:
         type: string
       id:
         type: string
+      inputs:
+        additionalProperties:
+          type: string
+        description: 实际传入的变量值
+        type: object
       logs:
         description: 任务日志
         items:
@@ -299,21 +330,59 @@ definitions:
       workspace:
         type: string
     type: object
+  models.VarDefinition:
+    properties:
+      default:
+        description: 默认值 (可选变量的默认值为空)
+        type: string
+      description:
+        description: 变量描述
+        type: string
+      required:
+        description: 是否必填
+        type: boolean
+    type: object
   models.Workflow:
     properties:
       createdAt:
         type: string
+      cronEnabled:
+        description: 是否启用定时触发
+        type: boolean
+      cronExpr:
+        description: Crontab 表达式
+        type: string
       description:
         type: string
+      enabled:
+        description: 是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)
+        type: boolean
       id:
         type: string
       name:
+        type: string
+      serviceAccountId:
+        description: 执行该工作流时使用的身份 (必填)
         type: string
       steps:
         items:
           $ref: '#/definitions/models.Step'
         type: array
+      timeout:
+        description: 超时时间 (秒)，默认 7200 (2h)，0 为不超时
+        type: integer
       updatedAt:
+        type: string
+      vars:
+        additionalProperties:
+          $ref: '#/definitions/models.VarDefinition'
+        description: 工作流启动时接受的变量定义
+        type: object
+      webhookEnabled:
+        description: 是否启用 Webhook 触发
+        type: boolean
+      webhookToken:
+        description: Webhook 触发令牌
         type: string
     type: object
   orchestration.ProbeRequest:
@@ -698,6 +767,8 @@ paths:
       - auth
   /orchestration/instances:
     get:
+      description: Retrieves a history of all triggered workflow instances and their
+        current status.
       produces:
       - application/json
       responses:
@@ -707,15 +778,19 @@ paths:
             items:
               $ref: '#/definitions/models.TaskInstance'
             type: array
-      security:
-      - ApiKeyAuth: []
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
       summary: List all task instances
       tags:
       - orchestration
   /orchestration/instances/{id}/cancel:
     post:
+      description: Attempts to terminate a running task instance gracefully by sending
+        a cancellation signal.
       parameters:
-      - description: Instance ID
+      - description: Task Instance ID
         in: path
         name: id
         required: true
@@ -727,6 +802,10 @@ paths:
           description: success
           schema:
             type: string
+        "404":
+          description: Instance Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
       summary: Cancel a task instance
@@ -734,8 +813,10 @@ paths:
       - orchestration
   /orchestration/instances/{id}/logs:
     get:
+      description: Returns the full execution logs for a specific task instance in
+        plain text.
       parameters:
-      - description: Instance ID
+      - description: Task Instance ID
         in: path
         name: id
         required: true
@@ -744,9 +825,13 @@ paths:
       - text/plain
       responses:
         "200":
-          description: logs
+          description: Log content
           schema:
             type: string
+        "404":
+          description: Instance Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
       summary: Get task instance logs
@@ -754,6 +839,8 @@ paths:
       - orchestration
   /orchestration/manifests:
     get:
+      description: Returns the specifications (inputs/outputs) for all registered
+        task processors in the system.
       produces:
       - application/json
       responses:
@@ -772,8 +859,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: Executes a specific processor in isolation within a temporary workspace.
+        Useful for debugging or testing parameters.
       parameters:
-      - description: Probe Request
+      - description: Probe Configuration
         in: body
         name: req
         required: true
@@ -783,18 +872,82 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Processor Output Data
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - ApiKeyAuth: []
-      summary: Probe a processor
+      summary: Test a single processor
+      tags:
+      - orchestration
+  /orchestration/webhooks/{token}:
+    get:
+      description: Asynchronously triggers a workflow using its unique security token.
+        No standard authentication required.
+      parameters:
+      - description: Unique Webhook Token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: instanceId
+          schema:
+            type: string
+        "401":
+          description: Invalid Token
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Workflow Disabled
+          schema:
+            $ref: '#/definitions/common.Response'
+        "409":
+          description: Already Running
+          schema:
+            $ref: '#/definitions/common.Response'
+      summary: Trigger a workflow via webhook
+      tags:
+      - orchestration
+    post:
+      description: Asynchronously triggers a workflow using its unique security token.
+        No standard authentication required.
+      parameters:
+      - description: Unique Webhook Token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: instanceId
+          schema:
+            type: string
+        "401":
+          description: Invalid Token
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Workflow Disabled
+          schema:
+            $ref: '#/definitions/common.Response'
+        "409":
+          description: Already Running
+          schema:
+            $ref: '#/definitions/common.Response'
+      summary: Trigger a workflow via webhook
       tags:
       - orchestration
   /orchestration/workflows:
     get:
+      description: Retrieves a list of all defined workflow templates.
       produces:
       - application/json
       responses:
@@ -804,6 +957,14 @@ paths:
             items:
               $ref: '#/definitions/models.Workflow'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
       summary: List all workflows
@@ -812,8 +973,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Creates a new workflow template with the provided steps and configuration.
       parameters:
-      - description: Workflow
+      - description: Workflow Configuration
         in: body
         name: workflow
         required: true
@@ -826,6 +988,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Workflow'
+        "400":
+          description: Bad Request (Validation Error)
+          schema:
+            $ref: '#/definitions/common.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
       summary: Create a workflow
@@ -833,6 +1007,8 @@ paths:
       - orchestration
   /orchestration/workflows/{id}:
     delete:
+      description: Deletes a workflow template and all its associated task instances
+        and triggers.
       parameters:
       - description: Workflow ID
         in: path
@@ -846,6 +1022,10 @@ paths:
           description: success
           schema:
             type: string
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
       summary: Delete a workflow
@@ -854,13 +1034,15 @@ paths:
     put:
       consumes:
       - application/json
+      description: Updates an existing workflow template. Performs validation on the
+        new configuration.
       parameters:
       - description: Workflow ID
         in: path
         name: id
         required: true
         type: string
-      - description: Workflow
+      - description: Updated Workflow Configuration
         in: body
         name: workflow
         required: true
@@ -873,19 +1055,62 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Workflow'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
       summary: Update a workflow
       tags:
       - orchestration
-  /orchestration/workflows/{workflowId}/run:
+  /orchestration/workflows/{id}/webhook/reset:
     post:
+      description: Regenerates the unique token used for Webhook triggering. The old
+        token will be immediately invalidated.
       parameters:
       - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New Webhook Token
+          schema:
+            type: string
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Reset a workflow webhook token
+      tags:
+      - orchestration
+  /orchestration/workflows/{workflowId}/run:
+    post:
+      consumes:
+      - application/json
+      description: Triggers the immediate execution of a workflow template. Returns
+        the generated instance ID.
+      parameters:
+      - description: Workflow ID to execute
         in: path
         name: workflowId
         required: true
         type: string
+      - description: Workflow Inputs
+        in: body
+        name: req
+        schema:
+          $ref: '#/definitions/models.RunWorkflowRequest'
       produces:
       - application/json
       responses:
@@ -893,9 +1118,50 @@ paths:
           description: instanceId
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+        "409":
+          description: Conflict (Already Running)
+          schema:
+            $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: Run a workflow
+      summary: Run a workflow manually
+      tags:
+      - orchestration
+  /orchestration/workflows/validate:
+    post:
+      consumes:
+      - application/json
+      description: Checks if a workflow configuration is valid, including variable
+        references and 'if' expressions.
+      parameters:
+      - description: Workflow to validate
+        in: body
+        name: workflow
+        required: true
+        schema:
+          $ref: '#/definitions/models.Workflow'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "400":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Validate a workflow configuration
       tags:
       - orchestration
   /rbac/resources/suggest:

@@ -17,6 +17,10 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CommonResponse } from '../model/commonResponse';
+// @ts-ignore
+import { ModelsRunWorkflowRequest } from '../model/modelsRunWorkflowRequest';
+// @ts-ignore
 import { ModelsStepManifest } from '../model/modelsStepManifest';
 // @ts-ignore
 import { ModelsTaskInstance } from '../model/modelsTaskInstance';
@@ -43,6 +47,7 @@ export class OrchestrationService extends BaseService {
 
     /**
      * List all task instances
+     * Retrieves a history of all triggered workflow instances and their current status.
      * @endpoint get /orchestration/instances
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -54,9 +59,6 @@ export class OrchestrationService extends BaseService {
     public orchestrationInstancesGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
-
-        // authentication (ApiKeyAuth) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json'
@@ -98,8 +100,9 @@ export class OrchestrationService extends BaseService {
 
     /**
      * Cancel a task instance
+     * Attempts to terminate a running task instance gracefully by sending a cancellation signal.
      * @endpoint post /orchestration/instances/{id}/cancel
-     * @param id Instance ID
+     * @param id Task Instance ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -157,8 +160,9 @@ export class OrchestrationService extends BaseService {
 
     /**
      * Get task instance logs
+     * Returns the full execution logs for a specific task instance in plain text.
      * @endpoint get /orchestration/instances/{id}/logs
-     * @param id Instance ID
+     * @param id Task Instance ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -216,6 +220,7 @@ export class OrchestrationService extends BaseService {
 
     /**
      * List all step manifests
+     * Returns the specifications (inputs/outputs) for all registered task processors in the system.
      * @endpoint get /orchestration/manifests
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -270,9 +275,10 @@ export class OrchestrationService extends BaseService {
     }
 
     /**
-     * Probe a processor
+     * Test a single processor
+     * Executes a specific processor in isolation within a temporary workspace. Useful for debugging or testing parameters.
      * @endpoint post /orchestration/probe
-     * @param req Probe Request
+     * @param req Probe Configuration
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -339,7 +345,122 @@ export class OrchestrationService extends BaseService {
     }
 
     /**
+     * Trigger a workflow via webhook
+     * Asynchronously triggers a workflow using its unique security token. No standard authentication required.
+     * @endpoint get /orchestration/webhooks/{token}
+     * @param token Unique Webhook Token
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public orchestrationWebhooksTokenGet(token: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public orchestrationWebhooksTokenGet(token: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public orchestrationWebhooksTokenGet(token: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public orchestrationWebhooksTokenGet(token: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (token === null || token === undefined) {
+            throw new Error('Required parameter token was null or undefined when calling orchestrationWebhooksTokenGet.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/orchestration/webhooks/${this.configuration.encodeParam({name: "token", value: token, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<string>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Trigger a workflow via webhook
+     * Asynchronously triggers a workflow using its unique security token. No standard authentication required.
+     * @endpoint post /orchestration/webhooks/{token}
+     * @param token Unique Webhook Token
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public orchestrationWebhooksTokenPost(token: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public orchestrationWebhooksTokenPost(token: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public orchestrationWebhooksTokenPost(token: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public orchestrationWebhooksTokenPost(token: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (token === null || token === undefined) {
+            throw new Error('Required parameter token was null or undefined when calling orchestrationWebhooksTokenPost.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/orchestration/webhooks/${this.configuration.encodeParam({name: "token", value: token, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * List all workflows
+     * Retrieves a list of all defined workflow templates.
      * @endpoint get /orchestration/workflows
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -395,6 +516,7 @@ export class OrchestrationService extends BaseService {
 
     /**
      * Delete a workflow
+     * Deletes a workflow template and all its associated task instances and triggers.
      * @endpoint delete /orchestration/workflows/{id}
      * @param id Workflow ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -454,9 +576,10 @@ export class OrchestrationService extends BaseService {
 
     /**
      * Update a workflow
+     * Updates an existing workflow template. Performs validation on the new configuration.
      * @endpoint put /orchestration/workflows/{id}
      * @param id Workflow ID
-     * @param workflow Workflow
+     * @param workflow Updated Workflow Configuration
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -526,9 +649,70 @@ export class OrchestrationService extends BaseService {
     }
 
     /**
+     * Reset a workflow webhook token
+     * Regenerates the unique token used for Webhook triggering. The old token will be immediately invalidated.
+     * @endpoint post /orchestration/workflows/{id}/webhook/reset
+     * @param id Workflow ID
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling orchestrationWorkflowsIdWebhookResetPost.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/orchestration/workflows/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/webhook/reset`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Create a workflow
+     * Creates a new workflow template with the provided steps and configuration.
      * @endpoint post /orchestration/workflows
-     * @param workflow Workflow
+     * @param workflow Workflow Configuration
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
@@ -595,17 +779,89 @@ export class OrchestrationService extends BaseService {
     }
 
     /**
-     * Run a workflow
-     * @endpoint post /orchestration/workflows/{workflowId}/run
-     * @param workflowId Workflow ID
+     * Validate a workflow configuration
+     * Checks if a workflow configuration is valid, including variable references and \&#39;if\&#39; expressions.
+     * @endpoint post /orchestration/workflows/validate
+     * @param workflow Workflow to validate
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (workflow === null || workflow === undefined) {
+            throw new Error('Required parameter workflow was null or undefined when calling orchestrationWorkflowsValidatePost.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (ApiKeyAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('ApiKeyAuth', 'Authorization', localVarHeaders);
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/orchestration/workflows/validate`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: workflow,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Run a workflow manually
+     * Triggers the immediate execution of a workflow template. Returns the generated instance ID.
+     * @endpoint post /orchestration/workflows/{workflowId}/run
+     * @param workflowId Workflow ID to execute
+     * @param req Workflow Inputs
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (workflowId === null || workflowId === undefined) {
             throw new Error('Required parameter workflowId was null or undefined when calling orchestrationWorkflowsWorkflowIdRunPost.');
         }
@@ -627,6 +883,15 @@ export class OrchestrationService extends BaseService {
         const localVarTransferCache: boolean = options?.transferCache ?? true;
 
 
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
         let responseType_: 'text' | 'json' | 'blob' = 'json';
         if (localVarHttpHeaderAcceptSelected) {
             if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
@@ -643,6 +908,7 @@ export class OrchestrationService extends BaseService {
         return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                body: req,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

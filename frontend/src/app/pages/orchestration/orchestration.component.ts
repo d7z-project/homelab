@@ -15,13 +15,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { firstValueFrom } from 'rxjs';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Clipboard } from '@angular/cdk/clipboard';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { UiService } from '../../ui.service';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateWorkflowDialogComponent } from './create-workflow-dialog.component';
+import { RunWorkflowDialogComponent } from './run-workflow-dialog.component';
 import { TaskDetailDialogComponent } from './task-detail-dialog.component';
 
 @Component({
@@ -41,6 +44,7 @@ import { TaskDetailDialogComponent } from './task-detail-dialog.component';
     MatTooltipModule,
     MatMenuModule,
     MatChipsModule,
+    MatSlideToggleModule,
   ],
   templateUrl: './orchestration.component.html',
 })
@@ -48,6 +52,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   private orchService = inject(OrchestrationService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  private clipboard = inject(Clipboard);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private breakpointObserver = inject(BreakpointObserver);
@@ -238,9 +243,40 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
 
   async runWorkflow(wf: ModelsWorkflow) {
     if (!wf.id) return;
+
+    if (wf.vars && Object.keys(wf.vars).length > 0) {
+      const dialogRef = this.dialog.open(RunWorkflowDialogComponent, {
+        data: { workflow: wf },
+        width: '400px',
+      });
+
+      dialogRef.afterClosed().subscribe(async (inputs) => {
+        if (inputs) {
+          this.executeRun(wf, inputs);
+        }
+      });
+    } else {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: '启动工作流',
+          message: `确定要启动工作流 "${wf.name}" 吗？`,
+          confirmText: '立即启动',
+          color: 'primary',
+        },
+      });
+
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result) {
+          this.executeRun(wf, {});
+        }
+      });
+    }
+  }
+
+  private async executeRun(wf: ModelsWorkflow, inputs: { [key: string]: string }) {
     this.loading.set(true);
     try {
-      await firstValueFrom(this.orchService.orchestrationWorkflowsWorkflowIdRunPost(wf.id));
+      await firstValueFrom(this.orchService.orchestrationWorkflowsWorkflowIdRunPost(wf.id!, { inputs }));
       this.snackBar.open('工作流已启动', '查看实例', { duration: 5000 })
         .onAction().subscribe(() => this.onTabChange(1));
       await this.loadInstances();
@@ -277,6 +313,45 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
           this.loadInstances();
       });
     });
+  }
+
+  async resetWebhookToken(wf: ModelsWorkflow) {
+    if (!wf.id) return;
+    this.loading.set(true);
+    try {
+      const newToken = await firstValueFrom(this.orchService.orchestrationWorkflowsIdWebhookResetPost(wf.id));
+      wf.webhookToken = newToken; // Update local ref
+      this.snackBar.open('Webhook Token 已重置', '复制新地址', { duration: 5000 })
+        .onAction().subscribe(() => this.copyWebhookUrl(wf));
+    } catch (err) {
+      this.snackBar.open('重置失败', '关闭', { duration: 2000 });
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  copyWebhookUrl(wf: ModelsWorkflow) {
+    if (!wf.webhookToken) return;
+    const url = `${window.location.protocol}//${window.location.host}/api/v1/orchestration/webhooks/${wf.webhookToken}`;
+    this.clipboard.copy(url);
+    this.snackBar.open('Webhook URL 已复制到剪贴板', '确定', { duration: 2000 });
+  }
+
+  async toggleWorkflow(wf: ModelsWorkflow) {
+    if (!wf.id) return;
+    const originalStatus = wf.enabled;
+    const newStatus = !originalStatus;
+    
+    // Optimistic update
+    wf.enabled = newStatus;
+
+    try {
+      await firstValueFrom(this.orchService.orchestrationWorkflowsIdPut(wf.id, wf));
+      this.snackBar.open(newStatus ? '工作流已启用' : '工作流已禁用', '关闭', { duration: 2000 });
+    } catch (err) {
+      wf.enabled = originalStatus; // Rollback
+      this.snackBar.open('状态更新失败', '关闭', { duration: 2000 });
+    }
   }
 
   getStatusClass(status: string | undefined): string {

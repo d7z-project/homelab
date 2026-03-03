@@ -15,6 +15,10 @@ export interface ModelsStep {
      */
     id?: string;
     /**
+     * 条件表达式 (go-expr)，为空则总是执行
+     */
+    'if'?: string;
+    /**
      * 步骤显示名称
      */
     name?: string;

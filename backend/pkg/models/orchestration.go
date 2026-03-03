@@ -5,14 +5,29 @@ import (
 	"time"
 )
 
+// VarDefinition 描述一个工作流的输入变量
+type VarDefinition struct {
+	Description string `json:"description"` // 变量描述
+	Default     string `json:"default"`     // 默认值 (可选变量的默认值为空)
+	Required    bool   `json:"required"`    // 是否必填
+}
+
 // Workflow 代表一个预定义的任务编排模板
 type Workflow struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Steps       []Step    `json:"steps"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID               string                   `json:"id"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description"`
+	Enabled          bool                     `json:"enabled"`          // 是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)
+	Timeout          int                      `json:"timeout"`          // 超时时间 (秒)，默认 7200 (2h)，0 为不超时
+	ServiceAccountID string                   `json:"serviceAccountId"` // 执行该工作流时使用的身份 (必填)
+	CronEnabled      bool                     `json:"cronEnabled"`      // 是否启用定时触发
+	CronExpr         string                   `json:"cronExpr"`         // Crontab 表达式
+	WebhookEnabled   bool                     `json:"webhookEnabled"`   // 是否启用 Webhook 触发
+	WebhookToken     string                   `json:"webhookToken"`     // Webhook 触发令牌
+	Vars             map[string]VarDefinition `json:"vars"`             // 工作流启动时接受的变量定义
+	Steps            []Step                   `json:"steps"`
+	CreatedAt        time.Time                `json:"createdAt"`
+	UpdatedAt        time.Time                `json:"updatedAt"`
 }
 
 func (w *Workflow) Bind(r *http.Request) error {
@@ -24,6 +39,7 @@ type Step struct {
 	ID     string            `json:"id"`     // 步骤 ID，用于 ${{ steps.ID.outputs.key }}
 	Type   string            `json:"type"`   // 处理器类型 (如 core/fetch/http)
 	Name   string            `json:"name"`   // 步骤显示名称
+	If     string            `json:"if"`     // 条件表达式 (go-expr)，为空则总是执行
 	Params map[string]string `json:"params"` // 输入参数，支持模板字符串
 }
 
@@ -33,6 +49,7 @@ type TaskInstance struct {
 	WorkflowID string            `json:"workflowId"`
 	Status     string            `json:"status"` // Pending, Running, Success, Failed, Cancelled
 	UserID     string            `json:"userId"` // 触发者 ID
+	Inputs     map[string]string `json:"inputs"` // 实际传入的变量值
 	Workspace  string            `json:"workspace"`
 	StartedAt  time.Time         `json:"startedAt"`
 	FinishedAt *time.Time        `json:"finishedAt,omitempty"`
@@ -51,11 +68,26 @@ func (t *TaskInstance) Bind(r *http.Request) error {
 	return nil
 }
 
+// ParamDefinition 描述一个参数的规格
+type ParamDefinition struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Optional    bool   `json:"optional"` // 是否为可选参数
+}
+
 // StepManifest 描述一个节点处理器的规格
 type StepManifest struct {
-	ID             string   `json:"id"`             // 处理器唯一标识 (如 core/fetch/http)
-	Name           string   `json:"name"`           // 显示名称
-	RequiredParams []string `json:"requiredParams"` // 必选参数名
-	OptionalParams []string `json:"optionalParams"` // 可选参数名
-	OutputParams   []string `json:"outputParams"`   // 该节点输出的 Key 列表
+	ID           string            `json:"id"`           // 处理器唯一标识 (如 core/fetch/http)
+	Name         string            `json:"name"`         // 显示名称
+	Description  string            `json:"description"`  // 处理器功能简述
+	Params       []ParamDefinition `json:"params"`       // 输入参数列表 (包含必选和可选)
+	OutputParams []ParamDefinition `json:"outputParams"` // 输出参数
+}
+
+type RunWorkflowRequest struct {
+	Inputs map[string]string `json:"inputs"`
+}
+
+func (r *RunWorkflowRequest) Bind(req *http.Request) error {
+	return nil
 }

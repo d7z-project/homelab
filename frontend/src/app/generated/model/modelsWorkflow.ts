@@ -7,15 +7,48 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsVarDefinition } from './modelsVarDefinition';
 import { ModelsStep } from './modelsStep';
 
 
 export interface ModelsWorkflow { 
     createdAt?: string;
+    /**
+     * 是否启用定时触发
+     */
+    cronEnabled?: boolean;
+    /**
+     * Crontab 表达式
+     */
+    cronExpr?: string;
     description?: string;
+    /**
+     * 是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)
+     */
+    enabled?: boolean;
     id?: string;
     name?: string;
+    /**
+     * 执行该工作流时使用的身份 (必填)
+     */
+    serviceAccountId?: string;
     steps?: Array<ModelsStep>;
+    /**
+     * 超时时间 (秒)，默认 7200 (2h)，0 为不超时
+     */
+    timeout?: number;
     updatedAt?: string;
+    /**
+     * 工作流启动时接受的变量定义
+     */
+    vars?: { [key: string]: ModelsVarDefinition; };
+    /**
+     * 是否启用 Webhook 触发
+     */
+    webhookEnabled?: boolean;
+    /**
+     * Webhook 触发令牌
+     */
+    webhookToken?: string;
 }
 

@@ -1,7 +1,10 @@
 package tests
 
 import (
+	"context"
 	"homelab/pkg/common"
+	"homelab/pkg/common/auth"
+	"homelab/pkg/models"
 	dnsrepo "homelab/pkg/repositories/dns"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	dnsservice "homelab/pkg/services/dns"
@@ -31,4 +34,23 @@ func SetupTestDB() func() {
 		db.Close()
 		common.DB = oldDB
 	}
+}
+
+// SetupMockRootContext 返回一个具有 Root (AllowedAll) 权限的上下文
+func SetupMockRootContext() context.Context {
+	return auth.WithPermissions(context.Background(), &models.ResourcePermissions{
+		AllowedAll: true,
+	})
+}
+
+// SetupMockContext 返回一个具有特定实例权限的上下文
+func SetupMockContext(userID string, rules []models.PolicyRule) context.Context {
+	allowedInstances := []string{}
+	for _, r := range rules {
+		allowedInstances = append(allowedInstances, r.Resource)
+	}
+	return auth.WithPermissions(context.Background(), &models.ResourcePermissions{
+		AllowedAll:       false,
+		AllowedInstances: allowedInstances,
+	})
 }

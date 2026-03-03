@@ -366,6 +366,8 @@ paths:
       - auth
   /orchestration/instances:
     get:
+      description: Retrieves a history of all triggered workflow instances and their
+        current status.
       responses:
         "200":
           content:
@@ -375,15 +377,21 @@ paths:
                   $ref: "#/components/schemas/models.TaskInstance"
                 type: array
           description: OK
-      security:
-      - ApiKeyAuth: []
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       summary: List all task instances
       tags:
       - orchestration
   /orchestration/instances/{id}/cancel:
     post:
+      description: Attempts to terminate a running task instance gracefully by sending
+        a cancellation signal.
       parameters:
-      - description: Instance ID
+      - description: Task Instance ID
         in: path
         name: id
         required: true
@@ -396,6 +404,12 @@ paths:
               schema:
                 type: string
           description: success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Instance Not Found
       security:
       - ApiKeyAuth: []
       summary: Cancel a task instance
@@ -403,8 +417,10 @@ paths:
       - orchestration
   /orchestration/instances/{id}/logs:
     get:
+      description: Returns the full execution logs for a specific task instance in
+        plain text.
       parameters:
-      - description: Instance ID
+      - description: Task Instance ID
         in: path
         name: id
         required: true
@@ -416,7 +432,13 @@ paths:
             text/plain:
               schema:
                 type: string
-          description: logs
+          description: Log content
+        "404":
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Instance Not Found
       security:
       - ApiKeyAuth: []
       summary: Get task instance logs
@@ -424,6 +446,8 @@ paths:
       - orchestration
   /orchestration/manifests:
     get:
+      description: Returns the specifications (inputs/outputs) for all registered
+        task processors in the system.
       responses:
         "200":
           content:
@@ -440,12 +464,14 @@ paths:
       - orchestration
   /orchestration/probe:
     post:
+      description: Executes a specific processor in isolation within a temporary workspace.
+        Useful for debugging or testing parameters.
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/orchestration.ProbeRequest"
-        description: Probe Request
+        description: Probe Configuration
         required: true
       responses:
         "200":
@@ -455,15 +481,93 @@ paths:
                 additionalProperties:
                   type: string
                 type: object
-          description: OK
+          description: Processor Output Data
       security:
       - ApiKeyAuth: []
-      summary: Probe a processor
+      summary: Test a single processor
       tags:
       - orchestration
       x-codegen-request-body-name: req
+  /orchestration/webhooks/{token}:
+    get:
+      description: Asynchronously triggers a workflow using its unique security token.
+        No standard authentication required.
+      parameters:
+      - description: Unique Webhook Token
+        in: path
+        name: token
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: instanceId
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Invalid Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Workflow Disabled
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Already Running
+      summary: Trigger a workflow via webhook
+      tags:
+      - orchestration
+    post:
+      description: Asynchronously triggers a workflow using its unique security token.
+        No standard authentication required.
+      parameters:
+      - description: Unique Webhook Token
+        in: path
+        name: token
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: instanceId
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Invalid Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Workflow Disabled
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Already Running
+      summary: Trigger a workflow via webhook
+      tags:
+      - orchestration
   /orchestration/workflows:
     get:
+      description: Retrieves a list of all defined workflow templates.
       responses:
         "200":
           content:
@@ -473,18 +577,31 @@ paths:
                   $ref: "#/components/schemas/models.Workflow"
                 type: array
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Internal Server Error
       security:
       - ApiKeyAuth: []
       summary: List all workflows
       tags:
       - orchestration
     post:
+      description: Creates a new workflow template with the provided steps and configuration.
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/models.Workflow"
-        description: Workflow
+        description: Workflow Configuration
         required: true
       responses:
         "200":
@@ -493,14 +610,64 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Workflow"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request (Validation Error)
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Internal Server Error
       security:
       - ApiKeyAuth: []
       summary: Create a workflow
       tags:
       - orchestration
       x-codegen-request-body-name: workflow
+  /orchestration/workflows/validate:
+    post:
+      description: "Checks if a workflow configuration is valid, including variable\
+        \ references and 'if' expressions."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Workflow"
+        description: Workflow to validate
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Validation Error
+      security:
+      - ApiKeyAuth: []
+      summary: Validate a workflow configuration
+      tags:
+      - orchestration
+      x-codegen-request-body-name: workflow
   /orchestration/workflows/{id}:
     delete:
+      description: Deletes a workflow template and all its associated task instances
+        and triggers.
       parameters:
       - description: Workflow ID
         in: path
@@ -515,12 +682,20 @@ paths:
               schema:
                 type: string
           description: success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Workflow Not Found
       security:
       - ApiKeyAuth: []
       summary: Delete a workflow
       tags:
       - orchestration
     put:
+      description: Updates an existing workflow template. Performs validation on the
+        new configuration.
       parameters:
       - description: Workflow ID
         in: path
@@ -533,7 +708,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/models.Workflow"
-        description: Workflow
+        description: Updated Workflow Configuration
         required: true
       responses:
         "200":
@@ -542,18 +717,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Workflow"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Workflow Not Found
       security:
       - ApiKeyAuth: []
       summary: Update a workflow
       tags:
       - orchestration
       x-codegen-request-body-name: workflow
-  /orchestration/workflows/{workflowId}/run:
+  /orchestration/workflows/{id}/webhook/reset:
     post:
+      description: Regenerates the unique token used for Webhook triggering. The old
+        token will be immediately invalidated.
       parameters:
       - description: Workflow ID
         in: path
-        name: workflowId
+        name: id
         required: true
         schema:
           type: string
@@ -563,12 +752,67 @@ paths:
             application/json:
               schema:
                 type: string
-          description: instanceId
+          description: New Webhook Token
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Workflow Not Found
       security:
       - ApiKeyAuth: []
-      summary: Run a workflow
+      summary: Reset a workflow webhook token
       tags:
       - orchestration
+  /orchestration/workflows/{workflowId}/run:
+    post:
+      description: Triggers the immediate execution of a workflow template. Returns
+        the generated instance ID.
+      parameters:
+      - description: Workflow ID to execute
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.RunWorkflowRequest"
+        description: Workflow Inputs
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: instanceId
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Workflow Not Found
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Conflict (Already Running)
+      security:
+      - ApiKeyAuth: []
+      summary: Run a workflow manually
+      tags:
+      - orchestration
+      x-codegen-request-body-name: req
   /rbac/resources/suggest:
     get:
       parameters:
@@ -969,6 +1213,19 @@ components:
         total:
           type: integer
       type: object
+    common.Response:
+      example:
+        code: 0
+        data: "{}"
+        message: message
+      properties:
+        code:
+          type: integer
+        data:
+          type: object
+        message:
+          type: string
+      type: object
     controllers.AuthInfo:
       example:
         id: id
@@ -1089,6 +1346,20 @@ components:
             type: object
           type: object
       type: object
+    models.LogEntry:
+      example:
+        stepId: stepId
+        message: message
+        timestamp: timestamp
+      properties:
+        message:
+          type: string
+        stepId:
+          description: 关联的步骤 ID，空字符串代表引擎级日志
+          type: string
+        timestamp:
+          type: string
+      type: object
     models.LoginRequest:
       properties:
         password:
@@ -1102,6 +1373,20 @@ components:
       properties:
         session_id:
           type: string
+      type: object
+    models.ParamDefinition:
+      example:
+        name: name
+        description: description
+        optional: true
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        optional:
+          description: 是否为可选参数
+          type: boolean
       type: object
     models.PolicyRule:
       example:
@@ -1222,6 +1507,13 @@ components:
         serviceAccountId:
           type: string
       type: object
+    models.RunWorkflowRequest:
+      properties:
+        inputs:
+          additionalProperties:
+            type: string
+          type: object
+      type: object
     models.ServiceAccount:
       example:
         comments: comments
@@ -1279,9 +1571,13 @@ components:
         params:
           key: params
         type: type
+        if: if
       properties:
         id:
           description: "步骤 ID，用于 ${{ steps.ID.outputs.key }}"
+          type: string
+        if:
+          description: 条件表达式 (go-expr)，为空则总是执行
           type: string
         name:
           description: 步骤显示名称
@@ -1297,38 +1593,42 @@ components:
       type: object
     models.StepManifest:
       example:
-        requiredParams:
-        - requiredParams
-        - requiredParams
         outputParams:
-        - outputParams
-        - outputParams
+        - name: name
+          description: description
+          optional: true
+        - name: name
+          description: description
+          optional: true
         name: name
-        optionalParams:
-        - optionalParams
-        - optionalParams
+        description: description
         id: id
+        params:
+        - name: name
+          description: description
+          optional: true
+        - name: name
+          description: description
+          optional: true
       properties:
+        description:
+          description: 处理器功能简述
+          type: string
         id:
           description: 处理器唯一标识 (如 core/fetch/http)
           type: string
         name:
           description: 显示名称
           type: string
-        optionalParams:
-          description: 可选参数名
-          items:
-            type: string
-          type: array
         outputParams:
-          description: 该节点输出的 Key 列表
+          description: 输出参数
           items:
-            type: string
+            $ref: "#/components/schemas/models.ParamDefinition"
           type: array
-        requiredParams:
-          description: 必选参数名
+        params:
+          description: 输入参数列表 (包含必选和可选)
           items:
-            type: string
+            $ref: "#/components/schemas/models.ParamDefinition"
           type: array
       type: object
     models.TaskInstance:
@@ -1336,9 +1636,18 @@ components:
         outputs:
           key: outputs
         workspace: workspace
+        inputs:
+          key: inputs
         startedAt: startedAt
         id: id
         error: error
+        logs:
+        - stepId: stepId
+          message: message
+          timestamp: timestamp
+        - stepId: stepId
+          message: message
+          timestamp: timestamp
         userId: userId
         workflowId: workflowId
         finishedAt: finishedAt
@@ -1350,6 +1659,16 @@ components:
           type: string
         id:
           type: string
+        inputs:
+          additionalProperties:
+            type: string
+          description: 实际传入的变量值
+          type: object
+        logs:
+          description: 任务日志
+          items:
+            $ref: "#/components/schemas/models.LogEntry"
+          type: array
         outputs:
           additionalProperties:
             type: string
@@ -1368,38 +1687,94 @@ components:
         workspace:
           type: string
       type: object
+    models.VarDefinition:
+      example:
+        default: default
+        description: description
+        required: true
+      properties:
+        default:
+          description: 默认值 (可选变量的默认值为空)
+          type: string
+        description:
+          description: 变量描述
+          type: string
+        required:
+          description: 是否必填
+          type: boolean
+      type: object
     models.Workflow:
       example:
-        createdAt: createdAt
-        name: name
+        serviceAccountId: serviceAccountId
+        cronEnabled: true
         description: description
-        id: id
         steps:
         - name: name
           id: id
           params:
             key: params
           type: type
+          if: if
         - name: name
           id: id
           params:
             key: params
           type: type
+          if: if
+        enabled: true
+        timeout: 0
+        cronExpr: cronExpr
+        createdAt: createdAt
+        webhookEnabled: true
+        name: name
+        id: id
+        vars:
+          key:
+            default: default
+            description: description
+            required: true
+        webhookToken: webhookToken
         updatedAt: updatedAt
       properties:
         createdAt:
           type: string
+        cronEnabled:
+          description: 是否启用定时触发
+          type: boolean
+        cronExpr:
+          description: Crontab 表达式
+          type: string
         description:
           type: string
+        enabled:
+          description: 是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)
+          type: boolean
         id:
           type: string
         name:
+          type: string
+        serviceAccountId:
+          description: 执行该工作流时使用的身份 (必填)
           type: string
         steps:
           items:
             $ref: "#/components/schemas/models.Step"
           type: array
+        timeout:
+          description: 超时时间 (秒)，默认 7200 (2h)，0 为不超时
+          type: integer
         updatedAt:
+          type: string
+        vars:
+          additionalProperties:
+            $ref: "#/components/schemas/models.VarDefinition"
+          description: 工作流启动时接受的变量定义
+          type: object
+        webhookEnabled:
+          description: 是否启用 Webhook 触发
+          type: boolean
+        webhookToken:
+          description: Webhook 触发令牌
           type: string
       type: object
     orchestration.ProbeRequest:

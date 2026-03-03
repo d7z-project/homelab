@@ -13,6 +13,10 @@ func Router(r chi.Router) {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/ping", middlewares.PingHandler)
 		r.Post("/login", controllers.LoginHandler)
+		r.Route("/orchestration/webhooks/{token}", func(r chi.Router) {
+			r.Get("/", controllers.WebhookHandler)
+			r.Post("/", controllers.WebhookHandler)
+		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.AuthMiddleware)

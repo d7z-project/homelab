@@ -62,23 +62,51 @@
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 bg-surface-container-low font-bold" style="width: 1px; white-space: nowrap"> 操作 </th>
                 <td mat-cell *matCellDef="let wf" class="text-right !pr-6" style="white-space: nowrap">
-                  <div class="flex justify-end gap-1">
+                  <div class="flex justify-end items-center gap-1">
+                    @if (!isHandset()) {
+                        <mat-slide-toggle [checked]="wf.enabled" (click)="$event.stopPropagation(); toggleWorkflow(wf)" color="primary" class="scale-75 mr-1" matTooltip="启用/禁用工作流">
+                        </mat-slide-toggle>
+                    }
                     <button mat-icon-button (click)="runWorkflow(wf)" matTooltip="启动工作流" class="text-primary">
                       <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">play_circle</mat-icon>
                     </button>
-                    <button mat-icon-button [matMenuTriggerFor]="wfMenu" class="text-outline">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">more_vert</mat-icon>
-                    </button>
-                    <mat-menu #wfMenu="matMenu" class="rounded-2xl overflow-hidden">
-                      <button mat-menu-item (click)="editWorkflow(wf)">
-                        <mat-icon>edit</mat-icon>
-                        <span>编辑模板</span>
+
+                    @if (wf.webhookEnabled) {
+                        <button mat-icon-button (click)="copyWebhookUrl(wf)" matTooltip="复制 Webhook URL" class="text-secondary">
+                            <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">link</mat-icon>
+                        </button>
+                        <button mat-icon-button (click)="resetWebhookToken(wf)" matTooltip="重置 Webhook Token" class="text-outline">
+                            <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">key_off</mat-icon>
+                        </button>
+                    }
+
+                    @if (!isHandset()) {
+                      <button mat-icon-button (click)="editWorkflow(wf)" matTooltip="编辑模板" class="text-outline">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
                       </button>
-                      <button mat-menu-item (click)="deleteWorkflow(wf)" class="text-error">
-                        <mat-icon color="warn">delete_outline</mat-icon>
-                        <span class="text-error">彻底删除</span>
+                      <button mat-icon-button (click)="deleteWorkflow(wf)" matTooltip="彻底删除" class="text-error">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
                       </button>
-                    </mat-menu>
+                    } @else {
+                      <button mat-icon-button [matMenuTriggerFor]="wfMenu" class="text-outline">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">more_vert</mat-icon>
+                      </button>
+                      <mat-menu #wfMenu="matMenu" class="rounded-2xl overflow-hidden">
+                        <div class="px-4 py-2 flex items-center justify-between border-b border-outline-variant/30 mb-1" (click)="$event.stopPropagation()">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-outline">状态控制</span>
+                            <mat-slide-toggle [checked]="wf.enabled" (click)="$event.stopPropagation(); toggleWorkflow(wf)" color="primary" class="scale-75">
+                            </mat-slide-toggle>
+                        </div>
+                        <button mat-menu-item (click)="editWorkflow(wf)">
+                          <mat-icon>edit</mat-icon>
+                          <span>编辑模板</span>
+                        </button>
+                        <button mat-menu-item (click)="deleteWorkflow(wf)" class="text-error">
+                          <mat-icon color="warn">delete_outline</mat-icon>
+                          <span class="text-error">彻底删除</span>
+                        </button>
+                      </mat-menu>
+                    }
                   </div>
                 </td>
               </ng-container>

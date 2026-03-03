@@ -7,9 +7,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsParamDefinition } from './modelsParamDefinition';
 
 
 export interface ModelsStepManifest { 
+    /**
+     * 处理器功能简述
+     */
+    description?: string;
     /**
      * 处理器唯一标识 (如 core/fetch/http)
      */
@@ -19,16 +24,12 @@ export interface ModelsStepManifest {
      */
     name?: string;
     /**
-     * 可选参数名
+     * 输出参数
      */
-    optionalParams?: Array<string>;
+    outputParams?: Array<ModelsParamDefinition>;
     /**
-     * 该节点输出的 Key 列表
+     * 输入参数列表 (包含必选和可选)
      */
-    outputParams?: Array<string>;
-    /**
-     * 必选参数名
-     */
-    requiredParams?: Array<string>;
+    params?: Array<ModelsParamDefinition>;
 }
 

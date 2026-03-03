@@ -2,13 +2,22 @@
 
 ## 1. 核心设计原则 (Core Principles)
 - **空间隔离**: 每个任务实例运行期间拥有独立的 **临时工作目录 (Task Workspace)**（如 `/tmp/task_<id>`），任务结束（无论成功失败）自动物理清理。
-- **参数映射 (GitHub Actions 风格)**: 节点输入支持引用前置步骤的输出，语法为 `${{ steps.<step_id>.outputs.<key> }}`。引擎负责在执行前解析模板字符串。
-- **实时权限校验**: 任务执行时，节点处理器（如 Load 节点）需实时根据 `UserID` 校验目标资源的 RBAC 权限，确保自动化操作不越权。
-- **主动取消 (Context Cancel)**: 引擎维护任务的 `context.CancelFunc`。支持通过 API 发送取消信号，利用 Go `context.Context` 传播并安全终止任务。
-- **不重试原则**: 任务失败即停止，不引入重试逻辑，确保系统状态的确定性与代码极简。
-- **启动自愈**: 后端启动钩子扫描数据库中 `Running` 状态的任务，将其标记为 `Failed`，并物理删除所有 `/tmp/task_*` 遗留目录。
-- **结构化日志**: 日志不再存放于本地文件，而是作为 `[]LogEntry` 结构化存储于数据库中，支持按步骤 (`StepID`) 分类检索。
-- **级联删除**: 删除 Workflow 模板时，自动物理删除所有关联的 TaskInstance 运行记录，确保数据库一致性。
+- **参数映射 (GitHub Actions 风格)**: 
+  - 支持引用前置步骤输出：`${{ steps.<step_id>.outputs.<key> }}`。
+  - 支持引用工作流运行变量：`${{ vars.<var_key> }}`。
+  - **可选语法**: `${{ ... ? }}` 标记，当变量不存在时解析为空字符串而非保留原样。
+- **并发控制 (Single Instance)**: 同一工作流在同一时间只能有一个实例运行，冲突时新请求直接失败，确保资源独占性。
+- **执行条件 (Conditional execution)**: 每一个步骤支持可选的 `if` 条件，使用 `go-expr` 表达式进行逻辑判断。
+- **触发器多样化**: 
+  - **手动运行**: 支持通过 UI 交互式输入运行变量。
+  - **定时任务 (Cron)**: 集成 `robfig/cron`，支持标准的 Crontab 表达式。
+  - **外部钩子 (Webhook)**: 提供基于独有 Token 认证的异步触发接口，支持 GET/POST 传参。
+- **安全性与身份**: 任务执行时强制绑定 **ServiceAccount**，所有节点处理器（如 DNS 记录创建）均以此身份权限进行实时 RBAC 校验。
+- **健壮性保障**: 
+  - **超时中止**: 支持配置工作流级超时时间（默认 2h），超时自动触发 context cancel。
+  - **Panic 恢复**: 引擎捕获所有执行过程中的 panic，记录堆栈信息并安全标记任务失败，防止程序崩溃。
+  - **启动自愈**: 启动时自动清理僵尸任务状态及物理临时目录。
+- **全生命周期审计**: 所有工作流的 C/U/D 变更（含新旧值对比）及每一次触发记录均记录于系统审计日志。
 
 ---
 
@@ -19,42 +28,35 @@
 type TaskContext struct {
     InstanceID     string
     Workspace      string             // 临时目录路径
-    UserID         string             // 用于实时 RBAC 校验的触发者 ID
-    Context        context.Context    // 用于传递取消信号
+    UserID         string             // 用于实时 RBAC 校验的触发者（SA ID 或 root）
+    Context        context.Context    // 用于传递取消信号或处理超时
     CancelFunc     context.CancelFunc // 允许手动终止任务
-    Logger         *TaskLogger        // 内存切片日志记录器，支持按步骤 SetStep
+    Logger         *TaskLogger        // 结构化日志记录器
 }
 ```
 
-### 2.2 数据模型 (Models)
+### 2.2 数据模型 (Models Refined)
 ```go
-type LogEntry struct {
-    Timestamp time.Time `json:"timestamp"`
-    StepID    string    `json:"stepId"` // 关联步骤，空代表系统日志
-    Message   string    `json:"message"`
+type VarDefinition struct {
+    Description string `json:"description"`
+    Default     string `json:"default"`
+    Required    bool   `json:"required"`
 }
 
-type TaskInstance struct {
-    // ... 基础字段
-    Logs []LogEntry `json:"logs"` // 嵌入式存储
-}
-```
-
-### 2.3 节点注册接口 (StepProcessor)
-采用 **惰性加载 (Lazy Loading)**，业务模块在 `init()` 阶段向注册表提交处理器构造函数。
-```go
-type StepManifest struct {
-    ID             string   // 步骤唯一标识 (用于 ${{ steps.ID... }})
-    Name           string   // 显示名称
-    RequiredParams []string // 必选参数名
-    OptionalParams []string // 可选参数名
-    OutputParams   []string // 该节点输出的 Key 列表
+type Step struct {
+    ID     string            `json:"id"`     // 命名限制：^[a-z0-9_]+$
+    Type   string            `json:"type"`   // 处理器类型
+    Name   string            `json:"name"`   // 支持变量插值
+    If     string            `json:"if"`     // go-expr 表达式
+    Params map[string]string `json:"params"` // 支持变量引用
 }
 
-type StepProcessor interface {
-    // 节点执行函数，返回 error 则流水线立即中断
-    Execute(ctx *TaskContext, inputs map[string]string) (outputs map[string]string, err error)
-    Manifest() StepManifest
+type Workflow struct {
+    Enabled          bool                     `json:"enabled"`
+    Timeout          int                      `json:"timeout"`
+    ServiceAccountID string                   `json:"serviceAccountId"`
+    Vars             map[string]VarDefinition `json:"vars"`
+    // ... 其他触发器配置与步骤
 }
 ```
 
@@ -62,38 +64,34 @@ type StepProcessor interface {
 
 ## 3. 技术实施规格 (Technical Specifications)
 
-- **目录管理**: 使用 `os.MkdirTemp` 创建空间，通过 `defer os.RemoveAll` 确保清理。启动时通过 `filepath.Glob("/tmp/task_*")` 进行物理清理。
-- **数据流转**: 
-  - 节点间统一传递 `map[string]string`。
-  - 大文件处理：`Fetcher` 输出 `{"file_path": "..."}` -> `Parser` 输入引用 `${{ steps.fetch.outputs.file_path }}`。
-- **探测接口 (Probe API)**: 提供独立的 `/api/v1/orchestration/probe` 接口，用于前端 Tag 预选等临时下载解析需求。
+- **命名规范**: 变量键名 (Var Key) 和步骤 ID (Step ID) 强制遵循 `^[a-z0-9_]+$` 限制，确保模板解析路径唯一且无歧义。
+- **校验逻辑**:
+  - **静态校验**: 保存前检查变量引用闭环、Cron 表达式合法性、必填变量默认值约束。
+  - **动态校验**: 触发时检查必填参数缺失情况、并发状态、Webhook Token 匹配度。
 - **前端交互**: 
-  - **全屏编辑器**: 采用 Material 3 全屏对话框，支持步骤 ID 自动生成与变量引用补全提示。
-  - **沉浸式日志 (GitHub Actions Style)**: 
-    - 采用全屏双栏布局，左侧为带动态状态图标的步骤导航，右侧为 XTerm.js 终端。
-    - 移动端适配：侧边栏自动转换为顶部水平滚动步骤条。
-    - 字体集成：集成 `JetBrains Mono` 字体栈，通过 `FitAddon` 实现终端尺寸自适应。
+  - **响应式操作**: 大屏幕显示快捷图标，小屏幕收纳至菜单。
+  - **运行弹窗**: 动态生成表单，支持运行前预填默认变量值。
+  - **状态切换**: Table 内集成乐观更新的启用/禁用开关。
 
 ---
 
 ## 4. 任务清单 (Action Plan)
 
-严格遵循 `GEMINI.md` 核心开发工作流规范。
+### 第一阶段：核心引擎与模型实现
+- [x] **Task 1: [Models]** 定义增强型 `Workflow`, `TaskInstance` 及变量定义模型。
+- [x] **Task 2: [Engine]** 实现带变量解析、条件执行、超时控制、并发锁及 Panic 恢复的执行引擎。
+- [x] **Task 3: [Audit]** 为编排模块挂载全量审计逻辑（C/U/D/Trigger）。
 
-### 第一阶段：后端分层实现 (Backend Implementation)
-- [x] **Task 1: [Models]** 定义 `Workflow`, `TaskInstance`, `StepManifest` 模型，确保实现 `render.Binder`。
-- [x] **Task 2: [Repositories]** 实现基于 `kv.Child("system", "orchestration")` 的任务持久化与存储库。
-- [x] **Task 3: [Services]** 实现任务引擎执行器 (Executor)：处理参数映射 (`${{...}}`)、任务空间隔离、`context.Cancel` 以及启动自愈钩子。实现级联删除逻辑。
-- [x] **Task 4: [Controllers]** 挂载任务编排路由与 `/api/v1/orchestration/probe` 接口。挂载相应的 `RequirePermission` 准入中间件。
+### 第二阶段：触发器与权限加固
+- [x] **Task 4: [Triggers]** 实现 `TriggerManager`：集成 Cron 调度与 Webhook Token 认证流。
+- [x] **Task 5: [RBAC]** 完成 Service 层细粒度资源过滤与显示名称/变量插值的权限隔离。
+- [x] **Task 6: [Discovery]** 注册 `orchestration` 资源到 RBAC 发现中心，支持 ID 级权限分配。
 
-### 第二阶段：逻辑验证与 API 同步 (Verify & Sync)
-- [x] **Task 5: [Tests]** 编写针对流水线执行、参数映射、以及并发终止 (Context Cancel) 的单元测试。
-- [x] **Task 6: [Generate]** 执行 `make backend-generate`，同步 OpenAPI 文档与前端类型代码。
+### 第三阶段：UI 精细化适配
+- [x] **Task 7: [UI-Builder]** 升级编辑器：增加变量声明步骤、ID 命名校验、超时与 SA 配置。
+- [x] **Task 8: [UI-Run]** 开发动态变量输入弹窗，支持运行前参数注入。
+- [x] **Task 9: [UI-Board]** 优化管理看板：支持 Webhook 地址复制/重置、表格内状态快捷切换。
 
-### 第三阶段：前端实现 (Frontend Adaptation)
-- [x] **Task 7: [UI-Workflow]** 开发任务编排看板列表，对标 DNS/RBAC 风格。
-- [x] **Task 8: [UI-Builder]** 实现全屏工作流编辑器，支持动态表单生成、自动 ID 分配与参数引用提示。
-- [x] **Task 9: [UI-Control]** 增加基于 XTerm.js 的 GitHub 风格实时日志详情页，支持全屏展示、按步骤过滤及移动端适配。
-
-### 第四阶段：全栈交付验证 (Full-Stack Verification)
-- [x] **Task 10: [Build]** 运行 `make all`，确保前后端均可正常编译通过无类型冲突。
+### 第四阶段：全栈交付验证
+- [x] **Task 10: [Tests]** 编写覆盖 11 个核心场景的单元测试套件，通过率为 100%。
+- [x] **Task 11: [Sync]** 完成 OpenAPI 同步与全栈 `make all` 构建验证。

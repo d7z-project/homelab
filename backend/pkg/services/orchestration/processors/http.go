@@ -2,6 +2,7 @@ package processors
 
 import (
 	"fmt"
+	"homelab/pkg/models"
 	"homelab/pkg/services/orchestration"
 	"io"
 	"net/http"
@@ -17,11 +18,16 @@ func init() {
 
 func (p *HttpFetchProcessor) Manifest() orchestration.StepManifest {
 	return orchestration.StepManifest{
-		ID:             "core/fetch/http",
-		Name:           "HTTP Fetcher",
-		RequiredParams: []string{"url"},
-		OptionalParams: []string{"output_file"},
-		OutputParams:   []string{"file_path"},
+		ID:          "core/fetch/http",
+		Name:        "HTTP Fetcher",
+		Description: "从指定 URL 下载文件到任务工作目录，支持 HTTP/HTTPS 协议。",
+		Params: []models.ParamDefinition{
+			{Name: "url", Description: "要下载的远程文件 URL 地址", Optional: false},
+			{Name: "output_file", Description: "本地保存的文件名，默认为 downloaded_file", Optional: true},
+		},
+		OutputParams: []models.ParamDefinition{
+			{Name: "file_path", Description: "下载成功后文件在工作目录的绝对路径"},
+		},
 	}
 }
 
