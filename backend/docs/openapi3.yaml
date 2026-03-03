@@ -1,0 +1,1257 @@
+openapi: 3.0.1
+info:
+  contact: {}
+  description: This is a sample server for homelab.
+  title: Homelab API
+  version: "1.0"
+servers:
+- url: /api/v1
+paths:
+  /audit/logs:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search query
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_audit_logs_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List audit logs
+      tags:
+      - audit
+  /audit/logs/cleanup:
+    post:
+      parameters:
+      - description: Logs older than these days will be deleted
+        in: query
+        name: days
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.AuditCleanupResponse"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Cleanup old audit logs
+      tags:
+      - audit
+  /auth/sessions:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/models.Session"
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all active root sessions
+      tags:
+      - auth
+  /auth/sessions/{id}:
+    delete:
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Revoke a session
+      tags:
+      - auth
+  /dns/domains:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_dns_domains_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all DNS domains
+      tags:
+      - dns
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Domain"
+        description: Domain
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Domain"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a DNS domain
+      tags:
+      - dns
+      x-codegen-request-body-name: domain
+  /dns/domains/{id}:
+    delete:
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a DNS domain
+      tags:
+      - dns
+    put:
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Domain"
+        description: Domain
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Domain"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a DNS domain
+      tags:
+      - dns
+      x-codegen-request-body-name: domain
+  /dns/export:
+    get:
+      description: Returns all domains and their associated records without internal
+        IDs. Requires a valid token but no specific permissions.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.DnsExportResponse"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Export all DNS domains and records
+      tags:
+      - dns
+  /dns/records:
+    get:
+      parameters:
+      - description: Domain ID filter
+        in: query
+        name: domainId
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name or value
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_dns_records_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all DNS records
+      tags:
+      - dns
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Record"
+        description: Record
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Record"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a DNS record
+      tags:
+      - dns
+      x-codegen-request-body-name: record
+  /dns/records/{id}:
+    delete:
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a DNS record
+      tags:
+      - dns
+    put:
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Record"
+        description: Record
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Record"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a DNS record
+      tags:
+      - dns
+      x-codegen-request-body-name: record
+  /info:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/controllers.AuthInfo"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user info
+      tags:
+      - auth
+  /login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.LoginRequest"
+        description: Login Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.LoginResponse"
+          description: OK
+      summary: Login to get session
+      tags:
+      - auth
+      x-codegen-request-body-name: request
+  /logout:
+    post:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Logout
+      tags:
+      - auth
+  /rbac/resources/suggest:
+    get:
+      parameters:
+      - description: Prefix to filter resources
+        in: query
+        name: prefix
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Suggest RBAC resources
+      tags:
+      - rbac
+  /rbac/rolebindings:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name or id
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_rbac_rolebindings_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all role bindings
+      tags:
+      - rbac
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.RoleBinding"
+        description: Role Binding
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.RoleBinding"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a role binding
+      tags:
+      - rbac
+      x-codegen-request-body-name: rb
+  /rbac/rolebindings/{id}:
+    delete:
+      parameters:
+      - description: Role Binding ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a role binding
+      tags:
+      - rbac
+    put:
+      parameters:
+      - description: Role Binding ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.RoleBinding"
+        description: Role Binding
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.RoleBinding"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a role binding
+      tags:
+      - rbac
+      x-codegen-request-body-name: rb
+  /rbac/roles:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name or id
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_rbac_roles_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all roles
+      tags:
+      - rbac
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Role"
+        description: Role
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Role"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a role
+      tags:
+      - rbac
+      x-codegen-request-body-name: role
+  /rbac/roles/{id}:
+    delete:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a role
+      tags:
+      - rbac
+    put:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Role"
+        description: Role
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Role"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a role
+      tags:
+      - rbac
+      x-codegen-request-body-name: role
+  /rbac/serviceaccounts:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name or id
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_rbac_serviceaccounts_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all service accounts
+      tags:
+      - rbac
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.ServiceAccount"
+        description: Service Account
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.ServiceAccount"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a service account
+      tags:
+      - rbac
+      x-codegen-request-body-name: sa
+  /rbac/serviceaccounts/{id}:
+    delete:
+      parameters:
+      - description: Service Account ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a service account
+      tags:
+      - rbac
+    put:
+      parameters:
+      - description: Service Account ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.ServiceAccount"
+        description: Service Account
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.ServiceAccount"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a service account
+      tags:
+      - rbac
+      x-codegen-request-body-name: sa
+  /rbac/serviceaccounts/{id}/reset:
+    post:
+      parameters:
+      - description: Service Account ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.ServiceAccount"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Reset a service account token
+      tags:
+      - rbac
+  /rbac/simulate:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SimulatePermissionsRequest"
+        description: Simulation Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.ResourcePermissions"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Simulate permissions for a service account
+      tags:
+      - rbac
+      x-codegen-request-body-name: request
+  /rbac/verbs/suggest:
+    get:
+      parameters:
+      - description: Resource prefix
+        in: query
+        name: resource
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Suggest RBAC verbs for a resource
+      tags:
+      - rbac
+components:
+  schemas:
+    common.PaginatedResponse:
+      properties:
+        items:
+          type: object
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      type: object
+    controllers.AuthInfo:
+      example:
+        id: id
+        sessionId: sessionId
+        type: type
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        type:
+          type: string
+      type: object
+    models.AuditCleanupResponse:
+      example:
+        deleted: 0
+      properties:
+        deleted:
+          type: integer
+      type: object
+    models.AuditLog:
+      example:
+        targetId: targetId
+        resource: resource
+        subject: subject
+        ipAddress: ipAddress
+        action: action
+        userAgent: userAgent
+        id: id
+        message: message
+        status: status
+        timestamp: timestamp
+      properties:
+        action:
+          description: "CREATE, UPDATE, DELETE, or HTTP Method"
+          type: string
+        id:
+          type: string
+        ipAddress:
+          type: string
+        message:
+          description: Detailed description
+          type: string
+        resource:
+          description: "e.g., \"DNS/Record\", \"RBAC/ServiceAccount\""
+          type: string
+        status:
+          description: Success or Failed
+          type: string
+        subject:
+          description: "User or SA name (e.g., \"root\" or \"sa-name\")"
+          type: string
+        targetId:
+          description: ID or name of the resource operated on
+          type: string
+        timestamp:
+          description: RFC3339 format
+          type: string
+        userAgent:
+          type: string
+      type: object
+    models.DnsExportResponse:
+      example:
+        domains:
+        - records:
+            key:
+              key: ""
+          name: name
+        - records:
+            key:
+              key: ""
+          name: name
+      properties:
+        domains:
+          items:
+            $ref: "#/components/schemas/models.ExportDomain"
+          type: array
+      type: object
+    models.Domain:
+      example:
+        createdAt: createdAt
+        comments: comments
+        name: name
+        id: id
+        enabled: true
+        updatedAt: updatedAt
+      properties:
+        comments:
+          description: 备注说明
+          type: string
+        createdAt:
+          description: 创建时间
+          type: string
+        enabled:
+          description: 是否启用
+          type: boolean
+        id:
+          type: string
+        name:
+          description: "域名名称 (e.g., example.com)"
+          type: string
+        updatedAt:
+          description: 更新时间
+          type: string
+      type: object
+    models.ExportDomain:
+      example:
+        records:
+          key:
+            key: ""
+        name: name
+      properties:
+        name:
+          type: string
+        records:
+          additionalProperties:
+            additionalProperties: true
+            type: object
+          type: object
+      type: object
+    models.LoginRequest:
+      properties:
+        password:
+          type: string
+        totp:
+          type: string
+      type: object
+    models.LoginResponse:
+      example:
+        session_id: session_id
+      properties:
+        session_id:
+          type: string
+      type: object
+    models.PolicyRule:
+      example:
+        resource: resource
+        verbs:
+        - verbs
+        - verbs
+      properties:
+        resource:
+          type: string
+        verbs:
+          items:
+            type: string
+          type: array
+      type: object
+    models.Record:
+      example:
+        comments: comments
+        name: name
+        id: id
+        priority: 5
+        type: type
+        ttl: 5
+        value: value
+        domainId: domainId
+        enabled: true
+      properties:
+        comments:
+          description: 备注说明
+          type: string
+        domainId:
+          description: 关联的域名 ID
+          type: string
+        enabled:
+          description: 是否启用
+          type: boolean
+        id:
+          type: string
+        name:
+          description: "记录名 (e.g., @, www, api)"
+          type: string
+        priority:
+          description: 优先级 (仅用于 MX 和 SRV)
+          type: integer
+        ttl:
+          description: 生存时间 (秒)
+          type: integer
+        type:
+          description: "记录类型 (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)"
+          type: string
+        value:
+          description: "记录值 (e.g., 192.168.1.1)"
+          type: string
+      type: object
+    models.ResourcePermissions:
+      example:
+        matchedRule: "{}"
+        allowedInstances:
+        - allowedInstances
+        - allowedInstances
+        allowedAll: true
+      properties:
+        allowedAll:
+          type: boolean
+        allowedInstances:
+          items:
+            type: string
+          type: array
+        matchedRule:
+          allOf:
+          - $ref: "#/components/schemas/models.PolicyRule"
+          description: Records which rule allowed the access
+          type: object
+      type: object
+    models.Role:
+      example:
+        name: name
+        rules:
+        - resource: resource
+          verbs:
+          - verbs
+          - verbs
+        - resource: resource
+          verbs:
+          - verbs
+          - verbs
+        id: id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        rules:
+          items:
+            $ref: "#/components/schemas/models.PolicyRule"
+          type: array
+      type: object
+    models.RoleBinding:
+      example:
+        serviceAccountId: serviceAccountId
+        roleIds:
+        - roleIds
+        - roleIds
+        name: name
+        id: id
+        enabled: true
+      properties:
+        enabled:
+          type: boolean
+        id:
+          type: string
+        name:
+          type: string
+        roleIds:
+          items:
+            type: string
+          type: array
+        serviceAccountId:
+          type: string
+      type: object
+    models.ServiceAccount:
+      example:
+        comments: comments
+        lastUsedAt: lastUsedAt
+        name: name
+        id: id
+        enabled: true
+        token: token
+      properties:
+        comments:
+          type: string
+        enabled:
+          type: boolean
+        id:
+          type: string
+        lastUsedAt:
+          type: string
+        name:
+          type: string
+        token:
+          type: string
+      type: object
+    models.Session:
+      example:
+        createdAt: createdAt
+        ip: ip
+        userAgent: userAgent
+        id: id
+        userType: userType
+      properties:
+        createdAt:
+          type: string
+        id:
+          type: string
+        ip:
+          type: string
+        userAgent:
+          type: string
+        userType:
+          type: string
+      type: object
+    models.SimulatePermissionsRequest:
+      properties:
+        resource:
+          type: string
+        serviceAccountId:
+          type: string
+        verb:
+          type: string
+      type: object
+    _audit_logs_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.AuditLog"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - targetId: targetId
+          resource: resource
+          subject: subject
+          ipAddress: ipAddress
+          action: action
+          userAgent: userAgent
+          id: id
+          message: message
+          status: status
+          timestamp: timestamp
+        - targetId: targetId
+          resource: resource
+          subject: subject
+          ipAddress: ipAddress
+          action: action
+          userAgent: userAgent
+          id: id
+          message: message
+          status: status
+          timestamp: timestamp
+    _dns_domains_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.Domain"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - createdAt: createdAt
+          comments: comments
+          name: name
+          id: id
+          enabled: true
+          updatedAt: updatedAt
+        - createdAt: createdAt
+          comments: comments
+          name: name
+          id: id
+          enabled: true
+          updatedAt: updatedAt
+    _dns_records_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.Record"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - comments: comments
+          name: name
+          id: id
+          priority: 5
+          type: type
+          ttl: 5
+          value: value
+          domainId: domainId
+          enabled: true
+        - comments: comments
+          name: name
+          id: id
+          priority: 5
+          type: type
+          ttl: 5
+          value: value
+          domainId: domainId
+          enabled: true
+    _rbac_rolebindings_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.RoleBinding"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - serviceAccountId: serviceAccountId
+          roleIds:
+          - roleIds
+          - roleIds
+          name: name
+          id: id
+          enabled: true
+        - serviceAccountId: serviceAccountId
+          roleIds:
+          - roleIds
+          - roleIds
+          name: name
+          id: id
+          enabled: true
+    _rbac_roles_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.Role"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - name: name
+          rules:
+          - resource: resource
+            verbs:
+            - verbs
+            - verbs
+          - resource: resource
+            verbs:
+            - verbs
+            - verbs
+          id: id
+        - name: name
+          rules:
+          - resource: resource
+            verbs:
+            - verbs
+            - verbs
+          - resource: resource
+            verbs:
+            - verbs
+            - verbs
+          id: id
+    _rbac_serviceaccounts_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.ServiceAccount"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - comments: comments
+          lastUsedAt: lastUsedAt
+          name: name
+          id: id
+          enabled: true
+          token: token
+        - comments: comments
+          lastUsedAt: lastUsedAt
+          name: name
+          id: id
+          enabled: true
+          token: token
+  securitySchemes:
+    ApiKeyAuth:
+      in: header
+      name: Authorization
+      type: apiKey
+x-original-swagger-version: "2.0"
