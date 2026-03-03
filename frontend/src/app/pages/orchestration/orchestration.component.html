@@ -116,8 +116,9 @@
                     <button
                       mat-icon-button
                       (click)="runWorkflow(wf)"
-                      matTooltip="启动工作流"
-                      class="text-primary"
+                      [disabled]="!wf.enabled"
+                      [matTooltip]="wf.enabled ? '启动工作流' : '工作流已禁用，无法启动'"
+                      [class.text-primary]="wf.enabled"
                     >
                       <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                         >play_circle</mat-icon
@@ -128,8 +129,9 @@
                       <button
                         mat-icon-button
                         (click)="copyWebhookUrl(wf)"
-                        matTooltip="复制 Webhook URL"
-                        class="text-secondary"
+                        [disabled]="!wf.enabled"
+                        [matTooltip]="wf.enabled ? '复制 Webhook URL' : '工作流已禁用'"
+                        [class.text-secondary]="wf.enabled"
                       >
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >link</mat-icon
@@ -138,6 +140,7 @@
                       <button
                         mat-icon-button
                         (click)="resetWebhookToken(wf)"
+                        [disabled]="!wf.enabled"
                         matTooltip="重置 Webhook Token"
                         class="text-outline"
                       >

@@ -50,6 +50,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		workflow := &models.Workflow{
 			ID:               "test-wf",
 			Name:             "Test Workflow",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{
@@ -108,6 +109,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		workflow := &models.Workflow{
 			ID:               "if-wf",
 			Name:             "If Workflow",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{
@@ -156,6 +158,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		workflow := &models.Workflow{
 			ID:               "concurrent-wf",
 			Name:             "Concurrent Workflow",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock"},
@@ -189,6 +192,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		workflow := &models.Workflow{
 			ID:               "timeout-wf",
 			Name:             "Timeout Workflow",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			Timeout:          1, // 1 second timeout
 			Steps: []models.Step{
@@ -224,6 +228,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		workflow := &models.Workflow{
 			ID:               "var-wf",
 			Name:             "Var Workflow",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			Vars: map[string]models.VarDefinition{
 				"target": {Required: true},
@@ -277,6 +282,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		workflow := &models.Workflow{
 			ID:               "opt-wf",
 			Name:             "Optional Workflow",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{
@@ -315,6 +321,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		workflow := &models.Workflow{
 			ID:               "panic-wf",
 			Name:             "Panic Workflow",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock"},
@@ -359,11 +366,11 @@ func TestOrchestrationEngine(t *testing.T) {
 			t.Error("Expected TriggerWorkflow to fail for disabled workflow")
 		}
 
-		// 2. RunWorkflow (Manual) should succeed even if disabled
+		// 2. RunWorkflow (Manual) should ALSO fail if disabled (as per new requirements)
 		ctx := tests.SetupMockRootContext()
 		_, err = orchestration.TriggerWorkflow(ctx, workflow, "root", "Manual", nil)
-		if err != nil {
-			t.Errorf("Expected Manual trigger to work even if disabled, got: %v", err)
+		if err == nil {
+			t.Error("Expected Manual trigger to fail for disabled workflow")
 		}
 	})
 
@@ -416,8 +423,8 @@ func TestOrchestrationEngine(t *testing.T) {
 
 	t.Run("RBAC Filtering", func(t *testing.T) {
 		// Create 2 workflows (IDs will be generated)
-		wf1 := &models.Workflow{Name: "WF 1", ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
-		wf2 := &models.Workflow{Name: "WF 2", ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
+		wf1 := &models.Workflow{Name: "WF 1", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
+		wf2 := &models.Workflow{Name: "WF 2", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
 		var err error
 		wf1, err = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf1)
 		if err != nil {
@@ -450,6 +457,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		wf := &models.Workflow{
 			ID:               "webhook-wf",
 			Name:             "Webhook WF",
+			Enabled:          true,
 			ServiceAccountID: "sa",
 			WebhookEnabled:   true,
 			Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},

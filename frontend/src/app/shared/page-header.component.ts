@@ -9,7 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   standalone: true,
   imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule],
   template: `
-    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2 mb-4">
       <div class="space-y-1">
         <h1 class="text-3xl font-bold tracking-tight text-on-surface">{{ title() }}</h1>
         @if (subtitle()) {

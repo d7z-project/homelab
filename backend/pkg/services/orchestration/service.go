@@ -246,16 +246,16 @@ func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
 // Task Instance Services
 
 func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID string, triggerSource string, inputs map[string]string) (string, error) {
+	// manual trigger is also blocked if workflow is disabled
+	if !workflow.Enabled {
+		return "", fmt.Errorf("workflow is disabled")
+	}
+
 	// Permission check for the workflow itself
 	if triggerSource == "Manual" {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + workflow.ID) {
 			return "", fmt.Errorf("permission denied: orchestration/%s", workflow.ID)
 		}
-	}
-
-	// Manual trigger always allowed, Cron/Webhook only if enabled
-	if triggerSource != "Manual" && !workflow.Enabled {
-		return "", fmt.Errorf("workflow is disabled")
 	}
 
 	// Validate and merge inputs
