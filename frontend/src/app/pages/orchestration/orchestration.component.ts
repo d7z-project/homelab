@@ -80,13 +80,15 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
 
+  private refreshTimer?: any;
+
   displayedWorkflowColumns = computed(() =>
     this.isHandset() ? ['name', 'actions'] : ['name', 'description', 'steps', 'actions'],
   );
   displayedInstanceColumns = computed(() =>
     this.isHandset()
-      ? ['id', 'status', 'actions']
-      : ['id', 'workflowId', 'status', 'startedAt', 'actions'],
+      ? ['workflowName', 'status', 'actions']
+      : ['workflowName', 'trigger', 'status', 'startedAt', 'actions'],
   );
 
   fabConfig = computed(() => {
@@ -102,8 +104,13 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.route.queryParams.subscribe((params) => {
-      if (params['tab'] === 'instance') this.selectedTabIndex.set(1);
-      else this.selectedTabIndex.set(0);
+      if (params['tab'] === 'instance') {
+        this.selectedTabIndex.set(1);
+        this.startRefreshTimer();
+      } else {
+        this.selectedTabIndex.set(0);
+        this.stopRefreshTimer();
+      }
     });
   }
 
@@ -123,6 +130,23 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.uiService.resetToolbar();
+    this.stopRefreshTimer();
+  }
+
+  private startRefreshTimer() {
+    this.stopRefreshTimer();
+    this.refreshTimer = setInterval(() => {
+      if (this.selectedTabIndex() === 1 && !this.loading()) {
+        this.loadInstances(true);
+      }
+    }, 2000);
+  }
+
+  private stopRefreshTimer() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = undefined;
+    }
   }
 
   onTabChange(index: number) {
@@ -134,6 +158,12 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+    
+    if (index === 1) {
+      this.startRefreshTimer();
+    } else {
+      this.stopRefreshTimer();
+    }
     this.refreshData();
   }
 
@@ -166,13 +196,48 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     this.workflows.set(data || []);
   }
 
-  async loadInstances() {
-    const data = await firstValueFrom(this.orchService.orchestrationInstancesGet());
-    // Sort by startedAt descending
-    const sorted = (data || []).sort((a, b) => {
-      return new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime();
-    });
-    this.instances.set(sorted);
+  async loadInstances(silent = false) {
+    if (!silent) this.loading.set(true);
+    try {
+      const data = await firstValueFrom(this.orchService.orchestrationInstancesGet());
+      // Sort by startedAt descending
+      const sorted = (data || []).sort((a, b) => {
+        return new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime();
+      });
+      this.instances.set(sorted);
+    } finally {
+      if (!silent) this.loading.set(false);
+    }
+  }
+
+  getWorkflowName(id: string): string {
+    return this.workflows().find((w) => w.id === id)?.name || id;
+  }
+
+  getTriggerLabel(trigger: string | undefined): string {
+    switch (trigger) {
+      case 'Manual':
+        return '直接启动';
+      case 'Webhook':
+        return 'Webhook';
+      case 'Cron':
+        return '定时任务';
+      default:
+        return trigger || '-';
+    }
+  }
+
+  getTriggerIcon(trigger: string | undefined): string {
+    switch (trigger) {
+      case 'Manual':
+        return 'person';
+      case 'Webhook':
+        return 'link';
+      case 'Cron':
+        return 'schedule';
+      default:
+        return 'help_outline';
+    }
   }
 
   createWorkflow() {

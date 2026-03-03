@@ -101,7 +101,8 @@ type TaskInstance struct {
 	ID         string            `json:"id"`
 	WorkflowID string            `json:"workflowId"`
 	Status     string            `json:"status"` // Pending, Running, Success, Failed, Cancelled
-	UserID     string            `json:"userId"` // 触发者 ID
+	Trigger    string            `json:"trigger"` // Manual, Cron, Webhook
+	UserID     string            `json:"userId"`  // 触发者 ID
 	Inputs     map[string]string `json:"inputs"` // 实际传入的变量值
 	Workspace  string            `json:"workspace"`
 	StartedAt  time.Time         `json:"startedAt"`

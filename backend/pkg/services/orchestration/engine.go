@@ -23,7 +23,7 @@ type Executor struct {
 
 var GlobalExecutor = &Executor{}
 
-func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.Workflow, inputs map[string]string) (string, error) {
+func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.Workflow, trigger string, inputs map[string]string) (string, error) {
 	// 1. Concurrency Control: Only one instance per workflow
 	if existingInstance, loaded := e.activeWorkflows.LoadOrStore(workflow.ID, "placeholder"); loaded {
 		return "", fmt.Errorf("workflow %s is already running (instance: %v)", workflow.ID, existingInstance)
@@ -33,6 +33,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 		ID:         fmt.Sprintf("task_%d", time.Now().UnixNano()),
 		WorkflowID: workflow.ID,
 		Status:     "Running",
+		Trigger:    trigger,
 		UserID:     userID,
 		Inputs:     inputs,
 		StartedAt:  time.Now(),

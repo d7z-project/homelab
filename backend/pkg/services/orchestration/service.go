@@ -274,7 +274,7 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 		finalInputs[k] = val
 	}
 
-	instanceID, err := GlobalExecutor.Execute(ctx, userID, workflow, finalInputs)
+	instanceID, err := GlobalExecutor.Execute(ctx, userID, workflow, triggerSource, finalInputs)
 	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Name, instanceID)
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("TriggerWorkflow", workflow.ID, message+" Error: "+err.Error(), false)
