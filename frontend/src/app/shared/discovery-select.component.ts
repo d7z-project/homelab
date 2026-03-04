@@ -60,9 +60,12 @@ import {
     },
   ],
   template: `
-    <mat-form-field [appearance]="appearance" [class]="'w-full relative ' + customClass" [subscriptSizing]="subscriptSizing">
+    <mat-form-field
+      [appearance]="appearance"
+      [class]="'w-full relative ' + customClass"
+      [subscriptSizing]="subscriptSizing"
+    >
       <mat-label>{{ label }}</mat-label>
-
 
       @if (multiple) {
         <mat-chip-grid #chipGrid>
