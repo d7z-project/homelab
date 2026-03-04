@@ -11,6 +11,10 @@ import { ModelsLogEntry } from './modelsLogEntry';
 
 
 export interface ModelsTaskInstance { 
+    /**
+     * 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
+     */
+    currentStep?: number;
     error?: string;
     finishedAt?: string;
     id?: string;

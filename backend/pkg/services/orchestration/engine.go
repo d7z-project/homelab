@@ -120,28 +120,42 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 
 func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workflow *models.Workflow, logger *TaskLogger, cancel context.CancelFunc) {
 	defer func() {
+		// Finalization Step
+		instance.CurrentStep = len(workflow.Steps) + 1
+		logger.SetStep(instance.CurrentStep)
 		if r := recover(); r != nil {
 			err := fmt.Errorf("panic recovered: %v\n%s", r, string(debug.Stack()))
 			e.fail(instance, err, logger)
 		}
-	}()
-	defer cancel()
-	defer e.runningTasks.Delete(instance.ID)
-	defer logger.Close()
-	defer func() {
 		if instance.Workspace != "" {
 			logger.Logf("Cleaning up workspace: %s", instance.Workspace)
 			_ = orchFS.RemoveAll(instance.Workspace)
 		}
+		if instance.Status == "Running" {
+			instance.Status = "Success"
+			now := time.Now()
+			instance.FinishedAt = &now
+			logger.Log("Workflow completed successfully")
+		}
+		e.updateInstanceState(instance, logger)
+		cancel()
+		e.runningTasks.Delete(instance.ID)
+		logger.Close()
 	}()
 
+	// Initialization Step
+	instance.CurrentStep = 0
+	logger.SetStep(0)
 	logger.Logf("Starting workflow: %s (%s)", workflow.Name, workflow.ID)
+	logger.Logf("Workspace directory: %s", instance.Workspace)
 	e.updateInstanceState(instance, logger)
 
 	stepOutputs := make(map[string]map[string]string)
 
 	for i, step := range workflow.Steps {
-		logger.SetStep(i + 1)
+		instance.CurrentStep = i + 1
+		logger.SetStep(instance.CurrentStep)
+		e.updateInstanceState(instance, logger)
 		select {
 		case <-ctx.Done():
 			e.fail(instance, ctx.Err(), logger)
@@ -183,6 +197,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		}
 
 		taskCtx := &TaskContext{
+			WorkflowID: workflow.ID,
 			InstanceID: instance.ID,
 			Workspace:  instance.Workspace,
 			UserID:     instance.UserID,
@@ -201,13 +216,6 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		logger.Logf("Step %s completed successfully", step.ID)
 		e.updateInstanceState(instance, logger)
 	}
-
-	// Finalize
-	instance.Status = "Success"
-	now := time.Now()
-	instance.FinishedAt = &now
-	e.updateInstanceState(instance, logger)
-	logger.Log("Workflow completed successfully")
 }
 
 func (e *Executor) updateInstanceState(instance *models.TaskInstance, logger *TaskLogger) {

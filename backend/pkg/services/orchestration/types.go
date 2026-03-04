@@ -6,6 +6,7 @@ import (
 )
 
 type TaskContext struct {
+	WorkflowID string
 	InstanceID string
 	Workspace  string             // 临时目录路径
 	UserID     string             // 用于实时 RBAC 校验的触发者 ID

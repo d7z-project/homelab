@@ -78,6 +78,16 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
 
   selectedWorkflowId = signal<string | null>(null);
 
+  filteredWorkflows = computed(() => {
+    const list = this.workflows();
+    const search = this.uiService.searchConfig()?.value?.toLowerCase();
+    if (!search) return list;
+    return list.filter(
+      (w) =>
+        w.name?.toLowerCase().includes(search) || w.description?.toLowerCase().includes(search),
+    );
+  });
+
   filteredInstances = computed(() => {
     let list = this.instances();
     const search = this.uiService.searchConfig()?.value?.toLowerCase();
@@ -388,10 +398,8 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       await firstValueFrom(
         this.orchService.orchestrationWorkflowsWorkflowIdRunPost(wf.id!, { inputs }),
       );
-      this.snackBar
-        .open('工作流已启动', '查看实例', { duration: 5000 })
-        .onAction()
-        .subscribe(() => this.onTabChange(1));
+      this.snackBar.open('工作流已启动', '关闭', { duration: 3000 });
+      this.filterByWorkflow(wf.id!);
       await this.loadInstances();
     } catch (err) {
       this.snackBar.open('启动失败', '关闭', { duration: 2000 });
@@ -471,9 +479,13 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   }
 
   filterByWorkflow(id: string | null) {
+    const queryParams: any = { workflowId: id || null };
+    if (id) {
+      queryParams.tab = 'instance';
+    }
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { workflowId: id },
+      queryParams,
       queryParamsHandling: 'merge',
     });
   }
@@ -557,10 +569,12 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     this.uiService.openSearch({
       placeholder:
         this.selectedTabIndex() === 0 ? '搜索工作流名称或描述...' : '搜索实例 ID 或工作流...',
-      value: '',
+      value: this.uiService.searchConfig()?.value || '',
       onSearch: (val) => {
-        // Implement local filtering or remote search if needed
-        console.log('Searching for:', val);
+        const config = this.uiService.searchConfig();
+        if (config) {
+          this.uiService.searchConfig.set({ ...config, value: val });
+        }
       },
     });
   }

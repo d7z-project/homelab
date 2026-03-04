@@ -101,6 +101,7 @@ type TaskInstance struct {
 	ID         string            `json:"id"`
 	WorkflowID string            `json:"workflowId"`
 	Status     string            `json:"status"` // Pending, Running, Success, Failed, Cancelled
+	CurrentStep int               `json:"currentStep"` // 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
 	Trigger    string            `json:"trigger"` // Manual, Cron, Webhook
 	UserID     string            `json:"userId"`  // 触发者 ID
 	Inputs     map[string]string `json:"inputs"` // 实际传入的变量值

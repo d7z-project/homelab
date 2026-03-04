@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   computed,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -24,8 +25,6 @@ import {
   ModelsLogEntry,
   ModelsWorkflow,
 } from '../../generated';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
 import { interval, Subscription, firstValueFrom } from 'rxjs';
 
 @Component({
@@ -49,11 +48,11 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
           <div class="flex flex-col min-w-0">
             <div class="flex items-center gap-1.5 sm:gap-2">
               <span
-                class="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded font-mono bg-primary/10 text-primary border border-primary/20 shrink-0"
-                >#{{ displayId() }}</span
+                class="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 shrink-0"
+                >运行详情</span
               >
               <h2 class="text-xs sm:text-base font-bold tracking-tight m-0 truncate">
-                {{ instance().workflowId }}
+                {{ workflowName() }}
               </h2>
             </div>
             <div
@@ -69,30 +68,34 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
               }}</span>
               <span class="opacity-30">|</span>
               <span class="truncate">{{ instance().startedAt | date: 'HH:mm:ss' }}</span>
+              <span class="opacity-30">|</span>
+              <span class="font-mono text-primary/80">{{ duration() }}</span>
             </div>
           </div>
         </div>
 
         <div class="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
           @if (instance().status === 'Running') {
-            <button
-              mat-icon-button
-              color="warn"
-              (click)="cancel()"
-              class="sm:hidden"
-              matTooltip="停止执行"
-            >
-              <mat-icon>stop_circle</mat-icon>
-            </button>
-            <button
-              mat-button
-              color="warn"
-              (click)="cancel()"
-              class="hidden sm:inline-flex !rounded-full font-bold"
-            >
-              <mat-icon>stop_circle</mat-icon>
-              停止执行
-            </button>
+            @if (isHandset()) {
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="cancel()"
+                matTooltip="停止执行"
+              >
+                <mat-icon>stop_circle</mat-icon>
+              </button>
+            } @else {
+              <button
+                mat-button
+                color="warn"
+                (click)="cancel()"
+                class="!rounded-full font-bold"
+              >
+                <mat-icon>stop_circle</mat-icon>
+                停止执行
+              </button>
+            }
           }
           <div class="w-px h-6 bg-outline-variant/30 mx-1 sm:mx-2"></div>
           <button mat-icon-button (click)="dialogRef.close()" matTooltip="关闭详情">
@@ -114,7 +117,7 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
               >流水线步骤</span
             >
             <span class="text-[9px] px-1.5 py-0.5 rounded bg-outline/10 text-outline font-mono">{{
-              stepsList().length + 1
+              stepsList().length + 2
             }}</span>
           </div>
 
@@ -122,16 +125,16 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
           <div
             class="flex-1 overflow-x-auto sm:overflow-y-auto px-2 sm:px-3 py-2 sm:pb-4 flex sm:flex-col gap-1 no-scrollbar"
           >
-            <!-- System Setup -->
+            <!-- Initialization -->
             <div
               (click)="onStepChange(0)"
               [class.active-step]="selectedStepIndex() === 0"
               class="step-nav-item group shrink-0 sm:shrink"
             >
-              <div class="status-indicator">
-                <mat-icon class="!w-4 !h-4 !text-[16px]">settings</mat-icon>
+              <div class="status-indicator" [style.color]="getStepStatusColor(0)">
+                <mat-icon class="!w-4 !h-4 !text-[16px]">{{ getStepStatusIcon(0) }}</mat-icon>
               </div>
-              <span class="text-[11px] sm:text-xs font-medium truncate flex-1">运行环境</span>
+              <span class="text-[11px] sm:text-xs font-medium truncate flex-1">任务初始化</span>
               <mat-icon class="chevron hidden sm:block opacity-0 group-hover:opacity-100"
                 >chevron_right</mat-icon
               >
@@ -157,10 +160,25 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
                 >
               </div>
             }
+
+            <!-- Finalization -->
+            <div
+              (click)="onStepChange(stepsList().length + 1)"
+              [class.active-step]="selectedStepIndex() === stepsList().length + 1"
+              class="step-nav-item group shrink-0 sm:shrink"
+            >
+              <div class="status-indicator" [style.color]="getStepStatusColor(stepsList().length + 1)">
+                <mat-icon class="!w-4 !h-4 !text-[16px]">{{ getStepStatusIcon(stepsList().length + 1) }}</mat-icon>
+              </div>
+              <span class="text-[11px] sm:text-xs font-medium truncate flex-1">清理与结束</span>
+              <mat-icon class="chevron hidden sm:block opacity-0 group-hover:opacity-100"
+                >chevron_right</mat-icon
+              >
+            </div>
           </div>
         </aside>
 
-        <!-- Main Content: Integrated Terminal -->
+        <!-- Main Content: Custom Terminal-like UI -->
         <main class="flex-1 flex flex-col bg-[#1e1e1e] relative min-w-0">
           <!-- Terminal Header (Minimal) -->
           <div
@@ -171,14 +189,36 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
               <span
                 class="text-[9px] font-bold font-mono text-white/40 uppercase tracking-widest truncate"
               >
-                {{ selectedStepIndex() === 0 ? 'Runner' : 'Step: ' + getStepName(selectedStepIndex()) }}
+                {{ getStepName(selectedStepIndex()) }}
               </span>
+            </div>
+            <div class="flex items-center gap-3">
+               <button 
+                 mat-icon-button 
+                 class="!w-6 !h-6 !text-white/30 hover:!text-white/60 transition-colors"
+                 (click)="autoScroll.set(!autoScroll())"
+                 [matTooltip]="autoScroll() ? '关闭自动滚动' : '开启自动滚动'"
+               >
+                 <mat-icon class="!text-[14px] !w-4 !h-4">{{ autoScroll() ? 'vertical_align_bottom' : 'vertical_align_top' }}</mat-icon>
+               </button>
             </div>
           </div>
 
-          <!-- Terminal View -->
-          <div class="flex-1 relative overflow-hidden bg-[#1e1e1e]">
-            <div #terminalContainer class="h-full w-full"></div>
+          <!-- Custom Log Viewer -->
+          <div 
+            #scrollContainer
+            class="flex-1 overflow-y-auto font-mono text-[13px] leading-relaxed p-4 selection:bg-primary/30 scroll-smooth"
+          >
+            @for (log of activeLogs(); track $index) {
+              <div class="flex gap-3 py-0.5 group hover:bg-white/5 rounded px-2 -mx-2 transition-colors">
+                <span class="text-white/20 select-none shrink-0 tabular-nums">[{{ log.timestamp | date: 'HH:mm:ss' }}]</span>
+                <span class="text-white/80 break-all whitespace-pre-wrap">{{ log.message }}</span>
+              </div>
+            } @empty {
+              <div class="h-full flex items-center justify-center text-white/10 select-none italic">
+                等待日志输出...
+              </div>
+            }
           </div>
 
           <!-- Error Alert -->
@@ -204,13 +244,6 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
         width: 100%;
         height: 100%;
         overflow: hidden;
-      }
-      :host ::ng-deep .xterm-viewport {
-        overflow-y: auto !important;
-        background-color: transparent !important;
-      }
-      :host ::ng-deep .xterm-screen {
-        padding: 16px;
       }
       .step-nav-item {
         display: flex;
@@ -263,12 +296,10 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
   ],
 })
 export class TaskDetailDialogComponent implements OnInit, OnDestroy {
-  @ViewChild('terminalContainer', { static: true }) terminalContainer!: ElementRef;
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef;
 
   private orchService = inject(OrchestrationService);
   private breakpointObserver = inject(BreakpointObserver);
-  private terminal?: Terminal;
-  private fitAddon = new FitAddon();
   private pollSubscription?: Subscription;
   private dialogData = inject(MAT_DIALOG_DATA);
 
@@ -278,66 +309,68 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   );
 
   instance = signal<ModelsTaskInstance>(this.dialogData.instance);
+  workflowName = signal<string>('');
   selectedStepIndex = signal<number>(0);
   stepsList = signal<{ id: string; name: string }[]>([]);
+  activeLogs = signal<ModelsLogEntry[]>([]);
+  autoScroll = signal(true);
+  now = signal(new Date());
 
   private currentOffset = 0;
   private autoStepFollow = true;
 
-  displayId = computed(() => {
-    const id = this.instance().id || '';
-    return id.split('_').pop() || id;
+  duration = computed(() => {
+    const start = new Date(this.instance().startedAt || new Date()).getTime();
+    const end = this.instance().finishedAt 
+      ? new Date(this.instance().finishedAt!).getTime() 
+      : this.now().getTime();
+    
+    const diff = Math.max(0, Math.floor((end - start) / 1000));
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    const s = diff % 60;
+
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
   });
 
-  constructor(public dialogRef: MatDialogRef<TaskDetailDialogComponent>) {}
+  constructor(public dialogRef: MatDialogRef<TaskDetailDialogComponent>) {
+    this.workflowName.set(this.instance().workflowId || 'Unknown Workflow');
+    // Effect to handle auto-scrolling when logs change
+    effect(() => {
+      if (this.activeLogs().length > 0 && this.autoScroll()) {
+        this.scrollToBottom();
+      }
+    });
+  }
 
   async ngOnInit() {
+    // Timer for real-time duration updates
+    const durationTimer = setInterval(() => {
+      this.now.set(new Date());
+    }, 1000);
+
     try {
       const workflows = await firstValueFrom(this.orchService.orchestrationWorkflowsGet());
       const wf = workflows.find((w) => w.id === this.instance().workflowId);
-      if (wf && wf.steps) {
-        this.stepsList.set(wf.steps.map((s) => ({ id: s.id || '', name: s.name || '' })));
+      if (wf) {
+        this.workflowName.set(wf.name || wf.id || '');
+        if (wf.steps) {
+          this.stepsList.set(wf.steps.map((s) => ({ id: s.id || '', name: s.name || '' })));
+        }
       }
     } catch (e) {}
-
-    this.terminal = new Terminal({
-      theme: {
-        background: '#1e1e1e',
-        foreground: '#d4d4d4',
-        cursor: '#aeafad',
-        selectionBackground: '#264f78',
-        black: '#000000',
-        red: '#f44747',
-        green: '#6a9955',
-        yellow: '#d7ba7d',
-        blue: '#569cd6',
-        magenta: '#c586c0',
-        cyan: '#9cdcfe',
-        white: '#d4d4d4',
-      },
-      convertEol: true,
-      disableStdin: true,
-      fontSize: 12,
-      fontFamily: "'JetBrains Mono', 'Roboto Mono', 'Menlo', 'Monaco', monospace",
-      lineHeight: 1.5,
-      letterSpacing: 0,
-    });
-    this.terminal.loadAddon(this.fitAddon);
-    this.terminal.open(this.terminalContainer.nativeElement);
-
-    setTimeout(() => this.fitAddon.fit(), 50);
-    window.addEventListener('resize', () => this.fitAddon.fit());
 
     // Initial full fetch for selected step
     this.refreshLogs(true);
 
     this.pollSubscription = interval(2000).subscribe(() => this.refresh());
+    this.pollSubscription.add(() => clearInterval(durationTimer));
   }
 
   ngOnDestroy() {
     this.pollSubscription?.unsubscribe();
-    this.terminal?.dispose();
-    window.removeEventListener('resize', () => this.fitAddon.fit());
   }
 
   async refresh() {
@@ -345,27 +378,18 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       const insts = await firstValueFrom(this.orchService.orchestrationInstancesGet());
       const updated = insts.find((i) => i.id === this.instance().id);
       if (updated) {
-        const oldStatus = this.instance().status;
         this.instance.set(updated);
         
-        // Auto follow step if running
-        if (this.autoStepFollow && updated.status === 'Running' && updated.logs && updated.logs.length > 0) {
-           const lastLog = updated.logs[updated.logs.length - 1];
-           // Find step index from step ID
-           const stepIdx = this.stepsList().findIndex(s => s.id === lastLog.stepId);
-           const newIdx = stepIdx === -1 ? 0 : stepIdx + 1;
+        // Auto follow step if running using the new backend field
+        if (this.autoStepFollow && updated.status === 'Running' && (updated as any).currentStep !== undefined) {
+           const newIdx = (updated as any).currentStep;
            if (newIdx !== this.selectedStepIndex()) {
              this.onStepChange(newIdx);
-             return; // onStepChange will handle log refresh
+             return;
            }
         }
 
         await this.refreshLogs();
-        
-        if (updated.status !== 'Running' && oldStatus === 'Running') {
-          // Task just finished, do one last refresh then stop polling if needed? 
-          // Actually we keep polling for some time or just let it be.
-        }
       }
     } catch (e) {}
   }
@@ -375,20 +399,24 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       this.autoStepFollow = false;
     }
     this.selectedStepIndex.set(index);
-    this.clearTerminal();
+    this.activeLogs.set([]);
     this.currentOffset = 0;
     this.refreshLogs(true);
-    setTimeout(() => this.fitAddon.fit(), 0);
   }
 
   getStepName(index: number): string {
-    if (index === 0) return 'Runner';
+    if (index === 0) return '任务初始化';
+    if (index === this.stepsList().length + 1) return '清理与结束';
     return this.stepsList()[index - 1]?.name || this.stepsList()[index - 1]?.id || 'Unknown';
   }
 
-  clearTerminal() {
-    this.terminal?.clear();
-    this.terminal?.write('\x1b[2J\x1b[H');
+  scrollToBottom() {
+    setTimeout(() => {
+      if (this.scrollContainer) {
+        const el = this.scrollContainer.nativeElement;
+        el.scrollTop = el.scrollHeight;
+      }
+    }, 0);
   }
 
   async refreshLogs(isInitial = false) {
@@ -405,25 +433,11 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       );
 
       if (res && res.logs) {
-        const logs: ModelsLogEntry[] = res.logs;
-        for (const log of logs) {
-          this.terminal?.writeln(`${log.message}`);
+        const newLogs: ModelsLogEntry[] = res.logs;
+        if (newLogs.length > 0) {
+          this.activeLogs.update(prev => [...prev, ...newLogs]);
+          this.currentOffset = res.nextOffset;
         }
-        this.currentOffset = res.nextOffset;
-        
-        if (logs.length > 0) {
-          this.terminal?.scrollToBottom();
-        }
-      } else if (Array.isArray(res) && isInitial) {
-        // Fallback for full logs if the API returned an array (e.g. if query params were ignored)
-        const allLogs: ModelsLogEntry[] = res;
-        const step = this.selectedStepIndex() === 0 ? '' : this.stepsList()[this.selectedStepIndex()-1].id;
-        for (const log of allLogs) {
-          if (log.stepId === step || (!log.stepId && step === '')) {
-             this.terminal?.writeln(`${log.message}`);
-          }
-        }
-        this.terminal?.scrollToBottom();
       }
     } catch (e) {
       console.error('Failed to fetch logs', e);
@@ -468,21 +482,19 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   getStepStatusIcon(index: number): string {
-    const logs = this.instance().logs || [];
-    const stepId = index === 0 ? '' : this.stepsList()[index-1].id;
-    const hasLogs = logs.some((l) => l.stepId === stepId);
-    if (!hasLogs) return 'radio_button_unchecked';
+    const status = this.instance().status;
+    const currentStep = (this.instance() as any).currentStep ?? -1;
 
-    if (this.instance().status === 'Success') return 'check_circle';
-    if (this.instance().status === 'Failed') {
-      const lastLog = logs[logs.length - 1];
-      if (lastLog.stepId === stepId) return 'error';
-      return 'check_circle';
+    if (status === 'Success') return 'check_circle';
+    if (status === 'Failed') {
+      if (index === currentStep) return 'error';
+      if (index < currentStep) return 'check_circle';
+      return 'radio_button_unchecked';
     }
-    if (this.instance().status === 'Running') {
-      const lastLog = logs[logs.length - 1];
-      if (lastLog.stepId === stepId) return 'pending';
-      return 'check_circle';
+    if (status === 'Running') {
+       if (index === currentStep) return 'pending';
+       if (index < currentStep) return 'check_circle';
+       return 'radio_button_unchecked';
     }
     return 'check_circle';
   }

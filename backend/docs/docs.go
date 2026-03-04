@@ -2415,6 +2415,10 @@ const docTemplate = `{
         "models.TaskInstance": {
             "type": "object",
             "properties": {
+                "currentStep": {
+                    "description": "当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)",
+                    "type": "integer"
+                },
                 "error": {
                     "type": "string"
                 },
