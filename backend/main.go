@@ -75,7 +75,6 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -92,11 +91,18 @@ func main() {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.Logger)
 		Router(r)
 	})
-	r.Get("/api/swagger/*", httpSwagger.WrapHandler)
+
+	r.Get("/api/swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/api/swagger/", http.StatusMovedPermanently)
+	})
+	r.Mount("/api/swagger", httpSwagger.Handler(
+		httpSwagger.URL("/api/swagger/doc.json"),
+	))
+
 	if debug {
-		log.Printf("Debug mode enabled, proxying frontend to http://127.0.0.1:4200")
 		target, _ := url.Parse("http://127.0.0.1:4200")
 		proxy := httputil.NewSingleHostReverseProxy(target)
 		r.NotFound(func(w http.ResponseWriter, r *http.Request) {

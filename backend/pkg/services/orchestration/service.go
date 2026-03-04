@@ -127,12 +127,21 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 	if old.CronEnabled != workflow.CronEnabled {
 		changes = append(changes, fmt.Sprintf("cronEnabled: %v -> %v", old.CronEnabled, workflow.CronEnabled))
 	}
+	if old.CronExpr != workflow.CronExpr {
+		changes = append(changes, fmt.Sprintf("cronExpr: %s -> %s", old.CronExpr, workflow.CronExpr))
+	}
+	if old.Description != workflow.Description {
+		changes = append(changes, "description changed")
+	}
 	if old.WebhookEnabled != workflow.WebhookEnabled {
 		changes = append(changes, fmt.Sprintf("webhookEnabled: %v -> %v", old.WebhookEnabled, workflow.WebhookEnabled))
 	}
-	// (Simplified check for vars change just to log it)
+	// (Simplified check for vars and steps change)
 	if len(old.Vars) != len(workflow.Vars) {
 		changes = append(changes, "vars defined changed")
+	}
+	if len(old.Steps) != len(workflow.Steps) {
+		changes = append(changes, "steps changed")
 	}
 
 	if workflow.WebhookEnabled && workflow.WebhookToken == "" {

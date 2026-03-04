@@ -25,7 +25,7 @@ type Workflow struct {
 	ID               string                   `json:"id"`
 	Name             string                   `json:"name"`
 	Description      string                   `json:"description"`
-	Enabled          bool                     `json:"enabled"`          // 是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)
+	Enabled          bool                     `json:"enabled"`          // 是否启用 (禁用时 Cron/Webhook/手动 均不可触发)
 	Timeout          int                      `json:"timeout"`          // 超时时间 (秒)，默认 7200 (2h)，0 为不超时
 	ServiceAccountID string                   `json:"serviceAccountId"` // 执行该工作流时使用的身份 (必填)
 	CronEnabled      bool                     `json:"cronEnabled"`      // 是否启用定时触发

@@ -180,7 +180,7 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "List all DNS domains",
+                "summary": "List all domains",
                 "parameters": [
                     {
                         "type": "integer",
@@ -240,7 +240,7 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "Create a DNS domain",
+                "summary": "Create a domain",
                 "parameters": [
                     {
                         "description": "Domain",
@@ -278,7 +278,7 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "Update a DNS domain",
+                "summary": "Update a domain",
                 "parameters": [
                     {
                         "type": "string",
@@ -318,7 +318,7 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "Delete a DNS domain",
+                "summary": "Delete a domain",
                 "parameters": [
                     {
                         "type": "string",
@@ -345,14 +345,14 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns all domains and their associated records without internal IDs. Requires a valid token but no specific permissions.",
+                "description": "Returns all enabled DNS domains and records in a structured format.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "dns"
                 ],
-                "summary": "Export all DNS domains and records",
+                "summary": "Export all DNS configurations",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -376,11 +376,11 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "List all DNS records",
+                "summary": "List all records",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Domain ID filter",
+                        "description": "Filter by domain ID",
                         "name": "domainId",
                         "in": "query"
                     },
@@ -442,7 +442,7 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "Create a DNS record",
+                "summary": "Create a record",
                 "parameters": [
                     {
                         "description": "Record",
@@ -480,7 +480,7 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "Update a DNS record",
+                "summary": "Update a record",
                 "parameters": [
                     {
                         "type": "string",
@@ -520,7 +520,7 @@ const docTemplate = `{
                 "tags": [
                     "dns"
                 ],
-                "summary": "Delete a DNS record",
+                "summary": "Delete a record",
                 "parameters": [
                     {
                         "type": "string",
@@ -2364,6 +2364,10 @@ const docTemplate = `{
                     "description": "Pending, Running, Success, Failed, Cancelled",
                     "type": "string"
                 },
+                "trigger": {
+                    "description": "Manual, Cron, Webhook",
+                    "type": "string"
+                },
                 "userId": {
                     "description": "触发者 ID",
                     "type": "string"
@@ -2411,7 +2415,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "enabled": {
-                    "description": "是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)",
+                    "description": "是否启用 (禁用时 Cron/Webhook/手动 均不可触发)",
                     "type": "boolean"
                 },
                 "id": {

@@ -38,7 +38,7 @@ func (m *TriggerManager) InitTriggers(ctx context.Context) error {
 
 	count := 0
 	for _, wf := range workflows {
-		if wf.CronEnabled && wf.CronExpr != "" {
+		if wf.Enabled && wf.CronEnabled && wf.CronExpr != "" {
 			m.addCronJob(wf)
 			count++
 		}
@@ -58,7 +58,7 @@ func (m *TriggerManager) UpdateTriggers(wf models.Workflow) {
 	}
 
 	// Add new if enabled
-	if wf.CronEnabled && wf.CronExpr != "" {
+	if wf.Enabled && wf.CronEnabled && wf.CronExpr != "" {
 		m.addCronJob(wf)
 	}
 }
