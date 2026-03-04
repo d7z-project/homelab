@@ -11,6 +11,7 @@ import {
 } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { ModelsRole, ModelsPolicyRule, RbacService } from '../../generated';
 import { firstValueFrom } from 'rxjs';
@@ -30,6 +31,7 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
     MatAutocompleteModule,
     MatChipsModule,
     MatDividerModule,
+    MatTooltipModule,
     FormsModule,
     DiscoverySuggestInputComponent,
   ],
@@ -50,10 +52,12 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
           </mat-form-field>
         } @else {
           <div
-            class="flex items-center px-4 py-3 bg-surface-container rounded-2xl border border-outline-variant/30 mb-4"
+            class="flex items-center px-4 bg-surface-container rounded-2xl border border-outline-variant/30 h-[56px]"
           >
             <mat-icon class="mr-3 text-outline">info</mat-icon>
-            <span class="text-xs text-outline">角色 ID 将在创建时由系统自动生成 (UUID)</span>
+            <span class="text-[11px] leading-tight text-outline"
+              >角色 ID 将在创建时由系统自动生成 (UUID)</span
+            >
           </div>
         }
 
@@ -87,7 +91,7 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
         </div>
 
         <div class="space-y-4">
-          @for (rule of role.rules; track i; let i = $index) {
+          @for (rule of role.rules; track $index; let i = $index) {
             <div
               class="group relative border border-outline-variant/50 p-4 pt-6 rounded-[24px] bg-surface-container-lowest transition-all hover:border-primary/30 animate-in zoom-in-95 duration-200"
             >
@@ -96,35 +100,33 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                 <button
                   mat-icon-button
                   color="warn"
-                  class="absolute top-1 right-1 !w-8 !h-8 scale-75 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="absolute top-1 right-1 !w-8 !h-8 scale-75 sm:opacity-0 group-hover:opacity-100 transition-opacity icon-button-center"
                   (click)="removeRule(i)"
                   matTooltip="删除此规则"
                 >
-                  <mat-icon class="!text-[18px]">delete_outline</mat-icon>
+                  <mat-icon class="!text-[20px]">delete_outline</mat-icon>
                 </button>
               }
 
-              <div class="space-y-4">
+              <div class="flex flex-col gap-2">
                 <!-- Resource Input with Suggestions -->
                 <app-discovery-suggest-input
                   label="资源路径 (Resource)"
-                  placeholder="例如: dns/* 或 dns/example.com"
+                  placeholder="例如: rbac/*, dns/example.com, audit/logs"
                   [(ngModel)]="rule.resource"
                   [staticSuggestions]="resourceSuggestions()"
-                  lookupCode="dns/domains"
-                  lookupLabel="域名参考 (ID)"
+                  staticSuggestionsLabel="资源路径推导"
                   (ngModelChange)="onResourceInput(rule)"
-                  subscriptSizing="dynamic"
                 ></app-discovery-suggest-input>
 
                 <!-- Verbs Selection -->
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-form-field appearance="outline" class="w-full">
                   <mat-label>允许操作 (Verbs)</mat-label>
-                  <mat-chip-grid #chipGridVerb class="!min-h-0">
+                  <mat-chip-grid #chipGridVerb>
                     @for (v of rule.verbs; track v) {
                       <mat-chip-row
                         (removed)="removeVerb(rule, v)"
-                        class="!bg-secondary-container !text-on-secondary-container !text-[10px] !min-h-[24px]"
+                        class="!bg-secondary-container !text-on-secondary-container"
                       >
                         {{ v }}
                         <button matChipRemove><mat-icon>cancel</mat-icon></button>
@@ -132,11 +134,11 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                     }
                     <input
                       placeholder="添加..."
+                      matInput
                       [matAutocomplete]="autoVerb"
                       [matChipInputFor]="chipGridVerb"
                       #verbInputEl
                       (focus)="onVerbInputFocus(rule)"
-                      class="!text-sm"
                     />
                   </mat-chip-grid>
                   <mat-autocomplete

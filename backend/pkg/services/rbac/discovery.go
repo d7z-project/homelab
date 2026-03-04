@@ -35,6 +35,7 @@ func init() {
 		for _, s := range subs {
 			if strings.HasPrefix(s, prefix) {
 				res = append(res, s)
+				res = append(res, s+"/*")
 			}
 		}
 		return res, nil
@@ -46,6 +47,7 @@ func init() {
 		for _, s := range subs {
 			if strings.HasPrefix(s, prefix) {
 				res = append(res, s)
+				res = append(res, s+"/*")
 			}
 		}
 		return res, nil
@@ -53,7 +55,8 @@ func init() {
 
 	RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]string, error) {
 		// prefix is everything after "dns/"
-		parts := strings.Split(prefix, "/")
+		prefixLower := strings.ToLower(prefix)
+		parts := strings.Split(prefixLower, "/")
 
 		// Get all domains to match against the first part
 		domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
@@ -63,8 +66,9 @@ func init() {
 
 		var res []string
 		for _, d := range domains {
+			domainNameLower := strings.ToLower(d.Name)
 			// Check if domain matches parts[0]
-			if !strings.HasPrefix(d.Name, parts[0]) {
+			if !strings.HasPrefix(domainNameLower, parts[0]) {
 				continue
 			}
 
@@ -75,7 +79,7 @@ func init() {
 				res = append(res, d.Name+"/**")
 			} else {
 				// Level 2 & 3: We have a full domain match, suggest records
-				if d.Name != parts[0] {
+				if domainNameLower != parts[0] {
 					continue
 				}
 
@@ -85,8 +89,9 @@ func init() {
 				}
 
 				for _, r := range records {
+					recordNameLower := strings.ToLower(r.Name)
 					// Check if record host matches parts[1]
-					if !strings.HasPrefix(r.Name, parts[1]) {
+					if !strings.HasPrefix(recordNameLower, parts[1]) {
 						continue
 					}
 
@@ -94,9 +99,11 @@ func init() {
 						// Level 2: Suggest hostnames
 						res = append(res, d.Name+"/"+r.Name)
 						res = append(res, d.Name+"/"+r.Name+"/*")
+						// Also suggest full path with type as it's common in rbac checks
+						res = append(res, d.Name+"/"+r.Name+"/"+r.Type)
 					} else {
 						// Level 3: Suggest types
-						if r.Name == parts[1] && strings.HasPrefix(r.Type, parts[2]) {
+						if recordNameLower == parts[1] && strings.HasPrefix(strings.ToLower(r.Type), parts[2]) {
 							res = append(res, d.Name+"/"+r.Name+"/"+r.Type)
 						}
 					}
@@ -108,21 +115,31 @@ func init() {
 	}, standardVerbs)
 
 	RegisterResourceWithVerbs("orchestration", func(ctx context.Context, prefix string) ([]string, error) {
-		// Suggest static sub-resources
+		// prefix is everything after "orchestration/"
 		subs := []string{"workflows", "instances", "manifests", "probe"}
 		var res []string
 		for _, s := range subs {
 			if strings.HasPrefix(s, prefix) {
 				res = append(res, s)
+				res = append(res, s+"/*")
 			}
 		}
 
-		// Suggest specific workflows
-		workflows, err := orchrepo.ListWorkflows(ctx)
-		if err == nil {
-			for _, wf := range workflows {
-				if strings.HasPrefix(wf.ID, prefix) {
-					res = append(res, wf.ID)
+		// If prefix starts with a sub-resource, suggest IDs
+		for _, s := range []string{"workflows", "instances"} {
+			if strings.HasPrefix(prefix, s+"/") {
+				idPrefix := strings.TrimPrefix(prefix, s+"/")
+				if s == "workflows" {
+					workflows, err := orchrepo.ListWorkflows(ctx)
+					if err == nil {
+						for _, wf := range workflows {
+							if strings.HasPrefix(wf.ID, idPrefix) {
+								res = append(res, "workflows/"+wf.ID)
+							}
+						}
+					}
+				} else {
+					res = append(res, "instances/*")
 				}
 			}
 		}
@@ -153,10 +170,11 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 
 	var suggestions []string
 	seen := make(map[string]struct{})
+	prefixLower := strings.ToLower(prefix)
 
 	if !strings.Contains(prefix, "/") {
 		for name := range discoveredResources {
-			if strings.HasPrefix(name, prefix) {
+			if strings.HasPrefix(name, prefixLower) {
 				suggestions = append(suggestions, name)
 				seen[name] = struct{}{}
 			}
@@ -165,7 +183,7 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 		return suggestions, nil
 	}
 
-	parts := strings.SplitN(prefix, "/", 2)
+	parts := strings.SplitN(prefixLower, "/", 2)
 	baseRes := parts[0]
 	remaining := parts[1]
 
@@ -209,7 +227,7 @@ func SuggestVerbs(ctx context.Context, resourcePrefix string) ([]string, error) 
 	}
 
 	// Split to get the root resource name
-	baseRes := strings.Split(resourcePrefix, "/")[0]
+	baseRes := strings.ToLower(strings.Split(resourcePrefix, "/")[0])
 	if info, ok := discoveredResources[baseRes]; ok {
 		// Only if we recognize the root resource do we suggest its specific verbs
 		return info.verbs, nil

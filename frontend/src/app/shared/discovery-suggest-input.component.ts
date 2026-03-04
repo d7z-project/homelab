@@ -61,7 +61,7 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
       <mat-autocomplete #auto="matAutocomplete">
         <!-- Variable/Ref Suggestions (Priority) -->
         @if (staticSuggestions.length > 0) {
-          <mat-optgroup label="变量引用">
+          <mat-optgroup [label]="staticSuggestionsLabel">
             @for (ref of staticSuggestions; track ref) {
               <mat-option [value]="ref">
                 <div class="flex items-center gap-2">
@@ -123,6 +123,7 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
   @Input() appearance: 'fill' | 'outline' = 'outline';
   @Input() subscriptSizing: 'fixed' | 'dynamic' = 'fixed';
   @Input() staticSuggestions: string[] = [];
+  @Input() staticSuggestionsLabel = '变量引用';
 
   control = new FormControl('');
   items = signal<ModelsLookupItem[]>([]);

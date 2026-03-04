@@ -26,12 +26,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         </span>
         <button
           mat-icon-button
+          icon-button-center
           (click)="refresh.emit()"
           [disabled]="loading()"
           matTooltip="刷新列表"
           class="!w-8 !h-8"
         >
-          <mat-icon class="!text-[16px]">refresh</mat-icon>
+          <mat-icon class="!text-[20px]">refresh</mat-icon>
         </button>
         <ng-content select="[chips]"></ng-content>
       </div>
