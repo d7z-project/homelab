@@ -10,11 +10,4 @@ export * from './orchestration.service';
 import { OrchestrationService } from './orchestration.service';
 export * from './rbac.service';
 import { RbacService } from './rbac.service';
-export const APIS = [
-  AuditService,
-  AuthService,
-  DiscoveryService,
-  DnsService,
-  OrchestrationService,
-  RbacService,
-];
+export const APIS = [AuditService, AuthService, DiscoveryService, DnsService, OrchestrationService, RbacService];

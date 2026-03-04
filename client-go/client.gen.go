@@ -174,10 +174,29 @@ type ModelsLoginResponse struct {
 	SessionId *string `json:"session_id,omitempty"`
 }
 
+// ModelsLookupItem defines model for models.LookupItem.
+type ModelsLookupItem struct {
+	Description *string `json:"description,omitempty"`
+
+	// Icon Optional icon name for M3
+	Icon *string `json:"icon,omitempty"`
+	Id   *string `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
+}
+
+// ModelsLookupResponse defines model for models.LookupResponse.
+type ModelsLookupResponse struct {
+	Items *[]ModelsLookupItem `json:"items,omitempty"`
+	Total *int                `json:"total,omitempty"`
+}
+
 // ModelsParamDefinition defines model for models.ParamDefinition.
 type ModelsParamDefinition struct {
 	Description *string `json:"description,omitempty"`
-	Name        *string `json:"name,omitempty"`
+
+	// LookupCode 服务发现代号 (可选)
+	LookupCode *string `json:"lookupCode,omitempty"`
+	Name       *string `json:"name,omitempty"`
 
 	// Optional 是否为可选参数
 	Optional *bool `json:"optional,omitempty"`
@@ -234,9 +253,10 @@ type ModelsResourcePermissions struct {
 
 // ModelsRole defines model for models.Role.
 type ModelsRole struct {
-	Id    *string             `json:"id,omitempty"`
-	Name  *string             `json:"name,omitempty"`
-	Rules *[]ModelsPolicyRule `json:"rules,omitempty"`
+	Comments *string             `json:"comments,omitempty"`
+	Id       *string             `json:"id,omitempty"`
+	Name     *string             `json:"name,omitempty"`
+	Rules    *[]ModelsPolicyRule `json:"rules,omitempty"`
 }
 
 // ModelsRoleBinding defines model for models.RoleBinding.
@@ -315,6 +335,12 @@ type ModelsStepManifest struct {
 	Params *[]ModelsParamDefinition `json:"params,omitempty"`
 }
 
+// ModelsStepTiming defines model for models.StepTiming.
+type ModelsStepTiming struct {
+	FinishedAt *string `json:"finishedAt,omitempty"`
+	StartedAt  *string `json:"startedAt,omitempty"`
+}
+
 // ModelsTaskInstance defines model for models.TaskInstance.
 type ModelsTaskInstance struct {
 	// CurrentStep 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
@@ -335,6 +361,9 @@ type ModelsTaskInstance struct {
 
 	// Status Pending, Running, Success, Failed, Cancelled
 	Status *string `json:"status,omitempty"`
+
+	// StepTimings 步骤执行耗时追踪
+	StepTimings *map[string]ModelsStepTiming `json:"stepTimings,omitempty"`
 
 	// Trigger Manual, Cron, Webhook
 	Trigger *string `json:"trigger,omitempty"`
@@ -421,6 +450,21 @@ type PostAuditLogsCleanupParams struct {
 	Days int `form:"days" json:"days"`
 }
 
+// GetDiscoveryLookupParams defines parameters for GetDiscoveryLookup.
+type GetDiscoveryLookupParams struct {
+	// Code Discovery code
+	Code string `form:"code" json:"code"`
+
+	// Search Search string
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// Offset Offset
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Limit Limit
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // GetDnsDomainsParams defines parameters for GetDnsDomains.
 type GetDnsDomainsParams struct {
 	// Page Page number
@@ -461,6 +505,12 @@ type GetOrchestrationInstancesIdLogsParams struct {
 
 	// Offset Line offset to start reading from
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// PostOrchestrationValidateRegexParams defines parameters for PostOrchestrationValidateRegex.
+type PostOrchestrationValidateRegexParams struct {
+	// Regex Regex to validate
+	Regex string `form:"regex" json:"regex"`
 }
 
 // GetRbacResourcesSuggestParams defines parameters for GetRbacResourcesSuggest.
@@ -647,6 +697,12 @@ type ClientInterface interface {
 	// DeleteAuthSessionsId request
 	DeleteAuthSessionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetDiscoveryCodes request
+	GetDiscoveryCodes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetDiscoveryLookup request
+	GetDiscoveryLookup(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetDnsDomains request
 	GetDnsDomains(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -715,6 +771,9 @@ type ClientInterface interface {
 	PostOrchestrationProbeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PostOrchestrationProbe(ctx context.Context, body PostOrchestrationProbeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostOrchestrationValidateRegex request
+	PostOrchestrationValidateRegex(ctx context.Context, params *PostOrchestrationValidateRegexParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetOrchestrationWebhooksToken request
 	GetOrchestrationWebhooksToken(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -852,6 +911,30 @@ func (c *Client) GetAuthSessions(ctx context.Context, reqEditors ...RequestEdito
 
 func (c *Client) DeleteAuthSessionsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteAuthSessionsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetDiscoveryCodes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDiscoveryCodesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetDiscoveryLookup(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDiscoveryLookupRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1152,6 +1235,18 @@ func (c *Client) PostOrchestrationProbeWithBody(ctx context.Context, contentType
 
 func (c *Client) PostOrchestrationProbe(ctx context.Context, body PostOrchestrationProbeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostOrchestrationProbeRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostOrchestrationValidateRegex(ctx context.Context, params *PostOrchestrationValidateRegexParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostOrchestrationValidateRegexRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1774,6 +1869,126 @@ func NewDeleteAuthSessionsIdRequest(server string, id string) (*http.Request, er
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetDiscoveryCodesRequest generates requests for GetDiscoveryCodes
+func NewGetDiscoveryCodesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/discovery/codes")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetDiscoveryLookupRequest generates requests for GetDiscoveryLookup
+func NewGetDiscoveryLookupRequest(server string, params *GetDiscoveryLookupParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/discovery/lookup")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "code", params.Code, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if params.Search != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "offset", *params.Offset, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -2597,6 +2812,51 @@ func NewPostOrchestrationProbeRequestWithBody(server string, contentType string,
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostOrchestrationValidateRegexRequest generates requests for PostOrchestrationValidateRegex
+func NewPostOrchestrationValidateRegexRequest(server string, params *PostOrchestrationValidateRegexParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orchestration/validate/regex")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "regex", params.Regex, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -3771,6 +4031,12 @@ type ClientWithResponsesInterface interface {
 	// DeleteAuthSessionsIdWithResponse request
 	DeleteAuthSessionsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteAuthSessionsIdResponse, error)
 
+	// GetDiscoveryCodesWithResponse request
+	GetDiscoveryCodesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDiscoveryCodesResponse, error)
+
+	// GetDiscoveryLookupWithResponse request
+	GetDiscoveryLookupWithResponse(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*GetDiscoveryLookupResponse, error)
+
 	// GetDnsDomainsWithResponse request
 	GetDnsDomainsWithResponse(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetDnsDomainsResponse, error)
 
@@ -3839,6 +4105,9 @@ type ClientWithResponsesInterface interface {
 	PostOrchestrationProbeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostOrchestrationProbeResponse, error)
 
 	PostOrchestrationProbeWithResponse(ctx context.Context, body PostOrchestrationProbeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostOrchestrationProbeResponse, error)
+
+	// PostOrchestrationValidateRegexWithResponse request
+	PostOrchestrationValidateRegexWithResponse(ctx context.Context, params *PostOrchestrationValidateRegexParams, reqEditors ...RequestEditorFn) (*PostOrchestrationValidateRegexResponse, error)
 
 	// GetOrchestrationWebhooksTokenWithResponse request
 	GetOrchestrationWebhooksTokenWithResponse(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*GetOrchestrationWebhooksTokenResponse, error)
@@ -4020,6 +4289,50 @@ func (r DeleteAuthSessionsIdResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteAuthSessionsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetDiscoveryCodesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDiscoveryCodesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDiscoveryCodesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetDiscoveryLookupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsLookupResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDiscoveryLookupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDiscoveryLookupResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4439,6 +4752,27 @@ func (r PostOrchestrationProbeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostOrchestrationProbeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostOrchestrationValidateRegexResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r PostOrchestrationValidateRegexResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostOrchestrationValidateRegexResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5050,6 +5384,24 @@ func (c *ClientWithResponses) DeleteAuthSessionsIdWithResponse(ctx context.Conte
 	return ParseDeleteAuthSessionsIdResponse(rsp)
 }
 
+// GetDiscoveryCodesWithResponse request returning *GetDiscoveryCodesResponse
+func (c *ClientWithResponses) GetDiscoveryCodesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDiscoveryCodesResponse, error) {
+	rsp, err := c.GetDiscoveryCodes(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDiscoveryCodesResponse(rsp)
+}
+
+// GetDiscoveryLookupWithResponse request returning *GetDiscoveryLookupResponse
+func (c *ClientWithResponses) GetDiscoveryLookupWithResponse(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*GetDiscoveryLookupResponse, error) {
+	rsp, err := c.GetDiscoveryLookup(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDiscoveryLookupResponse(rsp)
+}
+
 // GetDnsDomainsWithResponse request returning *GetDnsDomainsResponse
 func (c *ClientWithResponses) GetDnsDomainsWithResponse(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetDnsDomainsResponse, error) {
 	rsp, err := c.GetDnsDomains(ctx, params, reqEditors...)
@@ -5267,6 +5619,15 @@ func (c *ClientWithResponses) PostOrchestrationProbeWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParsePostOrchestrationProbeResponse(rsp)
+}
+
+// PostOrchestrationValidateRegexWithResponse request returning *PostOrchestrationValidateRegexResponse
+func (c *ClientWithResponses) PostOrchestrationValidateRegexWithResponse(ctx context.Context, params *PostOrchestrationValidateRegexParams, reqEditors ...RequestEditorFn) (*PostOrchestrationValidateRegexResponse, error) {
+	rsp, err := c.PostOrchestrationValidateRegex(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostOrchestrationValidateRegexResponse(rsp)
 }
 
 // GetOrchestrationWebhooksTokenWithResponse request returning *GetOrchestrationWebhooksTokenResponse
@@ -5676,6 +6037,58 @@ func ParseDeleteAuthSessionsIdResponse(rsp *http.Response) (*DeleteAuthSessionsI
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetDiscoveryCodesResponse parses an HTTP response from a GetDiscoveryCodesWithResponse call
+func ParseGetDiscoveryCodesResponse(rsp *http.Response) (*GetDiscoveryCodesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDiscoveryCodesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetDiscoveryLookupResponse parses an HTTP response from a GetDiscoveryLookupWithResponse call
+func ParseGetDiscoveryLookupResponse(rsp *http.Response) (*GetDiscoveryLookupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDiscoveryLookupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsLookupResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -6176,6 +6589,22 @@ func ParsePostOrchestrationProbeResponse(rsp *http.Response) (*PostOrchestration
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParsePostOrchestrationValidateRegexResponse parses an HTTP response from a PostOrchestrationValidateRegexWithResponse call
+func ParsePostOrchestrationValidateRegexResponse(rsp *http.Response) (*PostOrchestrationValidateRegexResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostOrchestrationValidateRegexResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
@@ -6978,6 +7407,12 @@ type ServerInterface interface {
 	// Revoke a session
 	// (DELETE /auth/sessions/{id})
 	DeleteAuthSessionsId(w http.ResponseWriter, r *http.Request, id string)
+	// List discovery codes
+	// (GET /discovery/codes)
+	GetDiscoveryCodes(w http.ResponseWriter, r *http.Request)
+	// Discovery lookup
+	// (GET /discovery/lookup)
+	GetDiscoveryLookup(w http.ResponseWriter, r *http.Request, params GetDiscoveryLookupParams)
 	// List all domains
 	// (GET /dns/domains)
 	GetDnsDomains(w http.ResponseWriter, r *http.Request, params GetDnsDomainsParams)
@@ -7035,6 +7470,9 @@ type ServerInterface interface {
 	// Test a single processor
 	// (POST /orchestration/probe)
 	PostOrchestrationProbe(w http.ResponseWriter, r *http.Request)
+	// Validate a regular expression
+	// (POST /orchestration/validate/regex)
+	PostOrchestrationValidateRegex(w http.ResponseWriter, r *http.Request, params PostOrchestrationValidateRegexParams)
 	// Trigger a workflow via webhook
 	// (GET /orchestration/webhooks/{token})
 	GetOrchestrationWebhooksToken(w http.ResponseWriter, r *http.Request, token string)
@@ -7252,6 +7690,90 @@ func (siw *ServerInterfaceWrapper) DeleteAuthSessionsId(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteAuthSessionsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDiscoveryCodes operation middleware
+func (siw *ServerInterfaceWrapper) GetDiscoveryCodes(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDiscoveryCodes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDiscoveryLookup operation middleware
+func (siw *ServerInterfaceWrapper) GetDiscoveryLookup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDiscoveryLookupParams
+
+	// ------------- Required query parameter "code" -------------
+
+	if paramValue := r.URL.Query().Get("code"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "code"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "code", r.URL.Query(), &params.Code, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDiscoveryLookup(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7802,6 +8324,46 @@ func (siw *ServerInterfaceWrapper) PostOrchestrationProbe(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostOrchestrationProbe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostOrchestrationValidateRegex operation middleware
+func (siw *ServerInterfaceWrapper) PostOrchestrationValidateRegex(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostOrchestrationValidateRegexParams
+
+	// ------------- Required query parameter "regex" -------------
+
+	if paramValue := r.URL.Query().Get("regex"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "regex"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "regex", r.URL.Query(), &params.Regex, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "regex", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostOrchestrationValidateRegex(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -8679,6 +9241,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/audit/logs/cleanup", wrapper.PostAuditLogsCleanup)
 	m.HandleFunc("GET "+options.BaseURL+"/auth/sessions", wrapper.GetAuthSessions)
 	m.HandleFunc("DELETE "+options.BaseURL+"/auth/sessions/{id}", wrapper.DeleteAuthSessionsId)
+	m.HandleFunc("GET "+options.BaseURL+"/discovery/codes", wrapper.GetDiscoveryCodes)
+	m.HandleFunc("GET "+options.BaseURL+"/discovery/lookup", wrapper.GetDiscoveryLookup)
 	m.HandleFunc("GET "+options.BaseURL+"/dns/domains", wrapper.GetDnsDomains)
 	m.HandleFunc("POST "+options.BaseURL+"/dns/domains", wrapper.PostDnsDomains)
 	m.HandleFunc("DELETE "+options.BaseURL+"/dns/domains/{id}", wrapper.DeleteDnsDomainsId)
@@ -8698,6 +9262,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/orchestration/instances/{id}/logs", wrapper.GetOrchestrationInstancesIdLogs)
 	m.HandleFunc("GET "+options.BaseURL+"/orchestration/manifests", wrapper.GetOrchestrationManifests)
 	m.HandleFunc("POST "+options.BaseURL+"/orchestration/probe", wrapper.PostOrchestrationProbe)
+	m.HandleFunc("POST "+options.BaseURL+"/orchestration/validate/regex", wrapper.PostOrchestrationValidateRegex)
 	m.HandleFunc("GET "+options.BaseURL+"/orchestration/webhooks/{token}", wrapper.GetOrchestrationWebhooksToken)
 	m.HandleFunc("POST "+options.BaseURL+"/orchestration/webhooks/{token}", wrapper.PostOrchestrationWebhooksToken)
 	m.HandleFunc("GET "+options.BaseURL+"/orchestration/workflows", wrapper.GetOrchestrationWorkflows)

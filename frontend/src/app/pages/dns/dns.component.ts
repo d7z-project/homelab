@@ -28,7 +28,6 @@ import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateDomainDialogComponent } from './create-domain-dialog.component';
 import { CreateRecordDialogComponent } from './create-record-dialog.component';
 import { PageHeaderComponent } from '../../shared/page-header.component';
-import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
 import { DiscoveryDialogComponent } from '../../shared/discovery-dialog.component';
 
 @Component({
@@ -53,8 +52,6 @@ import { DiscoveryDialogComponent } from '../../shared/discovery-dialog.componen
     MatSlideToggleModule,
     FormsModule,
     PageHeaderComponent,
-    DiscoverySelectComponent,
-    DiscoveryDialogComponent,
   ],
   templateUrl: './dns.component.html',
 })

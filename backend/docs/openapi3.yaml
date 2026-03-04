@@ -95,6 +95,60 @@ paths:
       summary: Revoke a session
       tags:
       - auth
+  /discovery/codes:
+    get:
+      description: Returns all registered discovery codes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List discovery codes
+      tags:
+      - discovery
+  /discovery/lookup:
+    get:
+      description: Search for items in a specific discovery code (e.g. dns/domains)
+      parameters:
+      - description: Discovery code
+        in: query
+        name: code
+        required: true
+        schema:
+          type: string
+      - description: Search string
+        in: query
+        name: search
+        schema:
+          type: string
+      - description: Offset
+        in: query
+        name: offset
+        schema:
+          type: integer
+      - description: Limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.LookupResponse"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Discovery lookup
+      tags:
+      - discovery
   /dns/domains:
     get:
       parameters:
@@ -556,6 +610,34 @@ paths:
       tags:
       - orchestration
       x-codegen-request-body-name: req
+  /orchestration/validate/regex:
+    post:
+      description: Checks if a regex string is syntactically correct for Go.
+      parameters:
+      - description: Regex to validate
+        in: query
+        name: regex
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: success
+        "400":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Invalid Regex
+      security:
+      - ApiKeyAuth: []
+      summary: Validate a regular expression
+      tags:
+      - orchestration
   /orchestration/webhooks/{token}:
     get:
       description: Asynchronously triggers a workflow using its unique security token.
@@ -1442,8 +1524,46 @@ components:
         session_id:
           type: string
       type: object
+    models.LookupItem:
+      example:
+        icon: icon
+        name: name
+        description: description
+        id: id
+      properties:
+        description:
+          type: string
+        icon:
+          description: Optional icon name for M3
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    models.LookupResponse:
+      example:
+        total: 0
+        items:
+        - icon: icon
+          name: name
+          description: description
+          id: id
+        - icon: icon
+          name: name
+          description: description
+          id: id
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/models.LookupItem"
+          type: array
+        total:
+          type: integer
+      type: object
     models.ParamDefinition:
       example:
+        lookupCode: lookupCode
         name: name
         description: description
         optional: true
@@ -1451,6 +1571,9 @@ components:
         regexFrontend: regexFrontend
       properties:
         description:
+          type: string
+        lookupCode:
+          description: 服务发现代号 (可选)
           type: string
         name:
           type: string
@@ -1539,6 +1662,7 @@ components:
       type: object
     models.Role:
       example:
+        comments: comments
         name: name
         rules:
         - resource: resource
@@ -1551,6 +1675,8 @@ components:
           - verbs
         id: id
       properties:
+        comments:
+          type: string
         id:
           type: string
         name:
@@ -1670,12 +1796,14 @@ components:
     models.StepManifest:
       example:
         outputParams:
-        - name: name
+        - lookupCode: lookupCode
+          name: name
           description: description
           optional: true
           regexBackend: regexBackend
           regexFrontend: regexFrontend
-        - name: name
+        - lookupCode: lookupCode
+          name: name
           description: description
           optional: true
           regexBackend: regexBackend
@@ -1684,12 +1812,14 @@ components:
         description: description
         id: id
         params:
-        - name: name
+        - lookupCode: lookupCode
+          name: name
           description: description
           optional: true
           regexBackend: regexBackend
           regexFrontend: regexFrontend
-        - name: name
+        - lookupCode: lookupCode
+          name: name
           description: description
           optional: true
           regexBackend: regexBackend
@@ -1715,6 +1845,16 @@ components:
             $ref: "#/components/schemas/models.ParamDefinition"
           type: array
       type: object
+    models.StepTiming:
+      example:
+        startedAt: startedAt
+        finishedAt: finishedAt
+      properties:
+        finishedAt:
+          type: string
+        startedAt:
+          type: string
+      type: object
     models.TaskInstance:
       example:
         outputs:
@@ -1725,6 +1865,10 @@ components:
         startedAt: startedAt
         trigger: trigger
         error: error
+        stepTimings:
+          key:
+            startedAt: startedAt
+            finishedAt: finishedAt
         userId: userId
         finishedAt: finishedAt
         currentStep: 0
@@ -1768,6 +1912,11 @@ components:
         status:
           description: "Pending, Running, Success, Failed, Cancelled"
           type: string
+        stepTimings:
+          additionalProperties:
+            $ref: "#/components/schemas/models.StepTiming"
+          description: 步骤执行耗时追踪
+          type: object
         trigger:
           description: "Manual, Cron, Webhook"
           type: string
@@ -2022,7 +2171,8 @@ components:
         pageSize: 6
         page: 0
         items:
-        - name: name
+        - comments: comments
+          name: name
           rules:
           - resource: resource
             verbs:
@@ -2033,7 +2183,8 @@ components:
             - verbs
             - verbs
           id: id
-        - name: name
+        - comments: comments
+          name: name
           rules:
           - resource: resource
             verbs:
