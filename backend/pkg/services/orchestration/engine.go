@@ -3,16 +3,42 @@ package orchestration
 import (
 	"context"
 	"fmt"
+	"homelab/pkg/common"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/orchestration"
-	"os"
 	"regexp"
 	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/expr-lang/expr"
+	"github.com/spf13/afero"
+	)
+
+const (
+	OrchSubDir     = "orch"
+	ProbeSubDir    = "probe"
+	LogSubDir      = "logs"
+	TaskPrefix     = "task_"
+	DefaultTimeout = 7200 * time.Second
 )
+
+var (
+	orchFS  afero.Fs
+	probeFS afero.Fs
+	logFS   afero.Fs
+)
+
+// Init initializes the module-scoped virtual filesystems.
+// Must be called after common.TempDir is initialized.
+func Init() {
+	_ = common.TempDir.MkdirAll(OrchSubDir, 0755)
+	_ = common.TempDir.MkdirAll(ProbeSubDir, 0755)
+	_ = common.TempDir.MkdirAll(LogSubDir, 0755)
+	orchFS = afero.NewBasePathFs(common.TempDir, OrchSubDir)
+	probeFS = afero.NewBasePathFs(common.TempDir, ProbeSubDir)
+	logFS = afero.NewBasePathFs(common.TempDir, LogSubDir)
+}
 
 var paramRegex = regexp.MustCompile(`\$\{\{\s*(?:steps\.([^.]+)\.outputs\.([^ \.?]+)|vars\.([^ \.?]+))\s*(\??)\s*\}\}`)
 
@@ -30,7 +56,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	}
 
 	instance := &models.TaskInstance{
-		ID:         fmt.Sprintf("task_%d", time.Now().UnixNano()),
+		ID:         fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano()),
 		WorkflowID: workflow.ID,
 		Status:     "Running",
 		Trigger:    trigger,
@@ -43,7 +69,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	// Update activeWorkflows with the real instance ID
 	e.activeWorkflows.Store(workflow.ID, instance.ID)
 
-	workspace, err := os.MkdirTemp("", instance.ID+"_*")
+	workspace, err := afero.TempDir(orchFS, "", instance.ID+"_*")
 	if err != nil {
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
@@ -51,13 +77,13 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	instance.Workspace = workspace
 
 	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
-		_ = os.RemoveAll(workspace)
+		_ = orchFS.RemoveAll(workspace)
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
 	}
 
 	// 2. Timeout logic
-	timeout := 7200 * time.Second // Default 2h
+	timeout := DefaultTimeout
 	if workflow.Timeout > 0 {
 		timeout = time.Duration(workflow.Timeout) * time.Second
 	} else if workflow.Timeout < 0 {
@@ -76,7 +102,12 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 
 	e.runningTasks.Store(instance.ID, cancel)
 
-	logger := NewTaskLogger()
+	logger, err := NewTaskLogger(instance.ID)
+	if err != nil {
+		e.activeWorkflows.Delete(workflow.ID)
+		cancel()
+		return "", err
+	}
 	logger.Logf("Workspace created at: %s", workspace)
 
 	go func() {
@@ -100,7 +131,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 	defer func() {
 		if instance.Workspace != "" {
 			logger.Logf("Cleaning up workspace: %s", instance.Workspace)
-			_ = os.RemoveAll(instance.Workspace)
+			_ = orchFS.RemoveAll(instance.Workspace)
 		}
 	}()
 
@@ -180,7 +211,6 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 }
 
 func (e *Executor) updateInstanceState(instance *models.TaskInstance, logger *TaskLogger) {
-	instance.Logs = logger.GetLogs()
 	_ = repo.SaveTaskInstance(context.Background(), instance)
 }
 

@@ -5,6 +5,7 @@ import (
 	"homelab/pkg/models"
 	"homelab/pkg/services/orchestration"
 	_ "homelab/pkg/services/orchestration/processors"
+	"homelab/pkg/services/rbac"
 	"homelab/tests"
 	"testing"
 	"time"
@@ -34,6 +35,12 @@ func (m *MockProcessor) Execute(ctx *orchestration.TaskContext, inputs map[strin
 func TestOrchestrationEngine(t *testing.T) {
 	teardown := tests.SetupTestDB()
 	defer teardown()
+
+	// Create common service account for tests
+	_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{
+		ID:   "sa",
+		Name: "Test SA",
+	})
 
 	// Register mock
 	mock := &MockProcessor{}
@@ -262,7 +269,8 @@ func TestOrchestrationEngine(t *testing.T) {
 
 		// Verify step name was resolved in logs
 		foundLog := false
-		for _, l := range instance.Logs {
+		logs, _ := orchestration.ReadTaskLogs(instanceID)
+		for _, l := range logs {
 			if l.Message == "Executing step: Running for PROD (s1)" {
 				foundLog = true
 			}

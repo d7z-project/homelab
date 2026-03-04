@@ -4,9 +4,9 @@ import (
 	"context"
 	repo "homelab/pkg/repositories/orchestration"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
+
+	"github.com/spf13/afero"
 )
 
 func BootUpSelfHealing() {
@@ -25,22 +25,31 @@ func BootUpSelfHealing() {
 			log.Printf("Self-healing: marked task %s as Failed", instance.ID)
 		}
 	}
+// Clean up temp dirs in orch sub-directory (orchFS is already scoped to 'orch')
+matches, err := afero.Glob(orchFS, "*")
+if err != nil {
+	log.Printf("Self-healing failed to glob orchFS temp dirs: %v", err)
+	return
+}
 
-	// Clean up temp dirs
-	tmpDir := os.TempDir()
-	matches, err := filepath.Glob(filepath.Join(tmpDir, "task_*"))
-	if err != nil {
-		log.Printf("Self-healing failed to glob temp dirs: %v", err)
-		return
-	}
+for _, match := range matches {
+	if info, err := orchFS.Stat(match); err == nil && info.IsDir() {
+		if strings.HasPrefix(match, TaskPrefix) {
+			// Parse instance ID (e.g., task_12345)
+			parts := strings.Split(match, "_")
+			if len(parts) >= 2 {
+				instanceID := parts[0] + "_" + parts[1]
+				inst, err := repo.GetTaskInstance(ctx, instanceID)
 
-	for _, match := range matches {
-		if info, err := os.Stat(match); err == nil && info.IsDir() {
-			// Check if it's really our task directory
-			if strings.HasPrefix(filepath.Base(match), "task_") {
-				_ = os.RemoveAll(match)
-				log.Printf("Self-healing: physically removed legacy directory %s", match)
+				// If task not found or NOT running, it's safe to clean up
+				if err != nil || (inst != nil && inst.Status != "Running") {
+					_ = orchFS.RemoveAll(match)
+					log.Printf("Self-healing: removed legacy task directory %s", match)
+				} else {
+					log.Printf("Self-healing: skipped active task directory %s", match)
+				}
 			}
 		}
 	}
+}
 }

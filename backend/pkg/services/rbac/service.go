@@ -8,6 +8,7 @@ import (
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
+	orchrepo "homelab/pkg/repositories/orchestration"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
 	"strings"
@@ -117,6 +118,16 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	existing, err := rbacrepo.GetServiceAccount(ctx, id)
 	if err != nil {
 		return errors.New("ServiceAccount not found")
+	}
+
+	// Check if used by any Workflow
+	workflows, err := orchrepo.ListWorkflows(ctx)
+	if err == nil {
+		for _, wf := range workflows {
+			if wf.ServiceAccountID == id {
+				return fmt.Errorf("cannot delete ServiceAccount: it is being used by workflow '%s' (%s)", wf.Name, wf.ID)
+			}
+		}
 	}
 
 	// Cascade delete RoleBindings
@@ -316,6 +327,19 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, errors.New("permission denied: rbac")
 	}
+
+	// Verify ServiceAccount exists
+	if _, err := rbacrepo.GetServiceAccount(ctx, rb.ServiceAccountID); err != nil {
+		return nil, fmt.Errorf("service account '%s' not found", rb.ServiceAccountID)
+	}
+
+	// Verify all Roles exist
+	for _, rid := range rb.RoleIDs {
+		if _, err := rbacrepo.GetRole(ctx, rid); err != nil {
+			return nil, fmt.Errorf("role '%s' not found", rid)
+		}
+	}
+
 	if rb.ID == "" {
 		rb.ID = uuid.New().String()
 	}
@@ -349,6 +373,18 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 	existing, err := rbacrepo.GetRoleBinding(ctx, id)
 	if err != nil {
 		return nil, errors.New("RoleBinding not found")
+	}
+
+	// Verify ServiceAccount exists
+	if _, err := rbacrepo.GetServiceAccount(ctx, rb.ServiceAccountID); err != nil {
+		return nil, fmt.Errorf("service account '%s' not found", rb.ServiceAccountID)
+	}
+
+	// Verify all Roles exist
+	for _, rid := range rb.RoleIDs {
+		if _, err := rbacrepo.GetRole(ctx, rid); err != nil {
+			return nil, fmt.Errorf("role '%s' not found", rid)
+		}
 	}
 
 	rb.ID = id

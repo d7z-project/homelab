@@ -1,23 +1,22 @@
 # 通用任务编排引擎 (Shared Task Orchestration Engine)
 
 ## 1. 核心设计原则 (Core Principles)
-- **空间隔离**: 每个任务实例运行期间拥有独立的 **临时工作目录 (Task Workspace)**（如 `/tmp/task_<id>`），任务结束（无论成功失败）自动物理清理。
+- **空间隔离与虚拟化**: 每个任务实例运行期间拥有独立的 **虚拟工作目录 (Scoped Workspace)**（锚定在 `common.TempDir/orch`）。采用 `afero.Fs` 实现 100% 逻辑路径操作，任务结束自动逻辑清理。
 - **参数映射 (GitHub Actions 风格)**: 
   - 支持引用前置步骤输出：`${{ steps.<step_id>.outputs.<key> }}`。
   - 支持引用工作流运行变量：`${{ vars.<var_key> }}`。
   - **可选语法**: `${{ ... ? }}` 标记，当变量不存在时解析为空字符串而非保留原样。
-- **并发控制 (Single Instance)**: 同一工作流在同一时间只能有一个实例运行，冲突时新请求直接失败，确保资源独占性。
+- **幂等性与并发控制**: 通过分布式锁 `common.Locker.TryLock` 实现触发阶段的幂等性拦截。同一工作流在同一时间只能有一个实例运行，冲突时新请求直接失败。
 - **执行条件 (Conditional execution)**: 每一个步骤 support 可选的 `if` 条件，使用 `go-expr` 表达式进行逻辑判断。
-- **触发器多样化**: 
-  - **手动运行**: 支持通过 UI 交互式输入运行变量。
-  - **定时任务 (Cron)**: 集成 `robfig/cron`，支持标准的 Crontab 表达式。
-  - **外部钩子 (Webhook)**: 提供基于独有 Token 认证的异步触发接口，支持 GET/POST 传参。
-- **安全性与身份**: 任务执行时强制绑定 **ServiceAccount**，所有节点处理器（如 DNS 记录创建）均以此身份权限进行实时 RBAC 校验。
+- **日志持久化与脱敏**: 日志不再常驻内存，而是流式写入虚拟文件系统 (`logFS`)。删除任务记录时自动级联删除对应的 VFS 日志文件。
+- **安全性与身份**: 
+  - **身份绑定**: 任务执行时强制绑定 **ServiceAccount**，创建/更新时强制校验 SA 存在性。
+  - **删除保护**: 禁止删除正被工作流引用的 ServiceAccount。
 - **健壮性保障**: 
   - **超时中止**: 支持配置工作流级超时时间（默认 2h），超时自动触发 context cancel。
-  - **Panic 恢复**: 引擎捕获所有执行过程中的 panic，记录堆栈信息并安全标记任务失败，防止程序崩溃。
-  - **启动自愈**: 启动时自动清理僵尸任务状态及物理临时目录。
-- **全生命周期审计**: 所有工作流的 C/U/D 变更及每一次触发记录均记录于系统审计日志。
+  - **Panic 恢复**: 引擎捕获所有执行过程中的 panic，记录堆栈信息并安全标记任务失败。
+  - **智能自愈**: 启动时自动清理僵尸任务状态。仅当任务处于终态或记录缺失时，才物理删除其 VFS 临时目录。
+  - **冒烟自检**: 系统启动时对所有 VFS 实例执行原子读写自检，失败则禁止启动。
 
 ---
 
@@ -27,11 +26,11 @@
 ```go
 type TaskContext struct {
     InstanceID     string
-    Workspace      string             // 临时目录路径
+    Workspace      string             // 逻辑工作目录（相对于模块 Scoped FS）
     UserID         string             // 用于实时 RBAC 校验的触发者（SA ID 或 root）
-    Context        context.Context    // 用于传递取消信号或处理超时
+    Context        context.Context    // 联动系统生命周期的取消信号
     CancelFunc     context.CancelFunc // 允许手动终止任务
-    Logger         *TaskLogger        // 结构化日志记录器
+    Logger         *TaskLogger        // VFS 持久化日志记录器
 }
 ```
 
@@ -39,12 +38,9 @@ type TaskContext struct {
 
 ## 3. 技术实施规格 (Technical Specifications)
 
-- **命名规范**: 变量键名 (Var Key) 和步骤 ID (Step ID) 强制遵循 `^[a-z0-9_]+$` 限制，确保模板解析路径唯一且无歧义。
-- **数据校验**: 遵循 `models.Bind` 标准进行基础格式校验。
-- **前端交互**: 
-  - **响应式操作**: 大屏幕显示快捷图标，小屏幕收纳至菜单。
-  - **运行弹窗**: 动态生成表单，支持运行前预填默认变量值。
-  - **状态切换**: Table 内集成乐观更新的启用/禁用开关。
+- **命名规范**: 变量键名 (Var Key) 和步骤 ID (Step ID) 强制遵循 `^[a-z0-9_]+$`。
+- **全栈 VFS**: 业务存储 (`common.FS`) 与 临时空间 (`common.TempDir`) 均由 URL Scheme 驱动，支持 `memory://` 实现零残留运行。
+- **作用域沙箱**: 模块内部必须使用 `afero.NewBasePathFs` 进一步收窄文件操作权限。
 
 ---
 
@@ -60,11 +56,13 @@ type TaskContext struct {
 - [x] **Task 5: [RBAC]** 完成 Service 层细粒度资源过滤与显示名称/变量插值的权限隔离。
 - [x] **Task 6: [Discovery]** 注册 `orchestration` 资源到 RBAC 发现中心，支持 ID 级权限分配。
 
-### 第三阶段：UI 精细化适配
-- [x] **Task 7: [UI-Builder]** 升级编辑器：增加变量声明步骤、ID 命名校验、超时与 SA 配置。
-- [x] **Task 8: [UI-Run]** 开发动态变量输入弹窗，支持运行前参数注入。
-- [x] **Task 9: [UI-Board]** 优化管理看板：支持 Webhook 地址复制/重置、表格内状态快捷切换。
+### 第三阶段：架构虚拟化与一致性重构 (NEW)
+- [x] **Task 7: [VFS]** 集成 `afero` 并实现基于 URL 的双重沙箱初始化。
+- [x] **Task 8: [Lock]** 引入分布式锁，在 `RunWorkflow` 中实现非阻塞幂等性保护。
+- [x] **Task 9: [Consistency]** 建立跨模块引用校验（SA/Role）与级联删除保护机制。
+- [x] **Task 10: [Logging]** 实现任务日志的 VFS 持久化存储与流式解析。
 
-### 第四阶段：全栈交付验证
-- [x] **Task 10: [Tests]** 编写覆盖 11 个核心场景的单元测试套件，通过率为 100%。
-- [x] **Task 11: [Sync]** 完成 OpenAPI 同步与全栈 `make all` 构建验证。
+### 第四阶段：UI 与交付验证
+- [x] **Task 11: [UI-Run]** 开发动态变量输入弹窗，支持运行前参数注入。
+- [x] **Task 12: [Tests]** 建立 `consistency_test.go` 专项测试，通过并发压力与一致性全量验证。
+

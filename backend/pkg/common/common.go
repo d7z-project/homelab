@@ -4,10 +4,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/render"
+	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
+	"gopkg.d7z.net/middleware/lock"
 )
 
 var DB kv.KV
+var Locker lock.Locker
+var FS afero.Fs
+var TempDir afero.Fs
 
 type Response struct {
 	Code    int         `json:"code"`

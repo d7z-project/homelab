@@ -1,22 +1,34 @@
 package orchestration
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"homelab/pkg/models"
 	"sync"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 type TaskLogger struct {
 	mu          sync.Mutex
-	logs        []models.LogEntry
 	currentStep string
+	file        afero.File
+	instanceID  string
 }
 
-func NewTaskLogger() *TaskLogger {
-	return &TaskLogger{
-		logs: make([]models.LogEntry, 0),
+// NewTaskLogger creates a new logger that writes to a file in logFS.
+func NewTaskLogger(instanceID string) (*TaskLogger, error) {
+	filename := fmt.Sprintf("%s.log", instanceID)
+	f, err := logFS.Create(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create log file: %w", err)
 	}
+	return &TaskLogger{
+		instanceID: instanceID,
+		file:       f,
+	}, nil
 }
 
 func (l *TaskLogger) SetStep(stepID string) {
@@ -28,26 +40,48 @@ func (l *TaskLogger) SetStep(stepID string) {
 func (l *TaskLogger) Log(message string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.logs = append(l.logs, models.LogEntry{
+
+	entry := models.LogEntry{
 		Timestamp: time.Now(),
 		StepID:    l.currentStep,
 		Message:   message,
-	})
+	}
+
+	data, err := json.Marshal(entry)
+	if err == nil {
+		_, _ = l.file.Write(data)
+		_, _ = l.file.Write([]byte("\n"))
+	}
 }
 
 func (l *TaskLogger) Logf(format string, a ...interface{}) {
 	l.Log(fmt.Sprintf(format, a...))
 }
 
-func (l *TaskLogger) GetLogs() []models.LogEntry {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	// Return a copy to avoid race conditions
-	res := make([]models.LogEntry, len(l.logs))
-	copy(res, l.logs)
-	return res
+// ReadTaskLogs reads and parses logs from the VFS file for a given instance.
+func ReadTaskLogs(instanceID string) ([]models.LogEntry, error) {
+	filename := fmt.Sprintf("%s.log", instanceID)
+	f, err := logFS.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open log file: %w", err)
+	}
+	defer f.Close()
+
+	var logs []models.LogEntry
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		var entry models.LogEntry
+		if err := json.Unmarshal(scanner.Bytes(), &entry); err == nil {
+			logs = append(logs, entry)
+		}
+	}
+	return logs, scanner.Err()
 }
 
 func (l *TaskLogger) Close() {
-	// No-op for now as we don't have external resources to close
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.file != nil {
+		_ = l.file.Close()
+	}
 }

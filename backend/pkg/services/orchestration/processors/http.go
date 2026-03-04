@@ -2,11 +2,11 @@ package processors
 
 import (
 	"fmt"
+	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/orchestration"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 )
 
@@ -60,7 +60,7 @@ func (p *HttpFetchProcessor) Execute(ctx *orchestration.TaskContext, inputs map[
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	out, err := os.Create(filePath)
+	out, err := common.TempDir.Create(filePath)
 	if err != nil {
 		return nil, err
 	}

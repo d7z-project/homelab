@@ -25,8 +25,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
+	"github.com/spf13/afero"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"gopkg.d7z.net/middleware/kv"
+	"gopkg.d7z.net/middleware/lock"
 	"gopkg.in/yaml.v3"
 )
 
@@ -66,8 +69,47 @@ func main() {
 	common.DB = db
 	defer db.Close()
 
+	locker, err := lock.NewLocker(common.Opts.Lock)
+	if err != nil {
+		log.Fatalf("Failed to initialize locker: %v", err)
+	}
+	common.Locker = locker
+
+	// Initialize VFS (User Data)
+	vfs, err := common.InitVFS(common.Opts.VFS)
+	if err != nil {
+		log.Fatalf("Failed to initialize VFS: %v", err)
+	}
+	common.FS = vfs
+
+	// Initialize Temp FS (Task Workspaces)
+	tempFs, err := common.InitVFS(common.Opts.TempDir)
+	if err != nil {
+		log.Fatalf("Failed to initialize Temp FS: %v", err)
+	}
+	common.TempDir = tempFs
+
+	// Initialize Orchestration Scoped FS
+	orchestration.Init()
+
+	// Smoke test VFS: write and delete a random file
+	testFile := ".homelab_vfs_test_" + uuid.New().String()
+	if err := afero.WriteFile(common.FS, testFile, []byte("ok"), 0644); err != nil {
+		log.Fatalf("VFS smoke test failed (write): %v", err)
+	}
+	_ = common.FS.Remove(testFile)
+
+	// Smoke test Temp FS
+	if err := afero.WriteFile(common.TempDir, testFile, []byte("ok"), 0644); err != nil {
+		log.Fatalf("Temp FS smoke test failed (write): %v", err)
+	}
+	_ = common.TempDir.Remove(testFile)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	orchestration.BootUpSelfHealing()
-	if err := orchestration.GlobalTriggerManager.InitTriggers(context.Background()); err != nil {
+	if err := orchestration.GlobalTriggerManager.InitTriggers(ctx); err != nil {
 		log.Printf("Failed to initialize triggers: %v", err)
 	}
 	orchestration.GlobalTriggerManager.Start()
@@ -139,17 +181,13 @@ func main() {
 		}
 	}()
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-	<-stop
+	<-ctx.Done()
 
 	log.Println("Shutting down server...")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Server forced to shutdown: %v", err)
 	}
-
 	log.Println("Server exiting")
 }

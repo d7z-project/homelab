@@ -8,9 +8,11 @@ import (
 	dnsrepo "homelab/pkg/repositories/dns"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	dnsservice "homelab/pkg/services/dns"
+	"homelab/pkg/services/orchestration"
 	"log"
 
 	"gopkg.d7z.net/middleware/kv"
+	"gopkg.d7z.net/middleware/lock"
 )
 
 // SetupTestDB 初始化一个内存数据库用于测试
@@ -26,15 +28,31 @@ func SetupTestDB() func() {
 		log.Fatalf("failed to create test db: %v", err)
 	}
 
-	// 保存旧的 DB 引用以便恢复（如果需要）
+	// 保存旧的引用以便恢复
 	oldDB := common.DB
+	oldLocker := common.Locker
+	oldFS := common.FS
+	oldTemp := common.TempDir
 	common.DB = db
+
+	locker, _ := lock.NewLocker("memory://")
+	common.Locker = locker
+
+	// Use InitVFS to get sandboxed memory FS for tests
+	fs, _ := common.InitVFS("memory://")
+	common.FS = fs
+	
+	temp, _ := common.InitVFS("memory://")
+	common.TempDir = temp
+
+	orchestration.Init()
 
 	return func() {
 		db.Close()
-		// No need to restore oldDB here if it might be nil,
-		// but let's be safe.
 		common.DB = oldDB
+		common.Locker = oldLocker
+		common.FS = oldFS
+		common.TempDir = oldTemp
 	}
 }
 

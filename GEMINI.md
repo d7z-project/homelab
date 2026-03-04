@@ -19,29 +19,37 @@
 - **职责**：编排业务流程、执行 **深度业务逻辑校验**、维护资源一致性。
 - **校验规范**：Service 层方法在执行任何逻辑前，**必须显式调用** `model.Bind(nil)`。
 - **更新一致性 (Critical)**：在执行 `Update*` 操作时，必须显式执行 `model.ID = id`（将 URL 路径中的 ID 强制覆盖至 Body 结构体），以防止因 ID 缺失或不一致导致产生冗余记录。
-- **资源清理规范**：所有涉及临时物理目录的任务（如任务编排工作空间），必须在 `run` 函数中使用 `defer` 确保在任何退出场景下（含 Success/Failed/Cancelled）执行物理删除。
+- **引用合法性校验 (Mandatory)**：在创建或更新包含外键引用（如 `ServiceAccountID`, `RoleIDs`, `DomainID`）的资源时，Service 层必须在持久化前 **强制校验** 被引用资源的存在性。
+- **删除完整性 (Cascading & Protection)**：
+  - **级联删除**：父级资源（如 `Domain`, `Workflow`）被删除时，其所属的子资源（如 `Record`, `TaskInstance`）必须通过 Repository 同步清理。
+  - **引用保护**：被其他核心模块引用的基础身份资源（如正被工作流引用的 `ServiceAccount`），在解除引用关系前 **严禁删除**。
+- **文件操作规范 (VFS)**：所有涉及业务数据及临时空间的读写必须分别通过 `common.FS` 或 `common.TempDir` (均为 `afero.Fs`) 执行。严禁直接使用 `os` 包或进行物理路径拼接。
+- **模块级沙箱 (Scoped FS)**：子模块若需管理子目录，必须基于全局 Fs 通过 `afero.NewBasePathFs` 建立包级私有 Fs（如 `orchFS`）。业务逻辑应直接面向私有 Fs 的根路径操作。
+- **智能资源清理**：执行自愈或清理逻辑前，必须核查数据库状态。仅当关联任务处于终态（Failed/Success）或记录不存在时，才允许物理/逻辑删除对应的虚拟目录。
+- **资源清理规范**：所有任务必须在 `run` 函数中使用 `defer` 确保在任何退出场景下执行逻辑清理。
 - **审计规范**：所有修改类操作（C/U/D）及触发类操作（Trigger）必须手动上报审计日志。
-  - **更新 (U)**：`message` 必须记录发生变化的字段及其 **新旧值对照**（格式：`field: old -> new`）。
-  - **触发 (Trigger)**：记录触发源（Manual/Cron/Webhook）及生成的实例 ID。
-
-### 4. 控制器层 (Controllers) - `pkg/controllers/`
-- **职责**：解析请求、调用 Service、返回标准响应。
-- **序列化规范**：统一使用 `github.com/go-chi/render`。
 
 ---
 
-## RBAC 与权限设计规范
+## 核心基础设施 (Core Infrastructure)
 
-项目采用基于资源路径的精细化权限控制体系。
+项目采用高度虚拟化的基础设施层，通过 URL Scheme 驱动实现“默认内存、按需物理”的部署策略。
 
-### 1. 资源层级 (Resource Hierarchy)
-- **DNS 模块**：`dns/<domain>/<host>/<type>`。
-- **Orchestration 模块**：`orchestration/<workflow_id>`。
-- **RBAC 模块**：`rbac`。
+### 1. 资源初始化模式
+- **存储 (DB)**: `common.DB` (kv.KV)，支持 `memory://`, `etcd://`, `redis://`。
+- **锁 (Locker)**: `common.Locker` (lock.Locker)，支持 `memory://`, `etcd://`。
+- **虚拟文件系统 (VFS)**: 
+  - **业务存储 (`common.FS`)**: 默认 `memory://`。
+  - **临时空间 (`common.TempDir`)**: 默认 `memory://`。
+  - **初始化安全**: `common.InitVFS` 强制使用 `BasePathFs` 封装。`local://` 模式下严禁隐式回退，必须提供显式路径。
+  - **启动自检**: 系统启动时必须对上述两个 Fs 执行“随机文件写入擦除”冒烟测试。
 
----
+### 2. 模块初始化协议
+- **Init() 模式**: 具备私有沙箱的模块（如 `orchestration`）必须提供 `Init()` 函数，在 `main` 建立全局 Fs 后同步完成包级 Scoped FS 的锚定。
 
-## 前端 UI/UX 开发规范
+### 3. 生命周期与停机
+- **Context 驱动**: `main.go` 采用 `signal.NotifyContext` 建立全局根上下文。
+- **优雅停机**: 所有初始化函数必须响应 `ctx.Done()`；`http.Server` 停机超时统一设为 5s。
 
 遵循 **Material Design 3 (M3)** 交互规范，追求极致的视觉一致性与操作流畅度。
 
@@ -68,6 +76,7 @@
 ### 1. 后端功能测试 - `backend/tests/unit/`
 - **覆盖要求**：核心业务逻辑必须具备 100% 的功能测试覆盖。
 - **关键路径验证**：必须包含针对 Update ID 一致性、物理路径清理逻辑及 RBAC 细粒度过滤的验证用例。
+- **一致性与幂等性测试**: 必须在 `consistency_test.go` 中包含针对跨模块引用校验、删除保护以及高并发下 `TryLock` 拦截效果的专项验证。
 
 ---
 

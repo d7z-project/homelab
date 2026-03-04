@@ -4,17 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/orchestration"
+	rbacrepo "homelab/pkg/repositories/rbac"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/expr-lang/expr"
 	"github.com/google/uuid"
+	"github.com/spf13/afero"
 )
 
 func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
@@ -75,6 +77,12 @@ func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Wor
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
 		return nil, err
 	}
+
+	// Verify ServiceAccount exists
+	if _, err := rbacrepo.GetServiceAccount(ctx, workflow.ServiceAccountID); err != nil {
+		return nil, fmt.Errorf("service account '%s' not found", workflow.ServiceAccountID)
+	}
+
 	workflow.ID = uuid.New().String()
 	workflow.CreatedAt = time.Now()
 	workflow.UpdatedAt = time.Now()
@@ -109,6 +117,11 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
 		return nil, err
+	}
+
+	// Verify ServiceAccount exists
+	if _, err := rbacrepo.GetServiceAccount(ctx, workflow.ServiceAccountID); err != nil {
+		return nil, fmt.Errorf("service account '%s' not found", workflow.ServiceAccountID)
 	}
 
 	changes := []string{}
@@ -216,12 +229,13 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 		return fmt.Errorf("permission denied: orchestration/%s", id)
 	}
 
-	// Cascade delete instances
+	// Cascade delete instances and logs
 	instances, err := repo.ListTaskInstances(ctx)
 	if err == nil {
 		for _, inst := range instances {
 			if inst.WorkflowID == id {
 				_ = repo.DeleteTaskInstance(ctx, inst.ID)
+				_ = logFS.Remove(fmt.Sprintf("%s.log", inst.ID))
 			}
 		}
 	}
@@ -295,6 +309,14 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 }
 
 func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]string) (string, error) {
+	// Use distributed lock to prevent concurrent triggers for the same workflow
+	lockKey := "orch:trigger:" + workflowID
+	release := common.Locker.TryLock(ctx, lockKey)
+	if release == nil {
+		return "", fmt.Errorf("workflow '%s' is already being triggered, please wait", workflowID)
+	}
+	defer release()
+
 	workflow, err := repo.GetWorkflow(ctx, workflowID)
 	if err != nil {
 		return "", err
@@ -394,8 +416,15 @@ func GetTaskLogs(ctx context.Context, id string) (string, error) {
 		return "", fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
 	}
 
+	// Read logs from VFS
+	logs, err := ReadTaskLogs(id)
+	if err != nil {
+		// If file not found, maybe it's an old task or no logs yet
+		return "[]", nil
+	}
+
 	// Return logs as JSON string
-	data, err := json.Marshal(instance.Logs)
+	data, err := json.Marshal(logs)
 	if err != nil {
 		return "", err
 	}
@@ -420,15 +449,19 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 		return nil, fmt.Errorf("processor not found: %s", req.ProcessorID)
 	}
 
-	// Create a temporary workspace for probe
-	workspace, err := os.MkdirTemp("", "probe_*")
+	// Create a temporary workspace for probe in its dedicated FS
+	workspace, err := afero.TempDir(probeFS, "", "probe_*")
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(workspace)
+	defer probeFS.RemoveAll(workspace)
 
-	logger := NewTaskLogger()
+	logger, err := NewTaskLogger("probe")
+	if err != nil {
+		return nil, err
+	}
 	defer logger.Close()
+	defer logFS.Remove("probe.log")
 
 	authCtx := commonauth.FromContext(ctx)
 	userID := "anonymous"

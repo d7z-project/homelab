@@ -9,14 +9,19 @@ import (
 var Opts = &Options{
 	Bind:         ":8080",
 	DB:           "memory://",
+	Lock:         "memory://",
+	VFS:          "memory://",
+	TempDir:      "memory://",
 	RootPassword: "admin",
 	TotpAuth:     "",
 	JWTSecret:    "change-me-please",
 }
-
-type Options struct {
+	type Options struct {
 	Bind         string `yaml:"bind" env:"HOMELAB_BIND"`
 	DB           string `yaml:"db" env:"HOMELAB_DB"`
+	Lock         string `yaml:"lock" env:"HOMELAB_LOCK"`
+	VFS          string `yaml:"vfs" env:"HOMELAB_VFS"`
+	TempDir      string `yaml:"temp_dir" env:"HOMELAB_TEMP_DIR"`
 	RootPassword string `yaml:"password" env:"HOMELAB_PASSWORD"`
 	TotpAuth     string `yaml:"totp_auth" env:"HOMELAB_TOTP_AUTH"`
 	JWTSecret    string `yaml:"jwt_secret" env:"HOMELAB_JWT_SECRET"`
