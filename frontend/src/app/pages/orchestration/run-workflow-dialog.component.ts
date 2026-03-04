@@ -6,6 +6,9 @@ import {
   FormBuilder,
   FormGroup,
   Validators,
+  ValidatorFn,
+  AbstractControl,
+  ValidationErrors,
 } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -39,6 +42,9 @@ import { ModelsWorkflow } from '../../generated';
               [placeholder]="data.workflow.vars?.[key]?.default || ''"
             />
             <mat-hint>{{ data.workflow.vars?.[key]?.description }}</mat-hint>
+            @if (form.get(key)?.errors?.['regexMatch']) {
+              <mat-error>值不符合该参数的前端正则要求</mat-error>
+            }
           </mat-form-field>
         }
       </form>
@@ -67,7 +73,20 @@ export class RunWorkflowDialogComponent implements OnInit {
       this.varKeys = Object.keys(this.data.workflow.vars);
       for (const key of this.varKeys) {
         const def = this.data.workflow.vars[key];
-        const validators = def.required ? [Validators.required] : [];
+        const validators: any[] = def.required ? [Validators.required] : [];
+        if (def.regexFrontend) {
+          validators.push((control: AbstractControl): ValidationErrors | null => {
+            const val = control.value;
+            if (!val || val.includes('${{')) return null;
+            try {
+              const regex = new RegExp(def.regexFrontend!);
+              if (!regex.test(val)) return { regexMatch: true };
+            } catch (e) {
+              return null;
+            }
+            return null;
+          });
+        }
         group[key] = [def.default || '', validators];
       }
     }

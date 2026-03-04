@@ -11,13 +11,15 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-var orchIdRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+var OrchIdRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 // VarDefinition 描述一个工作流的输入变量
 type VarDefinition struct {
-	Description string `json:"description"` // 变量描述
-	Default     string `json:"default"`     // 默认值 (可选变量的默认值为空)
-	Required    bool   `json:"required"`    // 是否必填
+	Description   string `json:"description"`   // 变量描述
+	Default       string `json:"default"`       // 默认值 (可选变量的默认值为空)
+	Required      bool   `json:"required"`      // 是否必填
+	RegexFrontend string `json:"regexFrontend"` // 前端校验正则 (可选)
+	RegexBackend  string `json:"regexBackend"`  // 后端校验正则 (可选)
 }
 
 // Workflow 代表一个预定义的任务编排模板
@@ -49,7 +51,7 @@ func (w *Workflow) Bind(r *http.Request) error {
 
 	// Validate Variable Keys
 	for k, v := range w.Vars {
-		if !orchIdRegex.MatchString(k) {
+		if !OrchIdRegex.MatchString(k) {
 			return fmt.Errorf("invalid variable key '%s': only lowercase letters, numbers and underscores are allowed", k)
 		}
 		if w.CronEnabled && v.Required && v.Default == "" {
@@ -72,7 +74,7 @@ func (w *Workflow) Bind(r *http.Request) error {
 		if step.ID == "" {
 			return fmt.Errorf("step %d: ID is required", i+1)
 		}
-		if !orchIdRegex.MatchString(step.ID) {
+		if !OrchIdRegex.MatchString(step.ID) {
 			return fmt.Errorf("step %d: invalid ID '%s': only lowercase letters, numbers and underscores are allowed", i+1, step.ID)
 		}
 		if stepIDs[step.ID] {
@@ -125,9 +127,11 @@ func (t *TaskInstance) Bind(r *http.Request) error {
 
 // ParamDefinition 描述一个参数的规格
 type ParamDefinition struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Optional    bool   `json:"optional"` // 是否为可选参数
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Optional      bool   `json:"optional"`       // 是否为可选参数
+	RegexFrontend string `json:"regexFrontend"` // 前端校验正则 (可选)
+	RegexBackend  string `json:"regexBackend"`  // 后端校验正则 (可选)
 }
 
 // StepManifest 描述一个节点处理器的规格

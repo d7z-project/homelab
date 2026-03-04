@@ -38,6 +38,10 @@ frontend-run: $(FRONTEND_DIR)/node_modules ## 运行前端开发服务器
 
 # --- Go 客户端 (修复路径警告) ---
 client-go-gen: $(FRONTEND_DIR)/node_modules ## 生成 Go 客户端代码
+	@if ! command -v oapi-codegen > /dev/null; then \
+		echo "oapi-codegen not found, installing..."; \
+		go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest; \
+	fi
 	@echo "Step 1: Converting Swagger to OpenAPI 3.0..."
 	@mkdir -p $(BACKEND_DIR)/docs
 	@npm exec --prefix $(FRONTEND_DIR) -- openapi-generator-cli generate \

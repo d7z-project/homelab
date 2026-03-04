@@ -13,7 +13,7 @@ import (
 
 	"github.com/expr-lang/expr"
 	"github.com/spf13/afero"
-	)
+)
 
 const (
 	OrchSubDir     = "orch"
@@ -196,10 +196,31 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 			return
 		}
 
+		// Validate against manifest
+		manifest := processor.Manifest()
+		for _, pDef := range manifest.Params {
+			val := inputs[pDef.Name]
+			if val == "" && !pDef.Optional {
+				e.fail(instance, fmt.Errorf("missing required parameter %s for step %s", pDef.Name, step.ID), logger)
+				return
+			}
+			if val != "" && pDef.RegexBackend != "" {
+				matched, err := regexp.MatchString(pDef.RegexBackend, val)
+				if err != nil {
+					e.fail(instance, fmt.Errorf("invalid regex for parameter %s in step %s: %v", pDef.Name, step.ID, err), logger)
+					return
+				}
+				if !matched {
+					e.fail(instance, fmt.Errorf("parameter %s in step %s does not match required format", pDef.Name, step.ID), logger)
+					return
+				}
+			}
+		}
+
 		taskCtx := &TaskContext{
 			WorkflowID: workflow.ID,
 			InstanceID: instance.ID,
-			Workspace:  instance.Workspace,
+			Workspace:  afero.NewBasePathFs(orchFS, instance.Workspace),
 			UserID:     instance.UserID,
 			Context:    ctx,
 			CancelFunc: cancel,

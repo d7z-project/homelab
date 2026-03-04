@@ -130,6 +130,12 @@ definitions:
       optional:
         description: 是否为可选参数
         type: boolean
+      regexBackend:
+        description: 后端校验正则 (可选)
+        type: string
+      regexFrontend:
+        description: 前端校验正则 (可选)
+        type: string
     type: object
   models.PolicyRule:
     properties:
@@ -343,6 +349,12 @@ definitions:
         type: string
       description:
         description: 变量描述
+        type: string
+      regexBackend:
+        description: 后端校验正则 (可选)
+        type: string
+      regexFrontend:
+        description: 前端校验正则 (可选)
         type: string
       required:
         description: 是否必填

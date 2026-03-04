@@ -78,4 +78,5 @@ type TaskContext struct {
 - [x] **Task 12: [Tests]** 建立 `consistency_test.go` 专项测试，通过并发压力与一致性全量验证。
 - [x] **Task 13: [Logs-Refactor]** 实现分片日志存储、增量偏移刷新及仿终端 UI 交互。
 - [x] **Task 14: [Records-Mgmt]** 支持记录搜索、工作流分类展示及按天数批量清理功能。
+- [x] **Task 15: [Validation]** 注册 `ParamDefinition` 及 `VarDefinition` 支持正则校验（分前后端参数）。
 

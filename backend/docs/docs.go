@@ -2166,6 +2166,14 @@ const docTemplate = `{
                 "optional": {
                     "description": "是否为可选参数",
                     "type": "boolean"
+                },
+                "regexBackend": {
+                    "description": "后端校验正则 (可选)",
+                    "type": "string"
+                },
+                "regexFrontend": {
+                    "description": "前端校验正则 (可选)",
+                    "type": "string"
                 }
             }
         },
@@ -2481,6 +2489,14 @@ const docTemplate = `{
                 },
                 "description": {
                     "description": "变量描述",
+                    "type": "string"
+                },
+                "regexBackend": {
+                    "description": "后端校验正则 (可选)",
+                    "type": "string"
+                },
+                "regexFrontend": {
+                    "description": "前端校验正则 (可选)",
                     "type": "string"
                 },
                 "required": {

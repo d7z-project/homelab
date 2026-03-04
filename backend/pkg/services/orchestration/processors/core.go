@@ -44,7 +44,13 @@ func (p *SleepProcessor) Manifest() orchestration.StepManifest {
 		Name:        "休眠等待",
 		Description: "暂停任务执行一段时间。",
 		Params: []models.ParamDefinition{
-			{Name: "duration", Description: "等待时长，例如 5s, 10m", Optional: false},
+			{
+				Name:          "duration",
+				Description:   "等待时长，例如 5s, 10m, 1h",
+				Optional:      false,
+				RegexFrontend: `^\d+[smh]$`,
+				RegexBackend:  `^\d+[smh]$`,
+			},
 		},
 		OutputParams: []models.ParamDefinition{},
 	}
@@ -92,8 +98,20 @@ func (p *WorkflowCallProcessor) Manifest() orchestration.StepManifest {
 		Name:        "调用工作流",
 		Description: "同步调用另一个工作流，并等待其执行完成。不允许自我调用。",
 		Params: []models.ParamDefinition{
-			{Name: "workflow_id", Description: "要调用的目标工作流 ID", Optional: false},
-			{Name: "vars", Description: "传递给子工作流的变量 (JSON 对象格式)", Optional: true},
+			{
+				Name:          "workflow_id",
+				Description:   "要调用的目标工作流 ID",
+				Optional:      false,
+				RegexFrontend: `^[a-f0-9-]{36}$`, // UUID
+				RegexBackend:  `^[a-f0-9-]{36}$`,
+			},
+			{
+				Name:          "vars",
+				Description:   "传递给子工作流的变量 (JSON 对象格式)",
+				Optional:      true,
+				RegexFrontend: `^\{.*\}$`,
+				RegexBackend:  `^\{.*\}$`,
+			},
 		},
 		OutputParams: []models.ParamDefinition{
 			{Name: "instance_id", Description: "子工作流的执行实例 ID"},

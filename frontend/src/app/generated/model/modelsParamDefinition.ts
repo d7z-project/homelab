@@ -16,5 +16,13 @@ export interface ModelsParamDefinition {
      * 是否为可选参数
      */
     optional?: boolean;
+    /**
+     * 后端校验正则 (可选)
+     */
+    regexBackend?: string;
+    /**
+     * 前端校验正则 (可选)
+     */
+    regexFrontend?: string;
 }
 

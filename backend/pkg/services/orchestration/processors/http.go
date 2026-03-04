@@ -2,12 +2,10 @@ package processors
 
 import (
 	"fmt"
-	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/orchestration"
 	"io"
 	"net/http"
-	"path/filepath"
 )
 
 type HttpFetchProcessor struct{}
@@ -22,7 +20,13 @@ func (p *HttpFetchProcessor) Manifest() orchestration.StepManifest {
 		Name:        "HTTP Fetcher",
 		Description: "从指定 URL 下载文件到任务工作目录，支持 HTTP/HTTPS 协议。",
 		Params: []models.ParamDefinition{
-			{Name: "url", Description: "要下载的远程文件 URL 地址", Optional: false},
+			{
+				Name:          "url",
+				Description:   "要下载的远程文件 URL 地址",
+				Optional:      false,
+				RegexFrontend: `^https?://.+`,
+				RegexBackend:  `^https?://.+`,
+			},
 			{Name: "output_file", Description: "本地保存的文件名，默认为 downloaded_file", Optional: true},
 		},
 		OutputParams: []models.ParamDefinition{
@@ -41,9 +45,8 @@ func (p *HttpFetchProcessor) Execute(ctx *orchestration.TaskContext, inputs map[
 	if outputFile == "" {
 		outputFile = "downloaded_file"
 	}
-	filePath := filepath.Join(ctx.Workspace, outputFile)
 
-	ctx.Logger.Logf("Fetching URL: %s to %s", url, filePath)
+	ctx.Logger.Logf("Fetching URL: %s to workspace file: %s", url, outputFile)
 
 	req, err := http.NewRequestWithContext(ctx.Context, "GET", url, nil)
 	if err != nil {
@@ -60,7 +63,7 @@ func (p *HttpFetchProcessor) Execute(ctx *orchestration.TaskContext, inputs map[
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	out, err := common.TempDir.Create(filePath)
+	out, err := ctx.Workspace.Create(outputFile)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +75,6 @@ func (p *HttpFetchProcessor) Execute(ctx *orchestration.TaskContext, inputs map[
 	}
 
 	return map[string]string{
-		"file_path": filePath,
+		"file_name": outputFile,
 	}, nil
 }

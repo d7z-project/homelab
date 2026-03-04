@@ -122,7 +122,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: List all DNS domains
+      summary: List all domains
       tags:
       - dns
     post:
@@ -142,7 +142,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: Create a DNS domain
+      summary: Create a domain
       tags:
       - dns
       x-codegen-request-body-name: domain
@@ -164,7 +164,7 @@ paths:
           description: success
       security:
       - ApiKeyAuth: []
-      summary: Delete a DNS domain
+      summary: Delete a domain
       tags:
       - dns
     put:
@@ -191,14 +191,13 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: Update a DNS domain
+      summary: Update a domain
       tags:
       - dns
       x-codegen-request-body-name: domain
   /dns/export:
     get:
-      description: Returns all domains and their associated records without internal
-        IDs. Requires a valid token but no specific permissions.
+      description: Returns all enabled DNS domains and records in a structured format.
       responses:
         "200":
           content:
@@ -208,13 +207,13 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: Export all DNS domains and records
+      summary: Export all DNS configurations
       tags:
       - dns
   /dns/records:
     get:
       parameters:
-      - description: Domain ID filter
+      - description: Filter by domain ID
         in: query
         name: domainId
         schema:
@@ -243,7 +242,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: List all DNS records
+      summary: List all records
       tags:
       - dns
     post:
@@ -263,7 +262,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: Create a DNS record
+      summary: Create a record
       tags:
       - dns
       x-codegen-request-body-name: record
@@ -285,7 +284,7 @@ paths:
           description: success
       security:
       - ApiKeyAuth: []
-      summary: Delete a DNS record
+      summary: Delete a record
       tags:
       - dns
     put:
@@ -312,7 +311,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: Update a DNS record
+      summary: Update a record
       tags:
       - dns
       x-codegen-request-body-name: record
@@ -386,6 +385,64 @@ paths:
       summary: List all task instances
       tags:
       - orchestration
+  /orchestration/instances/cleanup:
+    post:
+      description: Removes task instances and logs older than the specified number
+        of days.
+      parameters:
+      - description: Days older than which instances will be deleted
+        in: query
+        name: days
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                additionalProperties: true
+                type: object
+          description: Number of deleted instances
+      security:
+      - ApiKeyAuth: []
+      summary: Cleanup old task instances
+      tags:
+      - orchestration
+  /orchestration/instances/{id}:
+    delete:
+      description: Removes a specific task instance and its execution logs.
+      parameters:
+      - description: Task Instance ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: success
+        "400":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "404":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Instance Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a task instance
+      tags:
+      - orchestration
   /orchestration/instances/{id}/cancel:
     post:
       description: Attempts to terminate a running task instance gracefully by sending
@@ -417,8 +474,8 @@ paths:
       - orchestration
   /orchestration/instances/{id}/logs:
     get:
-      description: Returns the full execution logs for a specific task instance in
-        plain text.
+      description: "Returns execution logs for a specific task instance or step, supporting\
+        \ line offset for real-time refresh."
       parameters:
       - description: Task Instance ID
         in: path
@@ -426,16 +483,27 @@ paths:
         required: true
         schema:
           type: string
+      - description: "Step Index (0 for engine, 1+ for steps)"
+        in: query
+        name: stepIndex
+        schema:
+          type: integer
+      - description: Line offset to start reading from
+        in: query
+        name: offset
+        schema:
+          type: integer
       responses:
         "200":
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-          description: Log content
+                additionalProperties: true
+                type: object
+          description: Logs and next offset
         "404":
           content:
-            text/plain:
+            application/json:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Instance Not Found
@@ -1215,7 +1283,7 @@ components:
       type: object
     common.Response:
       example:
-        code: 0
+        code: 6
         data: "{}"
         message: message
       properties:
@@ -1379,6 +1447,8 @@ components:
         name: name
         description: description
         optional: true
+        regexBackend: regexBackend
+        regexFrontend: regexFrontend
       properties:
         description:
           type: string
@@ -1387,6 +1457,12 @@ components:
         optional:
           description: 是否为可选参数
           type: boolean
+        regexBackend:
+          description: 后端校验正则 (可选)
+          type: string
+        regexFrontend:
+          description: 前端校验正则 (可选)
+          type: string
       type: object
     models.PolicyRule:
       example:
@@ -1597,9 +1673,13 @@ components:
         - name: name
           description: description
           optional: true
+          regexBackend: regexBackend
+          regexFrontend: regexFrontend
         - name: name
           description: description
           optional: true
+          regexBackend: regexBackend
+          regexFrontend: regexFrontend
         name: name
         description: description
         id: id
@@ -1607,9 +1687,13 @@ components:
         - name: name
           description: description
           optional: true
+          regexBackend: regexBackend
+          regexFrontend: regexFrontend
         - name: name
           description: description
           optional: true
+          regexBackend: regexBackend
+          regexFrontend: regexFrontend
       properties:
         description:
           description: 处理器功能简述
@@ -1639,8 +1723,12 @@ components:
         inputs:
           key: inputs
         startedAt: startedAt
-        id: id
+        trigger: trigger
         error: error
+        userId: userId
+        finishedAt: finishedAt
+        currentStep: 0
+        id: id
         logs:
         - stepId: stepId
           message: message
@@ -1648,11 +1736,12 @@ components:
         - stepId: stepId
           message: message
           timestamp: timestamp
-        userId: userId
         workflowId: workflowId
-        finishedAt: finishedAt
         status: status
       properties:
+        currentStep:
+          description: "当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)"
+          type: integer
         error:
           type: string
         finishedAt:
@@ -1679,6 +1768,9 @@ components:
         status:
           description: "Pending, Running, Success, Failed, Cancelled"
           type: string
+        trigger:
+          description: "Manual, Cron, Webhook"
+          type: string
         userId:
           description: 触发者 ID
           type: string
@@ -1691,6 +1783,8 @@ components:
       example:
         default: default
         description: description
+        regexBackend: regexBackend
+        regexFrontend: regexFrontend
         required: true
       properties:
         default:
@@ -1698,6 +1792,12 @@ components:
           type: string
         description:
           description: 变量描述
+          type: string
+        regexBackend:
+          description: 后端校验正则 (可选)
+          type: string
+        regexFrontend:
+          description: 前端校验正则 (可选)
           type: string
         required:
           description: 是否必填
@@ -1732,6 +1832,8 @@ components:
           key:
             default: default
             description: description
+            regexBackend: regexBackend
+            regexFrontend: regexFrontend
             required: true
         webhookToken: webhookToken
         updatedAt: updatedAt
@@ -1747,7 +1849,7 @@ components:
         description:
           type: string
         enabled:
-          description: 是否启用 (禁用时 Cron/Webhook 不触发，但手动可运行)
+          description: 是否启用 (禁用时 Cron/Webhook/手动 均不可触发)
           type: boolean
         id:
           type: string

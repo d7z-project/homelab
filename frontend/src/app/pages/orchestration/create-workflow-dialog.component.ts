@@ -7,6 +7,9 @@ import {
   FormGroup,
   Validators,
   FormArray,
+  ValidatorFn,
+  AbstractControl,
+  ValidationErrors,
 } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,6 +24,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import {
   OrchestrationService,
   RbacService,
@@ -53,6 +57,7 @@ import { firstValueFrom } from 'rxjs';
     MatTooltipModule,
     MatSnackBarModule,
     MatCheckboxModule,
+    MatMenuModule,
   ],
   template: `
     <div class="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
@@ -198,10 +203,37 @@ import { firstValueFrom } from 'rxjs';
                     <mat-form-field appearance="outline" class="w-1/4">
                       <mat-label>默认值</mat-label>
                       <input matInput formControlName="default" placeholder="空" />
+                      @if (getVarGroup(vIndex).get('default')?.errors?.['regexMatch']) {
+                        <mat-error>值不符合前端正则要求</mat-error>
+                      }
                     </mat-form-field>
                     <div class="flex flex-col gap-2 pt-2">
                       <mat-checkbox formControlName="required">必填</mat-checkbox>
                     </div>
+                    <button
+                      mat-icon-button
+                      [matMenuTriggerFor]="varExtra"
+                      matTooltip="更多校验"
+                      type="button"
+                      class="mt-1"
+                    >
+                      <mat-icon>tune</mat-icon>
+                    </button>
+                    <mat-menu #varExtra="matMenu" class="rounded-xl overflow-hidden p-4">
+                      <div class="flex flex-col gap-4 p-4 min-w-[300px]" (click)="$event.stopPropagation()">
+                        <p class="text-[10px] font-bold uppercase text-outline">正则表达式校验</p>
+                        <mat-form-field appearance="outline">
+                          <mat-label>前端校验正则</mat-label>
+                          <input matInput formControlName="regexFrontend" placeholder="JS 正则格式" />
+                          <mat-hint>保存时立即校验（非变量值）</mat-hint>
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>后端校验正则</mat-label>
+                          <input matInput formControlName="regexBackend" placeholder="Go 正则格式" />
+                          <mat-hint>触发执行时强制校验（解析后）</mat-hint>
+                        </mat-form-field>
+                      </div>
+                    </mat-menu>
                     <button
                       mat-icon-button
                       color="warn"
@@ -351,6 +383,9 @@ import { firstValueFrom } from 'rxjs';
                                   [matAutocomplete]="auto"
                                 />
                                 <mat-hint class="text-[10px]">{{ param.description }}</mat-hint>
+                                @if (getStepGroup(stepIndex)?.get('params')?.get(param.name!)?.errors?.['regexMatch']) {
+                                  <mat-error>值不符合该参数的前端正则要求</mat-error>
+                                }
                                 @if (!param.optional) {
                                   <mat-error>此参数必填</mat-error>
                                 }
@@ -511,14 +546,44 @@ export class CreateWorkflowDialogComponent implements OnInit {
   }
 
   addVar(key?: string, def?: any) {
-    this.vars.push(
-      this.fb.group({
-        key: [key || '', [Validators.required, Validators.pattern('^[a-z0-9_]+$')]],
-        description: [def?.description || ''],
-        default: [def?.default || ''],
-        required: [def?.required || false],
-      }),
-    );
+    const varGroup = this.fb.group({
+      key: [key || '', [Validators.required, Validators.pattern('^[a-z0-9_]+$')]],
+      description: [def?.description || ''],
+      default: [def?.default || ''],
+      required: [def?.required || false],
+      regexFrontend: [def?.regexFrontend || ''],
+      regexBackend: [def?.regexBackend || ''],
+    });
+
+    // Apply regex validator to 'default' field
+    varGroup.get('default')?.setValidators([
+      this.createRegexValidator(varGroup, 'regexFrontend'),
+    ]);
+
+    this.vars.push(varGroup);
+  }
+
+  createRegexValidator(group: FormGroup, regexFieldName: string): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value;
+      if (!value) return null;
+
+      // Skip validation if it contains ${{ ... }}
+      if (value.includes('${{')) return null;
+
+      const regexStr = group.get(regexFieldName)?.value;
+      if (!regexStr) return null;
+
+      try {
+        const regex = new RegExp(regexStr);
+        if (!regex.test(value)) {
+          return { regexMatch: true };
+        }
+      } catch (e) {
+        return null;
+      }
+      return null;
+    };
   }
 
   removeVar(index: number) {
@@ -566,7 +631,20 @@ export class CreateWorkflowDialogComponent implements OnInit {
     if (manifest && manifest.params) {
       for (const p of manifest.params) {
         if (p.name) {
-          const validators = p.optional ? [] : [Validators.required];
+          const validators: ValidatorFn[] = p.optional ? [] : [Validators.required];
+          if (p.regexFrontend) {
+            validators.push((control: AbstractControl): ValidationErrors | null => {
+              const val = control.value;
+              if (!val || val.includes('${{')) return null;
+              try {
+                const regex = new RegExp(p.regexFrontend!);
+                if (!regex.test(val)) return { regexMatch: true };
+              } catch (e) {
+                return null;
+              }
+              return null;
+            });
+          }
           paramsGroup.addControl(
             p.name,
             this.fb.control(initialParams?.[p.name] || '', validators),
@@ -620,6 +698,8 @@ export class CreateWorkflowDialogComponent implements OnInit {
           description: v.description,
           default: v.default,
           required: v.required,
+          regexFrontend: v.regexFrontend,
+          regexBackend: v.regexBackend,
         };
       }
     }

@@ -19,6 +19,14 @@ export interface ModelsVarDefinition {
      */
     description?: string;
     /**
+     * 后端校验正则 (可选)
+     */
+    regexBackend?: string;
+    /**
+     * 前端校验正则 (可选)
+     */
+    regexFrontend?: string;
+    /**
      * 是否必填
      */
     required?: boolean;

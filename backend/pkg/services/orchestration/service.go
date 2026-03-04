@@ -11,6 +11,7 @@ import (
 	repo "homelab/pkg/repositories/orchestration"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,6 +29,18 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 	stepIDs := make(map[string]bool)
 	for _, step := range workflow.Steps {
 		stepIDs[step.ID] = true
+	}
+
+	// Validate variables
+	for k, v := range workflow.Vars {
+		if !models.OrchIdRegex.MatchString(k) {
+			return fmt.Errorf("invalid variable key: %s (must match %s)", k, models.OrchIdRegex.String())
+		}
+		if v.RegexBackend != "" {
+			if _, err := regexp.Compile(v.RegexBackend); err != nil {
+				return fmt.Errorf("invalid regex for variable %s: %v", k, err)
+			}
+		}
 	}
 
 	for _, step := range workflow.Steps {
@@ -295,6 +308,16 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 			}
 			val = def.Default
 		}
+		// Regex validation
+		if def.RegexBackend != "" {
+			matched, err := regexp.MatchString(def.RegexBackend, val)
+			if err != nil {
+				return "", fmt.Errorf("invalid regex for variable %s: %v", k, err)
+			}
+			if !matched {
+				return "", fmt.Errorf("variable %s does not match required format", k)
+			}
+		}
 		finalInputs[k] = val
 	}
 
@@ -550,7 +573,7 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 
 	taskCtx := &TaskContext{
 		InstanceID: "probe",
-		Workspace:  workspace,
+		Workspace:  afero.NewBasePathFs(probeFS, workspace),
 		UserID:     userID,
 		Context:    ctx,
 		CancelFunc: func() {},
