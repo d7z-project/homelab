@@ -56,20 +56,21 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	}
 
 	instance := &models.TaskInstance{
-		ID:         fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano()),
-		WorkflowID: workflow.ID,
-		Status:     "Running",
-		Trigger:    trigger,
-		UserID:     userID,
-		Inputs:     inputs,
-		StartedAt:  time.Now(),
-		Outputs:    make(map[string]string),
+		ID:          fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano()),
+		WorkflowID:  workflow.ID,
+		Status:      "Running",
+		Trigger:     trigger,
+		UserID:      userID,
+		Inputs:      inputs,
+		StartedAt:   time.Now(),
+		Outputs:     make(map[string]string),
+		StepTimings: make(map[int]*models.StepTiming),
 	}
 
 	// Update activeWorkflows with the real instance ID
 	e.activeWorkflows.Store(workflow.ID, instance.ID)
 
-	workspace, err := afero.TempDir(orchFS, "", instance.ID+"_*")
+	workspace, err := afero.TempDir(orchFS, "", instance.ID)
 	if err != nil {
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
@@ -120,23 +121,46 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 
 func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workflow *models.Workflow, logger *TaskLogger, cancel context.CancelFunc) {
 	defer func() {
-		// Finalization Step
-		instance.CurrentStep = len(workflow.Steps) + 1
-		logger.SetStep(instance.CurrentStep)
+		// Finalization Step Index
+		finalStepIdx := len(workflow.Steps) + 1
+
+		// Record end of the step that was running before defer (if any)
+		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
+			if t.FinishedAt == nil {
+				now := time.Now()
+				t.FinishedAt = &now
+			}
+		}
+
+		// Use the final step index for cleanup logs
+		logger.SetStep(finalStepIdx)
+
 		if r := recover(); r != nil {
 			err := fmt.Errorf("panic recovered: %v\n%s", r, string(debug.Stack()))
 			e.fail(instance, err, logger)
 		}
+
 		if instance.Workspace != "" {
-			logger.Logf("Cleaning up workspace: %s", instance.Workspace)
+			logger.Logf("Cleaning up workspace...")
 			_ = orchFS.RemoveAll(instance.Workspace)
 		}
+
 		if instance.Status == "Running" {
 			instance.Status = "Success"
+			instance.CurrentStep = finalStepIdx // Only move to final step index if succeeded
 			now := time.Now()
 			instance.FinishedAt = &now
-			logger.Log("Workflow completed successfully")
+			logger.Log("Workflow completed")
+		} else {
+			// If failed/cancelled, we stay on that step index for the UI
+			logger.Logf("Execution ended: %s", instance.Status)
 		}
+
+		// Record finalization timing (always happens)
+		instance.StepTimings[finalStepIdx] = &models.StepTiming{StartedAt: time.Now()}
+		now := time.Now()
+		instance.StepTimings[finalStepIdx].FinishedAt = &now
+
 		e.updateInstanceState(instance, logger)
 		cancel()
 		e.runningTasks.Delete(instance.ID)
@@ -145,15 +169,24 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 
 	// Initialization Step
 	instance.CurrentStep = 0
+	instance.StepTimings[0] = &models.StepTiming{StartedAt: time.Now()}
 	logger.SetStep(0)
-	logger.Logf("Starting workflow: %s (%s)", workflow.Name, workflow.ID)
-	logger.Logf("Workspace directory: %s", instance.Workspace)
+	logger.Log("Initializing workflow")
 	e.updateInstanceState(instance, logger)
 
 	stepOutputs := make(map[string]map[string]string)
 
 	for i, step := range workflow.Steps {
+		// End previous step timing (Init or previous workflow step)
+		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
+			if t.FinishedAt == nil {
+				now := time.Now()
+				t.FinishedAt = &now
+			}
+		}
+
 		instance.CurrentStep = i + 1
+		instance.StepTimings[instance.CurrentStep] = &models.StepTiming{StartedAt: time.Now()}
 		logger.SetStep(instance.CurrentStep)
 		e.updateInstanceState(instance, logger)
 		select {
@@ -165,9 +198,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		default:
 		}
 
-		// Resolve Step Name
-		resolvedName := e.resolveVariables(step.Name, stepOutputs, instance.Inputs)
-		logger.Logf("Executing step: %s (%s)", resolvedName, step.ID)
+		// Resolve Step Name (No logging start here as requested to reduce noise)
 
 		// 1. Evaluate 'if' condition
 		if step.If != "" {
@@ -177,7 +208,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 				return
 			}
 			if !shouldRun {
-				logger.Logf("Step skipped (if condition evaluated to false)")
+				logger.Logf("Step skipped")
 				e.updateInstanceState(instance, logger)
 				continue
 			}
@@ -234,7 +265,6 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		}
 
 		stepOutputs[step.ID] = outputs
-		logger.Logf("Step %s completed successfully", step.ID)
 		e.updateInstanceState(instance, logger)
 	}
 }

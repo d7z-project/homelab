@@ -144,23 +144,23 @@
                 >
                   <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
-                      <button mat-icon-button (click)="showSaRoles(element)" matTooltip="生效权限">
+                      <button mat-icon-button icon-button-center (click)="showSaRoles(element)" matTooltip="生效权限">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >manage_accounts</mat-icon
                         >
                       </button>
-                      <button mat-icon-button (click)="resetToken(element)" matTooltip="重置令牌">
+                      <button mat-icon-button icon-button-center (click)="resetToken(element)" matTooltip="重置令牌">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >key</mat-icon
                         >
                       </button>
-                      <button mat-icon-button (click)="editSA(element)" matTooltip="编辑">
+                      <button mat-icon-button icon-button-center (click)="editSA(element)" matTooltip="编辑">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >edit</mat-icon
                         >
                       </button>
                       <button
-                        mat-icon-button
+                        mat-icon-button icon-button-center
                         color="warn"
                         (click)="deleteSA(element)"
                         matTooltip="删除"
@@ -170,7 +170,7 @@
                         >
                       </button>
                     } @else {
-                      <button mat-icon-button [matMenuTriggerFor]="saMenu">
+                      <button mat-icon-button icon-button-center [matMenuTriggerFor]="saMenu">
                         <mat-icon>more_vert</mat-icon>
                       </button>
                       <mat-menu #saMenu="matMenu">
@@ -318,18 +318,18 @@
                 >
                   <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
-                      <button mat-icon-button (click)="editRole(element)">
+                      <button mat-icon-button icon-button-center (click)="editRole(element)">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >edit</mat-icon
                         >
                       </button>
-                      <button mat-icon-button color="warn" (click)="deleteRole(element)">
+                      <button mat-icon-button icon-button-center color="warn" (click)="deleteRole(element)">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >delete_outline</mat-icon
                         >
                       </button>
                     } @else {
-                      <button mat-icon-button [matMenuTriggerFor]="roleMenu">
+                      <button mat-icon-button icon-button-center [matMenuTriggerFor]="roleMenu">
                         <mat-icon>more_vert</mat-icon>
                       </button>
                       <mat-menu #roleMenu="matMenu">
@@ -488,18 +488,18 @@
                 >
                   <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
-                      <button mat-icon-button (click)="editRB(element)">
+                      <button mat-icon-button icon-button-center (click)="editRB(element)">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >edit</mat-icon
                         >
                       </button>
-                      <button mat-icon-button color="warn" (click)="deleteRB(element)">
+                      <button mat-icon-button icon-button-center color="warn" (click)="deleteRB(element)">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >delete_outline</mat-icon
                         >
                       </button>
                     } @else {
-                      <button mat-icon-button [matMenuTriggerFor]="rbMenu">
+                      <button mat-icon-button icon-button-center [matMenuTriggerFor]="rbMenu">
                         <mat-icon>more_vert</mat-icon>
                       </button>
                       <mat-menu #rbMenu="matMenu">

@@ -44,7 +44,8 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 	}
 
 	for _, step := range workflow.Steps {
-		if _, ok := GetProcessor(step.Type); !ok {
+		processor, ok := GetProcessor(step.Type)
+		if !ok {
 			return fmt.Errorf("step %s: processor not found: %s", step.ID, step.Type)
 		}
 
@@ -59,7 +60,9 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 		}
 
 		// Validate params for variable references
+		manifest := processor.Manifest()
 		for k, v := range step.Params {
+			// 1. Check for variable references
 			matches := paramRegex.FindAllStringSubmatch(v, -1)
 			for _, match := range matches {
 				if len(match) < 5 {
@@ -75,6 +78,21 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 				} else if varKey != "" {
 					if _, ok := workflow.Vars[varKey]; !ok {
 						return fmt.Errorf("step %s: param %s references unknown variable %s", step.ID, k, varKey)
+					}
+				}
+			}
+
+			// 2. Regex validation for static values (not containing templates)
+			if !strings.Contains(v, "${{") {
+				for _, pDef := range manifest.Params {
+					if pDef.Name == k && pDef.RegexBackend != "" {
+						matched, err := regexp.MatchString(pDef.RegexBackend, v)
+						if err != nil {
+							return fmt.Errorf("step %s: invalid regex for param %s: %v", step.ID, k, err)
+						}
+						if !matched {
+							return fmt.Errorf("step %s: parameter %s does not match required format", step.ID, k)
+						}
 					}
 				}
 			}
@@ -527,6 +545,14 @@ func GetStepLogs(ctx context.Context, id string, stepIndex int, offset int) ([]m
 	}
 
 	return ReadStepLogs(id, stepIndex, offset)
+}
+
+func ValidateRegex(regex string) error {
+	if regex == "" {
+		return nil
+	}
+	_, err := regexp.Compile(regex)
+	return err
 }
 
 type ProbeRequest struct {

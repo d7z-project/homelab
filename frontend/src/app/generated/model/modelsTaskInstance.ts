@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { ModelsLogEntry } from './modelsLogEntry';
+import { ModelsStepTiming } from './modelsStepTiming';
 
 
 export interface ModelsTaskInstance { 
@@ -35,6 +36,10 @@ export interface ModelsTaskInstance {
      * Pending, Running, Success, Failed, Cancelled
      */
     status?: string;
+    /**
+     * 步骤执行耗时追踪
+     */
+    stepTimings?: { [key: string]: ModelsStepTiming; };
     /**
      * Manual, Cron, Webhook
      */

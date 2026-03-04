@@ -300,6 +300,13 @@ definitions:
           $ref: '#/definitions/models.ParamDefinition'
         type: array
     type: object
+  models.StepTiming:
+    properties:
+      finishedAt:
+        type: string
+      startedAt:
+        type: string
+    type: object
   models.TaskInstance:
     properties:
       currentStep:
@@ -331,6 +338,11 @@ definitions:
       status:
         description: Pending, Running, Success, Failed, Cancelled
         type: string
+      stepTimings:
+        additionalProperties:
+          $ref: '#/definitions/models.StepTiming'
+        description: 步骤执行耗时追踪
+        type: object
       trigger:
         description: Manual, Cron, Webhook
         type: string
@@ -954,6 +966,29 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Test a single processor
+      tags:
+      - orchestration
+  /orchestration/validate/regex:
+    post:
+      description: Checks if a regex string is syntactically correct for Go.
+      parameters:
+      - description: Regex to validate
+        in: query
+        name: regex
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "400":
+          description: Invalid Regex
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Validate a regular expression
       tags:
       - orchestration
   /orchestration/webhooks/{token}:

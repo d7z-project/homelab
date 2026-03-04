@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, inject, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, Inject, OnInit, inject, signal, ChangeDetectorRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
@@ -11,7 +11,7 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,6 +25,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
 import {
   OrchestrationService,
   RbacService,
@@ -36,6 +40,8 @@ import {
   ModelsVarDefinition,
 } from '../../generated';
 import { firstValueFrom } from 'rxjs';
+import { ProcessorSelectorDialogComponent } from './processor-selector-dialog.component';
+import { VariableConfigDialogComponent } from './variable-config-dialog.component';
 
 @Component({
   selector: 'app-create-workflow-dialog',
@@ -58,6 +64,7 @@ import { firstValueFrom } from 'rxjs';
     MatSnackBarModule,
     MatCheckboxModule,
     MatMenuModule,
+    DragDropModule,
   ],
   template: `
     <div class="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
@@ -65,7 +72,7 @@ import { firstValueFrom } from 'rxjs';
         class="!bg-surface !border-b !border-outline-variant/30 flex justify-between shrink-0 h-16 sm:h-16"
       >
         <div class="flex items-center">
-          <button mat-icon-button (click)="dialogRef.close()" matTooltip="返回">
+          <button mat-icon-button icon-button-center (click)="dialogRef.close()" matTooltip="返回">
             <mat-icon>close</mat-icon>
           </button>
           <span class="ml-2 text-lg font-medium tracking-tight">{{
@@ -187,63 +194,61 @@ import { firstValueFrom } from 'rxjs';
                   @let vIndex = $index;
                   <div
                     [formGroup]="getVarGroup(vIndex)"
-                    class="flex gap-4 items-start bg-surface-container-low p-4 rounded-xl border border-outline-variant/30"
+                    class="bg-surface-container-low p-4 sm:p-6 rounded-2xl border border-outline-variant/30 flex flex-col gap-4 relative animate-in fade-in slide-in-from-top-2"
                   >
-                    <mat-form-field appearance="outline" class="w-1/4">
-                      <mat-label>变量键名</mat-label>
-                      <input matInput formControlName="key" placeholder="如：env" />
-                      @if (getVarGroup(vIndex).get('key')?.errors?.['pattern']) {
-                        <mat-error>仅限小写字母、数字、下划线</mat-error>
-                      }
-                    </mat-form-field>
-                    <mat-form-field appearance="outline" class="w-1/4">
-                      <mat-label>描述</mat-label>
-                      <input matInput formControlName="description" placeholder="说明" />
-                    </mat-form-field>
-                    <mat-form-field appearance="outline" class="w-1/4">
-                      <mat-label>默认值</mat-label>
-                      <input matInput formControlName="default" placeholder="空" />
-                      @if (getVarGroup(vIndex).get('default')?.errors?.['regexMatch']) {
-                        <mat-error>值不符合前端正则要求</mat-error>
-                      }
-                    </mat-form-field>
-                    <div class="flex flex-col gap-2 pt-2">
-                      <mat-checkbox formControlName="required">必填</mat-checkbox>
+                    <div class="flex justify-between items-start">
+                      <span class="text-[10px] font-bold uppercase tracking-widest text-outline bg-outline/5 px-2 py-0.5 rounded">变量 #{{ vIndex + 1 }}</span>
+                      <button
+                        mat-icon-button icon-button-center
+                        color="warn"
+                        (click)="removeVar(vIndex)"
+                        matTooltip="删除变量"
+                        type="button"
+                        class="!w-8 !h-8 -mt-2 -mr-2"
+                      >
+                        <mat-icon class="!text-lg">delete_outline</mat-icon>
+                      </button>
                     </div>
-                    <button
-                      mat-icon-button
-                      [matMenuTriggerFor]="varExtra"
-                      matTooltip="更多校验"
-                      type="button"
-                      class="mt-1"
-                    >
-                      <mat-icon>tune</mat-icon>
-                    </button>
-                    <mat-menu #varExtra="matMenu" class="rounded-xl overflow-hidden p-4">
-                      <div class="flex flex-col gap-4 p-4 min-w-[300px]" (click)="$event.stopPropagation()">
-                        <p class="text-[10px] font-bold uppercase text-outline">正则表达式校验</p>
-                        <mat-form-field appearance="outline">
-                          <mat-label>前端校验正则</mat-label>
-                          <input matInput formControlName="regexFrontend" placeholder="JS 正则格式" />
-                          <mat-hint>保存时立即校验（非变量值）</mat-hint>
-                        </mat-form-field>
-                        <mat-form-field appearance="outline">
-                          <mat-label>后端校验正则</mat-label>
-                          <input matInput formControlName="regexBackend" placeholder="Go 正则格式" />
-                          <mat-hint>触发执行时强制校验（解析后）</mat-hint>
-                        </mat-form-field>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
+                      <mat-form-field appearance="outline" class="sm:col-span-3">
+                        <mat-label>变量键名</mat-label>
+                        <input matInput formControlName="key" placeholder="如：env" />
+                        @if (getVarGroup(vIndex).get('key')?.errors?.['pattern']) {
+                          <mat-error>小写字母、数字、下划线</mat-error>
+                        }
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="sm:col-span-4">
+                        <mat-label>变量描述</mat-label>
+                        <input matInput formControlName="description" placeholder="此变量用途说明" />
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="sm:col-span-5">
+                        <mat-label>默认值 (可选)</mat-label>
+                        <input matInput formControlName="default" placeholder="未填时的回退值" />
+                        @if (getVarGroup(vIndex).get('default')?.errors?.['regexMatch']) {
+                          <mat-error>不符合前端正则</mat-error>
+                        }
+                      </mat-form-field>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-outline-variant/10">
+                      <div class="flex items-center gap-6">
+                        <mat-checkbox formControlName="required" class="font-medium">设为必填参数</mat-checkbox>
+                        <div class="w-px h-4 bg-outline-variant/30 hidden sm:block"></div>
+                        <button
+                          mat-button
+                          type="button"
+                          (click)="openVarExtra(vIndex)"
+                          [class.text-success]="hasRegex(vIndex)"
+                          class="!rounded-full !px-4"
+                        >
+                          <mat-icon class="mr-2">{{ hasRegex(vIndex) ? 'verified_user' : 'tune' }}</mat-icon>
+                          {{ hasRegex(vIndex) ? '已配置正则校验' : '配置正则校验' }}
+                        </button>
                       </div>
-                    </mat-menu>
-                    <button
-                      mat-icon-button
-                      color="warn"
-                      (click)="removeVar(vIndex)"
-                      matTooltip="删除变量"
-                      type="button"
-                      class="mt-1"
-                    >
-                      <mat-icon>delete_outline</mat-icon>
-                    </button>
+                    </div>
                   </div>
                 }
 
@@ -272,12 +277,24 @@ import { firstValueFrom } from 'rxjs';
             <!-- Step 3: Configure Steps -->
             <mat-step>
               <ng-template matStepLabel>任务步骤配置</ng-template>
-              <div class="flex flex-col gap-6 mt-6 pb-12">
+              <div 
+                class="flex flex-col gap-6 mt-6 pb-12"
+                cdkDropList
+                (cdkDropListDropped)="drop($event)"
+              >
                 @for (step of steps.controls; track step.value._uid) {
                   @let stepIndex = $index;
                   <div
+                    cdkDrag
                     class="bg-surface border border-outline-variant rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md relative"
                   >
+                    <!-- Drag handle -->
+                    <div 
+                      class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/10 hover:bg-primary transition-colors z-10 cursor-move"
+                      cdkDragHandle
+                      matTooltip="按住拖动排序"
+                    ></div>
+
                     <!-- Step Header/Toolbar -->
                     <div
                       class="bg-surface-container-low px-6 py-3 flex justify-between items-center border-b border-outline-variant/30"
@@ -296,15 +313,39 @@ import { firstValueFrom } from 'rxjs';
                           }}
                         </span>
                       </div>
-                      <button
-                        mat-icon-button
-                        color="warn"
-                        (click)="removeStep(stepIndex)"
-                        matTooltip="删除此步骤"
-                        class="!w-8 !h-8"
-                      >
-                        <mat-icon class="!text-lg">delete_outline</mat-icon>
-                      </button>
+                      <div class="flex items-center gap-1">
+                        @if (isHandset()) {
+                          <button
+                            mat-icon-button icon-button-center
+                            [disabled]="stepIndex === 0"
+                            (click)="moveStep(stepIndex, -1)"
+                            matTooltip="上移"
+                            type="button"
+                            class="!w-8 !h-8"
+                          >
+                            <mat-icon class="!text-lg">arrow_upward</mat-icon>
+                          </button>
+                          <button
+                            mat-icon-button icon-button-center
+                            [disabled]="stepIndex === steps.length - 1"
+                            (click)="moveStep(stepIndex, 1)"
+                            matTooltip="下移"
+                            type="button"
+                            class="!w-8 !h-8"
+                          >
+                            <mat-icon class="!text-lg">arrow_downward</mat-icon>
+                          </button>
+                        }
+                        <button
+                          mat-icon-button icon-button-center
+                          color="warn"
+                          (click)="removeStep(stepIndex)"
+                          matTooltip="删除此步骤"
+                          class="!w-8 !h-8"
+                        >
+                          <mat-icon class="!text-lg">delete_outline</mat-icon>
+                        </button>
+                      </div>
                     </div>
 
                     <div [formGroup]="getStepGroup(stepIndex)!" class="p-6 flex flex-col gap-4">
@@ -334,70 +375,78 @@ import { firstValueFrom } from 'rxjs';
                         </mat-form-field>
                       </div>
 
-                      <mat-form-field appearance="outline">
-                        <mat-label>处理器类型</mat-label>
-                        <mat-select
-                          formControlName="type"
-                          (selectionChange)="onProcessorChange(stepIndex)"
+                      <div class="flex flex-col gap-1.5">
+                        <mat-label class="text-[10px] font-bold text-outline uppercase px-1">处理器类型</mat-label>
+                        
+                        <div 
+                          (click)="openProcessorSelector(stepIndex)"
+                          class="group relative flex items-center gap-4 p-4 rounded-2xl border border-outline-variant/30 hover:border-primary/50 hover:bg-primary/[0.02] cursor-pointer transition-all duration-200"
+                          [class.bg-primary/5]="getStepManifest(stepIndex)"
+                          [class.border-primary/20]="getStepManifest(stepIndex)"
                         >
-                          @for (m of manifests(); track m.id) {
-                            <mat-option [value]="m.id">
-                              {{ m.name }}
-                            </mat-option>
-                          }
-                        </mat-select>
-                        @if (getStepGroup(stepIndex)?.get('type')?.value) {
-                          <mat-hint class="text-[10px] opacity-70">
-                            {{ manifests().find(m => m.id === getStepGroup(stepIndex)?.get('type')?.value)?.description }}
-                          </mat-hint>
-                        }
-                      </mat-form-field>
+                          <div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0 border border-outline-variant/20 group-hover:bg-primary/10 transition-colors">
+                            <mat-icon class="!w-6 !h-6 !text-[24px] text-outline group-hover:text-primary transition-colors">extension</mat-icon>
+                          </div>
 
-                      <!-- Dynamic Parameters -->
-                      @if (
-                        getProcessorParams(getStepGroup(stepIndex)?.get('type')?.value).length > 0
-                      ) {
-                        <div class="mt-2 space-y-4">
-                          <p
-                            class="text-[10px] font-bold uppercase tracking-wider text-outline px-1"
-                          >
-                            输入参数配置
-                          </p>
-                          <div
-                            formGroupName="params"
-                            class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4"
-                          >
-                            @for (
-                              param of getProcessorParams(
-                                getStepGroup(stepIndex)?.get('type')?.value
-                              );
-                              track param.name
-                            ) {
-                              <mat-form-field appearance="outline">
-                                <mat-label
-                                  >{{ param.name }}{{ param.optional ? ' (可选)' : '' }}</mat-label
-                                >
-                                <input
-                                  matInput
-                                  [formControlName]="param.name!"
-                                  [matAutocomplete]="auto"
-                                />
-                                <mat-hint class="text-[10px]">{{ param.description }}</mat-hint>
-                                @if (getStepGroup(stepIndex)?.get('params')?.get(param.name!)?.errors?.['regexMatch']) {
-                                  <mat-error>值不符合该参数的前端正则要求</mat-error>
-                                }
-                                @if (!param.optional) {
-                                  <mat-error>此参数必填</mat-error>
-                                }
-                                <mat-autocomplete #auto="matAutocomplete">
-                                  @for (ref of getOutputReferences(stepIndex); track ref) {
-                                    <mat-option [value]="ref">{{ ref }}</mat-option>
-                                  }
-                                </mat-autocomplete>
-                              </mat-form-field>
+                          <div class="flex-1 min-w-0">
+                            @if (getStepManifest(stepIndex); as manifest) {
+                              <div class="flex items-baseline gap-2">
+                                <span class="text-sm font-bold text-primary">{{ manifest.name }}</span>
+                                <span class="text-[10px] font-mono text-outline opacity-50">标识: {{ manifest.id }}</span>
+                              </div>
+                              <p class="text-xs text-outline opacity-80 mt-0.5 line-clamp-1">
+                                {{ manifest.description }}
+                              </p>
+                            } @else {
+                              <span class="text-sm text-outline opacity-50 font-medium">点击选择一个任务处理器...</span>
                             }
                           </div>
+
+                          <mat-icon class="text-outline opacity-30 group-hover:opacity-100 group-hover:text-primary transition-all">chevron_right</mat-icon>
                         </div>
+                        
+                        @if (getStepGroup(stepIndex)?.get('type')?.errors?.['required'] && getStepGroup(stepIndex)?.get('type')?.touched) {
+                          <p class="text-[10px] text-error px-1 mt-1">必须选择一个处理器</p>
+                        }
+                      </div>
+
+                      <!-- Dynamic Parameters -->
+                      @if (getProcessorParams(getStepGroup(stepIndex)?.get('type')?.value); as params) {
+                        @if (params.length > 0) {
+                          <div class="mt-2 space-y-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-outline px-1">
+                              输入参数配置
+                            </p>
+                            <div
+                              formGroupName="params"
+                              class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4"
+                            >
+                              @for (param of params; track param.name) {
+                                <div class="flex flex-col">
+                                  <mat-form-field appearance="outline" class="!mb-0">
+                                    <mat-label>{{ param.description || param.name }}{{ param.optional ? ' (可选)' : '' }}</mat-label>
+                                    <input
+                                      matInput
+                                      [formControlName]="param.name!"
+                                      [matAutocomplete]="auto"
+                                    />
+                                    @if (getStepGroup(stepIndex)?.get('params')?.get(param.name!)?.errors?.['regexMatch']) {
+                                      <mat-error>值不符合该参数的前端正则要求</mat-error>
+                                    }
+                                    @if (!param.optional) {
+                                      <mat-error>此参数必填</mat-error>
+                                    }
+                                    <mat-autocomplete #auto="matAutocomplete">
+                                      @for (ref of getOutputReferences(stepIndex); track ref) {
+                                        <mat-option [value]="ref">{{ ref }}</mat-option>
+                                      }
+                                    </mat-autocomplete>
+                                  </mat-form-field>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
                       }
                     </div>
                   </div>
@@ -479,9 +528,24 @@ export class CreateWorkflowDialogComponent implements OnInit {
   private rbacService = inject(RbacService);
   private cdr = inject(ChangeDetectorRef);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private breakpointObserver = inject(BreakpointObserver);
+
+  isHandset = toSignal(
+    this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
+    { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
+  );
 
   manifests = signal<ModelsStepManifest[]>([]);
   serviceAccounts = signal<ModelsServiceAccount[]>([]);
+
+  manifestMap = computed(() => {
+    const map = new Map<string, ModelsStepManifest>();
+    this.manifests().forEach(m => {
+      if (m.id) map.set(m.id, m);
+    });
+    return map;
+  });
 
   infoForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
@@ -503,12 +567,16 @@ export class CreateWorkflowDialogComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    const [manifests, saData] = await Promise.all([
-      firstValueFrom(this.orchService.orchestrationManifestsGet()),
-      firstValueFrom(this.rbacService.rbacServiceaccountsGet()),
-    ]);
-    this.manifests.set(manifests || []);
-    this.serviceAccounts.set(saData.items || []);
+    try {
+      const [manifests, saData] = await Promise.all([
+        firstValueFrom(this.orchService.orchestrationManifestsGet()),
+        firstValueFrom(this.rbacService.rbacServiceaccountsGet()),
+      ]);
+      this.manifests.set(manifests || []);
+      this.serviceAccounts.set(saData.items || []);
+    } catch (e) {
+      console.error('Failed to load initial data', e);
+    }
 
     requestAnimationFrame(() => {
       if (this.data.workflow) {
@@ -590,6 +658,32 @@ export class CreateWorkflowDialogComponent implements OnInit {
     this.vars.removeAt(index);
   }
 
+  hasRegex(index: number): boolean {
+    const group = this.getVarGroup(index);
+    return !!(group.get('regexFrontend')?.value || group.get('regexBackend')?.value);
+  }
+
+  openVarExtra(index: number) {
+    const group = this.getVarGroup(index);
+    const dialogRef = this.dialog.open(VariableConfigDialogComponent, {
+      width: '500px',
+      data: {
+        regexFrontend: group.get('regexFrontend')?.value,
+        regexBackend: group.get('regexBackend')?.value,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        group.patchValue({
+          regexFrontend: result.regexFrontend,
+          regexBackend: result.regexBackend,
+        });
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   getStepGroup(index: number): FormGroup | undefined {
     if (index < 0 || index >= this.steps.length) return undefined;
     return this.steps.at(index) as FormGroup;
@@ -617,12 +711,61 @@ export class CreateWorkflowDialogComponent implements OnInit {
     this.steps.removeAt(index);
   }
 
+  moveStep(index: number, delta: number) {
+    const to = index + delta;
+    if (to < 0 || to >= this.steps.length) return;
+
+    const control = this.steps.at(index);
+    this.steps.removeAt(index);
+    this.steps.insert(to, control);
+    this.cdr.markForCheck();
+  }
+
+  drop(event: CdkDragDrop<any[]>) {
+    const from = event.previousIndex;
+    const to = event.currentIndex;
+    if (from === to) return;
+
+    const control = this.steps.at(from);
+    this.steps.removeAt(from);
+    this.steps.insert(to, control);
+    
+    this.cdr.markForCheck();
+  }
+
+  openProcessorSelector(index: number) {
+    const stepGroup = this.getStepGroup(index);
+    if (!stepGroup) return;
+
+    const dialogRef = this.dialog.open(ProcessorSelectorDialogComponent, {
+      width: '600px',
+      data: {
+        manifests: this.manifests(),
+        selectedId: stepGroup.get('type')?.value
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(selectedId => {
+      if (selectedId) {
+        stepGroup.get('type')?.setValue(selectedId);
+        this.onProcessorChange(index);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  getStepManifest(index: number): ModelsStepManifest | undefined {
+    const type = this.getStepGroup(index)?.get('type')?.value;
+    if (!type) return undefined;
+    return this.manifestMap().get(type);
+  }
+
   onProcessorChange(index: number, initialParams?: any) {
     const stepGroup = this.getStepGroup(index);
     if (!stepGroup) return;
 
     const type = stepGroup.get('type')?.value;
-    const manifest = this.manifests().find((m) => m.id === type);
+    const manifest = this.manifestMap().get(type);
 
     const paramsGroup = stepGroup.get('params') as FormGroup;
     // Clear existing params
@@ -656,7 +799,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   getProcessorParams(type: string | undefined): ModelsParamDefinition[] {
     if (!type) return [];
-    const manifest = this.manifests().find((m) => m.id === type);
+    const manifest = this.manifestMap().get(type);
     if (!manifest) return [];
     return manifest.params || [];
   }
@@ -677,7 +820,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
       const stepID = step.get('id')?.value;
       const type = step.get('type')?.value;
-      const manifest = this.manifests().find((m) => m.id === type);
+      const manifest = this.manifestMap().get(type);
 
       if (stepID && manifest && manifest.outputParams) {
         for (const op of manifest.outputParams) {

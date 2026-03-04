@@ -881,6 +881,43 @@
                 }
             }
         },
+        "/orchestration/validate/regex": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Checks if a regex string is syntactically correct for Go.",
+                "tags": [
+                    "orchestration"
+                ],
+                "summary": "Validate a regular expression",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Regex to validate",
+                        "name": "regex",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Regex",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/orchestration/webhooks/{token}": {
             "get": {
                 "description": "Asynchronously triggers a workflow using its unique security token. No standard authentication required.",
@@ -2413,6 +2450,17 @@
                 }
             }
         },
+        "models.StepTiming": {
+            "type": "object",
+            "properties": {
+                "finishedAt": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "models.TaskInstance": {
             "type": "object",
             "properties": {
@@ -2456,6 +2504,13 @@
                 "status": {
                     "description": "Pending, Running, Success, Failed, Cancelled",
                     "type": "string"
+                },
+                "stepTimings": {
+                    "description": "步骤执行耗时追踪",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.StepTiming"
+                    }
                 },
                 "trigger": {
                     "description": "Manual, Cron, Webhook",

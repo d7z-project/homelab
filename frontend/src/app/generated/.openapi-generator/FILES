@@ -36,6 +36,7 @@ model/modelsSession.ts
 model/modelsSimulatePermissionsRequest.ts
 model/modelsStep.ts
 model/modelsStepManifest.ts
+model/modelsStepTiming.ts
 model/modelsTaskInstance.ts
 model/modelsVarDefinition.ts
 model/modelsWorkflow.ts

@@ -408,12 +408,31 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, instanceID)
 }
 
+// ValidateRegexHandler godoc
+// @Summary Validate a regular expression
+// @Description Checks if a regex string is syntactically correct for Go.
+// @Tags orchestration
+// @Param regex query string true "Regex to validate"
+// @Success 200 {string} string "success"
+// @Failure 400 {object} common.Response "Invalid Regex"
+// @Security ApiKeyAuth
+// @Router /orchestration/validate/regex [post]
+func ValidateRegexHandler(w http.ResponseWriter, r *http.Request) {
+	regex := r.URL.Query().Get("regex")
+	if err := orchestration.ValidateRegex(regex); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	common.Success(w, r, "success")
+}
+
 // OrchestrationRouter registers the orchestration routes
 func OrchestrationRouter(r chi.Router) {
 	r.Route("/orchestration", func(r chi.Router) {
 		r.Get("/workflows", ListWorkflowsHandler)
 		r.Post("/workflows", CreateWorkflowHandler)
 		r.Post("/workflows/validate", ValidateWorkflowHandler)
+		r.Post("/validate/regex", ValidateRegexHandler)
 		r.Put("/workflows/{id}", UpdateWorkflowHandler)
 		r.Delete("/workflows/{id}", DeleteWorkflowHandler)
 		r.Post("/workflows/{workflowId}/run", RunWorkflowHandler)

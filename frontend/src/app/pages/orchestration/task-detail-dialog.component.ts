@@ -77,28 +77,18 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
         <div class="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
           @if (instance().status === 'Running') {
             @if (isHandset()) {
-              <button
-                mat-icon-button
-                color="warn"
-                (click)="cancel()"
-                matTooltip="停止执行"
-              >
+              <button mat-icon-button icon-button-center color="warn" (click)="cancel()" matTooltip="停止执行">
                 <mat-icon>stop_circle</mat-icon>
               </button>
             } @else {
-              <button
-                mat-button
-                color="warn"
-                (click)="cancel()"
-                class="!rounded-full font-bold"
-              >
+              <button mat-button color="warn" (click)="cancel()" class="!rounded-full font-bold">
                 <mat-icon>stop_circle</mat-icon>
                 停止执行
               </button>
             }
           }
           <div class="w-px h-6 bg-outline-variant/30 mx-1 sm:mx-2"></div>
-          <button mat-icon-button (click)="dialogRef.close()" matTooltip="关闭详情">
+          <button mat-icon-button icon-button-center (click)="dialogRef.close()" matTooltip="关闭详情">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -134,7 +124,12 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
               <div class="status-indicator" [style.color]="getStepStatusColor(0)">
                 <mat-icon class="!w-4 !h-4 !text-[16px]">{{ getStepStatusIcon(0) }}</mat-icon>
               </div>
-              <span class="text-[11px] sm:text-xs font-medium truncate flex-1">任务初始化</span>
+              <div class="flex flex-col flex-1 min-w-0">
+                <span class="text-[11px] sm:text-xs font-medium truncate">任务初始化</span>
+                @if (getStepDuration(0); as d) {
+                  <span class="text-[9px] font-mono opacity-50">{{ d }}</span>
+                }
+              </div>
               <mat-icon class="chevron hidden sm:block opacity-0 group-hover:opacity-100"
                 >chevron_right</mat-icon
               >
@@ -152,9 +147,14 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
                     getStepStatusIcon(i + 1)
                   }}</mat-icon>
                 </div>
-                <span class="text-[11px] sm:text-xs font-medium truncate flex-1">{{
-                  step.name || step.id
-                }}</span>
+                <div class="flex flex-col flex-1 min-w-0">
+                  <span class="text-[11px] sm:text-xs font-medium truncate">{{
+                    step.name || step.id
+                  }}</span>
+                  @if (getStepDuration(i + 1); as d) {
+                    <span class="text-[9px] font-mono opacity-50">{{ d }}</span>
+                  }
+                </div>
                 <mat-icon class="chevron hidden sm:block opacity-0 group-hover:opacity-100"
                   >chevron_right</mat-icon
                 >
@@ -167,10 +167,20 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
               [class.active-step]="selectedStepIndex() === stepsList().length + 1"
               class="step-nav-item group shrink-0 sm:shrink"
             >
-              <div class="status-indicator" [style.color]="getStepStatusColor(stepsList().length + 1)">
-                <mat-icon class="!w-4 !h-4 !text-[16px]">{{ getStepStatusIcon(stepsList().length + 1) }}</mat-icon>
+              <div
+                class="status-indicator"
+                [style.color]="getStepStatusColor(stepsList().length + 1)"
+              >
+                <mat-icon class="!w-4 !h-4 !text-[16px]">{{
+                  getStepStatusIcon(stepsList().length + 1)
+                }}</mat-icon>
               </div>
-              <span class="text-[11px] sm:text-xs font-medium truncate flex-1">清理与结束</span>
+              <div class="flex flex-col flex-1 min-w-0">
+                <span class="text-[11px] sm:text-xs font-medium truncate">清理与结束</span>
+                @if (getStepDuration(stepsList().length + 1); as d) {
+                  <span class="text-[9px] font-mono opacity-50">{{ d }}</span>
+                }
+              </div>
               <mat-icon class="chevron hidden sm:block opacity-0 group-hover:opacity-100"
                 >chevron_right</mat-icon
               >
@@ -191,27 +201,36 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
               >
                 {{ getStepName(selectedStepIndex()) }}
               </span>
+              @if (getStepDuration(selectedStepIndex()); as d) {
+                <span class="text-[9px] font-mono text-primary/60 ml-2">[{{ d }}]</span>
+              }
             </div>
             <div class="flex items-center gap-3">
-               <button 
-                 mat-icon-button 
-                 class="!w-6 !h-6 !text-white/30 hover:!text-white/60 transition-colors"
-                 (click)="autoScroll.set(!autoScroll())"
-                 [matTooltip]="autoScroll() ? '关闭自动滚动' : '开启自动滚动'"
-               >
-                 <mat-icon class="!text-[14px] !w-4 !h-4">{{ autoScroll() ? 'vertical_align_bottom' : 'vertical_align_top' }}</mat-icon>
-               </button>
+              <button
+                mat-icon-button icon-button-center
+                class="!w-6 !h-6 !text-white/30 hover:!text-white/60 transition-colors"
+                (click)="autoScroll.set(!autoScroll())"
+                [matTooltip]="autoScroll() ? '关闭自动滚动' : '开启自动滚动'"
+              >
+                <mat-icon class="!text-[14px] !w-4 !h-4">{{
+                  autoScroll() ? 'vertical_align_bottom' : 'vertical_align_top'
+                }}</mat-icon>
+              </button>
             </div>
           </div>
 
           <!-- Custom Log Viewer -->
-          <div 
+          <div
             #scrollContainer
             class="flex-1 overflow-y-auto font-mono text-[13px] leading-relaxed p-4 selection:bg-primary/30 scroll-smooth"
           >
             @for (log of activeLogs(); track $index) {
-              <div class="flex gap-3 py-0.5 group hover:bg-white/5 rounded px-2 -mx-2 transition-colors">
-                <span class="text-white/20 select-none shrink-0 tabular-nums">[{{ log.timestamp | date: 'HH:mm:ss' }}]</span>
+              <div
+                class="flex gap-3 py-0.5 group hover:bg-white/5 rounded px-2 -mx-2 transition-colors"
+              >
+                <span class="text-white/20 select-none shrink-0 tabular-nums"
+                  >[{{ log.timestamp | date: 'HH:mm:ss' }}]</span
+                >
                 <span class="text-white/80 break-all whitespace-pre-wrap">{{ log.message }}</span>
               </div>
             } @empty {
@@ -222,7 +241,7 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
           </div>
 
           <!-- Error Alert -->
-          @if (instance().error && selectedStepIndex() === 0) {
+          @if (instance().error && selectedStepIndex() === getCurrentStep()) {
             <div
               class="absolute bottom-4 left-4 right-4 p-3 bg-error/90 backdrop-blur-md rounded-xl text-on-error shadow-2xl flex items-start gap-3 animate-in slide-in-from-bottom-2"
             >
@@ -321,18 +340,12 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
   duration = computed(() => {
     const start = new Date(this.instance().startedAt || new Date()).getTime();
-    const end = this.instance().finishedAt 
-      ? new Date(this.instance().finishedAt!).getTime() 
+    const end = this.instance().finishedAt
+      ? new Date(this.instance().finishedAt!).getTime()
       : this.now().getTime();
-    
-    const diff = Math.max(0, Math.floor((end - start) / 1000));
-    const h = Math.floor(diff / 3600);
-    const m = Math.floor((diff % 3600) / 60);
-    const s = diff % 60;
 
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
+    const diff = Math.max(0, Math.floor((end - start) / 1000));
+    return this.formatSeconds(diff);
   });
 
   constructor(public dialogRef: MatDialogRef<TaskDetailDialogComponent>) {
@@ -362,6 +375,15 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       }
     } catch (e) {}
 
+    // Smart initial tab selection
+    const inst = this.instance();
+    const currentIdx = (inst as any).currentStep ?? 0;
+    if (inst.status === 'Running' || inst.status === 'Failed' || inst.status === 'Cancelled') {
+      this.selectedStepIndex.set(currentIdx);
+    } else {
+      this.selectedStepIndex.set(0); // Success -> start from first
+    }
+
     // Initial full fetch for selected step
     this.refreshLogs(true);
 
@@ -379,14 +401,18 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       const updated = insts.find((i) => i.id === this.instance().id);
       if (updated) {
         this.instance.set(updated);
-        
+
         // Auto follow step if running using the new backend field
-        if (this.autoStepFollow && updated.status === 'Running' && (updated as any).currentStep !== undefined) {
-           const newIdx = (updated as any).currentStep;
-           if (newIdx !== this.selectedStepIndex()) {
-             this.onStepChange(newIdx);
-             return;
-           }
+        if (
+          this.autoStepFollow &&
+          updated.status === 'Running' &&
+          (updated as any).currentStep !== undefined
+        ) {
+          const newIdx = (updated as any).currentStep;
+          if (newIdx !== this.selectedStepIndex()) {
+            this.onStepChange(newIdx);
+            return;
+          }
         }
 
         await this.refreshLogs();
@@ -410,6 +436,28 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     return this.stepsList()[index - 1]?.name || this.stepsList()[index - 1]?.id || 'Unknown';
   }
 
+  getStepDuration(index: number): string | null {
+    const timings = (this.instance() as any).stepTimings;
+    if (!timings || !timings[index]) return null;
+
+    const t = timings[index];
+    const start = new Date(t.startedAt).getTime();
+    const end = t.finishedAt ? new Date(t.finishedAt).getTime() : this.now().getTime();
+
+    const diff = Math.max(0, Math.floor((end - start) / 1000));
+    return this.formatSeconds(diff);
+  }
+
+  private formatSeconds(diff: number): string {
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    const s = diff % 60;
+
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
   scrollToBottom() {
     setTimeout(() => {
       if (this.scrollContainer) {
@@ -428,14 +476,14 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
         this.orchService.orchestrationInstancesIdLogsGet(
           id,
           this.selectedStepIndex(),
-          this.currentOffset
-        )
+          this.currentOffset,
+        ),
       );
 
       if (res && res.logs) {
         const newLogs: ModelsLogEntry[] = res.logs;
         if (newLogs.length > 0) {
-          this.activeLogs.update(prev => [...prev, ...newLogs]);
+          this.activeLogs.update((prev) => [...prev, ...newLogs]);
           this.currentOffset = res.nextOffset;
         }
       }
@@ -481,22 +529,29 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     }
   }
 
+  getCurrentStep(): number {
+    return (this.instance() as any).currentStep ?? -1;
+  }
+
   getStepStatusIcon(index: number): string {
     const status = this.instance().status;
     const currentStep = (this.instance() as any).currentStep ?? -1;
 
     if (status === 'Success') return 'check_circle';
-    if (status === 'Failed') {
-      if (index === currentStep) return 'error';
+
+    if (status === 'Failed' || status === 'Cancelled') {
+      if (index === currentStep) return status === 'Failed' ? 'error' : 'cancel';
       if (index < currentStep) return 'check_circle';
       return 'radio_button_unchecked';
     }
+
     if (status === 'Running') {
-       if (index === currentStep) return 'pending';
-       if (index < currentStep) return 'check_circle';
-       return 'radio_button_unchecked';
+      if (index === currentStep) return 'pending';
+      if (index < currentStep) return 'check_circle';
+      return 'radio_button_unchecked';
     }
-    return 'check_circle';
+
+    return 'help_outline';
   }
 
   getStepStatusColor(index: number): string {
@@ -506,6 +561,8 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
         return '#3fb950';
       case 'error':
         return '#f85149';
+      case 'cancel':
+        return '#8b949e';
       case 'pending':
         return '#d29922';
       default:

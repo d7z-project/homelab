@@ -214,3 +214,33 @@ body {
   font-size: 14px;
   letter-spacing: 0.1px;
 }
+
+/* Fix for mat-icon-button icon alignment */
+.mat-mdc-icon-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.mat-mdc-icon-button .mat-icon {
+  margin: 0 !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Force centering for icon buttons with custom sizes */
+.icon-button-center {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.icon-button-center .mat-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}

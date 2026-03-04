@@ -93,4 +93,89 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 			t.Errorf("Expected regex validation error message, got: %q", instance.Error)
 		}
 	})
+
+	t.Run("Failure Step Index Persistence", func(t *testing.T) {
+		workflow := &models.Workflow{
+			ID:               "fail-step-wf",
+			Name:             "Fail Step Workflow",
+			Enabled:          true,
+			ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{
+					ID:     "s1",
+					Type:   "core/logger",
+					Params: map[string]string{"message": "step 1"},
+				},
+				{
+					ID:     "s2",
+					Type:   "core/fail",
+					Params: map[string]string{"message": "intentional failure"},
+				},
+				{
+					ID:     "s3",
+					Type:   "core/logger",
+					Params: map[string]string{"message": "step 3"},
+				},
+			},
+		}
+
+		ctx := tests.SetupMockRootContext()
+		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		if err != nil {
+			t.Fatalf("Execute failed: %v", err)
+		}
+
+		// Wait for completion
+		var instance *models.TaskInstance
+		for i := 0; i < 20; i++ {
+			instance, _ = orchestration.GetTaskInstance(ctx, instanceID)
+			if instance != nil && instance.Status != "Running" {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		if instance == nil || instance.Status != "Failed" {
+			t.Fatalf("Expected status Failed, got %v", instance.Status)
+		}
+
+		// CurrentStep should be 2 (s2 failed), not 4 (len(Steps) + 1)
+		if instance.CurrentStep != 2 {
+			t.Errorf("Expected CurrentStep to be 2 (failed step index), got %d", instance.CurrentStep)
+		}
+	})
+
+	t.Run("ValidateWorkflow Parameter Regex", func(t *testing.T) {
+		workflow := &models.Workflow{
+			Name:             "Invalid Param WF",
+			ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{
+					ID:   "s1",
+					Type: "core/sleep",
+					Params: map[string]string{
+						"duration": "invalid",
+					},
+				},
+			},
+		}
+
+		ctx := tests.SetupMockRootContext()
+		err := orchestration.ValidateWorkflow(ctx, workflow)
+		if err == nil {
+			t.Error("Expected ValidateWorkflow to fail for invalid static parameter, but it succeeded")
+		} else if !strings.Contains(err.Error(), "does not match required format") {
+			t.Errorf("Expected regex validation error message, got: %v", err)
+		}
+
+		// Template variable should bypass static validation
+		workflow.Vars = map[string]models.VarDefinition{
+			"timeout": {Required: true},
+		}
+		workflow.Steps[0].Params["duration"] = "${{ vars.timeout }}"
+		err = orchestration.ValidateWorkflow(ctx, workflow)
+		if err != nil {
+			t.Errorf("Expected ValidateWorkflow to skip validation for template variable, but it failed: %v", err)
+		}
+	})
 }

@@ -24,6 +24,7 @@ export * from './modelsSession';
 export * from './modelsSimulatePermissionsRequest';
 export * from './modelsStep';
 export * from './modelsStepManifest';
+export * from './modelsStepTiming';
 export * from './modelsTaskInstance';
 export * from './modelsVarDefinition';
 export * from './modelsWorkflow';

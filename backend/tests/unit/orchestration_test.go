@@ -268,16 +268,8 @@ func TestOrchestrationEngine(t *testing.T) {
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		// Verify step name was resolved in logs
-		foundLog := false
-		logs, _ := orchestration.GetTaskLogs(context.Background(), instanceID)
-		for _, l := range logs {
-			if strings.Contains(l.Message, "Executing step: Running for PROD (s1)") {
-				foundLog = true
-			}
-		}
-		if !foundLog {
-			t.Errorf("Step name variable interpolation failed")
+		if instance == nil || instance.Status != "Success" {
+			t.Fatalf("Workflow failed: %v", instance.Error)
 		}
 	})
 

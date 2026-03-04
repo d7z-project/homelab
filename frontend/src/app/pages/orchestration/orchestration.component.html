@@ -148,7 +148,7 @@
                 >
                   <div class="flex justify-end items-center gap-1">
                     <button
-                      mat-icon-button
+                      mat-icon-button icon-button-center
                       (click)="runWorkflow(wf)"
                       [disabled]="!wf.enabled"
                       [matTooltip]="wf.enabled ? '启动工作流' : '工作流已禁用，无法启动'"
@@ -161,7 +161,7 @@
 
                     @if (wf.webhookEnabled) {
                       <button
-                        mat-icon-button
+                        mat-icon-button icon-button-center
                         (click)="copyWebhookUrl(wf)"
                         [disabled]="!wf.enabled"
                         [matTooltip]="wf.enabled ? '复制 Webhook URL' : '工作流已禁用'"
@@ -172,7 +172,7 @@
                         >
                       </button>
                       <button
-                        mat-icon-button
+                        mat-icon-button icon-button-center
                         (click)="resetWebhookToken(wf)"
                         [disabled]="!wf.enabled"
                         matTooltip="重置 Webhook Token"
@@ -186,7 +186,7 @@
 
                     @if (!isHandset()) {
                       <button
-                        mat-icon-button
+                        mat-icon-button icon-button-center
                         (click)="editWorkflow(wf)"
                         matTooltip="编辑模板"
                         class="text-outline"
@@ -196,7 +196,7 @@
                         >
                       </button>
                       <button
-                        mat-icon-button
+                        mat-icon-button icon-button-center
                         (click)="deleteWorkflow(wf)"
                         matTooltip="彻底删除"
                         class="text-error"
@@ -206,7 +206,7 @@
                         >
                       </button>
                     } @else {
-                      <button mat-icon-button [matMenuTriggerFor]="wfMenu" class="text-outline">
+                      <button mat-icon-button icon-button-center [matMenuTriggerFor]="wfMenu" class="text-outline">
                         <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
                           >more_vert</mat-icon
                         >
@@ -379,7 +379,7 @@
                 >
                   <div class="flex justify-center gap-1">
                     <button
-                      mat-icon-button
+                      mat-icon-button icon-button-center
                       (click)="viewLogs(inst)"
                       matTooltip="查看实时日志"
                       class="text-primary"
@@ -390,7 +390,7 @@
                     </button>
                     @if (inst.status === 'Running') {
                       <button
-                        mat-icon-button
+                        mat-icon-button icon-button-center
                         color="warn"
                         (click)="cancelInstance(inst)"
                         matTooltip="强制停止"
@@ -401,7 +401,7 @@
                       </button>
                     } @else {
                       <button
-                        mat-icon-button
+                        mat-icon-button icon-button-center
                         color="warn"
                         (click)="deleteInstance(inst)"
                         matTooltip="删除记录"
