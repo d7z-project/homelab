@@ -17,6 +17,8 @@ import { RbacService, ModelsServiceAccount, ModelsResourcePermissions } from '..
 import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
+
 @Component({
   selector: 'app-rbac-simulator',
   standalone: true,
@@ -32,6 +34,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatProgressSpinnerModule,
     MatAutocompleteModule,
     FormsModule,
+    DiscoverySelectComponent,
   ],
   template: `
     <div class="animate-in fade-in duration-500 pb-20">
@@ -46,38 +49,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           <!-- Configuration Card -->
           <div class="bg-surface border border-outline-variant rounded-3xl p-6 sm:p-8 shadow-sm">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- ServiceAccount Searchable Autocomplete -->
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                <mat-label>目标服务账号 (ServiceAccount)</mat-label>
-                <input
-                  matInput
-                  [matAutocomplete]="saAuto"
-                  [(ngModel)]="saSearchValue"
-                  (input)="onSaSearch($any($event.target).value)"
+              <!-- ServiceAccount Discovery Select -->
+              <div class="md:col-span-2">
+                <app-discovery-select
+                  code="rbac/serviceaccounts"
+                  label="目标服务账号 (ServiceAccount)"
                   placeholder="搜索账号 ID 或名称..."
-                  required
-                />
-                <mat-autocomplete
-                  #saAuto="matAutocomplete"
-                  [displayWith]="displaySaFn.bind(this)"
-                  (optionSelected)="onSaSelected($event)"
-                >
-                  @for (sa of filteredSa(); track sa.id) {
-                    <mat-option [value]="sa">
-                      <div class="flex flex-col py-1">
-                        <span class="font-medium">{{ sa.name || '未命名账号' }}</span>
-                        <span class="text-[10px] text-outline font-mono">{{ sa.id }}</span>
-                      </div>
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-                <mat-hint
-                  >当前已选 ID:
-                  <code class="font-bold text-primary">{{
-                    selectedSaID() || '未选择'
-                  }}</code></mat-hint
-                >
-              </mat-form-field>
+                  [(ngModel)]="saId"
+                ></app-discovery-select>
+              </div>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>资源路径 (Resource)</mat-label>
@@ -125,7 +105,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 color="primary"
                 class="!rounded-2xl !px-12"
                 (click)="simulate()"
-                [disabled]="loading() || !selectedSaID() || !verb() || !resource()"
+                [disabled]="loading() || !saId() || !verb() || !resource()"
               >
                 @if (loading()) {
                   <mat-spinner diameter="20" class="mr-2"></mat-spinner>
@@ -296,11 +276,7 @@ export class RbacSimulatorComponent implements OnInit {
   private rbacService = inject(RbacService);
   private snackBar = inject(MatSnackBar);
 
-  saList = signal<ModelsServiceAccount[]>([]);
-  saSearchValue = '';
-  filteredSa = signal<ModelsServiceAccount[]>([]);
-  selectedSaID = signal('');
-
+  saId = signal('');
   verb = signal('');
   resource = signal('');
   suggestions = signal<string[]>([]);
@@ -308,30 +284,7 @@ export class RbacSimulatorComponent implements OnInit {
   loading = signal(false);
   result = signal<ModelsResourcePermissions | null>(null);
 
-  ngOnInit() {
-    this.onSaSearch(''); // Load initial 50
-  }
-
-  displaySaFn(sa: any): string {
-    if (typeof sa === 'string') return sa;
-    return sa ? sa.name || sa.id : '';
-  }
-
-  async onSaSearch(val: string) {
-    if (typeof val !== 'string') return;
-    try {
-      const data = await firstValueFrom(this.rbacService.rbacServiceaccountsGet(1, 50, val));
-      this.filteredSa.set(data.items || []);
-    } catch (e) {
-      this.filteredSa.set([]);
-    }
-  }
-
-  onSaSelected(event: MatAutocompleteSelectedEvent) {
-    const sa = event.option.value as ModelsServiceAccount;
-    this.selectedSaID.set(sa.id || '');
-    this.saSearchValue = sa.name || sa.id || '';
-  }
+  ngOnInit() {}
 
   async onResourceInput() {
     const val = this.resource().trim();
@@ -358,7 +311,7 @@ export class RbacSimulatorComponent implements OnInit {
     try {
       const res = await firstValueFrom(
         this.rbacService.rbacSimulatePost({
-          serviceAccountId: this.selectedSaID(),
+          serviceAccountId: this.saId(),
           verb: this.verb(),
           resource: this.resource(),
         }),

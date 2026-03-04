@@ -1,11 +1,6 @@
 import { Component, Inject, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormsModule,
-  ReactiveFormsModule,
-  FormBuilder,
-  FormGroup,
-} from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -30,7 +25,9 @@ import { firstValueFrom } from 'rxjs';
   ],
   template: `
     <div class="flex flex-col bg-surface overflow-hidden rounded-2xl">
-      <header class="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center shrink-0">
+      <header
+        class="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center shrink-0"
+      >
         <h2 class="text-lg font-bold m-0">正则表达式校验配置</h2>
         <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
       </header>
@@ -68,7 +65,7 @@ import { firstValueFrom } from 'rxjs';
         </button>
       </mat-dialog-actions>
     </div>
-  `
+  `,
 })
 export class VariableConfigDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -81,7 +78,7 @@ export class VariableConfigDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<VariableConfigDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { regexFrontend: string, regexBackend: string }
+    @Inject(MAT_DIALOG_DATA) public data: { regexFrontend: string; regexBackend: string },
   ) {}
 
   ngOnInit() {
@@ -94,7 +91,7 @@ export class VariableConfigDialogComponent implements OnInit {
   async save() {
     const { regexFrontend, regexBackend } = this.form.value;
     this.loading = true;
-    
+
     // Reset errors
     this.form.get('regexFrontend')?.setErrors(null);
     this.form.get('regexBackend')?.setErrors(null);
@@ -105,14 +102,18 @@ export class VariableConfigDialogComponent implements OnInit {
         try {
           new RegExp(regexFrontend);
         } catch (e: any) {
-          this.form.get('regexFrontend')?.setErrors({ regexInvalid: 'JS 正则语法错误: ' + e.message });
+          this.form
+            .get('regexFrontend')
+            ?.setErrors({ regexInvalid: 'JS 正则语法错误: ' + e.message });
           throw e;
         }
-        
+
         try {
           await firstValueFrom(this.orchService.orchestrationValidateRegexPost(regexFrontend));
         } catch (e: any) {
-          this.form.get('regexFrontend')?.setErrors({ regexInvalid: e.error?.message || '后端校验失败' });
+          this.form
+            .get('regexFrontend')
+            ?.setErrors({ regexInvalid: e.error?.message || '后端校验失败' });
           throw e;
         }
       }
@@ -121,7 +122,9 @@ export class VariableConfigDialogComponent implements OnInit {
         try {
           await firstValueFrom(this.orchService.orchestrationValidateRegexPost(regexBackend));
         } catch (e: any) {
-          this.form.get('regexBackend')?.setErrors({ regexInvalid: e.error?.message || '后端校验失败' });
+          this.form
+            .get('regexBackend')
+            ?.setErrors({ regexInvalid: e.error?.message || '后端校验失败' });
           throw e;
         }
       }

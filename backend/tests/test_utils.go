@@ -41,7 +41,7 @@ func SetupTestDB() func() {
 	// Use InitVFS to get sandboxed memory FS for tests
 	fs, _ := common.InitVFS("memory://")
 	common.FS = fs
-	
+
 	temp, _ := common.InitVFS("memory://")
 	common.TempDir = temp
 

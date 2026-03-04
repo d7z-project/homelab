@@ -23,6 +23,7 @@ func Router(r chi.Router) {
 			r.Get("/info", controllers.InfoHandler)
 			r.Post("/logout", controllers.LogoutHandler)
 			r.Get("/dns/export", controllers.ExportHandler)
+			r.Route("/discovery", controllers.DiscoveryController)
 
 			r.Group(func(r chi.Router) {
 				r.Use(middlewares.RequirePermission("admin", "rbac"))

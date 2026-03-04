@@ -77,7 +77,13 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
         <div class="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
           @if (instance().status === 'Running') {
             @if (isHandset()) {
-              <button mat-icon-button icon-button-center color="warn" (click)="cancel()" matTooltip="停止执行">
+              <button
+                mat-icon-button
+                icon-button-center
+                color="warn"
+                (click)="cancel()"
+                matTooltip="停止执行"
+              >
                 <mat-icon>stop_circle</mat-icon>
               </button>
             } @else {
@@ -88,7 +94,12 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
             }
           }
           <div class="w-px h-6 bg-outline-variant/30 mx-1 sm:mx-2"></div>
-          <button mat-icon-button icon-button-center (click)="dialogRef.close()" matTooltip="关闭详情">
+          <button
+            mat-icon-button
+            icon-button-center
+            (click)="dialogRef.close()"
+            matTooltip="关闭详情"
+          >
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -143,9 +154,7 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
                 class="step-nav-item group shrink-0 sm:shrink"
               >
                 <div class="status-indicator" [style.color]="getStepStatusColor(i + 1)">
-                  <mat-icon class="!w-4 !h-4 !text-[16px]">{{
-                    getStepStatusIcon(i + 1)
-                  }}</mat-icon>
+                  <mat-icon class="!w-4 !h-4 !text-[16px]">{{ getStepStatusIcon(i + 1) }}</mat-icon>
                 </div>
                 <div class="flex flex-col flex-1 min-w-0">
                   <span class="text-[11px] sm:text-xs font-medium truncate">{{
@@ -207,7 +216,8 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
             </div>
             <div class="flex items-center gap-3">
               <button
-                mat-icon-button icon-button-center
+                mat-icon-button
+                icon-button-center
                 class="!w-6 !h-6 !text-white/30 hover:!text-white/60 transition-colors"
                 (click)="autoScroll.set(!autoScroll())"
                 [matTooltip]="autoScroll() ? '关闭自动滚动' : '开启自动滚动'"

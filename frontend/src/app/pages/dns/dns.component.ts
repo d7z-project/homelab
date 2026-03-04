@@ -18,6 +18,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -27,6 +28,8 @@ import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateDomainDialogComponent } from './create-domain-dialog.component';
 import { CreateRecordDialogComponent } from './create-record-dialog.component';
 import { PageHeaderComponent } from '../../shared/page-header.component';
+import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
+import { DiscoveryDialogComponent } from '../../shared/discovery-dialog.component';
 
 @Component({
   selector: 'app-dns',
@@ -48,7 +51,10 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
     MatSelectModule,
     MatDividerModule,
     MatSlideToggleModule,
+    FormsModule,
     PageHeaderComponent,
+    DiscoverySelectComponent,
+    DiscoveryDialogComponent,
   ],
   templateUrl: './dns.component.html',
 })
@@ -90,7 +96,9 @@ export class DnsComponent implements OnInit, OnDestroy {
 
   // Controlled signals for stability - Enabled column at START
   displayedDomainColumns = computed(() =>
-    this.isHandset() ? ['enabled', 'name', 'actions'] : ['enabled', 'name', 'comments', 'updatedAt', 'actions'],
+    this.isHandset()
+      ? ['enabled', 'name', 'actions']
+      : ['enabled', 'name', 'comments', 'updatedAt', 'actions'],
   );
   displayedRecordColumns = computed(() =>
     this.isHandset()
@@ -322,6 +330,26 @@ export class DnsComponent implements OnInit, OnDestroy {
     this.loadRecords(true);
   }
 
+  openDomainFilter() {
+    const dialogRef = this.dialog.open(DiscoveryDialogComponent, {
+      width: '500px',
+      maxWidth: '95vw',
+      data: {
+        code: 'dns/domains',
+        title: '选择域名',
+        currentId: this.selectedDomainId(),
+        showAllOption: true,
+        allOptionLabel: '所有域名',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result !== undefined) {
+        this.onDomainFilterChange(result.id);
+      }
+    });
+  }
+
   async toggleDomain(domain: ModelsDomain) {
     if (!domain.id) return;
     this.loading.set(true);
@@ -429,7 +457,7 @@ export class DnsComponent implements OnInit, OnDestroy {
   createRecord() {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateRecordDialogComponent, {
-        data: { record: null, domains: this.domains(), defaultDomainId: this.selectedDomainId() },
+        data: { record: null, defaultDomainId: this.selectedDomainId() },
       });
 
       dialogRef.afterClosed().subscribe(async (result) => {
@@ -452,7 +480,7 @@ export class DnsComponent implements OnInit, OnDestroy {
   editRecord(record: ModelsRecord) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateRecordDialogComponent, {
-        data: { record: record, domains: this.domains() },
+        data: { record: record },
       });
 
       dialogRef.afterClosed().subscribe(async (result) => {

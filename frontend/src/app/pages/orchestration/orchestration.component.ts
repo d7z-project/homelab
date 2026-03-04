@@ -101,7 +101,9 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       list = list.filter(
         (i) =>
           i.id?.toLowerCase().includes(search) ||
-          this.getWorkflowName(i.workflowId || '').toLowerCase().includes(search),
+          this.getWorkflowName(i.workflowId || '')
+            .toLowerCase()
+            .includes(search),
       );
     }
     return list;
@@ -464,7 +466,9 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       if (result) {
         this.loading.set(true);
         try {
-          const res = await firstValueFrom(this.orchService.orchestrationInstancesCleanupPost(days));
+          const res = await firstValueFrom(
+            this.orchService.orchestrationInstancesCleanupPost(days),
+          );
           this.snackBar.open(`清理完成，共删除 ${(res as any).deleted || 0} 条记录`, '关闭', {
             duration: 3000,
           });

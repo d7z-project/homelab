@@ -113,7 +113,7 @@ func ReadStepLogs(instanceID string, index int, offset int) ([]models.LogEntry, 
 // ReadAllTaskLogs aggregates logs from all step files for an instance.
 func ReadAllTaskLogs(instanceID string) ([]models.LogEntry, error) {
 	var allLogs []models.LogEntry
-	
+
 	// We scan files sequentially from index 0 until we hit a gap or error
 	for i := 0; ; i++ {
 		logs, _, err := ReadStepLogs(instanceID, i, 0)
@@ -125,7 +125,7 @@ func ReadAllTaskLogs(instanceID string) ([]models.LogEntry, error) {
 			}
 		}
 		allLogs = append(allLogs, logs...)
-		
+
 		// Safety break to prevent infinite loops if something goes wrong
 		if i > 1000 {
 			break

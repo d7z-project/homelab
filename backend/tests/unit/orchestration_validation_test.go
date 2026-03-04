@@ -39,7 +39,7 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		
+
 		// Valid input
 		_, err := orchestration.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"env": "prod"})
 		if err != nil {

@@ -10,6 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { ModelsDomain, ModelsRecord } from '../../generated';
 
+import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
+
 @Component({
   selector: 'app-create-record-dialog',
   standalone: true,
@@ -23,6 +25,7 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
     MatSlideToggleModule,
     MatIconModule,
     FormsModule,
+    DiscoverySelectComponent,
   ],
   template: `
     <h2 mat-dialog-title class="!pt-6">
@@ -31,22 +34,15 @@ import { ModelsDomain, ModelsRecord } from '../../generated';
     </h2>
     <mat-dialog-content style="min-width: 350px; max-width: 600px;">
       <div class="pt-3 space-y-4">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>所属域名</mat-label>
-          <mat-select
-            [(ngModel)]="record.domainId"
-            [disabled]="isEdit"
-            required
-            #domainId="ngModel"
-          >
-            @for (d of domains; track d.id) {
-              <mat-option [value]="d.id">{{ d.name }}</mat-option>
-            }
-          </mat-select>
-          @if (domainId.errors?.['required']) {
-            <mat-error>请选择域名</mat-error>
-          }
-        </mat-form-field>
+        <!-- Domain Discovery Select -->
+        <app-discovery-select
+          code="dns/domains"
+          label="所属域名"
+          placeholder="搜索域名..."
+          [(ngModel)]="record.domainId"
+          [disabled]="isEdit"
+          required
+        ></app-discovery-select>
 
         <div class="flex gap-4">
           <mat-form-field appearance="outline" class="flex-1">
@@ -335,7 +331,6 @@ export class CreateRecordDialogComponent {
     priority: 10,
     enabled: true,
   };
-  domains: ModelsDomain[] = [];
   recordTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
 
   // SOA parts
@@ -359,9 +354,8 @@ export class CreateRecordDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public data: { record: ModelsRecord | null; domains: ModelsDomain[]; defaultDomainId?: string },
+    public data: { record: ModelsRecord | null; defaultDomainId?: string },
   ) {
-    this.domains = data.domains || [];
     if (data.record) {
       this.isEdit = true;
       this.record = { ...data.record };
@@ -373,8 +367,6 @@ export class CreateRecordDialogComponent {
       this.parseValue();
     } else if (data.defaultDomainId) {
       this.record.domainId = data.defaultDomainId;
-    } else if (this.domains.length > 0) {
-      this.record.domainId = this.domains[0].id || '';
     }
   }
 

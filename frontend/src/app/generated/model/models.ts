@@ -12,6 +12,8 @@ export * from './modelsExportDomain';
 export * from './modelsLogEntry';
 export * from './modelsLoginRequest';
 export * from './modelsLoginResponse';
+export * from './modelsLookupItem';
+export * from './modelsLookupResponse';
 export * from './modelsParamDefinition';
 export * from './modelsPolicyRule';
 export * from './modelsRecord';

@@ -7,8 +7,9 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsLookupItem } from './modelsLookupItem';
 
-export interface OrchestrationProbeRequest {
-  params?: { [key: string]: string };
-  processorId?: string;
+export interface ModelsLookupResponse {
+  items?: Array<ModelsLookupItem>;
+  total?: number;
 }

@@ -10,6 +10,7 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	dnsrepo "homelab/pkg/repositories/dns"
+	"homelab/pkg/services/discovery"
 	"net"
 	"regexp"
 	"strings"
@@ -31,6 +32,73 @@ type exportCacheEntry struct {
 
 func init() {
 	exportCache, _ = lru.New[string, exportCacheEntry](128)
+
+	discovery.Register("dns/domains", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, search)
+		if err != nil {
+			return nil, 0, err
+		}
+		perms := commonauth.PermissionsFromContext(ctx)
+		var items []models.LookupItem
+		for _, d := range domains {
+			if perms.IsAllowed("dns/" + d.Name) {
+				items = append(items, models.LookupItem{
+					ID:          d.ID,
+					Name:        d.Name,
+					Description: d.Comments,
+				})
+			}
+		}
+		total := len(items)
+		if offset >= total {
+			return []models.LookupItem{}, total, nil
+		}
+		end := offset + limit
+		if end > total {
+			end = total
+		}
+		return items[offset:end], total, nil
+	})
+
+	discovery.Register("dns/records", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+		records, _, err := dnsrepo.ListRecords(ctx, "", 0, 10000, search)
+		if err != nil {
+			return nil, 0, err
+		}
+		perms := commonauth.PermissionsFromContext(ctx)
+		domainCache := make(map[string]*models.Domain)
+		var items []models.LookupItem
+		search = strings.ToLower(search)
+		for _, r := range records {
+			domain, ok := domainCache[r.DomainID]
+			if !ok {
+				domain, _ = dnsrepo.GetDomain(ctx, r.DomainID)
+				domainCache[r.DomainID] = domain
+			}
+			if domain == nil {
+				continue
+			}
+			resourceDomain := fmt.Sprintf("dns/%s", domain.Name)
+			resourceRecord := fmt.Sprintf("dns/%s/%s/%s", domain.Name, r.Name, r.Type)
+			if perms.IsAllowed(resourceDomain) || perms.IsAllowed(resourceRecord) {
+				// Search check (already done in ListRecords, but adding ID check explicitly if needed)
+				items = append(items, models.LookupItem{
+					ID:          r.ID,
+					Name:        fmt.Sprintf("%s.%s (%s)", r.Name, domain.Name, r.Type),
+					Description: r.Value,
+				})
+			}
+		}
+		total := len(items)
+		if offset >= total {
+			return []models.LookupItem{}, total, nil
+		}
+		end := offset + limit
+		if end > total {
+			end = total
+		}
+		return items[offset:end], total, nil
+	})
 }
 
 func ClearCache() {

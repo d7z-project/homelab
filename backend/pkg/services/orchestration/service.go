@@ -10,6 +10,7 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/orchestration"
 	rbacrepo "homelab/pkg/repositories/rbac"
+	"homelab/pkg/services/discovery"
 	"net/http"
 	"regexp"
 	"strings"
@@ -607,4 +608,37 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 	}
 
 	return processor.Execute(taskCtx, req.Params)
+}
+
+func init() {
+	discovery.Register("orchestration/workflows", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration") {
+			return nil, 0, fmt.Errorf("permission denied")
+		}
+		workflows, err := repo.ListWorkflows(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+		var items []models.LookupItem
+		search = strings.ToLower(search)
+		for _, wf := range workflows {
+			if search != "" && !strings.Contains(strings.ToLower(wf.ID), search) && !strings.Contains(strings.ToLower(wf.Name), search) {
+				continue
+			}
+			items = append(items, models.LookupItem{
+				ID:          wf.ID,
+				Name:        wf.Name,
+				Description: wf.Description,
+			})
+		}
+		total := len(items)
+		if offset >= total {
+			return []models.LookupItem{}, total, nil
+		}
+		end := offset + limit
+		if end > total {
+			end = total
+		}
+		return items[offset:end], total, nil
+	})
 }

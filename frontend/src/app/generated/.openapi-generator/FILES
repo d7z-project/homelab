@@ -3,6 +3,7 @@ api.module.ts
 api/api.ts
 api/audit.service.ts
 api/auth.service.ts
+api/discovery.service.ts
 api/dns.service.ts
 api/orchestration.service.ts
 api/rbac.service.ts
@@ -24,6 +25,8 @@ model/modelsExportDomain.ts
 model/modelsLogEntry.ts
 model/modelsLoginRequest.ts
 model/modelsLoginResponse.ts
+model/modelsLookupItem.ts
+model/modelsLookupResponse.ts
 model/modelsParamDefinition.ts
 model/modelsPolicyRule.ts
 model/modelsRecord.ts

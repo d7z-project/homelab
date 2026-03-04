@@ -121,9 +121,33 @@ definitions:
       session_id:
         type: string
     type: object
+  models.LookupItem:
+    properties:
+      description:
+        type: string
+      icon:
+        description: Optional icon name for M3
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  models.LookupResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.LookupItem'
+        type: array
+      total:
+        type: integer
+    type: object
   models.ParamDefinition:
     properties:
       description:
+        type: string
+      lookupCode:
+        description: 服务发现代号 (可选)
         type: string
       name:
         type: string
@@ -190,6 +214,8 @@ definitions:
     type: object
   models.Role:
     properties:
+      comments:
+        type: string
       id:
         type: string
       name:
@@ -520,6 +546,60 @@ paths:
       summary: Revoke a session
       tags:
       - auth
+  /discovery/codes:
+    get:
+      consumes:
+      - application/json
+      description: Returns all registered discovery codes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List discovery codes
+      tags:
+      - discovery
+  /discovery/lookup:
+    get:
+      consumes:
+      - application/json
+      description: Search for items in a specific discovery code (e.g. dns/domains)
+      parameters:
+      - description: Discovery code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: Search string
+        in: query
+        name: search
+        type: string
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LookupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Discovery lookup
+      tags:
+      - discovery
   /dns/domains:
     get:
       parameters:

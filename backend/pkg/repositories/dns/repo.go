@@ -111,7 +111,7 @@ func ListDomains(ctx context.Context, page int, pageSize int, search string) ([]
 	var res []models.Domain
 	search = strings.ToLower(search)
 	for _, domain := range all {
-		if search == "" || strings.Contains(strings.ToLower(domain.Name), search) {
+		if search == "" || strings.Contains(strings.ToLower(domain.Name), search) || strings.Contains(strings.ToLower(domain.ID), search) {
 			res = append(res, domain)
 		}
 	}
@@ -205,7 +205,7 @@ func ListRecords(ctx context.Context, domainID string, page int, pageSize int, s
 	var res []models.Record
 	search = strings.ToLower(search)
 	for _, record := range all {
-		if search == "" || strings.Contains(strings.ToLower(record.Name), search) || strings.Contains(strings.ToLower(record.Value), search) {
+		if search == "" || strings.Contains(strings.ToLower(record.Name), search) || strings.Contains(strings.ToLower(record.Value), search) || strings.Contains(strings.ToLower(record.ID), search) {
 			res = append(res, record)
 		}
 	}

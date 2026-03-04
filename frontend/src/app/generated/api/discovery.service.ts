@@ -22,9 +22,7 @@ import { Observable } from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
-import { AuditLogsGet200Response } from '../model/auditLogsGet200Response';
-// @ts-ignore
-import { ModelsAuditCleanupResponse } from '../model/modelsAuditCleanupResponse';
+import { ModelsLookupResponse } from '../model/modelsLookupResponse';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -34,7 +32,7 @@ import { BaseService } from '../api.base.service';
 @Injectable({
   providedIn: 'root',
 })
-export class AuditService extends BaseService {
+export class DiscoveryService extends BaseService {
   constructor(
     protected httpClient: HttpClient,
     @Optional() @Inject(BASE_PATH) basePath: string | string[],
@@ -44,15 +42,14 @@ export class AuditService extends BaseService {
   }
 
   /**
-   * Cleanup old audit logs
-   * @endpoint post /audit/logs/cleanup
-   * @param days Logs older than these days will be deleted
+   * List discovery codes
+   * Returns all registered discovery codes
+   * @endpoint get /discovery/codes
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
-  public auditLogsCleanupPost(
-    days: number,
+  public discoveryCodesGet(
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -60,9 +57,8 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsAuditCleanupResponse>;
-  public auditLogsCleanupPost(
-    days: number,
+  ): Observable<Array<string>>;
+  public discoveryCodesGet(
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -70,9 +66,8 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsAuditCleanupResponse>>;
-  public auditLogsCleanupPost(
-    days: number,
+  ): Observable<HttpResponse<Array<string>>>;
+  public discoveryCodesGet(
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -80,9 +75,8 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsAuditCleanupResponse>>;
-  public auditLogsCleanupPost(
-    days: number,
+  ): Observable<HttpEvent<Array<string>>>;
+  public discoveryCodesGet(
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -91,22 +85,6 @@ export class AuditService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<any> {
-    if (days === null || days === undefined) {
-      throw new Error(
-        'Required parameter days was null or undefined when calling auditLogsCleanupPost.',
-      );
-    }
-
-    let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
-
-    localVarQueryParameters = this.addToHttpParams(
-      localVarQueryParameters,
-      'days',
-      <any>days,
-      QueryParamStyle.Form,
-      false,
-    );
-
     let localVarHeaders = this.defaultHeaders;
 
     // authentication (ApiKeyAuth) required
@@ -137,38 +115,36 @@ export class AuditService extends BaseService {
       }
     }
 
-    let localVarPath = `/audit/logs/cleanup`;
+    let localVarPath = `/discovery/codes`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsAuditCleanupResponse>(
-      'post',
-      `${basePath}${localVarPath}`,
-      {
-        context: localVarHttpContext,
-        params: localVarQueryParameters.toHttpParams(),
-        responseType: <any>responseType_,
-        ...(withCredentials ? { withCredentials } : {}),
-        headers: localVarHeaders,
-        observe: observe,
-        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-        reportProgress: reportProgress,
-      },
-    );
+    return this.httpClient.request<Array<string>>('get', `${basePath}${localVarPath}`, {
+      context: localVarHttpContext,
+      responseType: <any>responseType_,
+      ...(withCredentials ? { withCredentials } : {}),
+      headers: localVarHeaders,
+      observe: observe,
+      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+      reportProgress: reportProgress,
+    });
   }
 
   /**
-   * List audit logs
-   * @endpoint get /audit/logs
-   * @param page Page number
-   * @param pageSize Items per page
-   * @param search Search query
+   * Discovery lookup
+   * Search for items in a specific discovery code (e.g. dns/domains)
+   * @endpoint get /discovery/lookup
+   * @param code Discovery code
+   * @param search Search string
+   * @param offset Offset
+   * @param limit Limit
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
-  public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+  public discoveryLookupGet(
+    code: string,
     search?: string,
+    offset?: number,
+    limit?: number,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -176,11 +152,12 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<AuditLogsGet200Response>;
-  public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+  ): Observable<ModelsLookupResponse>;
+  public discoveryLookupGet(
+    code: string,
     search?: string,
+    offset?: number,
+    limit?: number,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -188,11 +165,12 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<AuditLogsGet200Response>>;
-  public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+  ): Observable<HttpResponse<ModelsLookupResponse>>;
+  public discoveryLookupGet(
+    code: string,
     search?: string,
+    offset?: number,
+    limit?: number,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -200,11 +178,12 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<AuditLogsGet200Response>>;
-  public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+  ): Observable<HttpEvent<ModelsLookupResponse>>;
+  public discoveryLookupGet(
+    code: string,
     search?: string,
+    offset?: number,
+    limit?: number,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -213,20 +192,18 @@ export class AuditService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<any> {
+    if (code === null || code === undefined) {
+      throw new Error(
+        'Required parameter code was null or undefined when calling discoveryLookupGet.',
+      );
+    }
+
     let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
-      QueryParamStyle.Form,
-      false,
-    );
-
-    localVarQueryParameters = this.addToHttpParams(
-      localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'code',
+      <any>code,
       QueryParamStyle.Form,
       false,
     );
@@ -239,6 +216,22 @@ export class AuditService extends BaseService {
       false,
     );
 
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'offset',
+      <any>offset,
+      QueryParamStyle.Form,
+      false,
+    );
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'limit',
+      <any>limit,
+      QueryParamStyle.Form,
+      false,
+    );
+
     let localVarHeaders = this.defaultHeaders;
 
     // authentication (ApiKeyAuth) required
@@ -269,9 +262,9 @@ export class AuditService extends BaseService {
       }
     }
 
-    let localVarPath = `/audit/logs`;
+    let localVarPath = `/discovery/lookup`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<AuditLogsGet200Response>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<ModelsLookupResponse>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       params: localVarQueryParameters.toHttpParams(),
       responseType: <any>responseType_,

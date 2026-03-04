@@ -11,6 +11,7 @@ import (
 	orchrepo "homelab/pkg/repositories/orchestration"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
+	"homelab/pkg/services/discovery"
 	"strings"
 
 	"github.com/google/uuid"
@@ -437,4 +438,44 @@ func SimulatePermissions(ctx context.Context, saID, verb, resource string) (*mod
 	// Basic non-empty checks moved to models.SimulatePermissionsRequest.Bind
 
 	return authservice.GetPermissions(ctx, saID, verb, resource)
+}
+
+func init() {
+	discovery.Register("rbac/serviceaccounts", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+			return nil, 0, errors.New("permission denied")
+		}
+		sas, total, err := rbacrepo.ListServiceAccounts(ctx, uint64(offset/limit), uint(limit), search)
+		if err != nil {
+			return nil, 0, err
+		}
+		var items []models.LookupItem
+		for _, sa := range sas {
+			items = append(items, models.LookupItem{
+				ID:          sa.ID,
+				Name:        sa.Name,
+				Description: sa.Comments,
+			})
+		}
+		return items, int(total), nil
+	})
+
+	discovery.Register("rbac/roles", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+			return nil, 0, errors.New("permission denied")
+		}
+		roles, total, err := rbacrepo.ListRoles(ctx, uint64(offset/limit), uint(limit), search)
+		if err != nil {
+			return nil, 0, err
+		}
+		var items []models.LookupItem
+		for _, r := range roles {
+			items = append(items, models.LookupItem{
+				ID:          r.ID,
+				Name:        r.Name,
+				Description: r.Comments,
+			})
+		}
+		return items, int(total), nil
+	})
 }

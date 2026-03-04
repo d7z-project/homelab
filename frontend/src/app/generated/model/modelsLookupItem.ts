@@ -8,7 +8,12 @@
  * Do not edit the class manually.
  */
 
-export interface OrchestrationProbeRequest {
-  params?: { [key: string]: string };
-  processorId?: string;
+export interface ModelsLookupItem {
+  description?: string;
+  /**
+   * Optional icon name for M3
+   */
+  icon?: string;
+  id?: string;
+  name?: string;
 }

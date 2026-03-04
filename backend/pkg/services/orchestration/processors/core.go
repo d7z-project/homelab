@@ -23,7 +23,7 @@ func (p *LoggerProcessor) Manifest() orchestration.StepManifest {
 		Name:        "日志输出",
 		Description: "将指定的消息打印到任务日志中。",
 		Params: []models.ParamDefinition{
-			{Name: "message", Description: "要打印的消息内容，支持变量引用", Optional: false},
+			{Name: "message", Description: "要打印的消息内容", Optional: false},
 		},
 		OutputParams: []models.ParamDefinition{},
 	}
@@ -102,8 +102,9 @@ func (p *WorkflowCallProcessor) Manifest() orchestration.StepManifest {
 				Name:          "workflow_id",
 				Description:   "要调用的目标工作流 ID",
 				Optional:      false,
-				RegexFrontend: `^[a-f0-9-]{36}$`, // UUID
+				RegexFrontend: `^[a-f0-9-]{36}$`,
 				RegexBackend:  `^[a-f0-9-]{36}$`,
+				LookupCode:    "orchestration/workflows",
 			},
 			{
 				Name:          "vars",

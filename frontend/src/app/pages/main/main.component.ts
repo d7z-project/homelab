@@ -214,9 +214,7 @@ export class MainComponent {
         link: '/system',
         icon: 'settings',
         label: '系统管理',
-        children: [
-          { link: '/audit', icon: 'history', label: '审计日志' },
-        ],
+        children: [{ link: '/audit', icon: 'history', label: '审计日志' }],
       },
     ];
 

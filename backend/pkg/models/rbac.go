@@ -32,9 +32,10 @@ type PolicyRule struct {
 }
 
 type Role struct {
-	ID    string       `json:"id"`
-	Name  string       `json:"name"`
-	Rules []PolicyRule `json:"rules"`
+	ID       string       `json:"id"`
+	Name     string       `json:"name"`
+	Comments string       `json:"comments"`
+	Rules    []PolicyRule `json:"rules"`
 }
 
 func (ro *Role) Bind(r *http.Request) error {

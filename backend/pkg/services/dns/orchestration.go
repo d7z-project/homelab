@@ -19,7 +19,7 @@ func (p *DnsRecordProcessor) Manifest() orchestration.StepManifest {
 		Name:        "DNS Record Creator",
 		Description: "在指定域名下创建一条新的解析记录，支持 A, CNAME, TXT 等类型。",
 		Params: []models.ParamDefinition{
-			{Name: "domain_id", Description: "目标域名 ID (如 example.com)", Optional: false},
+			{Name: "domain_id", Description: "目标域名 ID (如 example.com)", Optional: false, LookupCode: "dns/domains"},
 			{Name: "name", Description: "主机名 (如 www, @)", Optional: false},
 			{Name: "type", Description: "记录类型 (A, CNAME, TXT, etc.)", Optional: false},
 			{Name: "value", Description: "记录内容 (IP 地址或目标域名)", Optional: false},

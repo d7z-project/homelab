@@ -2,10 +2,19 @@ export * from './audit.service';
 import { AuditService } from './audit.service';
 export * from './auth.service';
 import { AuthService } from './auth.service';
+export * from './discovery.service';
+import { DiscoveryService } from './discovery.service';
 export * from './dns.service';
 import { DnsService } from './dns.service';
 export * from './orchestration.service';
 import { OrchestrationService } from './orchestration.service';
 export * from './rbac.service';
 import { RbacService } from './rbac.service';
-export const APIS = [AuditService, AuthService, DnsService, OrchestrationService, RbacService];
+export const APIS = [
+  AuditService,
+  AuthService,
+  DiscoveryService,
+  DnsService,
+  OrchestrationService,
+  RbacService,
+];

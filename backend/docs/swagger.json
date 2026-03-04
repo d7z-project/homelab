@@ -160,6 +160,92 @@
                 }
             }
         },
+        "/discovery/codes": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns all registered discovery codes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discovery"
+                ],
+                "summary": "List discovery codes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/discovery/lookup": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Search for items in a specific discovery code (e.g. dns/domains)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discovery"
+                ],
+                "summary": "Discovery lookup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Discovery code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search string",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.LookupResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/dns/domains": {
             "get": {
                 "security": [
@@ -2184,10 +2270,46 @@
                 }
             }
         },
+        "models.LookupItem": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "description": "Optional icon name for M3",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LookupResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.LookupItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.ParamDefinition": {
             "type": "object",
             "properties": {
                 "description": {
+                    "type": "string"
+                },
+                "lookupCode": {
+                    "description": "服务发现代号 (可选)",
                     "type": "string"
                 },
                 "name": {
@@ -2286,6 +2408,9 @@
         "models.Role": {
             "type": "object",
             "properties": {
+                "comments": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },

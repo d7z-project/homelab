@@ -1,11 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-  computed,
-  OnDestroy,
-} from '@angular/core';
+import { Component, OnInit, inject, signal, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -134,7 +127,9 @@ export class RbacComponent implements OnInit, OnDestroy {
     this.isHandset() ? ['name', 'actions'] : ['name', 'rules', 'actions'],
   );
   displayedRbColumns = computed(() =>
-    this.isHandset() ? ['enabled', 'name', 'sa', 'role', 'actions'] : ['enabled', 'name', 'sa', 'role', 'actions'],
+    this.isHandset()
+      ? ['enabled', 'name', 'sa', 'role', 'actions']
+      : ['enabled', 'name', 'sa', 'role', 'actions'],
   );
 
   async toggleRb(rb: ModelsRoleBinding) {
@@ -510,10 +505,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
         data: {
-          serviceAccounts: this.serviceAccounts(),
-          roles: this.roles(),
           binding: binding,
-          existingIDs: this.roleBindings().map((x) => x.id || ''),
         },
       });
       dialogRef.afterClosed().subscribe(async (updatedRB) => {
@@ -683,11 +675,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   createRB() {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
-        data: {
-          serviceAccounts: this.serviceAccounts(),
-          roles: this.roles(),
-          existingIDs: this.roleBindings().map((x) => x.id || ''),
-        },
+        data: {},
       });
       dialogRef.afterClosed().subscribe(async (rb) => {
         if (rb) {

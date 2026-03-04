@@ -1,4 +1,12 @@
-import { Component, Inject, OnInit, inject, signal, ChangeDetectorRef, computed } from '@angular/core';
+import {
+  Component,
+  Inject,
+  OnInit,
+  inject,
+  signal,
+  ChangeDetectorRef,
+  computed,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
@@ -11,7 +19,12 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import {
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+  MAT_DIALOG_DATA,
+} from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -43,6 +56,9 @@ import { firstValueFrom } from 'rxjs';
 import { ProcessorSelectorDialogComponent } from './processor-selector-dialog.component';
 import { VariableConfigDialogComponent } from './variable-config-dialog.component';
 
+import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
+import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-input.component';
+
 @Component({
   selector: 'app-create-workflow-dialog',
   standalone: true,
@@ -65,6 +81,8 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
     MatCheckboxModule,
     MatMenuModule,
     DragDropModule,
+    DiscoverySelectComponent,
+    DiscoverySuggestInputComponent,
   ],
   template: `
     <div class="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
@@ -112,16 +130,13 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                 </mat-form-field>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <mat-form-field appearance="outline">
-                    <mat-label>执行身份 (ServiceAccount)</mat-label>
-                    <mat-select formControlName="serviceAccountId">
-                      @for (sa of serviceAccounts(); track sa.id) {
-                        <mat-option [value]="sa.id">{{ sa.name }} ({{ sa.id }})</mat-option>
-                      }
-                    </mat-select>
-                    <mat-error>身份必选</mat-error>
-                    <mat-hint>任务将以此身份权限运行</mat-hint>
-                  </mat-form-field>
+                  <app-discovery-select
+                    code="rbac/serviceaccounts"
+                    label="执行身份 (ServiceAccount)"
+                    placeholder="搜索账号 ID 或名称..."
+                    formControlName="serviceAccountId"
+                    hint="任务将以此身份权限运行"
+                  ></app-discovery-select>
 
                   <mat-form-field appearance="outline">
                     <mat-label>超时时间 (秒)</mat-label>
@@ -197,9 +212,13 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                     class="bg-surface-container-low p-4 sm:p-6 rounded-2xl border border-outline-variant/30 flex flex-col gap-4 relative animate-in fade-in slide-in-from-top-2"
                   >
                     <div class="flex justify-between items-start">
-                      <span class="text-[10px] font-bold uppercase tracking-widest text-outline bg-outline/5 px-2 py-0.5 rounded">变量 #{{ vIndex + 1 }}</span>
+                      <span
+                        class="text-[10px] font-bold uppercase tracking-widest text-outline bg-outline/5 px-2 py-0.5 rounded"
+                        >变量 #{{ vIndex + 1 }}</span
+                      >
                       <button
-                        mat-icon-button icon-button-center
+                        mat-icon-button
+                        icon-button-center
                         color="warn"
                         (click)="removeVar(vIndex)"
                         matTooltip="删除变量"
@@ -221,7 +240,11 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
 
                       <mat-form-field appearance="outline" class="sm:col-span-4">
                         <mat-label>变量描述</mat-label>
-                        <input matInput formControlName="description" placeholder="此变量用途说明" />
+                        <input
+                          matInput
+                          formControlName="description"
+                          placeholder="此变量用途说明"
+                        />
                       </mat-form-field>
 
                       <mat-form-field appearance="outline" class="sm:col-span-5">
@@ -233,9 +256,13 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                       </mat-form-field>
                     </div>
 
-                    <div class="flex items-center justify-between pt-2 border-t border-outline-variant/10">
+                    <div
+                      class="flex items-center justify-between pt-2 border-t border-outline-variant/10"
+                    >
                       <div class="flex items-center gap-6">
-                        <mat-checkbox formControlName="required" class="font-medium">设为必填参数</mat-checkbox>
+                        <mat-checkbox formControlName="required" class="font-medium"
+                          >设为必填参数</mat-checkbox
+                        >
                         <div class="w-px h-4 bg-outline-variant/30 hidden sm:block"></div>
                         <button
                           mat-button
@@ -244,7 +271,9 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                           [class.text-success]="hasRegex(vIndex)"
                           class="!rounded-full !px-4"
                         >
-                          <mat-icon class="mr-2">{{ hasRegex(vIndex) ? 'verified_user' : 'tune' }}</mat-icon>
+                          <mat-icon class="mr-2">{{
+                            hasRegex(vIndex) ? 'verified_user' : 'tune'
+                          }}</mat-icon>
                           {{ hasRegex(vIndex) ? '已配置正则校验' : '配置正则校验' }}
                         </button>
                       </div>
@@ -277,7 +306,7 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
             <!-- Step 3: Configure Steps -->
             <mat-step>
               <ng-template matStepLabel>任务步骤配置</ng-template>
-              <div 
+              <div
                 class="flex flex-col gap-6 mt-6 pb-12"
                 cdkDropList
                 (cdkDropListDropped)="drop($event)"
@@ -289,7 +318,7 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                     class="bg-surface border border-outline-variant rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md relative"
                   >
                     <!-- Drag handle -->
-                    <div 
+                    <div
                       class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/10 hover:bg-primary transition-colors z-10 cursor-move"
                       cdkDragHandle
                       matTooltip="按住拖动排序"
@@ -316,7 +345,8 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                       <div class="flex items-center gap-1">
                         @if (isHandset()) {
                           <button
-                            mat-icon-button icon-button-center
+                            mat-icon-button
+                            icon-button-center
                             [disabled]="stepIndex === 0"
                             (click)="moveStep(stepIndex, -1)"
                             matTooltip="上移"
@@ -326,7 +356,8 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                             <mat-icon class="!text-lg">arrow_upward</mat-icon>
                           </button>
                           <button
-                            mat-icon-button icon-button-center
+                            mat-icon-button
+                            icon-button-center
                             [disabled]="stepIndex === steps.length - 1"
                             (click)="moveStep(stepIndex, 1)"
                             matTooltip="下移"
@@ -337,7 +368,8 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                           </button>
                         }
                         <button
-                          mat-icon-button icon-button-center
+                          mat-icon-button
+                          icon-button-center
                           color="warn"
                           (click)="removeStep(stepIndex)"
                           matTooltip="删除此步骤"
@@ -364,7 +396,9 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                         <mat-form-field appearance="outline">
                           <mat-label>步骤 ID</mat-label>
                           <input matInput formControlName="id" placeholder="例如：fetch_data" />
-                          <mat-hint>用于 {{ '{{' }} steps.ID.outputs.key {{ '}}' }} 引用</mat-hint>
+                          <mat-hint
+                            >用于 <code>{{ '\${{ steps.ID.outputs.key }}' }}</code> 引用</mat-hint
+                          >
                           @if (getStepGroup(stepIndex)?.get('id')?.errors?.['pattern']) {
                             <mat-error>仅限小写字母、数字、下划线</mat-error>
                           }
@@ -376,45 +410,69 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                       </div>
 
                       <div class="flex flex-col gap-1.5">
-                        <mat-label class="text-[10px] font-bold text-outline uppercase px-1">处理器类型</mat-label>
-                        
-                        <div 
+                        <mat-label class="text-[10px] font-bold text-outline uppercase px-1"
+                          >处理器类型</mat-label
+                        >
+
+                        <div
                           (click)="openProcessorSelector(stepIndex)"
                           class="group relative flex items-center gap-4 p-4 rounded-2xl border border-outline-variant/30 hover:border-primary/50 hover:bg-primary/[0.02] cursor-pointer transition-all duration-200"
                           [class.bg-primary/5]="getStepManifest(stepIndex)"
                           [class.border-primary/20]="getStepManifest(stepIndex)"
                         >
-                          <div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0 border border-outline-variant/20 group-hover:bg-primary/10 transition-colors">
-                            <mat-icon class="!w-6 !h-6 !text-[24px] text-outline group-hover:text-primary transition-colors">extension</mat-icon>
+                          <div
+                            class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0 border border-outline-variant/20 group-hover:bg-primary/10 transition-colors"
+                          >
+                            <mat-icon
+                              class="!w-6 !h-6 !text-[24px] text-outline group-hover:text-primary transition-colors"
+                              >extension</mat-icon
+                            >
                           </div>
 
                           <div class="flex-1 min-w-0">
                             @if (getStepManifest(stepIndex); as manifest) {
                               <div class="flex items-baseline gap-2">
-                                <span class="text-sm font-bold text-primary">{{ manifest.name }}</span>
-                                <span class="text-[10px] font-mono text-outline opacity-50">标识: {{ manifest.id }}</span>
+                                <span class="text-sm font-bold text-primary">{{
+                                  manifest.name
+                                }}</span>
+                                <span class="text-[10px] font-mono text-outline opacity-50"
+                                  >标识: {{ manifest.id }}</span
+                                >
                               </div>
                               <p class="text-xs text-outline opacity-80 mt-0.5 line-clamp-1">
                                 {{ manifest.description }}
                               </p>
                             } @else {
-                              <span class="text-sm text-outline opacity-50 font-medium">点击选择一个任务处理器...</span>
+                              <span class="text-sm text-outline opacity-50 font-medium"
+                                >点击选择一个任务处理器...</span
+                              >
                             }
                           </div>
 
-                          <mat-icon class="text-outline opacity-30 group-hover:opacity-100 group-hover:text-primary transition-all">chevron_right</mat-icon>
+                          <mat-icon
+                            class="text-outline opacity-30 group-hover:opacity-100 group-hover:text-primary transition-all"
+                            >chevron_right</mat-icon
+                          >
                         </div>
-                        
-                        @if (getStepGroup(stepIndex)?.get('type')?.errors?.['required'] && getStepGroup(stepIndex)?.get('type')?.touched) {
+
+                        @if (
+                          getStepGroup(stepIndex)?.get('type')?.errors?.['required'] &&
+                          getStepGroup(stepIndex)?.get('type')?.touched
+                        ) {
                           <p class="text-[10px] text-error px-1 mt-1">必须选择一个处理器</p>
                         }
                       </div>
 
                       <!-- Dynamic Parameters -->
-                      @if (getProcessorParams(getStepGroup(stepIndex)?.get('type')?.value); as params) {
+                      @if (
+                        getProcessorParams(getStepGroup(stepIndex)?.get('type')?.value);
+                        as params
+                      ) {
                         @if (params.length > 0) {
                           <div class="mt-2 space-y-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-outline px-1">
+                            <p
+                              class="text-[10px] font-bold uppercase tracking-wider text-outline px-1"
+                            >
                               输入参数配置
                             </p>
                             <div
@@ -423,25 +481,32 @@ import { VariableConfigDialogComponent } from './variable-config-dialog.componen
                             >
                               @for (param of params; track param.name) {
                                 <div class="flex flex-col">
-                                  <mat-form-field appearance="outline" class="!mb-0">
-                                    <mat-label>{{ param.description || param.name }}{{ param.optional ? ' (可选)' : '' }}</mat-label>
-                                    <input
-                                      matInput
-                                      [formControlName]="param.name!"
-                                      [matAutocomplete]="auto"
-                                    />
-                                    @if (getStepGroup(stepIndex)?.get('params')?.get(param.name!)?.errors?.['regexMatch']) {
-                                      <mat-error>值不符合该参数的前端正则要求</mat-error>
-                                    }
-                                    @if (!param.optional) {
-                                      <mat-error>此参数必填</mat-error>
-                                    }
-                                    <mat-autocomplete #auto="matAutocomplete">
-                                      @for (ref of getOutputReferences(stepIndex); track ref) {
-                                        <mat-option [value]="ref">{{ ref }}</mat-option>
-                                      }
-                                    </mat-autocomplete>
-                                  </mat-form-field>
+                                  <app-discovery-suggest-input
+                                    [label]="
+                                      (param.description || param.name) +
+                                      (param.optional ? ' (可选)' : '')
+                                    "
+                                    [formControlName]="param.name!"
+                                    [lookupCode]="param.lookupCode || ''"
+                                    [staticSuggestions]="getOutputReferences(stepIndex)"
+                                    [hint]="getParamHint(param)"
+                                  ></app-discovery-suggest-input>
+                                  @if (
+                                    getStepGroup(stepIndex)?.get('params')?.get(param.name!)
+                                      ?.errors?.['regexMatch']
+                                  ) {
+                                    <p class="text-[10px] text-error px-1 mt-1">
+                                      值不符合该参数的前端正则要求
+                                    </p>
+                                  }
+                                  @if (
+                                    getStepGroup(stepIndex)?.get('params')?.get(param.name!)
+                                      ?.errors?.['required'] &&
+                                    getStepGroup(stepIndex)?.get('params')?.get(param.name!)
+                                      ?.touched
+                                  ) {
+                                    <p class="text-[10px] text-error px-1 mt-1">此参数必填</p>
+                                  }
                                 </div>
                               }
                             </div>
@@ -541,7 +606,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   manifestMap = computed(() => {
     const map = new Map<string, ModelsStepManifest>();
-    this.manifests().forEach(m => {
+    this.manifests().forEach((m) => {
       if (m.id) map.set(m.id, m);
     });
     return map;
@@ -568,12 +633,8 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   async ngOnInit() {
     try {
-      const [manifests, saData] = await Promise.all([
-        firstValueFrom(this.orchService.orchestrationManifestsGet()),
-        firstValueFrom(this.rbacService.rbacServiceaccountsGet()),
-      ]);
+      const manifests = await firstValueFrom(this.orchService.orchestrationManifestsGet());
       this.manifests.set(manifests || []);
-      this.serviceAccounts.set(saData.items || []);
     } catch (e) {
       console.error('Failed to load initial data', e);
     }
@@ -624,9 +685,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
     });
 
     // Apply regex validator to 'default' field
-    varGroup.get('default')?.setValidators([
-      this.createRegexValidator(varGroup, 'regexFrontend'),
-    ]);
+    varGroup.get('default')?.setValidators([this.createRegexValidator(varGroup, 'regexFrontend')]);
 
     this.vars.push(varGroup);
   }
@@ -729,7 +788,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
     const control = this.steps.at(from);
     this.steps.removeAt(from);
     this.steps.insert(to, control);
-    
+
     this.cdr.markForCheck();
   }
 
@@ -741,11 +800,11 @@ export class CreateWorkflowDialogComponent implements OnInit {
       width: '600px',
       data: {
         manifests: this.manifests(),
-        selectedId: stepGroup.get('type')?.value
-      }
+        selectedId: stepGroup.get('type')?.value,
+      },
     });
 
-    dialogRef.afterClosed().subscribe(selectedId => {
+    dialogRef.afterClosed().subscribe((selectedId) => {
       if (selectedId) {
         stepGroup.get('type')?.setValue(selectedId);
         this.onProcessorChange(index);
@@ -802,6 +861,13 @@ export class CreateWorkflowDialogComponent implements OnInit {
     const manifest = this.manifestMap().get(type);
     if (!manifest) return [];
     return manifest.params || [];
+  }
+
+  getParamHint(param: ModelsParamDefinition): string {
+    if (param.regexFrontend) {
+      return `格式要求: ${param.regexFrontend}`;
+    }
+    return '';
   }
 
   getOutputReferences(currentIndex: number): string[] {

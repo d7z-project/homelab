@@ -16,7 +16,8 @@ var Opts = &Options{
 	TotpAuth:     "",
 	JWTSecret:    "change-me-please",
 }
-	type Options struct {
+
+type Options struct {
 	Bind         string `yaml:"bind" env:"HOMELAB_BIND"`
 	DB           string `yaml:"db" env:"HOMELAB_DB"`
 	Lock         string `yaml:"lock" env:"HOMELAB_LOCK"`

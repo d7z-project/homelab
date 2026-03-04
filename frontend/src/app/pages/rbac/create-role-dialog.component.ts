@@ -15,6 +15,8 @@ import { FormsModule } from '@angular/forms';
 import { ModelsRole, ModelsPolicyRule, RbacService } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 
+import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-input.component';
+
 @Component({
   selector: 'app-create-role-dialog',
   standalone: true,
@@ -29,6 +31,7 @@ import { firstValueFrom } from 'rxjs';
     MatChipsModule,
     MatDividerModule,
     FormsModule,
+    DiscoverySuggestInputComponent,
   ],
   template: `
     <h2 mat-dialog-title class="!pt-6">
@@ -102,28 +105,17 @@ import { firstValueFrom } from 'rxjs';
               }
 
               <div class="space-y-4">
-                <!-- Resource Input -->
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                  <mat-label>资源路径 (Resource)</mat-label>
-                  <input
-                    matInput
-                    [(ngModel)]="rule.resource"
-                    [matAutocomplete]="autoRes"
-                    (input)="onResourceInput(rule)"
-                    placeholder="例如: dns/*"
-                  />
-                  <mat-autocomplete
-                    #autoRes="matAutocomplete"
-                    (optionSelected)="onResourceSelected($event, rule)"
-                  >
-                    @for (suggestion of resourceSuggestions(); track suggestion) {
-                      <mat-option [value]="suggestion">
-                        <mat-icon class="scale-75 opacity-50">category</mat-icon>
-                        <span>{{ suggestion }}</span>
-                      </mat-option>
-                    }
-                  </mat-autocomplete>
-                </mat-form-field>
+                <!-- Resource Input with Suggestions -->
+                <app-discovery-suggest-input
+                  label="资源路径 (Resource)"
+                  placeholder="例如: dns/* 或 dns/example.com"
+                  [(ngModel)]="rule.resource"
+                  [staticSuggestions]="resourceSuggestions()"
+                  lookupCode="dns/domains"
+                  lookupLabel="域名参考 (ID)"
+                  (ngModelChange)="onResourceInput(rule)"
+                  subscriptSizing="dynamic"
+                ></app-discovery-suggest-input>
 
                 <!-- Verbs Selection -->
                 <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
@@ -239,10 +231,7 @@ export class CreateRoleDialogComponent {
     } catch (e) {
       this.resourceSuggestions.set([]);
     }
-  }
-
-  onResourceSelected(event: MatAutocompleteSelectedEvent, rule: ModelsPolicyRule) {
-    rule.resource = event.option.viewValue;
+    // Also trigger verb suggestion update
     this.updateVerbSuggestions(rule);
   }
 
