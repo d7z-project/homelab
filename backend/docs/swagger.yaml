@@ -787,6 +787,33 @@ paths:
       summary: List all task instances
       tags:
       - orchestration
+  /orchestration/instances/{id}:
+    delete:
+      description: Removes a specific task instance and its execution logs.
+      parameters:
+      - description: Task Instance ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/common.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Instance Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a task instance
+      tags:
+      - orchestration
   /orchestration/instances/{id}/cancel:
     post:
       description: Attempts to terminate a running task instance gracefully by sending
@@ -815,21 +842,30 @@ paths:
       - orchestration
   /orchestration/instances/{id}/logs:
     get:
-      description: Returns the full execution logs for a specific task instance in
-        plain text.
+      description: Returns execution logs for a specific task instance or step, supporting
+        line offset for real-time refresh.
       parameters:
       - description: Task Instance ID
         in: path
         name: id
         required: true
         type: string
+      - description: Step Index (0 for engine, 1+ for steps)
+        in: query
+        name: stepIndex
+        type: integer
+      - description: Line offset to start reading from
+        in: query
+        name: offset
+        type: integer
       produces:
-      - text/plain
+      - application/json
       responses:
         "200":
-          description: Log content
+          description: Logs and next offset
           schema:
-            type: string
+            additionalProperties: true
+            type: object
         "404":
           description: Instance Not Found
           schema:
@@ -837,6 +873,27 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get task instance logs
+      tags:
+      - orchestration
+  /orchestration/instances/cleanup:
+    post:
+      description: Removes task instances and logs older than the specified number
+        of days.
+      parameters:
+      - description: Days older than which instances will be deleted
+        in: query
+        name: days
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Number of deleted instances
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Cleanup old task instances
       tags:
       - orchestration
   /orchestration/manifests:

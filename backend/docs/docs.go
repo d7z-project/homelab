@@ -650,6 +650,81 @@ const docTemplate = `{
                 }
             }
         },
+        "/orchestration/instances/cleanup": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Removes task instances and logs older than the specified number of days.",
+                "tags": [
+                    "orchestration"
+                ],
+                "summary": "Cleanup old task instances",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Days older than which instances will be deleted",
+                        "name": "days",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Number of deleted instances",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/orchestration/instances/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Removes a specific task instance and its execution logs.",
+                "tags": [
+                    "orchestration"
+                ],
+                "summary": "Delete a task instance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task Instance ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Instance Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/orchestration/instances/{id}/cancel": {
             "post": {
                 "security": [
@@ -697,9 +772,9 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns the full execution logs for a specific task instance in plain text.",
+                "description": "Returns execution logs for a specific task instance or step, supporting line offset for real-time refresh.",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
                     "orchestration"
@@ -712,13 +787,26 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Step Index (0 for engine, 1+ for steps)",
+                        "name": "stepIndex",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Line offset to start reading from",
+                        "name": "offset",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Log content",
+                        "description": "Logs and next offset",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "404": {

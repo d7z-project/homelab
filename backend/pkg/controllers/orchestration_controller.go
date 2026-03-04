@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/orchestration"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -152,25 +154,90 @@ func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, instanceID)
 }
 
+// DeleteInstanceHandler godoc
+// @Summary Delete a task instance
+// @Description Removes a specific task instance and its execution logs.
+// @Tags orchestration
+// @Param id path string true "Task Instance ID"
+// @Success 200 {object} common.Response "success"
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 404 {object} common.Response "Instance Not Found"
+// @Security ApiKeyAuth
+// @Router /orchestration/instances/{id} [delete]
+func DeleteInstanceHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := orchestration.DeleteTaskInstance(r.Context(), id); err != nil {
+		common.BadRequestError(w, r, 0, err.Error())
+		return
+	}
+	common.Success(w, r, "success")
+}
+
+// CleanupInstancesHandler godoc
+// @Summary Cleanup old task instances
+// @Description Removes task instances and logs older than the specified number of days.
+// @Tags orchestration
+// @Param days query int true "Days older than which instances will be deleted"
+// @Success 200 {object} map[string]interface{} "Number of deleted instances"
+// @Security ApiKeyAuth
+// @Router /orchestration/instances/cleanup [post]
+func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
+	daysStr := r.URL.Query().Get("days")
+	days, err := strconv.Atoi(daysStr)
+	if err != nil {
+		common.BadRequestError(w, r, 0, "invalid days parameter")
+		return
+	}
+
+	count, err := orchestration.CleanupTaskInstances(r.Context(), days)
+	if err != nil {
+		common.InternalServerError(w, r, 0, err.Error())
+		return
+	}
+	common.Success(w, r, map[string]interface{}{"deleted": count})
+}
+
 // GetInstanceLogsHandler godoc
 // @Summary Get task instance logs
-// @Description Returns the full execution logs for a specific task instance in plain text.
+// @Description Returns execution logs for a specific task instance or step, supporting line offset for real-time refresh.
 // @Tags orchestration
-// @Produce plain
+// @Produce json
 // @Param id path string true "Task Instance ID"
-// @Success 200 {string} string "Log content"
+// @Param stepIndex query int false "Step Index (0 for engine, 1+ for steps)"
+// @Param offset query int false "Line offset to start reading from"
+// @Success 200 {object} map[string]interface{} "Logs and next offset"
 // @Failure 404 {object} common.Response "Instance Not Found"
 // @Security ApiKeyAuth
 // @Router /orchestration/instances/{id}/logs [get]
 func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	stepIndexStr := r.URL.Query().Get("stepIndex")
+	offsetStr := r.URL.Query().Get("offset")
+
+	if stepIndexStr != "" {
+		var stepIndex, offset int
+		fmt.Sscanf(stepIndexStr, "%d", &stepIndex)
+		fmt.Sscanf(offsetStr, "%d", &offset)
+
+		logs, nextOffset, err := orchestration.GetStepLogs(r.Context(), id, stepIndex, offset)
+		if err != nil {
+			common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+			return
+		}
+		common.Success(w, r, map[string]interface{}{
+			"logs":       logs,
+			"nextOffset": nextOffset,
+		})
+		return
+	}
+
+	// Default to all logs if no stepIndex provided
 	logs, err := orchestration.GetTaskLogs(r.Context(), id)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(logs))
+	common.Success(w, r, logs)
 }
 
 // CancelInstanceHandler godoc
@@ -353,7 +420,9 @@ func OrchestrationRouter(r chi.Router) {
 		r.Post("/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
 
 		r.Get("/instances", ListInstancesHandler)
+		r.Post("/instances/cleanup", CleanupInstancesHandler)
 		r.Get("/instances/{id}/logs", GetInstanceLogsHandler)
+		r.Delete("/instances/{id}", DeleteInstanceHandler)
 		r.Post("/instances/{id}/cancel", CancelInstanceHandler)
 
 		r.Get("/manifests", ListManifestsHandler)

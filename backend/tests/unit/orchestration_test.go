@@ -7,6 +7,7 @@ import (
 	_ "homelab/pkg/services/orchestration/processors"
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
+	"strings"
 	"testing"
 	"time"
 )
@@ -269,9 +270,9 @@ func TestOrchestrationEngine(t *testing.T) {
 
 		// Verify step name was resolved in logs
 		foundLog := false
-		logs, _ := orchestration.ReadTaskLogs(instanceID)
+		logs, _ := orchestration.GetTaskLogs(context.Background(), instanceID)
 		for _, l := range logs {
-			if l.Message == "Executing step: Running for PROD (s1)" {
+			if strings.Contains(l.Message, "Executing step: Running for PROD (s1)") {
 				foundLog = true
 			}
 		}
@@ -495,6 +496,223 @@ func TestOrchestrationEngine(t *testing.T) {
 		updated, _ := orchestration.GetWorkflow(tests.SetupMockRootContext(), wf.ID)
 		if updated.WebhookToken != newToken {
 			t.Error("Token in repo does not match new token")
+		}
+	})
+
+	t.Run("Log Persistence and Querying", func(t *testing.T) {
+		workflow := &models.Workflow{
+			ID:               "log-wf",
+			Name:             "Log Workflow",
+			Enabled:          true,
+			ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{
+					ID:     "step1",
+					Type:   "core/logger",
+					Name:   "Step 1",
+					Params: map[string]string{"message": "Hello from Step 1"},
+				},
+			},
+		}
+
+		ctx := tests.SetupMockRootContext()
+		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		if err != nil {
+			t.Fatalf("Execute failed: %v", err)
+		}
+
+		// Wait for completion
+		var instance *models.TaskInstance
+		for i := 0; i < 20; i++ {
+			instance, _ = orchestration.GetTaskInstance(ctx, instanceID)
+			if instance != nil && instance.Status != "Running" {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		if instance == nil || instance.Status != "Success" {
+			t.Fatalf("Instance failed or not found: %v", instance)
+		}
+
+		// Query all logs
+		logs, err := orchestration.GetTaskLogs(ctx, instanceID)
+		if err != nil {
+			t.Fatalf("GetTaskLogs failed: %v", err)
+		}
+
+		if len(logs) == 0 {
+			t.Fatal("Expected at least one log entry")
+		}
+
+		// Verify per-step logs
+		stepLogs, nextOffset, err := orchestration.GetStepLogs(ctx, instanceID, 1, 0)
+		if err != nil {
+			t.Fatalf("GetStepLogs failed: %v", err)
+		}
+		if len(stepLogs) == 0 {
+			t.Error("Expected logs for step 1")
+		}
+		if nextOffset == 0 {
+			t.Error("Expected nextOffset to be > 0")
+		}
+
+		foundStepMsg := false
+		for _, l := range stepLogs {
+			if strings.Contains(l.Message, "Hello from Step 1") {
+				foundStepMsg = true
+			}
+		}
+		if !foundStepMsg {
+			t.Error("Did not find expected step 1 log message")
+		}
+	})
+
+	t.Run("Large Log Entry", func(t *testing.T) {
+		largeMessage := strings.Repeat("A", 128*1024) // 128KB
+		workflow := &models.Workflow{
+			ID:               "large-log-wf",
+			Name:             "Large Log Workflow",
+			Enabled:          true,
+			ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{
+					ID:     "step1",
+					Type:   "core/logger",
+					Params: map[string]string{"message": largeMessage},
+				},
+			},
+		}
+
+		ctx := tests.SetupMockRootContext()
+		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		if err != nil {
+			t.Fatalf("Execute failed: %v", err)
+		}
+
+		// Wait for completion
+		for i := 0; i < 20; i++ {
+			inst, _ := orchestration.GetTaskInstance(ctx, instanceID)
+			if inst != nil && inst.Status == "Success" {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		// Query logs
+		logs, err := orchestration.GetTaskLogs(ctx, instanceID)
+		if err != nil {
+			t.Fatalf("GetTaskLogs failed: %v", err)
+		}
+
+		foundLarge := false
+		for _, l := range logs {
+			if len(l.Message) >= 128*1024 {
+				foundLarge = true
+			}
+		}
+
+		if !foundLarge {
+			t.Error("Did not find large log entry")
+		}
+	})
+
+	t.Run("GetTaskInstance Log Population", func(t *testing.T) {
+		workflow := &models.Workflow{
+			ID:               "pop-wf",
+			Name:             "Pop Workflow",
+			Enabled:          true,
+			ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{
+					ID:     "s1",
+					Type:   "core/logger",
+					Params: map[string]string{"message": "pop test"},
+				},
+			},
+		}
+
+		ctx := tests.SetupMockRootContext()
+		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		if err != nil {
+			t.Fatalf("Execute failed: %v", err)
+		}
+
+		// Wait for completion
+		for i := 0; i < 20; i++ {
+			inst, _ := orchestration.GetTaskInstance(ctx, instanceID)
+			if inst != nil && inst.Status == "Success" {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		// Get instance again
+		inst, err := orchestration.GetTaskInstance(ctx, instanceID)
+		if err != nil {
+			t.Fatalf("GetTaskInstance failed: %v", err)
+		}
+
+		if len(inst.Logs) > 0 {
+			t.Logf("Confirmed: GetTaskInstance populated %d logs", len(inst.Logs))
+		} else {
+			t.Errorf("GetTaskInstance did NOT populate logs")
+		}
+	})
+
+	t.Run("Task Instance Deletion and Cleanup", func(t *testing.T) {
+		workflow := &models.Workflow{
+			ID:               "del-wf",
+			Name:             "Delete Workflow",
+			Enabled:          true,
+			ServiceAccountID: "sa",
+			Steps:            []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "test"}}},
+		}
+
+		ctx := tests.SetupMockRootContext()
+		id, _ := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+
+		// Wait for completion
+		for i := 0; i < 20; i++ {
+			inst, _ := orchestration.GetTaskInstance(ctx, id)
+			if inst != nil && inst.Status == "Success" {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		// Delete single instance
+		err := orchestration.DeleteTaskInstance(ctx, id)
+		if err != nil {
+			t.Errorf("DeleteTaskInstance failed: %v", err)
+		}
+
+		_, err = orchestration.GetTaskInstance(ctx, id)
+		if err == nil {
+			t.Error("Instance should have been deleted")
+		}
+
+		// Cleanup (0 days should cleanup everything)
+		id2, _ := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		for i := 0; i < 20; i++ {
+			inst, _ := orchestration.GetTaskInstance(ctx, id2)
+			if inst != nil && inst.Status == "Success" {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		deleted, err := orchestration.CleanupTaskInstances(ctx, 0)
+		if err != nil {
+			t.Errorf("CleanupTaskInstances failed: %v", err)
+		}
+		if deleted == 0 {
+			t.Error("CleanupTaskInstances should have deleted at least one instance")
+		}
+
+		_, err = orchestration.GetTaskInstance(ctx, id2)
+		if err == nil {
+			t.Error("Instance id2 should have been cleaned up")
 		}
 	})
 }

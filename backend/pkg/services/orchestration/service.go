@@ -235,7 +235,7 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 		for _, inst := range instances {
 			if inst.WorkflowID == id {
 				_ = repo.DeleteTaskInstance(ctx, inst.ID)
-				_ = logFS.Remove(fmt.Sprintf("%s.log", inst.ID))
+				_ = RemoveTaskLogs(inst.ID)
 			}
 		}
 	}
@@ -349,6 +349,15 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + inst.WorkflowID) {
 		return nil, fmt.Errorf("permission denied: orchestration/%s", inst.WorkflowID)
 	}
+
+	// Populate logs from all parts
+	logs, _ := ReadAllTaskLogs(id)
+	if logs != nil {
+		inst.Logs = logs
+	} else {
+		inst.Logs = []models.LogEntry{}
+	}
+
 	return inst, nil
 }
 
@@ -362,10 +371,68 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	var filtered []models.TaskInstance
 	for _, inst := range all {
 		if perms.IsAllowed("orchestration/" + inst.WorkflowID) {
+			// Populate logs from all parts
+			logs, _ := ReadAllTaskLogs(inst.ID)
+			if logs != nil {
+				inst.Logs = logs
+			} else {
+				inst.Logs = []models.LogEntry{}
+			}
 			filtered = append(filtered, inst)
 		}
 	}
 	return filtered, nil
+}
+
+func DeleteTaskInstance(ctx context.Context, id string) error {
+	inst, err := repo.GetTaskInstance(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Permission check for the parent workflow
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + inst.WorkflowID) {
+		return fmt.Errorf("permission denied: orchestration/%s", inst.WorkflowID)
+	}
+
+	// Don't allow deleting running tasks
+	if inst.Status == "Running" {
+		return fmt.Errorf("cannot delete a running task instance")
+	}
+
+	if err := repo.DeleteTaskInstance(ctx, id); err != nil {
+		return err
+	}
+
+	// Also remove logs
+	_ = RemoveTaskLogs(id)
+	return nil
+}
+
+func CleanupTaskInstances(ctx context.Context, days int) (int, error) {
+	all, err := repo.ListTaskInstances(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -days)
+	count := 0
+	perms := commonauth.PermissionsFromContext(ctx)
+
+	for _, inst := range all {
+		// Only cleanup instances we have permission for
+		if !perms.IsAllowed("orchestration/" + inst.WorkflowID) {
+			continue
+		}
+
+		// Only cleanup non-running instances older than cutoff
+		if inst.Status != "Running" && inst.StartedAt.Before(cutoff) {
+			_ = repo.DeleteTaskInstance(ctx, inst.ID)
+			_ = RemoveTaskLogs(inst.ID)
+			count++
+		}
+	}
+	return count, nil
 }
 
 func CancelTaskInstance(ctx context.Context, id string) error {
@@ -405,30 +472,38 @@ func CancelTaskInstance(ctx context.Context, id string) error {
 	return nil
 }
 
-func GetTaskLogs(ctx context.Context, id string) (string, error) {
+func GetTaskLogs(ctx context.Context, id string) ([]models.LogEntry, error) {
 	instance, err := repo.GetTaskInstance(ctx, id)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Check permission for the parent workflow
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + instance.WorkflowID) {
-		return "", fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
+		return nil, fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
 	}
 
-	// Read logs from VFS
-	logs, err := ReadTaskLogs(id)
+	// Read all logs from VFS
+	logs, err := ReadAllTaskLogs(id)
 	if err != nil {
-		// If file not found, maybe it's an old task or no logs yet
-		return "[]", nil
+		return []models.LogEntry{}, nil
 	}
 
-	// Return logs as JSON string
-	data, err := json.Marshal(logs)
+	return logs, nil
+}
+
+func GetStepLogs(ctx context.Context, id string, stepIndex int, offset int) ([]models.LogEntry, int, error) {
+	instance, err := repo.GetTaskInstance(ctx, id)
 	if err != nil {
-		return "", err
+		return nil, 0, err
 	}
-	return string(data), nil
+
+	// Check permission for the parent workflow
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + instance.WorkflowID) {
+		return nil, 0, fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
+	}
+
+	return ReadStepLogs(id, stepIndex, offset)
 }
 
 type ProbeRequest struct {

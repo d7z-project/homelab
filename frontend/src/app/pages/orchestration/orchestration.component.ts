@@ -76,6 +76,27 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   workflows = signal<ModelsWorkflow[]>([]);
   instances = signal<ModelsTaskInstance[]>([]);
 
+  selectedWorkflowId = signal<string | null>(null);
+
+  filteredInstances = computed(() => {
+    let list = this.instances();
+    const search = this.uiService.searchConfig()?.value?.toLowerCase();
+    const wfId = this.selectedWorkflowId();
+
+    if (wfId) {
+      list = list.filter((i) => i.workflowId === wfId);
+    }
+
+    if (search) {
+      list = list.filter(
+        (i) =>
+          i.id?.toLowerCase().includes(search) ||
+          this.getWorkflowName(i.workflowId || '').toLowerCase().includes(search),
+      );
+    }
+    return list;
+  });
+
   loading = signal(false);
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
@@ -83,7 +104,9 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   private refreshTimer?: any;
 
   displayedWorkflowColumns = computed(() =>
-    this.isHandset() ? ['enabled', 'name', 'actions'] : ['enabled', 'name', 'description', 'steps', 'actions'],
+    this.isHandset()
+      ? ['enabled', 'name', 'actions']
+      : ['enabled', 'name', 'description', 'steps', 'actions'],
   );
   displayedInstanceColumns = computed(() =>
     this.isHandset()
@@ -110,6 +133,11 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       } else {
         this.selectedTabIndex.set(0);
         this.stopRefreshTimer();
+      }
+      if (params['workflowId']) {
+        this.selectedWorkflowId.set(params['workflowId']);
+      } else {
+        this.selectedWorkflowId.set(null);
       }
     });
   }
@@ -139,7 +167,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       if (this.selectedTabIndex() === 1 && !this.loading()) {
         this.loadInstances(true);
       }
-    }, 2000);
+    }, 10000);
   }
 
   private stopRefreshTimer() {
@@ -158,7 +186,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
-    
+
     if (index === 1) {
       this.startRefreshTimer();
     } else {
@@ -210,7 +238,8 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     }
   }
 
-  getWorkflowName(id: string): string {
+  getWorkflowName(id: string | undefined): string {
+    if (!id) return '-';
     return this.workflows().find((w) => w.id === id)?.name || id;
   }
 
@@ -383,6 +412,70 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  async deleteInstance(inst: ModelsTaskInstance) {
+    if (!inst.id) return;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: '删除运行记录',
+        message: `确定要删除此条运行记录吗？相关的执行日志也将被永久清除。`,
+        confirmText: '确定删除',
+        color: 'warn',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result && inst.id) {
+        this.loading.set(true);
+        try {
+          await firstValueFrom(this.orchService.orchestrationInstancesIdDelete(inst.id));
+          this.snackBar.open('记录已删除', '关闭', { duration: 2000 });
+          await this.loadInstances();
+        } catch (err) {
+          this.snackBar.open('删除失败', '关闭', { duration: 2000 });
+        } finally {
+          this.loading.set(false);
+        }
+      }
+    });
+  }
+
+  async cleanupInstances() {
+    const days = 7; // Default to 7 days
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: '批量清理记录',
+        message: `确定要清理 ${days} 天前的所有运行记录吗？`,
+        confirmText: '开始清理',
+        color: 'warn',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        this.loading.set(true);
+        try {
+          const res = await firstValueFrom(this.orchService.orchestrationInstancesCleanupPost(days));
+          this.snackBar.open(`清理完成，共删除 ${(res as any).deleted || 0} 条记录`, '关闭', {
+            duration: 3000,
+          });
+          await this.loadInstances();
+        } catch (err) {
+          this.snackBar.open('清理失败', '关闭', { duration: 2000 });
+        } finally {
+          this.loading.set(false);
+        }
+      }
+    });
+  }
+
+  filterByWorkflow(id: string | null) {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { workflowId: id },
+      queryParamsHandling: 'merge',
+    });
   }
 
   viewLogs(inst: ModelsTaskInstance) {

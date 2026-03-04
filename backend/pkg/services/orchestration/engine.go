@@ -140,8 +140,8 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 
 	stepOutputs := make(map[string]map[string]string)
 
-	for _, step := range workflow.Steps {
-		logger.SetStep(step.ID)
+	for i, step := range workflow.Steps {
+		logger.SetStep(i + 1)
 		select {
 		case <-ctx.Done():
 			e.fail(instance, ctx.Err(), logger)

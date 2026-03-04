@@ -124,8 +124,8 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
           >
             <!-- System Setup -->
             <div
-              (click)="onStepChange('')"
-              [class.active-step]="selectedStep() === ''"
+              (click)="onStepChange(0)"
+              [class.active-step]="selectedStepIndex() === 0"
               class="step-nav-item group shrink-0 sm:shrink"
             >
               <div class="status-indicator">
@@ -138,15 +138,15 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
             </div>
 
             <!-- Workflow Steps -->
-            @for (step of stepsList(); track step.id) {
+            @for (step of stepsList(); track step.id; let i = $index) {
               <div
-                (click)="onStepChange(step.id)"
-                [class.active-step]="selectedStep() === step.id"
+                (click)="onStepChange(i + 1)"
+                [class.active-step]="selectedStepIndex() === i + 1"
                 class="step-nav-item group shrink-0 sm:shrink"
               >
-                <div class="status-indicator" [style.color]="getStepStatusColor(step.id)">
+                <div class="status-indicator" [style.color]="getStepStatusColor(i + 1)">
                   <mat-icon class="!w-4 !h-4 !text-[16px]">{{
-                    getStepStatusIcon(step.id)
+                    getStepStatusIcon(i + 1)
                   }}</mat-icon>
                 </div>
                 <span class="text-[11px] sm:text-xs font-medium truncate flex-1">{{
@@ -171,7 +171,7 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
               <span
                 class="text-[9px] font-bold font-mono text-white/40 uppercase tracking-widest truncate"
               >
-                {{ selectedStep() === '' ? 'Runner' : 'Step: ' + selectedStep() }}
+                {{ selectedStepIndex() === 0 ? 'Runner' : 'Step: ' + getStepName(selectedStepIndex()) }}
               </span>
             </div>
           </div>
@@ -182,7 +182,7 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
           </div>
 
           <!-- Error Alert -->
-          @if (instance().error && selectedStep() === '') {
+          @if (instance().error && selectedStepIndex() === 0) {
             <div
               class="absolute bottom-4 left-4 right-4 p-3 bg-error/90 backdrop-blur-md rounded-xl text-on-error shadow-2xl flex items-start gap-3 animate-in slide-in-from-bottom-2"
             >
@@ -278,16 +278,16 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   );
 
   instance = signal<ModelsTaskInstance>(this.dialogData.instance);
-  selectedStep = signal<string>('');
+  selectedStepIndex = signal<number>(0);
+  stepsList = signal<{ id: string; name: string }[]>([]);
+
+  private currentOffset = 0;
+  private autoStepFollow = true;
 
   displayId = computed(() => {
     const id = this.instance().id || '';
     return id.split('_').pop() || id;
   });
-
-  stepsList = signal<{ id: string; name: string }[]>([]);
-
-  private lastRenderedIndex = -1;
 
   constructor(public dialogRef: MatDialogRef<TaskDetailDialogComponent>) {}
 
@@ -325,15 +325,13 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     this.terminal.loadAddon(this.fitAddon);
     this.terminal.open(this.terminalContainer.nativeElement);
 
-    // Fit terminal on open and window resize
     setTimeout(() => this.fitAddon.fit(), 50);
     window.addEventListener('resize', () => this.fitAddon.fit());
 
-    this.renderLogs();
+    // Initial full fetch for selected step
+    this.refreshLogs(true);
 
-    if (this.instance().status === 'Running') {
-      this.pollSubscription = interval(2000).subscribe(() => this.refresh());
-    }
+    this.pollSubscription = interval(2000).subscribe(() => this.refresh());
   }
 
   ngOnDestroy() {
@@ -347,21 +345,45 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       const insts = await firstValueFrom(this.orchService.orchestrationInstancesGet());
       const updated = insts.find((i) => i.id === this.instance().id);
       if (updated) {
+        const oldStatus = this.instance().status;
         this.instance.set(updated);
-        this.renderLogs();
-        if (updated.status !== 'Running') {
-          this.pollSubscription?.unsubscribe();
+        
+        // Auto follow step if running
+        if (this.autoStepFollow && updated.status === 'Running' && updated.logs && updated.logs.length > 0) {
+           const lastLog = updated.logs[updated.logs.length - 1];
+           // Find step index from step ID
+           const stepIdx = this.stepsList().findIndex(s => s.id === lastLog.stepId);
+           const newIdx = stepIdx === -1 ? 0 : stepIdx + 1;
+           if (newIdx !== this.selectedStepIndex()) {
+             this.onStepChange(newIdx);
+             return; // onStepChange will handle log refresh
+           }
+        }
+
+        await this.refreshLogs();
+        
+        if (updated.status !== 'Running' && oldStatus === 'Running') {
+          // Task just finished, do one last refresh then stop polling if needed? 
+          // Actually we keep polling for some time or just let it be.
         }
       }
     } catch (e) {}
   }
 
-  onStepChange(step: string) {
-    this.selectedStep.set(step);
+  onStepChange(index: number) {
+    if (this.instance().status !== 'Running') {
+      this.autoStepFollow = false;
+    }
+    this.selectedStepIndex.set(index);
     this.clearTerminal();
-    this.lastRenderedIndex = -1;
-    this.renderLogs();
+    this.currentOffset = 0;
+    this.refreshLogs(true);
     setTimeout(() => this.fitAddon.fit(), 0);
+  }
+
+  getStepName(index: number): string {
+    if (index === 0) return 'Runner';
+    return this.stepsList()[index - 1]?.name || this.stepsList()[index - 1]?.id || 'Unknown';
   }
 
   clearTerminal() {
@@ -369,19 +391,42 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     this.terminal?.write('\x1b[2J\x1b[H');
   }
 
-  renderLogs() {
-    const allLogs = this.instance().logs || [];
-    const step = this.selectedStep();
+  async refreshLogs(isInitial = false) {
+    const id = this.instance().id;
+    if (!id) return;
 
-    const startIndex = this.lastRenderedIndex + 1;
+    try {
+      const res = await firstValueFrom<any>(
+        this.orchService.orchestrationInstancesIdLogsGet(
+          id,
+          this.selectedStepIndex(),
+          this.currentOffset
+        )
+      );
 
-    for (let i = startIndex; i < allLogs.length; i++) {
-      const log = allLogs[i];
-      if (log.stepId === step || (!log.stepId && step === '')) {
-        const time = new Date(log.timestamp || '').toLocaleTimeString([], { hour12: false });
-        this.terminal?.write(`\x1b[90m${time}\x1b[0m  ${log.message}\r\n`);
+      if (res && res.logs) {
+        const logs: ModelsLogEntry[] = res.logs;
+        for (const log of logs) {
+          this.terminal?.writeln(`${log.message}`);
+        }
+        this.currentOffset = res.nextOffset;
+        
+        if (logs.length > 0) {
+          this.terminal?.scrollToBottom();
+        }
+      } else if (Array.isArray(res) && isInitial) {
+        // Fallback for full logs if the API returned an array (e.g. if query params were ignored)
+        const allLogs: ModelsLogEntry[] = res;
+        const step = this.selectedStepIndex() === 0 ? '' : this.stepsList()[this.selectedStepIndex()-1].id;
+        for (const log of allLogs) {
+          if (log.stepId === step || (!log.stepId && step === '')) {
+             this.terminal?.writeln(`${log.message}`);
+          }
+        }
+        this.terminal?.scrollToBottom();
       }
-      this.lastRenderedIndex = i;
+    } catch (e) {
+      console.error('Failed to fetch logs', e);
     }
   }
 
@@ -422,8 +467,9 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  getStepStatusIcon(stepId: string): string {
+  getStepStatusIcon(index: number): string {
     const logs = this.instance().logs || [];
+    const stepId = index === 0 ? '' : this.stepsList()[index-1].id;
     const hasLogs = logs.some((l) => l.stepId === stepId);
     if (!hasLogs) return 'radio_button_unchecked';
 
@@ -441,8 +487,8 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     return 'check_circle';
   }
 
-  getStepStatusColor(stepId: string): string {
-    const icon = this.getStepStatusIcon(stepId);
+  getStepStatusColor(index: number): string {
+    const icon = this.getStepStatusIcon(index);
     switch (icon) {
       case 'check_circle':
         return '#3fb950';
