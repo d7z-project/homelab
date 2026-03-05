@@ -1470,7 +1470,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "string"
+                                "$ref": "#/definitions/models.DiscoverResult"
                             }
                         }
                     }
@@ -2189,6 +2189,23 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DiscoverResult": {
+            "type": "object",
+            "properties": {
+                "final": {
+                    "description": "True if this is a complete resource, False if it's a category/prefix",
+                    "type": "boolean"
+                },
+                "fullId": {
+                    "description": "Actual resource path used in RBAC check",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Display name in UI",
+                    "type": "string"
+                }
+            }
+        },
         "models.DnsExportResponse": {
             "type": "object",
             "properties": {
@@ -2463,6 +2480,10 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "trigger": {
+                    "description": "Optional: Manual (default), API, Script, etc.",
+                    "type": "string"
                 }
             }
         },

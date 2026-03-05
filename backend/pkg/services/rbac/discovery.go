@@ -2,8 +2,7 @@ package rbac
 
 import (
 	"context"
-	dnsrepo "homelab/pkg/repositories/dns"
-	orchrepo "homelab/pkg/repositories/orchestration"
+	"homelab/pkg/models"
 	"sort"
 	"strings"
 	"sync"
@@ -21,7 +20,7 @@ type resourceInfo struct {
 }
 
 // DiscoverFunc returns a list of matching resource paths based on the remaining prefix
-type DiscoverFunc func(ctx context.Context, prefix string) ([]string, error)
+type DiscoverFunc func(ctx context.Context, prefix string) ([]models.DiscoverResult, error)
 
 func init() {
 	discoveredResources = make(map[string]resourceInfo)
@@ -29,121 +28,18 @@ func init() {
 	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
 
 	// Register default internal resources
-	RegisterResourceWithVerbs("rbac", func(ctx context.Context, prefix string) ([]string, error) {
+	RegisterResourceWithVerbs("rbac", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		subs := []string{"serviceaccounts", "roles", "rolebindings", "simulate"}
-		var res []string
+		res := make([]models.DiscoverResult, 0)
 		for _, s := range subs {
 			if strings.HasPrefix(s, prefix) {
-				res = append(res, s)
-				res = append(res, s+"/*")
+				res = append(res, models.DiscoverResult{
+					FullID: s,
+					Name:   s,
+					Final:  true,
+				})
 			}
 		}
-		return res, nil
-	}, standardVerbs)
-
-	RegisterResourceWithVerbs("audit", func(ctx context.Context, prefix string) ([]string, error) {
-		subs := []string{"logs"}
-		var res []string
-		for _, s := range subs {
-			if strings.HasPrefix(s, prefix) {
-				res = append(res, s)
-				res = append(res, s+"/*")
-			}
-		}
-		return res, nil
-	}, []string{"get", "list", "*"})
-
-	RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]string, error) {
-		// prefix is everything after "dns/"
-		prefixLower := strings.ToLower(prefix)
-		parts := strings.Split(prefixLower, "/")
-
-		// Get all domains to match against the first part
-		domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
-		if err != nil {
-			return nil, err
-		}
-
-		var res []string
-		for _, d := range domains {
-			domainNameLower := strings.ToLower(d.Name)
-			// Check if domain matches parts[0]
-			if !strings.HasPrefix(domainNameLower, parts[0]) {
-				continue
-			}
-
-			if len(parts) <= 1 {
-				// Level 1: Suggest domains
-				res = append(res, d.Name)
-				res = append(res, d.Name+"/*")
-				res = append(res, d.Name+"/**")
-			} else {
-				// Level 2 & 3: We have a full domain match, suggest records
-				if domainNameLower != parts[0] {
-					continue
-				}
-
-				records, _, err := dnsrepo.ListRecords(ctx, d.ID, 0, 1000, "")
-				if err != nil {
-					continue
-				}
-
-				for _, r := range records {
-					recordNameLower := strings.ToLower(r.Name)
-					// Check if record host matches parts[1]
-					if !strings.HasPrefix(recordNameLower, parts[1]) {
-						continue
-					}
-
-					if len(parts) <= 2 {
-						// Level 2: Suggest hostnames
-						res = append(res, d.Name+"/"+r.Name)
-						res = append(res, d.Name+"/"+r.Name+"/*")
-						// Also suggest full path with type as it's common in rbac checks
-						res = append(res, d.Name+"/"+r.Name+"/"+r.Type)
-					} else {
-						// Level 3: Suggest types
-						if recordNameLower == parts[1] && strings.HasPrefix(strings.ToLower(r.Type), parts[2]) {
-							res = append(res, d.Name+"/"+r.Name+"/"+r.Type)
-						}
-					}
-				}
-			}
-		}
-
-		return res, nil
-	}, standardVerbs)
-
-	RegisterResourceWithVerbs("orchestration", func(ctx context.Context, prefix string) ([]string, error) {
-		// prefix is everything after "orchestration/"
-		subs := []string{"workflows", "instances", "manifests", "probe"}
-		var res []string
-		for _, s := range subs {
-			if strings.HasPrefix(s, prefix) {
-				res = append(res, s)
-				res = append(res, s+"/*")
-			}
-		}
-
-		// If prefix starts with a sub-resource, suggest IDs
-		for _, s := range []string{"workflows", "instances"} {
-			if strings.HasPrefix(prefix, s+"/") {
-				idPrefix := strings.TrimPrefix(prefix, s+"/")
-				if s == "workflows" {
-					workflows, err := orchrepo.ListWorkflows(ctx)
-					if err == nil {
-						for _, wf := range workflows {
-							if strings.HasPrefix(wf.ID, idPrefix) {
-								res = append(res, "workflows/"+wf.ID)
-							}
-						}
-					}
-				} else {
-					res = append(res, "instances/*")
-				}
-			}
-		}
-
 		return res, nil
 	}, standardVerbs)
 }
@@ -164,22 +60,30 @@ func RegisterResourceWithVerbs(name string, f DiscoverFunc, verbs []string) {
 }
 
 // SuggestResources returns a list of resource paths matching the prefix
-func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
+func SuggestResources(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 	discoveryMu.RLock()
 	defer discoveryMu.RUnlock()
 
-	var suggestions []string
+	suggestions := make([]models.DiscoverResult, 0)
 	seen := make(map[string]struct{})
 	prefixLower := strings.ToLower(prefix)
 
 	if !strings.Contains(prefix, "/") {
+		var rootNames []string
 		for name := range discoveredResources {
 			if strings.HasPrefix(name, prefixLower) {
-				suggestions = append(suggestions, name)
-				seen[name] = struct{}{}
+				rootNames = append(rootNames, name)
 			}
 		}
-		sort.Strings(suggestions)
+		sort.Strings(rootNames)
+
+		for _, name := range rootNames {
+			suggestions = append(suggestions, models.DiscoverResult{
+				FullID: name,
+				Name:   name,
+				Final:  false,
+			})
+		}
 		return suggestions, nil
 	}
 
@@ -193,10 +97,10 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 			return nil, err
 		}
 		for _, m := range matches {
-			fullPath := baseRes + "/" + m
-			if _, exists := seen[fullPath]; !exists {
-				suggestions = append(suggestions, fullPath)
-				seen[fullPath] = struct{}{}
+			m.FullID = baseRes + "/" + m.FullID
+			if _, exists := seen[m.FullID]; !exists {
+				suggestions = append(suggestions, m)
+				seen[m.FullID] = struct{}{}
 			}
 		}
 
@@ -206,14 +110,20 @@ func SuggestResources(ctx context.Context, prefix string) ([]string, error) {
 			if remaining == "" || strings.HasPrefix(w, remaining) {
 				fullPath := baseRes + "/" + w
 				if _, exists := seen[fullPath]; !exists {
-					suggestions = append(suggestions, fullPath)
+					suggestions = append(suggestions, models.DiscoverResult{
+						FullID: fullPath,
+						Name:   w,
+						Final:  true,
+					})
 					seen[fullPath] = struct{}{}
 				}
 			}
 		}
 	}
 
-	sort.Strings(suggestions)
+	sort.Slice(suggestions, func(i, j int) bool {
+		return suggestions[i].FullID < suggestions[j].FullID
+	})
 	return suggestions, nil
 }
 
@@ -233,6 +143,6 @@ func SuggestVerbs(ctx context.Context, resourcePrefix string) ([]string, error) 
 		return info.verbs, nil
 	}
 
-	// If the resource is unknown or partially typed, only suggest "*"
-	return []string{"*"}, nil
+	// If the resource is unknown, we don't know the verbs
+	return []string{}, nil
 }

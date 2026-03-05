@@ -7,8 +7,28 @@ import (
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
+	"homelab/pkg/models"
 	auditrepo "homelab/pkg/repositories/audit"
+	"homelab/pkg/services/rbac"
+	"strings"
 )
+
+func init() {
+	rbac.RegisterResourceWithVerbs("audit", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+		subs := []string{"logs"}
+		res := make([]models.DiscoverResult, 0)
+		for _, s := range subs {
+			if strings.HasPrefix(s, prefix) {
+				res = append(res, models.DiscoverResult{
+					FullID: s,
+					Name:   s,
+					Final:  true,
+				})
+			}
+		}
+		return res, nil
+	}, []string{"get", "list", "*"})
+}
 
 // ListLogs retrieves audit logs with optional pagination and filtering.
 func ListLogs(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {

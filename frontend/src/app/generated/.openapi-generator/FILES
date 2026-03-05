@@ -19,6 +19,7 @@ model/dnsRecordsGet200Response.ts
 model/models.ts
 model/modelsAuditCleanupResponse.ts
 model/modelsAuditLog.ts
+model/modelsDiscoverResult.ts
 model/modelsDnsExportResponse.ts
 model/modelsDomain.ts
 model/modelsExportDomain.ts

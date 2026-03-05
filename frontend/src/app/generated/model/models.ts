@@ -6,6 +6,7 @@ export * from './dnsDomainsGet200Response';
 export * from './dnsRecordsGet200Response';
 export * from './modelsAuditCleanupResponse';
 export * from './modelsAuditLog';
+export * from './modelsDiscoverResult';
 export * from './modelsDnsExportResponse';
 export * from './modelsDomain';
 export * from './modelsExportDomain';

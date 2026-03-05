@@ -178,4 +178,54 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 			t.Errorf("Expected ValidateWorkflow to skip validation for template variable, but it failed: %v", err)
 		}
 	})
+
+	t.Run("Optional Parameter Regex Bypassing when Empty", func(t *testing.T) {
+		teardown := tests.SetupTestDB()
+		defer teardown()
+
+		_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{
+			ID:   "sa",
+			Name: "Test SA",
+		})
+
+		workflow := &models.Workflow{
+			ID:               "optional-regex-wf",
+			Name:             "Optional Regex Workflow",
+			Enabled:          true,
+			ServiceAccountID: "sa",
+			Vars: map[string]models.VarDefinition{
+				"optional_var": {
+					Required:     false,
+					RegexBackend: "^[0-9]+$", // Must be digits if provided
+				},
+			},
+			Steps: []models.Step{
+				{
+					ID:   "s1",
+					Type: "core/workflow_call",
+					Params: map[string]string{
+						"workflow_id": "some-other-id",
+						"vars":        "", // Optional JSON, regex ^\{.*\}$
+					},
+				},
+			},
+		}
+
+		ctx := tests.SetupMockRootContext()
+
+		// 1. Test ValidateWorkflow (Step Parameters)
+		err := orchestration.ValidateWorkflow(ctx, workflow)
+		if err != nil {
+			t.Errorf("ValidateWorkflow failed for empty optional parameter: %v", err)
+		}
+
+		// 2. Test TriggerWorkflow (Workflow Variables)
+		// Empty input for optional_var should succeed despite regex
+		_, err = orchestration.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"optional_var": ""})
+		if err != nil && !strings.Contains(err.Error(), "not found") { // Ignore "target workflow not found" error from the processor execution part
+			if strings.Contains(err.Error(), "match required format") {
+				t.Errorf("TriggerWorkflow failed regex for empty optional variable: %v", err)
+			}
+		}
+	})
 }

@@ -1,20 +1,38 @@
-import { Component, Input, OnInit, forwardRef, inject, signal } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnInit,
+  inject,
+  signal,
+  Optional,
+  Self,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ControlValueAccessor,
-  NG_VALUE_ACCESSOR,
   FormsModule,
   ReactiveFormsModule,
   FormControl,
+  Validator,
+  AbstractControl,
+  ValidationErrors,
+  NgControl,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DiscoveryService, ModelsLookupItem } from '../generated';
-import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize, map } from 'rxjs';
+import { DiscoveryService, ModelsLookupItem, ModelsDiscoverResult } from '../generated';
+import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize } from 'rxjs';
 
+/**
+ * AppDiscoverySuggestInputComponent
+ * Provides a free-text input with suggestions from:
+ * 1. Remote lookup (discovery service)
+ * 2. Static string list (e.g. variable references)
+ * 3. Structured RBAC resource results (supports drill-down)
+ */
 @Component({
   selector: 'app-discovery-suggest-input',
   standalone: true,
@@ -28,13 +46,6 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
     MatIconModule,
     MatProgressBarModule,
   ],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => DiscoverySuggestInputComponent),
-      multi: true,
-    },
-  ],
   template: `
     <mat-form-field
       [appearance]="appearance"
@@ -47,6 +58,7 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
         [placeholder]="placeholder"
         [matAutocomplete]="auto"
         [formControl]="control"
+        (blur)="onTouched()"
       />
 
       <!-- Loading bar at bottom of field -->
@@ -58,95 +70,137 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
         <mat-progress-bar mode="indeterminate" class="!h-[2px]"></mat-progress-bar>
       </div>
 
-      <mat-autocomplete #auto="matAutocomplete">
+      <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSelected($event)">
         <!-- Variable/Ref Suggestions (Priority) -->
-        @if (staticSuggestions.length > 0) {
-          <mat-optgroup [label]="staticSuggestionsLabel">
-            @for (ref of staticSuggestions; track ref) {
-              <mat-option [value]="ref">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="!text-[14px] !w-4 !h-4 opacity-50">data_object</mat-icon>
-                  <span class="font-mono text-xs">{{ ref }}</span>
-                </div>
-              </mat-option>
-            }
-          </mat-optgroup>
+        @for (ref of staticSuggestions; track ref) {
+          <mat-option [value]="ref" class="!h-auto !py-3">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-secondary/70">data_object</mat-icon>
+              </div>
+              <span class="font-mono text-sm text-secondary truncate">{{ ref }}</span>
+            </div>
+          </mat-option>
+        }
+
+        <!-- RBAC Discovery Results -->
+        @for (ref of rbacSuggestions; track ref.fullId) {
+          <mat-option [value]="ref" class="!h-auto !py-3">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5">
+                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70">{{ ref.final ? 'description' : 'folder' }}</mat-icon>
+              </div>
+              <div class="flex flex-col min-w-0 flex-1 leading-tight">
+                <span class="font-bold text-[14px] text-on-surface truncate">{{ ref.name }}</span>
+                <span class="text-[11px] font-mono text-outline truncate opacity-60 mt-0.5">
+                  {{ ref.fullId }}
+                </span>
+              </div>
+            </div>
+          </mat-option>
         }
 
         <!-- Discovery Results -->
-        @if (items().length > 0) {
-          <mat-optgroup [label]="lookupLabel">
-            @for (item of items(); track item.id) {
-              <mat-option [value]="item.id">
-                <div class="flex flex-col leading-tight py-1">
-                  <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                      @if (item.icon) {
-                        <mat-icon class="!text-sm !w-4 !h-4 !m-0 opacity-70">{{
-                          item.icon
-                        }}</mat-icon>
-                      }
-                      <span class="font-bold text-[13px]">{{ item.name }}</span>
-                    </div>
-                    <span
-                      class="text-[9px] font-mono opacity-40 bg-neutral-variant/10 px-1.5 py-0.5 rounded"
-                    >
-                      {{ item.id }}
-                    </span>
-                  </div>
-                  @if (item.description) {
-                    <span class="text-[10px] text-outline truncate opacity-70 mt-0.5">
-                      {{ item.description }}
-                    </span>
-                  }
-                </div>
-              </mat-option>
-            }
-          </mat-optgroup>
+        @for (item of items(); track item.id) {
+          <mat-option [value]="item.id" class="!h-auto !py-3">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5">
+                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70">{{ item.icon || 'label' }}</mat-icon>
+              </div>
+              <div class="flex flex-col min-w-0 flex-1 leading-tight">
+                <span class="font-bold text-[14px] text-on-surface truncate">{{ item.name }}</span>
+                <span class="text-[11px] font-mono text-outline truncate opacity-60 mt-0.5">
+                  {{ item.id }}
+                </span>
+                @if (item.description) {
+                  <span class="text-[11px] text-outline truncate opacity-80 mt-1 italic leading-tight">
+                    {{ item.description }}
+                  </span>
+                }
+              </div>
+            </div>
+          </mat-option>
         }
       </mat-autocomplete>
 
-      @if (hint) {
+      @if (ngControl && ngControl.errors && ngControl.errors['notFinal']) {
+        <mat-error>请选择更具体的资源路径 (当前为目录/分类)</mat-error>
+      } @else if (ngControl && ngControl.errors && ngControl.errors['invalidPath']) {
+        <mat-error>无效的资源路径 (未找到匹配项)</mat-error>
+      } @else if (ngControl && ngControl.errors && ngControl.errors['required']) {
+        <mat-error>此项为必填项</mat-error>
+      }
+
+      @if (hint && (!ngControl || !ngControl.invalid)) {
         <mat-hint>{{ hint }}</mat-hint>
       }
     </mat-form-field>
   `,
 })
-export class DiscoverySuggestInputComponent implements OnInit, ControlValueAccessor {
+export class DiscoverySuggestInputComponent implements OnInit, ControlValueAccessor, Validator {
   private discoveryService = inject(DiscoveryService);
 
-  @Input() lookupCode = '';
-  @Input() lookupLabel = '常用项建议';
+  /** Standard lookup code for discovery service */
+  @Input() code = '';
+  /** Main field label */
   @Input() label = '输入值';
+  /** Field placeholder */
   @Input() placeholder = '输入自定义内容或 ${{ 引用变量 }}';
+  /** Optional hint text */
   @Input() hint = '';
+  /** Material field appearance */
   @Input() appearance: 'fill' | 'outline' = 'outline';
+  /** Subscript sizing behavior */
   @Input() subscriptSizing: 'fixed' | 'dynamic' = 'fixed';
+  
+  /** Static string suggestions (e.g. for variable completion) */
   @Input() staticSuggestions: string[] = [];
-  @Input() staticSuggestionsLabel = '变量引用';
+
+  /** Structured RBAC suggestions */
+  @Input() rbacSuggestions: ModelsDiscoverResult[] = [];
+
+  /** Whether the parent is currently fetching suggestions */
+  @Input() loading = false;
+
+  /** Whether to strictly validate against RBAC rules */
+  @Input() rbacMode = false;
 
   control = new FormControl('');
   items = signal<ModelsLookupItem[]>([]);
   isLoading = signal(false);
   disabled = false;
 
-  private onChange: (value: any) => void = () => {};
-  private onTouched: () => void = () => {};
+  constructor(@Optional() @Self() public ngControl: NgControl) {
+    if (this.ngControl) {
+      this.ngControl.valueAccessor = this;
+    }
+  }
+
+  public onChange: (value: any) => void = () => {};
+  public onTouched: () => void = () => {};
 
   ngOnInit() {
+    // Register validator manually since we use @Self() NgControl
+    if (this.ngControl && this.ngControl.control) {
+      this.ngControl.control.addValidators(this.validate.bind(this));
+    }
+
     this.control.valueChanges
       .pipe(
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((value) => {
-          const search = typeof value === 'string' ? value : '';
+          // If value is a ModelsDiscoverResult (from selection), we don't want to trigger lookup
+          if (typeof value !== 'string') return of({ items: [] });
+
+          const search = value;
           // Only trigger discovery search if code is provided and value doesn't look like a variable ref
-          if (!this.lookupCode || search.includes('${{')) {
+          if (!this.code || search.includes('${{')) {
             return of({ items: [] });
           }
 
           this.isLoading.set(true);
-          return this.discoveryService.discoveryLookupGet(this.lookupCode, search, 0, 10).pipe(
+          return this.discoveryService.discoveryLookupGet(this.code, search, 0, 10).pipe(
             catchError(() => of({ items: [] })),
             finalize(() => this.isLoading.set(false)),
           );
@@ -157,7 +211,58 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
       });
 
     // Notify parent on change
-    this.control.valueChanges.subscribe((val) => this.onChange(val));
+    this.control.valueChanges.subscribe((val) => {
+      if (typeof val === 'string') {
+        this.onChange(val);
+      }
+    });
+  }
+
+  onSelected(event: MatAutocompleteSelectedEvent) {
+    const val = event.option.value;
+    if (val && typeof val === 'object' && 'fullId' in val) {
+      const result = val as ModelsDiscoverResult;
+      let nextValue = result.fullId || '';
+      if (!result.final) {
+        nextValue += '/';
+      }
+      this.control.setValue(nextValue);
+    } else if (typeof val === 'string') {
+      this.control.setValue(val);
+    }
+  }
+
+  // Validator implementation
+  validate(control: AbstractControl): ValidationErrors | null {
+    const val = control.value;
+    if (!val || typeof val !== 'string' || this.loading) return null;
+
+    if (this.staticSuggestions.includes(val)) return null;
+    if (val.includes('${{')) return null;
+
+    if (val.endsWith('/')) {
+      return { notFinal: true };
+    }
+
+    if (this.rbacMode) {
+      const match = this.rbacSuggestions.find((s) => s.fullId === val);
+      if (match) {
+        return match.final ? null : { notFinal: true };
+      }
+
+      // If not an exact match, check if it's a prefix of any suggestion
+      const isPrefix = this.rbacSuggestions.some((s) => s.fullId && s.fullId.startsWith(val));
+      if (isPrefix) {
+        return { notFinal: true };
+      }
+
+      // Neither exact match nor a prefix, and we are not loading -> Definitely invalid
+      if (!this.loading) {
+        return { invalidPath: true };
+      }
+    }
+
+    return null;
   }
 
   // ControlValueAccessor

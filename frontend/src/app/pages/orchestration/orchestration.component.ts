@@ -256,29 +256,31 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   }
 
   getTriggerLabel(trigger: string | undefined): string {
-    switch (trigger) {
-      case 'Manual':
-        return '直接启动';
-      case 'Webhook':
-        return 'Webhook';
-      case 'Cron':
-        return '定时任务';
-      default:
-        return trigger || '-';
-    }
+    if (!trigger) return '-';
+    if (trigger === 'Manual') return '手动执行';
+    if (trigger === 'Webhook') return 'Webhook';
+    if (trigger === 'Cron') return '定时计划';
+    if (trigger === 'API') return 'API 调用';
+    if (trigger.startsWith('SubWorkflow:')) return '子任务调用';
+    return trigger;
   }
 
   getTriggerIcon(trigger: string | undefined): string {
-    switch (trigger) {
-      case 'Manual':
-        return 'person';
-      case 'Webhook':
-        return 'link';
-      case 'Cron':
-        return 'schedule';
-      default:
-        return 'help_outline';
+    if (!trigger) return 'help_outline';
+    if (trigger === 'Manual') return 'person';
+    if (trigger === 'Webhook') return 'link';
+    if (trigger === 'Cron') return 'schedule';
+    if (trigger === 'API') return 'code';
+    if (trigger.startsWith('SubWorkflow:')) return 'account_tree';
+    return 'extension';
+  }
+
+  getTriggerTooltip(trigger: string | undefined): string {
+    if (!trigger) return '';
+    if (trigger.startsWith('SubWorkflow:')) {
+      return '父级实例 ID: ' + trigger.split(':')[1];
     }
+    return this.getTriggerLabel(trigger);
   }
 
   createWorkflow() {

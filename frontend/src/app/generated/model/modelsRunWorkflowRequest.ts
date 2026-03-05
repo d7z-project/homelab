@@ -11,5 +11,9 @@
 
 export interface ModelsRunWorkflowRequest { 
     inputs?: { [key: string]: string; };
+    /**
+     * Optional: Manual (default), API, Script, etc.
+     */
+    trigger?: string;
 }
 

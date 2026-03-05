@@ -487,7 +487,7 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                                       (param.optional ? ' (可选)' : '')
                                     "
                                     [formControlName]="param.name!"
-                                    [lookupCode]="param.lookupCode || ''"
+                                    [code]="param.lookupCode || ''"
                                     [staticSuggestions]="getOutputReferences(stepIndex)"
                                     [hint]="getParamHint(param)"
                                   ></app-discovery-suggest-input>

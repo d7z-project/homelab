@@ -151,7 +151,8 @@ type StepManifest struct {
 }
 
 type RunWorkflowRequest struct {
-	Inputs map[string]string `json:"inputs"`
+	Inputs  map[string]string `json:"inputs"`
+	Trigger string            `json:"trigger"` // Optional: Manual (default), API, Script, etc.
 }
 
 func (r *RunWorkflowRequest) Bind(req *http.Request) error {

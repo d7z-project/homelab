@@ -4,7 +4,8 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { ModelsServiceAccount } from '../../generated';
 
@@ -17,11 +18,13 @@ import { ModelsServiceAccount } from '../../generated';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatCheckboxModule,
+    MatSlideToggleModule,
+    MatIconModule,
     FormsModule,
   ],
   template: `
     <h2 mat-dialog-title class="!pt-6">
+      <mat-icon class="mr-2 align-middle text-primary">person_outline</mat-icon>
       {{ isEdit ? '修改 ServiceAccount' : '创建 ServiceAccount' }}
     </h2>
     <mat-dialog-content style="min-width: 320px; max-width: 500px;">
@@ -69,8 +72,14 @@ import { ModelsServiceAccount } from '../../generated';
           ></textarea>
         </mat-form-field>
 
-        <div class="py-2">
-          <mat-checkbox [(ngModel)]="sa.enabled" color="primary"> 启用此账号 </mat-checkbox>
+        <div
+          class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30"
+        >
+          <div class="flex flex-col">
+            <span class="text-sm font-bold">启用此账号</span>
+            <span class="text-xs text-outline">禁用后使用该 ID 的所有 API 访问将被拒绝</span>
+          </div>
+          <mat-slide-toggle color="primary" [(ngModel)]="sa.enabled"></mat-slide-toggle>
         </div>
       </div>
     </mat-dialog-content>
@@ -81,8 +90,9 @@ import { ModelsServiceAccount } from '../../generated';
         color="primary"
         (click)="confirm()"
         [disabled]="!sa.id?.trim() || (!isEdit && (isDuplicate() || idInput.errors?.['pattern']))"
-        class="!ml-2"
+        class="!ml-2 px-8 rounded-full"
       >
+        <mat-icon class="mr-1">check</mat-icon>
         {{ isEdit ? '保存修改' : '确认创建' }}
       </button>
     </mat-dialog-actions>

@@ -1,4 +1,4 @@
-import { Component, Inject, inject } from '@angular/core';
+import { Component, Inject, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -283,9 +283,11 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           }
         </div>
 
-        <div class="flex items-center justify-between px-4 py-3 bg-surface-container rounded-2xl">
+        <div
+          class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30"
+        >
           <div class="flex flex-col">
-            <span class="font-medium">启用状态</span>
+            <span class="text-sm font-bold">启用状态</span>
             <span class="text-xs text-outline">禁用后此条记录将不再参与解析</span>
           </div>
           <mat-slide-toggle
@@ -319,7 +321,8 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
     </mat-dialog-actions>
   `,
 })
-export class CreateRecordDialogComponent {
+export class CreateRecordDialogComponent implements AfterViewInit {
+  private cdr = inject(ChangeDetectorRef);
   private dialogRef = inject(MatDialogRef<CreateRecordDialogComponent>);
   isEdit = false;
   record: ModelsRecord = {
@@ -368,6 +371,13 @@ export class CreateRecordDialogComponent {
     } else if (data.defaultDomainId) {
       this.record.domainId = data.defaultDomainId;
     }
+  }
+
+  ngAfterViewInit() {
+    // Ensure view state is stable after potential initial value syncing and child component init
+    setTimeout(() => {
+      this.cdr.detectChanges();
+    });
   }
 
   onTypeChange() {

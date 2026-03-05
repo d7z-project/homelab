@@ -58,9 +58,11 @@ import { ModelsDomain } from '../../generated';
           }
         </mat-form-field>
 
-        <div class="flex items-center justify-between px-4 py-3 bg-surface-container rounded-2xl">
+        <div
+          class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30"
+        >
           <div class="flex flex-col">
-            <span class="font-medium">解析状态</span>
+            <span class="text-sm font-bold">解析状态</span>
             <span class="text-xs text-outline">禁用后该域名下的所有记录将停止解析</span>
           </div>
           <mat-slide-toggle color="primary" [(ngModel)]="domain.enabled"> </mat-slide-toggle>

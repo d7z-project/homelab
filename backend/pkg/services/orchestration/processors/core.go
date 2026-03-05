@@ -99,12 +99,10 @@ func (p *WorkflowCallProcessor) Manifest() orchestration.StepManifest {
 		Description: "同步调用另一个工作流，并等待其执行完成。不允许自我调用。",
 		Params: []models.ParamDefinition{
 			{
-				Name:          "workflow_id",
-				Description:   "要调用的目标工作流 ID",
-				Optional:      false,
-				RegexFrontend: `^[a-f0-9-]{36}$`,
-				RegexBackend:  `^[a-f0-9-]{36}$`,
-				LookupCode:    "orchestration/workflows",
+				Name:        "workflow_id",
+				Description: "要调用的目标工作流 ID",
+				Optional:    false,
+				LookupCode:  "orchestration/workflows",
 			},
 			{
 				Name:          "vars",

@@ -134,6 +134,12 @@ type SimulatePermissionsRequest struct {
 	Resource         string `json:"resource"`
 }
 
+type DiscoverResult struct {
+	FullID string `json:"fullId"` // Actual resource path used in RBAC check
+	Name   string `json:"name"`   // Display name in UI
+	Final  bool   `json:"final"`  // True if this is a complete resource, False if it's a category/prefix
+}
+
 func (s *SimulatePermissionsRequest) Bind(r *http.Request) error {
 	if s.ServiceAccountID == "" {
 		return errors.New("service account ID is required")

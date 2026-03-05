@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { ModelsDiscoverResult } from '../model/modelsDiscoverResult';
+// @ts-ignore
 import { ModelsResourcePermissions } from '../model/modelsResourcePermissions';
 // @ts-ignore
 import { ModelsRole } from '../model/modelsRole';
@@ -57,9 +59,9 @@ export class RbacService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public rbacResourcesSuggestGet(prefix?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<string>>;
-    public rbacResourcesSuggestGet(prefix?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<string>>>;
-    public rbacResourcesSuggestGet(prefix?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<string>>>;
+    public rbacResourcesSuggestGet(prefix?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<ModelsDiscoverResult>>;
+    public rbacResourcesSuggestGet(prefix?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<ModelsDiscoverResult>>>;
+    public rbacResourcesSuggestGet(prefix?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<ModelsDiscoverResult>>>;
     public rbacResourcesSuggestGet(prefix?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -103,7 +105,7 @@ export class RbacService extends BaseService {
 
         let localVarPath = `/rbac/resources/suggest`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Array<string>>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<Array<ModelsDiscoverResult>>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),

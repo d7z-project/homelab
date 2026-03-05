@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, inject, signal } from '@angular/core';
+import { Component, Inject, OnInit, inject, signal, ChangeDetectorRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -97,7 +97,8 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
     </mat-dialog-actions>
   `,
 })
-export class CreateBindingDialogComponent implements OnInit {
+export class CreateBindingDialogComponent implements OnInit, AfterViewInit {
+  private cdr = inject(ChangeDetectorRef);
   isEdit = false;
   binding: ModelsRoleBinding = {
     id: '',
@@ -121,4 +122,11 @@ export class CreateBindingDialogComponent implements OnInit {
   }
 
   ngOnInit() {}
+
+  ngAfterViewInit() {
+    // Ensure view is stable and all child validations are completed
+    setTimeout(() => {
+      this.cdr.detectChanges();
+    });
+  }
 }

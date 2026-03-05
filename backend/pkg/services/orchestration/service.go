@@ -11,6 +11,7 @@ import (
 	repo "homelab/pkg/repositories/orchestration"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	"homelab/pkg/services/discovery"
+	"homelab/pkg/services/rbac"
 	"net/http"
 	"regexp"
 	"strings"
@@ -87,6 +88,10 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 			if !strings.Contains(v, "${{") {
 				for _, pDef := range manifest.Params {
 					if pDef.Name == k && pDef.RegexBackend != "" {
+						// Skip validation if optional and empty
+						if pDef.Optional && v == "" {
+							continue
+						}
 						matched, err := regexp.MatchString(pDef.RegexBackend, v)
 						if err != nil {
 							return fmt.Errorf("step %s: invalid regex for param %s: %v", step.ID, k, err)
@@ -329,12 +334,17 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 		}
 		// Regex validation
 		if def.RegexBackend != "" {
-			matched, err := regexp.MatchString(def.RegexBackend, val)
-			if err != nil {
-				return "", fmt.Errorf("invalid regex for variable %s: %v", k, err)
-			}
-			if !matched {
-				return "", fmt.Errorf("variable %s does not match required format", k)
+			// Skip validation if optional and empty
+			if !def.Required && val == "" {
+				// OK
+			} else {
+				matched, err := regexp.MatchString(def.RegexBackend, val)
+				if err != nil {
+					return "", fmt.Errorf("invalid regex for variable %s: %v", k, err)
+				}
+				if !matched {
+					return "", fmt.Errorf("variable %s does not match required format", k)
+				}
 			}
 		}
 		finalInputs[k] = val
@@ -350,7 +360,7 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 	return instanceID, nil
 }
 
-func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]string) (string, error) {
+func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]string, triggerSource string) (string, error) {
 	// Use distributed lock to prevent concurrent triggers for the same workflow
 	lockKey := "orch:trigger:" + workflowID
 	release := common.Locker.TryLock(ctx, lockKey)
@@ -379,7 +389,11 @@ func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]strin
 		}
 	}
 
-	return TriggerWorkflow(ctx, workflow, userID, "Manual", inputs)
+	if triggerSource == "" {
+		triggerSource = "Manual"
+	}
+
+	return TriggerWorkflow(ctx, workflow, userID, triggerSource, inputs)
 }
 
 func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, error) {
@@ -611,6 +625,51 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 }
 
 func init() {
+	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
+	rbac.RegisterResourceWithVerbs("orchestration", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+		// prefix is everything after "orchestration/"
+		subs := []string{"workflows", "instances", "manifests", "probe"}
+		res := make([]models.DiscoverResult, 0)
+		for _, s := range subs {
+			if strings.HasPrefix(s, prefix) {
+				res = append(res, models.DiscoverResult{
+					FullID: s,
+					Name:   s,
+					Final:  true,
+				})
+			}
+		}
+
+		// If prefix starts with a sub-resource, suggest IDs
+		for _, s := range []string{"workflows", "instances"} {
+			if strings.HasPrefix(prefix, s+"/") {
+				idPrefix := strings.TrimPrefix(prefix, s+"/")
+				if s == "workflows" {
+					workflows, err := repo.ListWorkflows(ctx)
+					if err == nil {
+						for _, wf := range workflows {
+							if strings.HasPrefix(wf.ID, idPrefix) {
+								res = append(res, models.DiscoverResult{
+									FullID: "workflows/" + wf.ID,
+									Name:   "Workflow: " + wf.Name,
+									Final:  true,
+								})
+							}
+						}
+					}
+				} else {
+					res = append(res, models.DiscoverResult{
+						FullID: "instances/*",
+						Name:   "All Instances",
+						Final:  true,
+					})
+				}
+			}
+		}
+
+		return res, nil
+	}, standardVerbs)
+
 	discovery.Register("orchestration/workflows", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration") {
 			return nil, 0, fmt.Errorf("permission denied")

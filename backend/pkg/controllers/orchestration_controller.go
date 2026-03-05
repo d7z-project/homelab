@@ -146,7 +146,7 @@ func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	// Ignore errors, body is optional
 	_ = render.Bind(r, &req)
 
-	instanceID, err := orchestration.RunWorkflow(r.Context(), workflowID, req.Inputs)
+	instanceID, err := orchestration.RunWorkflow(r.Context(), workflowID, req.Inputs, req.Trigger)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return

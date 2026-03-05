@@ -324,7 +324,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Produce json
 // @Param prefix query string false "Prefix to filter resources"
-// @Success 200 {array} string
+// @Success 200 {array} models.DiscoverResult
 // @Security ApiKeyAuth
 // @Router /rbac/resources/suggest [get]
 func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {

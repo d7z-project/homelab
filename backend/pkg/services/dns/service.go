@@ -11,6 +11,7 @@ import (
 	"homelab/pkg/models"
 	dnsrepo "homelab/pkg/repositories/dns"
 	"homelab/pkg/services/discovery"
+	"homelab/pkg/services/rbac"
 	"net"
 	"regexp"
 	"strings"
@@ -32,6 +33,81 @@ type exportCacheEntry struct {
 
 func init() {
 	exportCache, _ = lru.New[string, exportCacheEntry](128)
+
+	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
+	rbac.RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+		// prefix is everything after "dns/"
+		prefixLower := strings.ToLower(prefix)
+		parts := strings.Split(prefixLower, "/")
+
+		// Get all domains to match against the first part
+		domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
+		if err != nil {
+			return []models.DiscoverResult{}, err
+		}
+
+		res := make([]models.DiscoverResult, 0)
+		for _, d := range domains {
+			domainNameLower := strings.ToLower(d.Name)
+			// Check if domain matches parts[0]
+			if !strings.HasPrefix(domainNameLower, parts[0]) {
+				continue
+			}
+
+			if len(parts) <= 1 {
+				// Level 1: Suggest domains
+				res = append(res, models.DiscoverResult{
+					FullID: d.Name,
+					Name:   "Domain: " + d.Name,
+					Final:  false,
+				})
+			} else {
+				// Level 2 & 3: We have a full domain match, suggest records
+				if domainNameLower != parts[0] {
+					continue
+				}
+
+				records, _, err := dnsrepo.ListRecords(ctx, d.ID, 0, 1000, "")
+				if err != nil {
+					continue
+				}
+
+				for _, r := range records {
+					recordNameLower := strings.ToLower(r.Name)
+					// Check if record host matches parts[1]
+					if !strings.HasPrefix(recordNameLower, parts[1]) {
+						continue
+					}
+
+					if len(parts) <= 2 {
+						// Level 2: Suggest hostnames
+						res = append(res, models.DiscoverResult{
+							FullID: d.Name + "/" + r.Name,
+							Name:   "Record: " + r.Name,
+							Final:  false,
+						})
+						// Also suggest full path with type as it's common in rbac checks
+						res = append(res, models.DiscoverResult{
+							FullID: d.Name + "/" + r.Name + "/" + r.Type,
+							Name:   fmt.Sprintf("%s (%s)", r.Name, r.Type),
+							Final:  true,
+						})
+					} else {
+						// Level 3: Suggest types
+						if recordNameLower == parts[1] && strings.HasPrefix(strings.ToLower(r.Type), parts[2]) {
+							res = append(res, models.DiscoverResult{
+								FullID: d.Name + "/" + r.Name + "/" + r.Type,
+								Name:   r.Type,
+								Final:  true,
+							})
+						}
+					}
+				}
+			}
+		}
+
+		return res, nil
+	}, standardVerbs)
 
 	discovery.Register("dns/domains", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, search)

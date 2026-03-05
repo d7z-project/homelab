@@ -12,12 +12,13 @@ import {
   MatAutocompleteModule,
   MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
-import { FormsModule } from '@angular/forms';
-import { RbacService, ModelsServiceAccount, ModelsResourcePermissions } from '../../generated';
+import { FormsModule, NgModel } from '@angular/forms';
+import { RbacService, ModelsServiceAccount, ModelsResourcePermissions, ModelsDiscoverResult } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
+import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-input.component';
 
 @Component({
   selector: 'app-rbac-simulator',
@@ -35,6 +36,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
     MatAutocompleteModule,
     FormsModule,
     DiscoverySelectComponent,
+    DiscoverySuggestInputComponent,
   ],
   template: `
     <div class="animate-in fade-in duration-500 pb-20">
@@ -56,27 +58,20 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
                   label="目标服务账号 (ServiceAccount)"
                   placeholder="搜索账号 ID 或名称..."
                   [(ngModel)]="saId"
+                  required
                 ></app-discovery-select>
               </div>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>资源路径 (Resource)</mat-label>
-                <input
-                  matInput
-                  [(ngModel)]="resource"
-                  [matAutocomplete]="auto"
-                  (input)="onResourceInput()"
-                  placeholder="dns, rbac, dns/example.com ..."
-                />
-                <mat-autocomplete #auto="matAutocomplete">
-                  @for (suggestion of suggestions(); track suggestion) {
-                    <mat-option [value]="suggestion">
-                      {{ suggestion }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-                <mat-hint>例如: dns/example.com</mat-hint>
-              </mat-form-field>
+              <app-discovery-suggest-input
+                #resourceModel="ngModel"
+                label="资源路径 (Resource)"
+                placeholder="例如: rbac/*, dns/example.com, audit/logs"
+                [(ngModel)]="resource"
+                [rbacSuggestions]="suggestions()"
+                [rbacMode]="true"
+                (ngModelChange)="onResourceInput()"
+                required
+              ></app-discovery-suggest-input>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>动作 (Verb)</mat-label>
@@ -86,6 +81,8 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
                   [matAutocomplete]="autoVerb"
                   (focus)="onVerbInputFocus()"
                   placeholder="get, list, * ..."
+                  required
+                  #verbModel="ngModel"
                 />
                 <mat-autocomplete #autoVerb="matAutocomplete">
                   @for (v of verbSuggestions(); track v) {
@@ -95,6 +92,9 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
                   }
                 </mat-autocomplete>
                 <mat-hint>针对该资源的允许操作</mat-hint>
+                @if (verbModel.invalid && verbModel.touched) {
+                  <mat-error>此项为必填项</mat-error>
+                }
               </mat-form-field>
             </div>
 
@@ -105,7 +105,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
                 color="primary"
                 class="!rounded-2xl !px-12"
                 (click)="simulate()"
-                [disabled]="loading() || !saId() || !verb() || !resource()"
+                [disabled]="loading() || !saId() || !verb() || !resource() || resourceModel.invalid || verbModel.invalid"
               >
                 @if (loading()) {
                   <mat-spinner diameter="20" class="mr-2"></mat-spinner>
@@ -279,7 +279,7 @@ export class RbacSimulatorComponent implements OnInit {
   saId = signal('');
   verb = signal('');
   resource = signal('');
-  suggestions = signal<string[]>([]);
+  suggestions = signal<ModelsDiscoverResult[]>([]);
   verbSuggestions = signal<string[]>([]);
   loading = signal(false);
   result = signal<ModelsResourcePermissions | null>(null);

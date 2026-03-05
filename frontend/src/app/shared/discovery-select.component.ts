@@ -2,19 +2,23 @@ import {
   Component,
   Input,
   OnInit,
-  forwardRef,
   inject,
   signal,
   ViewChild,
   ElementRef,
+  Optional,
+  Self,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ControlValueAccessor,
-  NG_VALUE_ACCESSOR,
   FormsModule,
   ReactiveFormsModule,
   FormControl,
+  NgControl,
+  Validator,
+  AbstractControl,
+  ValidationErrors,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -37,6 +41,10 @@ import {
   forkJoin,
 } from 'rxjs';
 
+/**
+ * AppDiscoverySelectComponent
+ * Provides a selection-only input (single or multiple) using discovery lookup service.
+ */
 @Component({
   selector: 'app-discovery-select',
   standalone: true,
@@ -52,17 +60,10 @@ import {
     MatProgressSpinnerModule,
     MatProgressBarModule,
   ],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => DiscoverySelectComponent),
-      multi: true,
-    },
-  ],
   template: `
     <mat-form-field
       [appearance]="appearance"
-      [class]="'w-full relative ' + customClass"
+      class="w-full relative"
       [subscriptSizing]="subscriptSizing"
     >
       <mat-label>{{ label }}</mat-label>
@@ -87,6 +88,7 @@ import {
             [matAutocomplete]="auto"
             [matChipInputFor]="chipGrid"
             [formControl]="inputControl"
+            (blur)="onTouched()"
             #inputElement
           />
         </mat-chip-grid>
@@ -96,6 +98,7 @@ import {
           [placeholder]="placeholder"
           [matAutocomplete]="auto"
           [formControl]="inputControl"
+          (blur)="onTouched()"
           #inputElement
         />
       }
@@ -115,34 +118,35 @@ import {
         (optionSelected)="onSelected($event)"
       >
         @if (showAllOption) {
-          <mat-option [value]="{ id: '', name: allOptionLabel }">
-            <div class="flex items-center gap-2 py-1">
-              <mat-icon class="!text-sm !w-4 !h-4 opacity-50">all_inclusive</mat-icon>
+          <mat-option [value]="{ id: '', name: allOptionLabel }" class="!h-auto !py-3">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-primary">all_inclusive</mat-icon>
+              </div>
               <span class="font-bold text-sm">{{ allOptionLabel }}</span>
             </div>
           </mat-option>
         }
         @for (item of items(); track item.id) {
-          <mat-option [value]="item" class="!h-auto !py-2 !px-4">
-            <div class="flex flex-col leading-tight">
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                  @if (item.icon) {
-                    <mat-icon class="!text-sm !w-4 !h-4 !m-0 opacity-70">{{ item.icon }}</mat-icon>
-                  }
-                  <span class="font-bold text-[13px]">{{ item.name }}</span>
-                </div>
-                <span
-                  class="text-[9px] font-mono opacity-40 bg-neutral-variant/10 px-1.5 py-0.5 rounded border border-outline-variant/10"
-                >
+          <mat-option [value]="item" class="!h-auto !py-3">
+            <div class="flex items-start gap-4">
+              <!-- Optimized Icon Container with absolute centering -->
+              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5">
+                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70">{{ item.icon || 'label' }}</mat-icon>
+              </div>
+              
+              <!-- Content Container -->
+              <div class="flex flex-col min-w-0 flex-1 leading-tight">
+                <span class="font-bold text-[14px] text-on-surface truncate">{{ item.name }}</span>
+                <span class="text-[11px] font-mono text-outline truncate opacity-60 mt-0.5">
                   {{ item.id }}
                 </span>
+                @if (item.description) {
+                  <span class="text-[11px] text-outline truncate opacity-80 mt-1 italic leading-tight">
+                    {{ item.description }}
+                  </span>
+                }
               </div>
-              @if (item.description) {
-                <span class="text-[10px] text-outline truncate opacity-70 mt-0.5">
-                  {{ item.description }}
-                </span>
-              }
             </div>
           </mat-option>
         }
@@ -151,24 +155,36 @@ import {
         }
       </mat-autocomplete>
 
-      @if (hint) {
+      @if (ngControl && ngControl.errors && ngControl.errors['required']) {
+        <mat-error>此项为必填项</mat-error>
+      }
+
+      @if (hint && (!ngControl || !ngControl.invalid)) {
         <mat-hint>{{ hint }}</mat-hint>
       }
     </mat-form-field>
   `,
 })
-export class DiscoverySelectComponent implements OnInit, ControlValueAccessor {
+export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, Validator {
   private discoveryService = inject(DiscoveryService);
 
+  /** Standard lookup code for discovery service */
   @Input() code = '';
+  /** Main field label */
   @Input() label = '选择';
+  /** Field placeholder */
   @Input() placeholder = '搜索...';
+  /** Optional hint text */
   @Input() hint = '';
+  /** Material field appearance */
   @Input() appearance: 'fill' | 'outline' = 'outline';
+  /** Subscript sizing behavior */
   @Input() subscriptSizing: 'fixed' | 'dynamic' = 'fixed';
+  /** Whether multiple items can be selected */
   @Input() multiple = false;
-  @Input() customClass = '';
+  /** Whether to show an "All" option with empty ID */
   @Input() showAllOption = false;
+  /** Label for the "All" option */
   @Input() allOptionLabel = '全部';
 
   @ViewChild('inputElement') inputElement!: ElementRef<HTMLInputElement>;
@@ -180,10 +196,21 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor {
   lastSearch = signal('');
   disabled = false;
 
-  private onChange: (value: any) => void = () => {};
-  private onTouched: () => void = () => {};
+  constructor(@Optional() @Self() public ngControl: NgControl) {
+    if (this.ngControl) {
+      this.ngControl.valueAccessor = this;
+    }
+  }
+
+  public onChange: (value: any) => void = () => {};
+  public onTouched: () => void = () => {};
 
   ngOnInit() {
+    // Register validator manually
+    if (this.ngControl && this.ngControl.control) {
+      this.ngControl.control.addValidators(this.validate.bind(this));
+    }
+
     this.inputControl.valueChanges
       .pipe(
         debounceTime(300),
@@ -242,6 +269,12 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor {
       ? this.selectedItems().map((i) => i.id)
       : this.selectedItems()[0]?.id || '';
     this.onChange(val);
+  }
+
+  // Validator implementation
+  validate(control: AbstractControl): ValidationErrors | null {
+    // Basic required check handled by outer [required]
+    return null;
   }
 
   // ControlValueAccessor implementation
