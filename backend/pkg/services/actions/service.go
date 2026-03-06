@@ -106,14 +106,15 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 			exprStr := step.If
 
 			for i, match := range matches {
-				if len(match) < 5 {
+				if len(match) < 6 {
 					continue
 				}
 				fullMatch := match[0]
 				sID := match[1]
-				outputKey := match[2]
-				varKey := match[3]
-				isOptional := match[4] == "?"
+				refType := match[2] // "outputs.KEY" or "status"
+				outputKey := match[3]
+				varKey := match[4]
+				isOptional := match[5] == "?"
 
 				// Check timing and existence
 				if sID != "" {
@@ -121,8 +122,8 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 					if !stepIDs[sID] {
 						return fmt.Errorf("step %s: 'if' condition references unknown or future step '%s'", step.ID, sID)
 					}
-					// Only strictly check output key if NOT optional
-					if !isOptional && outputKey != "" && !stepOutputsMap[sID][outputKey] {
+					// Only strictly check output key if NOT optional AND not "status"
+					if !isOptional && refType != "status" && outputKey != "" && !stepOutputsMap[sID][outputKey] {
 						return fmt.Errorf("step %s: 'if' condition references unknown output '%s' from step '%s' (use '?' for optional)", step.ID, outputKey, sID)
 					}
 				} else if varKey != "" {
@@ -138,7 +139,6 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 				exprStr = strings.Replace(exprStr, fullMatch, placeholder, 1)
 				env[placeholder] = ""
 			}
-
 			program, err := expr.Compile(exprStr, expr.Env(env), expr.AsBool())
 			if err != nil {
 				return fmt.Errorf("step %s: invalid 'if' expression: %v", step.ID, err)
@@ -156,20 +156,21 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 			// Check for variable references
 			matches := paramRegex.FindAllStringSubmatch(v, -1)
 			for _, match := range matches {
-				if len(match) < 5 {
+				if len(match) < 6 {
 					continue
 				}
 				sID := match[1]
-				outputKey := match[2]
-				varKey := match[3]
-				isOptional := match[4] == "?"
+				refType := match[2] // "outputs.KEY" or "status"
+				outputKey := match[3]
+				varKey := match[4]
+				isOptional := match[5] == "?"
 
 				if sID != "" {
 					if !stepIDs[sID] {
 						return fmt.Errorf("step %s: param %s references unknown or future step '%s'", step.ID, k, sID)
 					}
-					// Only strictly check output key if NOT optional
-					if !isOptional && outputKey != "" && !stepOutputsMap[sID][outputKey] {
+					// Only strictly check output key if NOT optional AND not "status"
+					if !isOptional && refType != "status" && outputKey != "" && !stepOutputsMap[sID][outputKey] {
 						return fmt.Errorf("step %s: param %s references unknown output '%s' from step '%s' (use '?' for optional)", step.ID, k, outputKey, sID)
 					}
 				} else if varKey != "" {

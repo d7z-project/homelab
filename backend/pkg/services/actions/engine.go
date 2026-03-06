@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
@@ -37,7 +38,9 @@ func Init() {
 	logFS = afero.NewBasePathFs(common.FS, LogSubDir)
 }
 
-var paramRegex = regexp.MustCompile(`\$\{\{\s*(?:steps\.([^.]+)\.outputs\.([^ \.?]+)|vars\.([^ \.?]+))\s*(\??)\s*\}\}`)
+// Updated paramRegex to support steps.ID.status
+// Groups: 1:stepID, 2:refType(outputs.KEY or status), 3:outputKey, 4:varKey, 5:isOptional(?)
+var paramRegex = regexp.MustCompile(`\$\{\{\s*(?:steps\.([^.]+)\.(outputs\.([^ \.?]+)|status)|vars\.([^ \.?]+))\s*(\??)\s*\}\}`)
 
 type Executor struct {
 	runningTasks    sync.Map // instanceID -> cancelFunc
@@ -85,7 +88,6 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	if workflow.Timeout > 0 {
 		timeout = time.Duration(workflow.Timeout) * time.Second
 	} else if workflow.Timeout < 0 {
-		// Assume no timeout if specifically set to negative (though UI uses 0)
 		timeout = 0
 	}
 
@@ -118,53 +120,40 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 
 func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workflow *models.Workflow, logger *TaskLogger, cancel context.CancelFunc) {
 	defer func() {
-		// Finalization Step Index
 		finalStepIdx := len(workflow.Steps) + 1
-
-		// Record end of the step that was running before defer (if any)
 		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
 			if t.FinishedAt == nil {
 				now := time.Now()
 				t.FinishedAt = &now
 			}
 		}
-
-		// Use the final step index for cleanup logs
 		logger.SetStep(finalStepIdx)
-
 		if r := recover(); r != nil {
 			err := fmt.Errorf("panic recovered: %v\n%s", r, string(debug.Stack()))
 			e.fail(instance, err, logger)
 		}
-
 		if instance.Workspace != "" {
 			logger.Logf("Cleaning up workspace...")
 			_ = actionsFS.RemoveAll(instance.Workspace)
 		}
-
 		if instance.Status == "Running" {
 			instance.Status = "Success"
-			instance.CurrentStep = finalStepIdx // Only move to final step index if succeeded
+			instance.CurrentStep = finalStepIdx
 			now := time.Now()
 			instance.FinishedAt = &now
 			logger.Log("Workflow completed")
 		} else {
-			// If failed/cancelled, we stay on that step index for the UI
 			logger.Logf("Execution ended: %s", instance.Status)
 		}
-
-		// Record finalization timing (always happens)
 		instance.StepTimings[finalStepIdx] = &models.StepTiming{StartedAt: time.Now()}
 		now := time.Now()
 		instance.StepTimings[finalStepIdx].FinishedAt = &now
-
 		e.updateInstanceState(instance, logger)
 		cancel()
 		e.runningTasks.Delete(instance.ID)
 		logger.Close()
 	}()
 
-	// Initialization Step
 	instance.CurrentStep = 0
 	instance.StepTimings[0] = &models.StepTiming{StartedAt: time.Now()}
 	logger.SetStep(0)
@@ -172,9 +161,9 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 	e.updateInstanceState(instance, logger)
 
 	stepOutputs := make(map[string]map[string]string)
+	stepStatuses := make(map[string]bool)
 
 	for i, step := range workflow.Steps {
-		// End previous step timing (Init or previous workflow step)
 		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
 			if t.FinishedAt == nil {
 				now := time.Now()
@@ -189,17 +178,13 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		select {
 		case <-ctx.Done():
 			e.fail(instance, ctx.Err(), logger)
-			instance.Status = "Cancelled"
-			e.updateInstanceState(instance, logger)
 			return
 		default:
 		}
 
-		// Resolve Step Name (No logging start here as requested to reduce noise)
-
 		// 1. Evaluate 'if' condition
 		if step.If != "" {
-			shouldRun, err := e.evaluateIf(step.If, stepOutputs, instance.Inputs)
+			shouldRun, err := e.evaluateIf(step.If, stepOutputs, stepStatuses, instance.Inputs)
 			if err != nil {
 				e.fail(instance, fmt.Errorf("invalid if condition in step %s: %v", step.ID, err), logger)
 				return
@@ -214,7 +199,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		// 2. Resolve inputs
 		inputs := make(map[string]string)
 		for k, v := range step.Params {
-			inputs[k] = e.resolveVariables(v, stepOutputs, instance.Inputs)
+			inputs[k] = e.resolveVariables(v, stepOutputs, stepStatuses, instance.Inputs)
 		}
 
 		// 3. Execute Processor
@@ -226,23 +211,35 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 
 		// Validate against manifest
 		manifest := processor.Manifest()
+		var validationErr error
 		for _, pDef := range manifest.Params {
 			val := inputs[pDef.Name]
 			if val == "" && !pDef.Optional {
-				e.fail(instance, fmt.Errorf("missing required parameter %s for step %s", pDef.Name, step.ID), logger)
-				return
+				validationErr = fmt.Errorf("missing required parameter %s for step %s", pDef.Name, step.ID)
+				break
 			}
 			if val != "" && pDef.RegexBackend != "" {
 				matched, err := regexp.MatchString(pDef.RegexBackend, val)
 				if err != nil {
-					e.fail(instance, fmt.Errorf("invalid regex for parameter %s in step %s: %v", pDef.Name, step.ID, err), logger)
-					return
+					validationErr = fmt.Errorf("invalid regex for parameter %s in step %s: %v", pDef.Name, step.ID, err)
+					break
 				}
 				if !matched {
-					e.fail(instance, fmt.Errorf("parameter %s in step %s does not match required format", pDef.Name, step.ID), logger)
-					return
+					validationErr = fmt.Errorf("parameter %s in step %s does not match required format", pDef.Name, step.ID)
+					break
 				}
 			}
+		}
+
+		if validationErr != nil {
+			if step.Fail {
+				logger.Logf("Step validation failed, but allow error (fail:true) is set: %v", validationErr)
+				stepStatuses[step.ID] = false
+				e.updateInstanceState(instance, logger)
+				continue
+			}
+			e.fail(instance, validationErr, logger)
+			return
 		}
 
 		taskCtx := &TaskContext{
@@ -257,11 +254,18 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 
 		outputs, err := processor.Execute(taskCtx, inputs)
 		if err != nil {
+			if step.Fail {
+				logger.Logf("Step failed, but allow error (fail:true) is set: %v", err)
+				stepStatuses[step.ID] = false
+				e.updateInstanceState(instance, logger)
+				continue
+			}
 			e.fail(instance, err, logger)
 			return
 		}
 
 		stepOutputs[step.ID] = outputs
+		stepStatuses[step.ID] = true
 		e.updateInstanceState(instance, logger)
 	}
 }
@@ -270,33 +274,43 @@ func (e *Executor) updateInstanceState(instance *models.TaskInstance, logger *Ta
 	if instance == nil {
 		return
 	}
-	// Use context.Background() to ensure saving even if task context is cancelled,
-	// but handle potential nil DB in tests
 	if common.DB != nil {
 		_ = repo.SaveTaskInstance(context.Background(), instance)
 	}
 }
 
-func (e *Executor) resolveVariables(input string, stepOutputs map[string]map[string]string, workflowInputs map[string]string) string {
+func (e *Executor) resolveVariables(input string, stepOutputs map[string]map[string]string, stepStatuses map[string]bool, workflowInputs map[string]string) string {
 	return paramRegex.ReplaceAllStringFunc(input, func(match string) string {
 		submatches := paramRegex.FindStringSubmatch(match)
-		if len(submatches) < 5 {
+		if len(submatches) < 6 {
 			return match
 		}
 
 		stepID := submatches[1]
-		outputKey := submatches[2]
-		varKey := submatches[3]
-		isOptional := submatches[4] == "?"
+		refType := submatches[2] // "outputs.KEY" or "status"
+		outputKey := submatches[3]
+		varKey := submatches[4]
+		isOptional := submatches[5] == "?"
 
 		var resolvedVal string
 		var found bool
 
-		if stepID != "" && outputKey != "" {
-			if outputs, ok := stepOutputs[stepID]; ok {
-				if val, ok := outputs[outputKey]; ok {
-					resolvedVal = val
+		if stepID != "" {
+			if refType == "status" {
+				if status, ok := stepStatuses[stepID]; ok {
+					if status {
+						resolvedVal = "true"
+					} else {
+						resolvedVal = "false"
+					}
 					found = true
+				}
+			} else if outputKey != "" {
+				if outputs, ok := stepOutputs[stepID]; ok {
+					if val, ok := outputs[outputKey]; ok {
+						resolvedVal = val
+						found = true
+					}
 				}
 			}
 		} else if varKey != "" {
@@ -317,30 +331,37 @@ func (e *Executor) resolveVariables(input string, stepOutputs map[string]map[str
 	})
 }
 
-func (e *Executor) evaluateIf(condition string, stepOutputs map[string]map[string]string, workflowInputs map[string]string) (bool, error) {
-	// Extract all references
+func (e *Executor) evaluateIf(condition string, stepOutputs map[string]map[string]string, stepStatuses map[string]bool, workflowInputs map[string]string) (bool, error) {
 	matches := paramRegex.FindAllStringSubmatch(condition, -1)
 	env := make(map[string]interface{})
 	exprStr := condition
 
 	for i, match := range matches {
-		if len(match) < 5 {
+		if len(match) < 6 {
 			continue
 		}
 		fullMatch := match[0]
 		stepID := match[1]
-		outputKey := match[2]
-		varKey := match[3]
-		isOptional := match[4] == "?"
+		refType := match[2]
+		outputKey := match[3]
+		varKey := match[4]
+		isOptional := match[5] == "?"
 
 		var resolvedVal interface{}
 		var found bool
 
-		if stepID != "" && outputKey != "" {
-			if outputs, ok := stepOutputs[stepID]; ok {
-				if val, ok := outputs[outputKey]; ok {
-					resolvedVal = val
+		if stepID != "" {
+			if refType == "status" {
+				if status, ok := stepStatuses[stepID]; ok {
+					resolvedVal = status
 					found = true
+				}
+			} else if outputKey != "" {
+				if outputs, ok := stepOutputs[stepID]; ok {
+					if val, ok := outputs[outputKey]; ok {
+						resolvedVal = val
+						found = true
+					}
 				}
 			}
 		} else if varKey != "" {
@@ -354,11 +375,10 @@ func (e *Executor) evaluateIf(condition string, stepOutputs map[string]map[strin
 			if isOptional {
 				resolvedVal = ""
 			} else {
-				resolvedVal = nil // Or handle as error
+				resolvedVal = nil
 			}
 		}
 
-		// Use the same placeholder logic as in ValidateWorkflow
 		placeholder := fmt.Sprintf("__v%d", i)
 		exprStr = strings.Replace(exprStr, fullMatch, placeholder, 1)
 		env[placeholder] = resolvedVal
@@ -378,12 +398,16 @@ func (e *Executor) evaluateIf(condition string, stepOutputs map[string]map[strin
 }
 
 func (e *Executor) fail(instance *models.TaskInstance, err error, logger *TaskLogger) {
-	instance.Status = "Failed"
+	if errors.Is(err, context.Canceled) {
+		instance.Status = "Cancelled"
+	} else {
+		instance.Status = "Failed"
+	}
 	instance.Error = err.Error()
 	now := time.Now()
 	instance.FinishedAt = &now
 	e.updateInstanceState(instance, logger)
-	logger.Logf("Workflow failed: %v", err)
+	logger.Logf("Workflow %s: %v", instance.Status, err)
 }
 
 func (e *Executor) Cancel(instanceID string) bool {

@@ -11,6 +11,10 @@
 
 export interface ModelsStep { 
     /**
+     * 执行出错时是否继续执行后续步骤
+     */
+    fail?: boolean;
+    /**
      * 步骤 ID，用于 ${{ steps.ID.outputs.key }}
      */
     id?: string;

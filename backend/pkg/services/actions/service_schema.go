@@ -37,6 +37,10 @@ func GenerateWorkflowSchema() map[string]interface{} {
 					"properties": paramProps,
 					"required":   requiredParams,
 				},
+				"fail": map[string]interface{}{
+					"type":        "boolean",
+					"description": "执行出错时是否继续执行后续步骤",
+				},
 			},
 			"required": []string{"id", "type"},
 		}

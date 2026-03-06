@@ -310,6 +310,9 @@ definitions:
     type: object
   models.Step:
     properties:
+      fail:
+        description: 执行出错时是否继续执行后续步骤
+        type: boolean
       id:
         description: 步骤 ID，用于 ${{ steps.ID.outputs.key }}
         type: string

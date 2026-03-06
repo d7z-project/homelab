@@ -96,6 +96,7 @@ type Step struct {
 	Name   string            `json:"name"`   // 步骤显示名称
 	If     string            `json:"if"`     // 条件表达式 (go-expr)，为空则总是执行
 	Params map[string]string `json:"params"` // 输入参数，支持模板字符串
+	Fail   bool              `json:"fail"`   // 执行出错时是否继续执行后续步骤
 }
 
 type StepTiming struct {
