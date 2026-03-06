@@ -1,7 +1,9 @@
 package common
 
 import (
+	"net"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/render"
 	"github.com/spf13/afero"
@@ -64,4 +66,21 @@ func InternalServerError(w http.ResponseWriter, r *http.Request, code int, messa
 
 func UnauthorizedError(w http.ResponseWriter, r *http.Request, code int, message string) {
 	Error(w, r, http.StatusUnauthorized, code, message)
+}
+
+func GetIP(r *http.Request) string {
+	var ip string
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		ip = strings.TrimSpace(strings.Split(xff, ",")[0])
+	} else if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		ip = xri
+	} else {
+		ip = r.RemoteAddr
+	}
+
+	// Strip port if present (e.g. "127.0.0.1:1234" or "[::1]:1234")
+	if host, _, err := net.SplitHostPort(ip); err == nil {
+		return host
+	}
+	return ip
 }

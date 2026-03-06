@@ -53,7 +53,7 @@ func ListLogs(ctx context.Context, page, pageSize int, search string) (*common.P
 func CleanupLogs(ctx context.Context, days int) (int, error) {
 	ac := commonauth.FromContext(ctx)
 	if ac == nil || ac.Type != "root" {
-		return 0, errors.New("only root can cleanup audit logs")
+		return 0, fmt.Errorf("%w: audit (root access required)", commonauth.ErrPermissionDenied)
 	}
 
 	if days < 0 {

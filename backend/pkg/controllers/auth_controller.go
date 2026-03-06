@@ -28,7 +28,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ip := GetIP(r)
+	ip := common.GetIP(r)
 	ua := r.UserAgent()
 
 	// Inject logger for login phase

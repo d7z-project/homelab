@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"homelab/pkg/common"
+	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	dnsservice "homelab/pkg/services/dns"
 	"net/http"
@@ -50,7 +51,7 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := dnsservice.CreateDomain(r.Context(), &domain)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -76,7 +77,7 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := dnsservice.UpdateDomain(r.Context(), id, &domain)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -141,7 +142,7 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := dnsservice.CreateRecord(r.Context(), &record)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -167,7 +168,7 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := dnsservice.UpdateRecord(r.Context(), id, &record)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -210,14 +211,16 @@ func ExportHandler(w http.ResponseWriter, r *http.Request) {
 // DNSRouter registers the DNS routes
 func DNSRouter(r chi.Router) {
 	r.Route("/dns", func(r chi.Router) {
+		r.With(middlewares.RequirePermission("get", "dns")).Get("/export", ExportHandler)
+
 		r.Get("/domains", ListDomainsHandler)
-		r.Post("/domains", CreateDomainHandler)
-		r.Put("/domains/{id}", UpdateDomainHandler)
-		r.Delete("/domains/{id}", DeleteDomainHandler)
+		r.With(middlewares.RequirePermission("create", "dns/*")).Post("/domains", CreateDomainHandler)
+		r.With(middlewares.RequirePermission("update", "dns/*")).Put("/domains/{id}", UpdateDomainHandler)
+		r.With(middlewares.RequirePermission("delete", "dns/*")).Delete("/domains/{id}", DeleteDomainHandler)
 
 		r.Get("/records", ListRecordsHandler)
-		r.Post("/records", CreateRecordHandler)
-		r.Put("/records/{id}", UpdateRecordHandler)
-		r.Delete("/records/{id}", DeleteRecordHandler)
+		r.With(middlewares.RequirePermission("create", "dns/*")).Post("/records", CreateRecordHandler)
+		r.With(middlewares.RequirePermission("update", "dns/*")).Put("/records/{id}", UpdateRecordHandler)
+		r.With(middlewares.RequirePermission("delete", "dns/*")).Delete("/records/{id}", DeleteRecordHandler)
 	})
 }

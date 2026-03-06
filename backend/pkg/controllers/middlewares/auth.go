@@ -6,7 +6,6 @@ import (
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/controllers"
 	"homelab/pkg/models"
 	authservice "homelab/pkg/services/auth"
 	"net/http"
@@ -17,7 +16,7 @@ import (
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := controllers.GetIP(r)
+		ip := common.GetIP(r)
 		ua := r.UserAgent()
 
 		// Inject a temporary logger for auth phase

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"homelab/pkg/common"
+	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	rbacservice "homelab/pkg/services/rbac"
 	"net/http"
@@ -50,7 +51,7 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.CreateServiceAccount(r.Context(), &sa)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -76,7 +77,7 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.UpdateServiceAccount(r.Context(), id, &sa)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -139,7 +140,7 @@ func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.CreateRole(r.Context(), &role)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -165,7 +166,7 @@ func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.UpdateRole(r.Context(), id, &role)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -228,7 +229,7 @@ func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.CreateRoleBinding(r.Context(), &rb)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -254,7 +255,7 @@ func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.UpdateRoleBinding(r.Context(), id, &rb)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -289,7 +290,7 @@ func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	res, err := rbacservice.ResetServiceAccountToken(r.Context(), id)
 	if err != nil {
-		common.BadRequestError(w, r, http.StatusNotFound, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -360,19 +361,22 @@ func RBACRouter(r chi.Router) {
 	r.Route("/rbac", func(r chi.Router) {
 		r.Get("/resources/suggest", SuggestResourcesHandler)
 		r.Get("/verbs/suggest", SuggestVerbsHandler)
-		r.Post("/simulate", SimulatePermissionsHandler)
+		r.With(middlewares.RequirePermission("simulate", "rbac")).Post("/simulate", SimulatePermissionsHandler)
+
 		r.Get("/serviceaccounts", ListServiceAccountsHandler)
-		r.Post("/serviceaccounts", CreateServiceAccountHandler)
-		r.Put("/serviceaccounts/{id}", UpdateServiceAccountHandler)
-		r.Delete("/serviceaccounts/{id}", DeleteServiceAccountHandler)
-		r.Post("/serviceaccounts/{id}/reset", ResetServiceAccountTokenHandler)
+		r.With(middlewares.RequirePermission("create", "rbac")).Post("/serviceaccounts", CreateServiceAccountHandler)
+		r.With(middlewares.RequirePermission("update", "rbac")).Put("/serviceaccounts/{id}", UpdateServiceAccountHandler)
+		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/serviceaccounts/{id}", DeleteServiceAccountHandler)
+		r.With(middlewares.RequirePermission("update", "rbac")).Post("/serviceaccounts/{id}/reset", ResetServiceAccountTokenHandler)
+
 		r.Get("/roles", ListRolesHandler)
-		r.Post("/roles", CreateRoleHandler)
-		r.Put("/roles/{id}", UpdateRoleHandler)
-		r.Delete("/roles/{id}", DeleteRoleHandler)
+		r.With(middlewares.RequirePermission("create", "rbac")).Post("/roles", CreateRoleHandler)
+		r.With(middlewares.RequirePermission("update", "rbac")).Put("/roles/{id}", UpdateRoleHandler)
+		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/roles/{id}", DeleteRoleHandler)
+
 		r.Get("/rolebindings", ListRoleBindingsHandler)
-		r.Post("/rolebindings", CreateRoleBindingHandler)
-		r.Put("/rolebindings/{id}", UpdateRoleBindingHandler)
-		r.Delete("/rolebindings/{id}", DeleteRoleBindingHandler)
+		r.With(middlewares.RequirePermission("create", "rbac")).Post("/rolebindings", CreateRoleBindingHandler)
+		r.With(middlewares.RequirePermission("update", "rbac")).Put("/rolebindings/{id}", UpdateRoleBindingHandler)
+		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/rolebindings/{id}", DeleteRoleBindingHandler)
 	})
 }

@@ -169,7 +169,7 @@ func Logout(ctx context.Context, tokenString string) error {
 func ListSessions(ctx context.Context) ([]models.Session, error) {
 	ac := commonauth.FromContext(ctx)
 	if ac == nil || ac.Type != "root" {
-		return nil, ErrUnauthorized
+		return nil, fmt.Errorf("%w: session (root access required)", commonauth.ErrPermissionDenied)
 	}
 	return authrepo.ListSessions(ctx)
 }
@@ -177,7 +177,7 @@ func ListSessions(ctx context.Context) ([]models.Session, error) {
 func RevokeSession(ctx context.Context, sessionID string) error {
 	ac := commonauth.FromContext(ctx)
 	if ac == nil || ac.Type != "root" {
-		return ErrUnauthorized
+		return fmt.Errorf("%w: session (root access required)", commonauth.ErrPermissionDenied)
 	}
 	err := authrepo.RevokeSession(ctx, sessionID)
 	message := "Revoked session " + sessionID

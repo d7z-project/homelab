@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"homelab/pkg/common"
+	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	auditservice "homelab/pkg/services/audit"
 	"net/http"
@@ -62,6 +63,6 @@ func CleanupAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 func AuditRouter(r chi.Router) {
 	r.Route("/audit", func(r chi.Router) {
 		r.Get("/logs", ListAuditLogsHandler)
-		r.Post("/logs/cleanup", CleanupAuditLogsHandler)
+		r.With(middlewares.RequirePermission("delete", "audit")).Post("/logs/cleanup", CleanupAuditLogsHandler)
 	})
 }
