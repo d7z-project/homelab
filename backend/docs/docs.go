@@ -1937,6 +1937,73 @@ const docTemplate = `{
             }
         },
         "/network/intelligence/sources/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/intelligence"
+                ],
+                "summary": "Update intelligence source",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Source",
+                        "name": "source",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IntelligenceSource"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IntelligenceSource"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -4902,6 +4969,14 @@ const docTemplate = `{
         "models.SiteAnalysisResult": {
             "type": "object",
             "properties": {
+                "dns": {
+                    "description": "DNS Intelligence",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.SiteDNSAnalysis"
+                        }
+                    ]
+                },
                 "matched": {
                     "type": "boolean"
                 },
@@ -4912,6 +4987,35 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.SiteDNSAnalysis": {
+            "type": "object",
+            "properties": {
+                "a": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.IPInfoResponse"
+                    }
+                },
+                "aaaa": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.IPInfoResponse"
+                    }
+                },
+                "cname": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "soa": {
                     "type": "array",
                     "items": {
                         "type": "string"

@@ -30,16 +30,16 @@ type UnderscoreAuditLogsGet200Response struct {
 	Total    *int              `json:"total,omitempty"`
 }
 
-// UnderscoreDnsDomainsGet200Response defines model for _dns_domains_get_200_response.
-type UnderscoreDnsDomainsGet200Response struct {
+// UnderscoreNetworkDnsDomainsGet200Response defines model for _network_dns_domains_get_200_response.
+type UnderscoreNetworkDnsDomainsGet200Response struct {
 	Items    *[]ModelsDomain `json:"items,omitempty"`
 	Page     *int            `json:"page,omitempty"`
 	PageSize *int            `json:"pageSize,omitempty"`
 	Total    *int            `json:"total,omitempty"`
 }
 
-// UnderscoreDnsRecordsGet200Response defines model for _dns_records_get_200_response.
-type UnderscoreDnsRecordsGet200Response struct {
+// UnderscoreNetworkDnsRecordsGet200Response defines model for _network_dns_records_get_200_response.
+type UnderscoreNetworkDnsRecordsGet200Response struct {
 	Items    *[]ModelsRecord `json:"items,omitempty"`
 	Page     *int            `json:"page,omitempty"`
 	PageSize *int            `json:"pageSize,omitempty"`
@@ -60,6 +60,22 @@ type UnderscoreNetworkIpPoolsGet200Response struct {
 	Page     *int             `json:"page,omitempty"`
 	PageSize *int             `json:"pageSize,omitempty"`
 	Total    *int             `json:"total,omitempty"`
+}
+
+// UnderscoreNetworkSiteExportsGet200Response defines model for _network_site_exports_get_200_response.
+type UnderscoreNetworkSiteExportsGet200Response struct {
+	Items    *[]ModelsSiteExport `json:"items,omitempty"`
+	Page     *int                `json:"page,omitempty"`
+	PageSize *int                `json:"pageSize,omitempty"`
+	Total    *int                `json:"total,omitempty"`
+}
+
+// UnderscoreNetworkSitePoolsGet200Response defines model for _network_site_pools_get_200_response.
+type UnderscoreNetworkSitePoolsGet200Response struct {
+	Items    *[]ModelsSiteGroup `json:"items,omitempty"`
+	Page     *int               `json:"page,omitempty"`
+	PageSize *int               `json:"pageSize,omitempty"`
+	Total    *int               `json:"total,omitempty"`
 }
 
 // UnderscoreRbacRolebindingsGet200Response defines model for _rbac_rolebindings_get_200_response.
@@ -225,6 +241,11 @@ type ModelsIPExport struct {
 	UpdatedAt *string `json:"updatedAt,omitempty"`
 }
 
+// ModelsIPExportTriggerResponse defines model for models.IPExportTriggerResponse.
+type ModelsIPExportTriggerResponse struct {
+	TaskId *string `json:"taskId,omitempty"`
+}
+
 // ModelsIPGroup defines model for models.IPGroup.
 type ModelsIPGroup struct {
 	// Checksum 数据指纹，用于缓存失效
@@ -237,6 +258,12 @@ type ModelsIPGroup struct {
 	Id         *string `json:"id,omitempty"`
 	Name       *string `json:"name,omitempty"`
 	UpdatedAt  *string `json:"updatedAt,omitempty"`
+}
+
+// ModelsIPHitTestRequest defines model for models.IPHitTestRequest.
+type ModelsIPHitTestRequest struct {
+	GroupIds *[]string `json:"groupIds,omitempty"`
+	Ip       *string   `json:"ip,omitempty"`
 }
 
 // ModelsIPInfoResponse defines model for models.IPInfoResponse.
@@ -272,6 +299,24 @@ type ModelsIPPoolPreviewResponse struct {
 
 	// Total 总条数
 	Total *int `json:"total,omitempty"`
+}
+
+// ModelsIntelligenceSource defines model for models.IntelligenceSource.
+type ModelsIntelligenceSource struct {
+	AutoUpdate    *bool   `json:"autoUpdate,omitempty"`
+	Cron          *string `json:"cron,omitempty"`
+	Enabled       *bool   `json:"enabled,omitempty"`
+	ErrorMessage  *string `json:"errorMessage,omitempty"`
+	Id            *string `json:"id,omitempty"`
+	LastUpdatedAt *string `json:"lastUpdatedAt,omitempty"`
+	Name          *string `json:"name,omitempty"`
+
+	// Status Ready, Downloading, Error
+	Status *string `json:"status,omitempty"`
+
+	// Type asn, city, country
+	Type *string `json:"type,omitempty"`
+	Url  *string `json:"url,omitempty"`
 }
 
 // ModelsLogEntry defines model for models.LogEntry.
@@ -422,6 +467,76 @@ type ModelsSimulatePermissionsRequest struct {
 	Verb             *string `json:"verb,omitempty"`
 }
 
+// ModelsSiteAnalysisResult defines model for models.SiteAnalysisResult.
+type ModelsSiteAnalysisResult struct {
+	// Dns DNS Intelligence
+	Dns      *ModelsSiteDNSAnalysis `json:"dns,omitempty"`
+	Matched  *bool                  `json:"matched,omitempty"`
+	Pattern  *string                `json:"pattern,omitempty"`
+	RuleType *int                   `json:"ruleType,omitempty"`
+	Tags     *[]string              `json:"tags,omitempty"`
+}
+
+// ModelsSiteDNSAnalysis defines model for models.SiteDNSAnalysis.
+type ModelsSiteDNSAnalysis struct {
+	A     *[]ModelsIPInfoResponse `json:"a,omitempty"`
+	Aaaa  *[]ModelsIPInfoResponse `json:"aaaa,omitempty"`
+	Cname *[]string               `json:"cname,omitempty"`
+	Soa   *[]string               `json:"soa,omitempty"`
+}
+
+// ModelsSiteExport defines model for models.SiteExport.
+type ModelsSiteExport struct {
+	CreatedAt   *string `json:"createdAt,omitempty"`
+	Description *string `json:"description,omitempty"`
+
+	// GroupIds 依赖的域名池 ID 列表
+	GroupIds *[]string `json:"groupIds,omitempty"`
+	Id       *string   `json:"id,omitempty"`
+	Name     *string   `json:"name,omitempty"`
+
+	// Rule go-expr 表达式
+	Rule      *string `json:"rule,omitempty"`
+	UpdatedAt *string `json:"updatedAt,omitempty"`
+}
+
+// ModelsSiteGroup defines model for models.SiteGroup.
+type ModelsSiteGroup struct {
+	// Checksum 数据指纹
+	Checksum    *string `json:"checksum,omitempty"`
+	CreatedAt   *string `json:"createdAt,omitempty"`
+	Description *string `json:"description,omitempty"`
+
+	// EntryCount 条目总数
+	EntryCount *int    `json:"entryCount,omitempty"`
+	Id         *string `json:"id,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	UpdatedAt  *string `json:"updatedAt,omitempty"`
+}
+
+// ModelsSitePoolEntry defines model for models.SitePoolEntry.
+type ModelsSitePoolEntry struct {
+	Tags *[]string `json:"tags,omitempty"`
+
+	// Type 0:Keyword, 1:Regex, 2:Domain, 3:Full
+	Type  *int    `json:"type,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
+// ModelsSitePoolEntryRequest defines model for models.SitePoolEntryRequest.
+type ModelsSitePoolEntryRequest struct {
+	Tags  *[]string `json:"tags,omitempty"`
+	Type  *int      `json:"type,omitempty"`
+	Value *string   `json:"value,omitempty"`
+}
+
+// ModelsSitePoolPreviewResponse defines model for models.SitePoolPreviewResponse.
+type ModelsSitePoolPreviewResponse struct {
+	Entries    *[]ModelsSitePoolEntry `json:"entries,omitempty"`
+	NextCursor *int                   `json:"nextCursor,omitempty"`
+	Total      *int                   `json:"total,omitempty"`
+}
+
 // ModelsStep defines model for models.Step.
 type ModelsStep struct {
 	// Fail 执行出错时是否继续执行后续步骤
@@ -467,6 +582,11 @@ type ModelsStepTiming struct {
 	StartedAt  *string `json:"startedAt,omitempty"`
 }
 
+// ModelsTaskCleanupResponse defines model for models.TaskCleanupResponse.
+type ModelsTaskCleanupResponse struct {
+	Deleted *int `json:"deleted,omitempty"`
+}
+
 // ModelsTaskInstance defines model for models.TaskInstance.
 type ModelsTaskInstance struct {
 	// CurrentStep 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
@@ -504,6 +624,12 @@ type ModelsTaskInstance struct {
 	UserId     *string `json:"userId,omitempty"`
 	WorkflowId *string `json:"workflowId,omitempty"`
 	Workspace  *string `json:"workspace,omitempty"`
+}
+
+// ModelsTaskLogResponse defines model for models.TaskLogResponse.
+type ModelsTaskLogResponse struct {
+	Logs       *[]ModelsLogEntry `json:"logs,omitempty"`
+	NextOffset *int              `json:"nextOffset,omitempty"`
 }
 
 // ModelsVarDefinition defines model for models.VarDefinition.
@@ -556,6 +682,16 @@ type ModelsWorkflow struct {
 
 	// WebhookToken Webhook 触发令牌
 	WebhookToken *string `json:"webhookToken,omitempty"`
+}
+
+// SiteExportTask defines model for site.ExportTask.
+type SiteExportTask struct {
+	Error     *string  `json:"error,omitempty"`
+	Format    *string  `json:"format,omitempty"`
+	Id        *string  `json:"id,omitempty"`
+	Progress  *float32 `json:"progress,omitempty"`
+	ResultURL *string  `json:"resultURL,omitempty"`
+	Status    *string  `json:"status,omitempty"`
 }
 
 // PostActionsInstancesCleanupParams defines parameters for PostActionsInstancesCleanup.
@@ -612,8 +748,8 @@ type GetDiscoveryLookupParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// GetDnsDomainsParams defines parameters for GetDnsDomains.
-type GetDnsDomainsParams struct {
+// GetNetworkDnsDomainsParams defines parameters for GetNetworkDnsDomains.
+type GetNetworkDnsDomainsParams struct {
 	// Page Page number
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
 
@@ -624,8 +760,8 @@ type GetDnsDomainsParams struct {
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
 
-// GetDnsRecordsParams defines parameters for GetDnsRecords.
-type GetDnsRecordsParams struct {
+// GetNetworkDnsRecordsParams defines parameters for GetNetworkDnsRecords.
+type GetNetworkDnsRecordsParams struct {
 	// DomainId Filter by domain ID
 	DomainId *string `form:"domainId,omitempty" json:"domainId,omitempty"`
 
@@ -638,9 +774,6 @@ type GetDnsRecordsParams struct {
 	// Search Search by name or value
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
-
-// PostNetworkIpAnalysisHitTestJSONBody defines parameters for PostNetworkIpAnalysisHitTest.
-type PostNetworkIpAnalysisHitTestJSONBody = map[string]interface{}
 
 // GetNetworkIpAnalysisInfoParams defines parameters for GetNetworkIpAnalysisInfo.
 type GetNetworkIpAnalysisInfoParams struct {
@@ -686,6 +819,60 @@ type DeleteNetworkIpPoolsIdEntriesParams struct {
 
 // GetNetworkIpPoolsIdPreviewParams defines parameters for GetNetworkIpPoolsIdPreview.
 type GetNetworkIpPoolsIdPreviewParams struct {
+	// Cursor Byte offset cursor
+	Cursor *int `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Number of entries to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Search Search prefix or tag
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+}
+
+// PostNetworkSiteAnalysisHitTestJSONBody defines parameters for PostNetworkSiteAnalysisHitTest.
+type PostNetworkSiteAnalysisHitTestJSONBody = map[string]interface{}
+
+// GetNetworkSiteExportsParams defines parameters for GetNetworkSiteExports.
+type GetNetworkSiteExportsParams struct {
+	// Page Page number
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
+
+	// PageSize Items per page
+	PageSize *int `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// Search Search by name
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+}
+
+// PostNetworkSiteExportsIdTriggerParams defines parameters for PostNetworkSiteExportsIdTrigger.
+type PostNetworkSiteExportsIdTriggerParams struct {
+	// Format Format: text, json, yaml
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+}
+
+// GetNetworkSitePoolsParams defines parameters for GetNetworkSitePools.
+type GetNetworkSitePoolsParams struct {
+	// Page Page number
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
+
+	// PageSize Items per page
+	PageSize *int `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// Search Search by name
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+}
+
+// DeleteNetworkSitePoolsIdEntriesParams defines parameters for DeleteNetworkSitePoolsIdEntries.
+type DeleteNetworkSitePoolsIdEntriesParams struct {
+	// Type Rule type
+	Type int `form:"type" json:"type"`
+
+	// Value Rule value
+	Value string `form:"value" json:"value"`
+}
+
+// GetNetworkSitePoolsIdPreviewParams defines parameters for GetNetworkSitePoolsIdPreview.
+type GetNetworkSitePoolsIdPreviewParams struct {
 	// Cursor Byte offset cursor
 	Cursor *int `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -759,23 +946,29 @@ type PutActionsWorkflowsIdJSONRequestBody = ModelsWorkflow
 // PostActionsWorkflowsWorkflowIdRunJSONRequestBody defines body for PostActionsWorkflowsWorkflowIdRun for application/json ContentType.
 type PostActionsWorkflowsWorkflowIdRunJSONRequestBody = ModelsRunWorkflowRequest
 
-// PostDnsDomainsJSONRequestBody defines body for PostDnsDomains for application/json ContentType.
-type PostDnsDomainsJSONRequestBody = ModelsDomain
-
-// PutDnsDomainsIdJSONRequestBody defines body for PutDnsDomainsId for application/json ContentType.
-type PutDnsDomainsIdJSONRequestBody = ModelsDomain
-
-// PostDnsRecordsJSONRequestBody defines body for PostDnsRecords for application/json ContentType.
-type PostDnsRecordsJSONRequestBody = ModelsRecord
-
-// PutDnsRecordsIdJSONRequestBody defines body for PutDnsRecordsId for application/json ContentType.
-type PutDnsRecordsIdJSONRequestBody = ModelsRecord
-
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = ModelsLoginRequest
 
+// PostNetworkDnsDomainsJSONRequestBody defines body for PostNetworkDnsDomains for application/json ContentType.
+type PostNetworkDnsDomainsJSONRequestBody = ModelsDomain
+
+// PutNetworkDnsDomainsIdJSONRequestBody defines body for PutNetworkDnsDomainsId for application/json ContentType.
+type PutNetworkDnsDomainsIdJSONRequestBody = ModelsDomain
+
+// PostNetworkDnsRecordsJSONRequestBody defines body for PostNetworkDnsRecords for application/json ContentType.
+type PostNetworkDnsRecordsJSONRequestBody = ModelsRecord
+
+// PutNetworkDnsRecordsIdJSONRequestBody defines body for PutNetworkDnsRecordsId for application/json ContentType.
+type PutNetworkDnsRecordsIdJSONRequestBody = ModelsRecord
+
+// PostNetworkIntelligenceSourcesJSONRequestBody defines body for PostNetworkIntelligenceSources for application/json ContentType.
+type PostNetworkIntelligenceSourcesJSONRequestBody = ModelsIntelligenceSource
+
+// PutNetworkIntelligenceSourcesIdJSONRequestBody defines body for PutNetworkIntelligenceSourcesId for application/json ContentType.
+type PutNetworkIntelligenceSourcesIdJSONRequestBody = ModelsIntelligenceSource
+
 // PostNetworkIpAnalysisHitTestJSONRequestBody defines body for PostNetworkIpAnalysisHitTest for application/json ContentType.
-type PostNetworkIpAnalysisHitTestJSONRequestBody = PostNetworkIpAnalysisHitTestJSONBody
+type PostNetworkIpAnalysisHitTestJSONRequestBody = ModelsIPHitTestRequest
 
 // PostNetworkIpExportsJSONRequestBody defines body for PostNetworkIpExports for application/json ContentType.
 type PostNetworkIpExportsJSONRequestBody = ModelsIPExport
@@ -785,6 +978,18 @@ type PostNetworkIpPoolsJSONRequestBody = ModelsIPGroup
 
 // PostNetworkIpPoolsIdEntriesJSONRequestBody defines body for PostNetworkIpPoolsIdEntries for application/json ContentType.
 type PostNetworkIpPoolsIdEntriesJSONRequestBody = ModelsIPPoolEntryRequest
+
+// PostNetworkSiteAnalysisHitTestJSONRequestBody defines body for PostNetworkSiteAnalysisHitTest for application/json ContentType.
+type PostNetworkSiteAnalysisHitTestJSONRequestBody = PostNetworkSiteAnalysisHitTestJSONBody
+
+// PostNetworkSiteExportsJSONRequestBody defines body for PostNetworkSiteExports for application/json ContentType.
+type PostNetworkSiteExportsJSONRequestBody = ModelsSiteExport
+
+// PostNetworkSitePoolsJSONRequestBody defines body for PostNetworkSitePools for application/json ContentType.
+type PostNetworkSitePoolsJSONRequestBody = ModelsSiteGroup
+
+// PostNetworkSitePoolsIdEntriesJSONRequestBody defines body for PostNetworkSitePoolsIdEntries for application/json ContentType.
+type PostNetworkSitePoolsIdEntriesJSONRequestBody = ModelsSitePoolEntryRequest
 
 // PostRbacRolebindingsJSONRequestBody defines body for PostRbacRolebindings for application/json ContentType.
 type PostRbacRolebindingsJSONRequestBody = ModelsRoleBinding
@@ -962,41 +1167,6 @@ type ClientInterface interface {
 	// GetDiscoveryLookup request
 	GetDiscoveryLookup(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetDnsDomains request
-	GetDnsDomains(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostDnsDomainsWithBody request with any body
-	PostDnsDomainsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostDnsDomains(ctx context.Context, body PostDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteDnsDomainsId request
-	DeleteDnsDomainsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PutDnsDomainsIdWithBody request with any body
-	PutDnsDomainsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PutDnsDomainsId(ctx context.Context, id string, body PutDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetDnsExport request
-	GetDnsExport(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetDnsRecords request
-	GetDnsRecords(ctx context.Context, params *GetDnsRecordsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostDnsRecordsWithBody request with any body
-	PostDnsRecordsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostDnsRecords(ctx context.Context, body PostDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteDnsRecordsId request
-	DeleteDnsRecordsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PutDnsRecordsIdWithBody request with any body
-	PutDnsRecordsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PutDnsRecordsId(ctx context.Context, id string, body PutDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetInfo request
 	GetInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1007,6 +1177,60 @@ type ClientInterface interface {
 
 	// PostLogout request
 	PostLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkDnsDomains request
+	GetNetworkDnsDomains(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkDnsDomainsWithBody request with any body
+	PostNetworkDnsDomainsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkDnsDomains(ctx context.Context, body PostNetworkDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNetworkDnsDomainsId request
+	DeleteNetworkDnsDomainsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutNetworkDnsDomainsIdWithBody request with any body
+	PutNetworkDnsDomainsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutNetworkDnsDomainsId(ctx context.Context, id string, body PutNetworkDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkDnsExport request
+	GetNetworkDnsExport(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkDnsRecords request
+	GetNetworkDnsRecords(ctx context.Context, params *GetNetworkDnsRecordsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkDnsRecordsWithBody request with any body
+	PostNetworkDnsRecordsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkDnsRecords(ctx context.Context, body PostNetworkDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNetworkDnsRecordsId request
+	DeleteNetworkDnsRecordsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutNetworkDnsRecordsIdWithBody request with any body
+	PutNetworkDnsRecordsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutNetworkDnsRecordsId(ctx context.Context, id string, body PutNetworkDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkIntelligenceSources request
+	GetNetworkIntelligenceSources(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkIntelligenceSourcesWithBody request with any body
+	PostNetworkIntelligenceSourcesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkIntelligenceSources(ctx context.Context, body PostNetworkIntelligenceSourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNetworkIntelligenceSourcesId request
+	DeleteNetworkIntelligenceSourcesId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutNetworkIntelligenceSourcesIdWithBody request with any body
+	PutNetworkIntelligenceSourcesIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutNetworkIntelligenceSourcesId(ctx context.Context, id string, body PutNetworkIntelligenceSourcesIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkIntelligenceSourcesIdSync request
+	PostNetworkIntelligenceSourcesIdSync(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PostNetworkIpAnalysisHitTestWithBody request with any body
 	PostNetworkIpAnalysisHitTestWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1057,6 +1281,53 @@ type ClientInterface interface {
 
 	// GetNetworkIpPoolsIdPreview request
 	GetNetworkIpPoolsIdPreview(ctx context.Context, id string, params *GetNetworkIpPoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkSiteAnalysisHitTestWithBody request with any body
+	PostNetworkSiteAnalysisHitTestWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkSiteAnalysisHitTest(ctx context.Context, body PostNetworkSiteAnalysisHitTestJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkSiteExports request
+	GetNetworkSiteExports(ctx context.Context, params *GetNetworkSiteExportsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkSiteExportsWithBody request with any body
+	PostNetworkSiteExportsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkSiteExports(ctx context.Context, body PostNetworkSiteExportsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkSiteExportsDownloadTaskId request
+	GetNetworkSiteExportsDownloadTaskId(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkSiteExportsTaskTaskId request
+	GetNetworkSiteExportsTaskTaskId(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNetworkSiteExportsId request
+	DeleteNetworkSiteExportsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkSiteExportsIdTrigger request
+	PostNetworkSiteExportsIdTrigger(ctx context.Context, id string, params *PostNetworkSiteExportsIdTriggerParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkSitePools request
+	GetNetworkSitePools(ctx context.Context, params *GetNetworkSitePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkSitePoolsWithBody request with any body
+	PostNetworkSitePoolsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkSitePools(ctx context.Context, body PostNetworkSitePoolsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNetworkSitePoolsId request
+	DeleteNetworkSitePoolsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNetworkSitePoolsIdEntries request
+	DeleteNetworkSitePoolsIdEntries(ctx context.Context, id string, params *DeleteNetworkSitePoolsIdEntriesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkSitePoolsIdEntriesWithBody request with any body
+	PostNetworkSitePoolsIdEntriesWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkSitePoolsIdEntries(ctx context.Context, id string, body PostNetworkSitePoolsIdEntriesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkSitePoolsIdPreview request
+	GetNetworkSitePoolsIdPreview(ctx context.Context, id string, params *GetNetworkSitePoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRbacResourcesSuggest request
 	GetRbacResourcesSuggest(ctx context.Context, params *GetRbacResourcesSuggestParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1469,162 +1740,6 @@ func (c *Client) GetDiscoveryLookup(ctx context.Context, params *GetDiscoveryLoo
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetDnsDomains(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetDnsDomainsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostDnsDomainsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostDnsDomainsRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostDnsDomains(ctx context.Context, body PostDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostDnsDomainsRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteDnsDomainsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteDnsDomainsIdRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PutDnsDomainsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutDnsDomainsIdRequestWithBody(c.Server, id, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PutDnsDomainsId(ctx context.Context, id string, body PutDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutDnsDomainsIdRequest(c.Server, id, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetDnsExport(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetDnsExportRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetDnsRecords(ctx context.Context, params *GetDnsRecordsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetDnsRecordsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostDnsRecordsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostDnsRecordsRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostDnsRecords(ctx context.Context, body PostDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostDnsRecordsRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteDnsRecordsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteDnsRecordsIdRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PutDnsRecordsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutDnsRecordsIdRequestWithBody(c.Server, id, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PutDnsRecordsId(ctx context.Context, id string, body PutDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutDnsRecordsIdRequest(c.Server, id, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) GetInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetInfoRequest(c.Server)
 	if err != nil {
@@ -1663,6 +1778,246 @@ func (c *Client) PostLogin(ctx context.Context, body PostLoginJSONRequestBody, r
 
 func (c *Client) PostLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostLogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkDnsDomains(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkDnsDomainsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkDnsDomainsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkDnsDomainsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkDnsDomains(ctx context.Context, body PostNetworkDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkDnsDomainsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNetworkDnsDomainsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNetworkDnsDomainsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkDnsDomainsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkDnsDomainsIdRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkDnsDomainsId(ctx context.Context, id string, body PutNetworkDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkDnsDomainsIdRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkDnsExport(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkDnsExportRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkDnsRecords(ctx context.Context, params *GetNetworkDnsRecordsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkDnsRecordsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkDnsRecordsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkDnsRecordsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkDnsRecords(ctx context.Context, body PostNetworkDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkDnsRecordsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNetworkDnsRecordsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNetworkDnsRecordsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkDnsRecordsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkDnsRecordsIdRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkDnsRecordsId(ctx context.Context, id string, body PutNetworkDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkDnsRecordsIdRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkIntelligenceSources(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkIntelligenceSourcesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkIntelligenceSourcesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkIntelligenceSourcesRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkIntelligenceSources(ctx context.Context, body PostNetworkIntelligenceSourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkIntelligenceSourcesRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNetworkIntelligenceSourcesId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNetworkIntelligenceSourcesIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkIntelligenceSourcesIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkIntelligenceSourcesIdRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkIntelligenceSourcesId(ctx context.Context, id string, body PutNetworkIntelligenceSourcesIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkIntelligenceSourcesIdRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkIntelligenceSourcesIdSync(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkIntelligenceSourcesIdSyncRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1879,6 +2234,210 @@ func (c *Client) PostNetworkIpPoolsIdEntries(ctx context.Context, id string, bod
 
 func (c *Client) GetNetworkIpPoolsIdPreview(ctx context.Context, id string, params *GetNetworkIpPoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetNetworkIpPoolsIdPreviewRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSiteAnalysisHitTestWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSiteAnalysisHitTestRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSiteAnalysisHitTest(ctx context.Context, body PostNetworkSiteAnalysisHitTestJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSiteAnalysisHitTestRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkSiteExports(ctx context.Context, params *GetNetworkSiteExportsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkSiteExportsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSiteExportsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSiteExportsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSiteExports(ctx context.Context, body PostNetworkSiteExportsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSiteExportsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkSiteExportsDownloadTaskId(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkSiteExportsDownloadTaskIdRequest(c.Server, taskId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkSiteExportsTaskTaskId(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkSiteExportsTaskTaskIdRequest(c.Server, taskId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNetworkSiteExportsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNetworkSiteExportsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSiteExportsIdTrigger(ctx context.Context, id string, params *PostNetworkSiteExportsIdTriggerParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSiteExportsIdTriggerRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkSitePools(ctx context.Context, params *GetNetworkSitePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkSitePoolsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSitePoolsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSitePoolsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSitePools(ctx context.Context, body PostNetworkSitePoolsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSitePoolsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNetworkSitePoolsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNetworkSitePoolsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNetworkSitePoolsIdEntries(ctx context.Context, id string, params *DeleteNetworkSitePoolsIdEntriesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNetworkSitePoolsIdEntriesRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSitePoolsIdEntriesWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSitePoolsIdEntriesRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkSitePoolsIdEntries(ctx context.Context, id string, body PostNetworkSitePoolsIdEntriesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkSitePoolsIdEntriesRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkSitePoolsIdPreview(ctx context.Context, id string, params *GetNetworkSitePoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkSitePoolsIdPreviewRequest(c.Server, id, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3160,8 +3719,102 @@ func NewGetDiscoveryLookupRequest(server string, params *GetDiscoveryLookupParam
 	return req, nil
 }
 
-// NewGetDnsDomainsRequest generates requests for GetDnsDomains
-func NewGetDnsDomainsRequest(server string, params *GetDnsDomainsParams) (*http.Request, error) {
+// NewGetInfoRequest generates requests for GetInfo
+func NewGetInfoRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/info")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostLoginRequest calls the generic PostLogin builder with application/json body
+func NewPostLoginRequest(server string, body PostLoginJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostLoginRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostLoginRequestWithBody generates requests for PostLogin with any type of body
+func NewPostLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostLogoutRequest generates requests for PostLogout
+func NewPostLogoutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/logout")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetNetworkDnsDomainsRequest generates requests for GetNetworkDnsDomains
+func NewGetNetworkDnsDomainsRequest(server string, params *GetNetworkDnsDomainsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3241,19 +3894,19 @@ func NewGetDnsDomainsRequest(server string, params *GetDnsDomainsParams) (*http.
 	return req, nil
 }
 
-// NewPostDnsDomainsRequest calls the generic PostDnsDomains builder with application/json body
-func NewPostDnsDomainsRequest(server string, body PostDnsDomainsJSONRequestBody) (*http.Request, error) {
+// NewPostNetworkDnsDomainsRequest calls the generic PostNetworkDnsDomains builder with application/json body
+func NewPostNetworkDnsDomainsRequest(server string, body PostNetworkDnsDomainsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostDnsDomainsRequestWithBody(server, "application/json", bodyReader)
+	return NewPostNetworkDnsDomainsRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostDnsDomainsRequestWithBody generates requests for PostDnsDomains with any type of body
-func NewPostDnsDomainsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostNetworkDnsDomainsRequestWithBody generates requests for PostNetworkDnsDomains with any type of body
+func NewPostNetworkDnsDomainsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3281,8 +3934,8 @@ func NewPostDnsDomainsRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
-// NewDeleteDnsDomainsIdRequest generates requests for DeleteDnsDomainsId
-func NewDeleteDnsDomainsIdRequest(server string, id string) (*http.Request, error) {
+// NewDeleteNetworkDnsDomainsIdRequest generates requests for DeleteNetworkDnsDomainsId
+func NewDeleteNetworkDnsDomainsIdRequest(server string, id string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -3315,19 +3968,19 @@ func NewDeleteDnsDomainsIdRequest(server string, id string) (*http.Request, erro
 	return req, nil
 }
 
-// NewPutDnsDomainsIdRequest calls the generic PutDnsDomainsId builder with application/json body
-func NewPutDnsDomainsIdRequest(server string, id string, body PutDnsDomainsIdJSONRequestBody) (*http.Request, error) {
+// NewPutNetworkDnsDomainsIdRequest calls the generic PutNetworkDnsDomainsId builder with application/json body
+func NewPutNetworkDnsDomainsIdRequest(server string, id string, body PutNetworkDnsDomainsIdJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPutDnsDomainsIdRequestWithBody(server, id, "application/json", bodyReader)
+	return NewPutNetworkDnsDomainsIdRequestWithBody(server, id, "application/json", bodyReader)
 }
 
-// NewPutDnsDomainsIdRequestWithBody generates requests for PutDnsDomainsId with any type of body
-func NewPutDnsDomainsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPutNetworkDnsDomainsIdRequestWithBody generates requests for PutNetworkDnsDomainsId with any type of body
+func NewPutNetworkDnsDomainsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -3362,8 +4015,8 @@ func NewPutDnsDomainsIdRequestWithBody(server string, id string, contentType str
 	return req, nil
 }
 
-// NewGetDnsExportRequest generates requests for GetDnsExport
-func NewGetDnsExportRequest(server string) (*http.Request, error) {
+// NewGetNetworkDnsExportRequest generates requests for GetNetworkDnsExport
+func NewGetNetworkDnsExportRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3389,8 +4042,8 @@ func NewGetDnsExportRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewGetDnsRecordsRequest generates requests for GetDnsRecords
-func NewGetDnsRecordsRequest(server string, params *GetDnsRecordsParams) (*http.Request, error) {
+// NewGetNetworkDnsRecordsRequest generates requests for GetNetworkDnsRecords
+func NewGetNetworkDnsRecordsRequest(server string, params *GetNetworkDnsRecordsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3486,19 +4139,19 @@ func NewGetDnsRecordsRequest(server string, params *GetDnsRecordsParams) (*http.
 	return req, nil
 }
 
-// NewPostDnsRecordsRequest calls the generic PostDnsRecords builder with application/json body
-func NewPostDnsRecordsRequest(server string, body PostDnsRecordsJSONRequestBody) (*http.Request, error) {
+// NewPostNetworkDnsRecordsRequest calls the generic PostNetworkDnsRecords builder with application/json body
+func NewPostNetworkDnsRecordsRequest(server string, body PostNetworkDnsRecordsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostDnsRecordsRequestWithBody(server, "application/json", bodyReader)
+	return NewPostNetworkDnsRecordsRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostDnsRecordsRequestWithBody generates requests for PostDnsRecords with any type of body
-func NewPostDnsRecordsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostNetworkDnsRecordsRequestWithBody generates requests for PostNetworkDnsRecords with any type of body
+func NewPostNetworkDnsRecordsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3526,8 +4179,8 @@ func NewPostDnsRecordsRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
-// NewDeleteDnsRecordsIdRequest generates requests for DeleteDnsRecordsId
-func NewDeleteDnsRecordsIdRequest(server string, id string) (*http.Request, error) {
+// NewDeleteNetworkDnsRecordsIdRequest generates requests for DeleteNetworkDnsRecordsId
+func NewDeleteNetworkDnsRecordsIdRequest(server string, id string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -3560,19 +4213,19 @@ func NewDeleteDnsRecordsIdRequest(server string, id string) (*http.Request, erro
 	return req, nil
 }
 
-// NewPutDnsRecordsIdRequest calls the generic PutDnsRecordsId builder with application/json body
-func NewPutDnsRecordsIdRequest(server string, id string, body PutDnsRecordsIdJSONRequestBody) (*http.Request, error) {
+// NewPutNetworkDnsRecordsIdRequest calls the generic PutNetworkDnsRecordsId builder with application/json body
+func NewPutNetworkDnsRecordsIdRequest(server string, id string, body PutNetworkDnsRecordsIdJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPutDnsRecordsIdRequestWithBody(server, id, "application/json", bodyReader)
+	return NewPutNetworkDnsRecordsIdRequestWithBody(server, id, "application/json", bodyReader)
 }
 
-// NewPutDnsRecordsIdRequestWithBody generates requests for PutDnsRecordsId with any type of body
-func NewPutDnsRecordsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPutNetworkDnsRecordsIdRequestWithBody generates requests for PutNetworkDnsRecordsId with any type of body
+func NewPutNetworkDnsRecordsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -3607,8 +4260,8 @@ func NewPutDnsRecordsIdRequestWithBody(server string, id string, contentType str
 	return req, nil
 }
 
-// NewGetInfoRequest generates requests for GetInfo
-func NewGetInfoRequest(server string) (*http.Request, error) {
+// NewGetNetworkIntelligenceSourcesRequest generates requests for GetNetworkIntelligenceSources
+func NewGetNetworkIntelligenceSourcesRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3616,7 +4269,7 @@ func NewGetInfoRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/info")
+	operationPath := fmt.Sprintf("/network/intelligence/sources")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3634,19 +4287,19 @@ func NewGetInfoRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewPostLoginRequest calls the generic PostLogin builder with application/json body
-func NewPostLoginRequest(server string, body PostLoginJSONRequestBody) (*http.Request, error) {
+// NewPostNetworkIntelligenceSourcesRequest calls the generic PostNetworkIntelligenceSources builder with application/json body
+func NewPostNetworkIntelligenceSourcesRequest(server string, body PostNetworkIntelligenceSourcesJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostLoginRequestWithBody(server, "application/json", bodyReader)
+	return NewPostNetworkIntelligenceSourcesRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostLoginRequestWithBody generates requests for PostLogin with any type of body
-func NewPostLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostNetworkIntelligenceSourcesRequestWithBody generates requests for PostNetworkIntelligenceSources with any type of body
+func NewPostNetworkIntelligenceSourcesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3654,7 +4307,7 @@ func NewPostLoginRequestWithBody(server string, contentType string, body io.Read
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/login")
+	operationPath := fmt.Sprintf("/network/intelligence/sources")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3674,16 +4327,104 @@ func NewPostLoginRequestWithBody(server string, contentType string, body io.Read
 	return req, nil
 }
 
-// NewPostLogoutRequest generates requests for PostLogout
-func NewPostLogoutRequest(server string) (*http.Request, error) {
+// NewDeleteNetworkIntelligenceSourcesIdRequest generates requests for DeleteNetworkIntelligenceSourcesId
+func NewDeleteNetworkIntelligenceSourcesIdRequest(server string, id string) (*http.Request, error) {
 	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/logout")
+	operationPath := fmt.Sprintf("/network/intelligence/sources/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutNetworkIntelligenceSourcesIdRequest calls the generic PutNetworkIntelligenceSourcesId builder with application/json body
+func NewPutNetworkIntelligenceSourcesIdRequest(server string, id string, body PutNetworkIntelligenceSourcesIdJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutNetworkIntelligenceSourcesIdRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPutNetworkIntelligenceSourcesIdRequestWithBody generates requests for PutNetworkIntelligenceSourcesId with any type of body
+func NewPutNetworkIntelligenceSourcesIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/intelligence/sources/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostNetworkIntelligenceSourcesIdSyncRequest generates requests for PostNetworkIntelligenceSourcesIdSync
+func NewPostNetworkIntelligenceSourcesIdSyncRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/intelligence/sources/%s/sync", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -4336,6 +5077,679 @@ func NewGetNetworkIpPoolsIdPreviewRequest(server string, id string, params *GetN
 	}
 
 	operationPath := fmt.Sprintf("/network/ip/pools/%s/preview", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Search != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostNetworkSiteAnalysisHitTestRequest calls the generic PostNetworkSiteAnalysisHitTest builder with application/json body
+func NewPostNetworkSiteAnalysisHitTestRequest(server string, body PostNetworkSiteAnalysisHitTestJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostNetworkSiteAnalysisHitTestRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostNetworkSiteAnalysisHitTestRequestWithBody generates requests for PostNetworkSiteAnalysisHitTest with any type of body
+func NewPostNetworkSiteAnalysisHitTestRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/analysis/hit-test")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetNetworkSiteExportsRequest generates requests for GetNetworkSiteExports
+func NewGetNetworkSiteExportsRequest(server string, params *GetNetworkSiteExportsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/exports")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PageSize != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "pageSize", *params.PageSize, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Search != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostNetworkSiteExportsRequest calls the generic PostNetworkSiteExports builder with application/json body
+func NewPostNetworkSiteExportsRequest(server string, body PostNetworkSiteExportsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostNetworkSiteExportsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostNetworkSiteExportsRequestWithBody generates requests for PostNetworkSiteExports with any type of body
+func NewPostNetworkSiteExportsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/exports")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetNetworkSiteExportsDownloadTaskIdRequest generates requests for GetNetworkSiteExportsDownloadTaskId
+func NewGetNetworkSiteExportsDownloadTaskIdRequest(server string, taskId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "taskId", taskId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/exports/download/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetNetworkSiteExportsTaskTaskIdRequest generates requests for GetNetworkSiteExportsTaskTaskId
+func NewGetNetworkSiteExportsTaskTaskIdRequest(server string, taskId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "taskId", taskId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/exports/task/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteNetworkSiteExportsIdRequest generates requests for DeleteNetworkSiteExportsId
+func NewDeleteNetworkSiteExportsIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/exports/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostNetworkSiteExportsIdTriggerRequest generates requests for PostNetworkSiteExportsIdTrigger
+func NewPostNetworkSiteExportsIdTriggerRequest(server string, id string, params *PostNetworkSiteExportsIdTriggerParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/exports/%s/trigger", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "format", *params.Format, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetNetworkSitePoolsRequest generates requests for GetNetworkSitePools
+func NewGetNetworkSitePoolsRequest(server string, params *GetNetworkSitePoolsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/pools")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PageSize != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "pageSize", *params.PageSize, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Search != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostNetworkSitePoolsRequest calls the generic PostNetworkSitePools builder with application/json body
+func NewPostNetworkSitePoolsRequest(server string, body PostNetworkSitePoolsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostNetworkSitePoolsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostNetworkSitePoolsRequestWithBody generates requests for PostNetworkSitePools with any type of body
+func NewPostNetworkSitePoolsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/pools")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteNetworkSitePoolsIdRequest generates requests for DeleteNetworkSitePoolsId
+func NewDeleteNetworkSitePoolsIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/pools/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteNetworkSitePoolsIdEntriesRequest generates requests for DeleteNetworkSitePoolsIdEntries
+func NewDeleteNetworkSitePoolsIdEntriesRequest(server string, id string, params *DeleteNetworkSitePoolsIdEntriesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/pools/%s/entries", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "type", params.Type, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "value", params.Value, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostNetworkSitePoolsIdEntriesRequest calls the generic PostNetworkSitePoolsIdEntries builder with application/json body
+func NewPostNetworkSitePoolsIdEntriesRequest(server string, id string, body PostNetworkSitePoolsIdEntriesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostNetworkSitePoolsIdEntriesRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPostNetworkSitePoolsIdEntriesRequestWithBody generates requests for PostNetworkSitePoolsIdEntries with any type of body
+func NewPostNetworkSitePoolsIdEntriesRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/pools/%s/entries", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetNetworkSitePoolsIdPreviewRequest generates requests for GetNetworkSitePoolsIdPreview
+func NewGetNetworkSitePoolsIdPreviewRequest(server string, id string, params *GetNetworkSitePoolsIdPreviewParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/site/pools/%s/preview", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -5310,41 +6724,6 @@ type ClientWithResponsesInterface interface {
 	// GetDiscoveryLookupWithResponse request
 	GetDiscoveryLookupWithResponse(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*GetDiscoveryLookupResponse, error)
 
-	// GetDnsDomainsWithResponse request
-	GetDnsDomainsWithResponse(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetDnsDomainsResponse, error)
-
-	// PostDnsDomainsWithBodyWithResponse request with any body
-	PostDnsDomainsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDnsDomainsResponse, error)
-
-	PostDnsDomainsWithResponse(ctx context.Context, body PostDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDnsDomainsResponse, error)
-
-	// DeleteDnsDomainsIdWithResponse request
-	DeleteDnsDomainsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteDnsDomainsIdResponse, error)
-
-	// PutDnsDomainsIdWithBodyWithResponse request with any body
-	PutDnsDomainsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutDnsDomainsIdResponse, error)
-
-	PutDnsDomainsIdWithResponse(ctx context.Context, id string, body PutDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutDnsDomainsIdResponse, error)
-
-	// GetDnsExportWithResponse request
-	GetDnsExportWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDnsExportResponse, error)
-
-	// GetDnsRecordsWithResponse request
-	GetDnsRecordsWithResponse(ctx context.Context, params *GetDnsRecordsParams, reqEditors ...RequestEditorFn) (*GetDnsRecordsResponse, error)
-
-	// PostDnsRecordsWithBodyWithResponse request with any body
-	PostDnsRecordsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDnsRecordsResponse, error)
-
-	PostDnsRecordsWithResponse(ctx context.Context, body PostDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDnsRecordsResponse, error)
-
-	// DeleteDnsRecordsIdWithResponse request
-	DeleteDnsRecordsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteDnsRecordsIdResponse, error)
-
-	// PutDnsRecordsIdWithBodyWithResponse request with any body
-	PutDnsRecordsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutDnsRecordsIdResponse, error)
-
-	PutDnsRecordsIdWithResponse(ctx context.Context, id string, body PutDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutDnsRecordsIdResponse, error)
-
 	// GetInfoWithResponse request
 	GetInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInfoResponse, error)
 
@@ -5355,6 +6734,60 @@ type ClientWithResponsesInterface interface {
 
 	// PostLogoutWithResponse request
 	PostLogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLogoutResponse, error)
+
+	// GetNetworkDnsDomainsWithResponse request
+	GetNetworkDnsDomainsWithResponse(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetNetworkDnsDomainsResponse, error)
+
+	// PostNetworkDnsDomainsWithBodyWithResponse request with any body
+	PostNetworkDnsDomainsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkDnsDomainsResponse, error)
+
+	PostNetworkDnsDomainsWithResponse(ctx context.Context, body PostNetworkDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkDnsDomainsResponse, error)
+
+	// DeleteNetworkDnsDomainsIdWithResponse request
+	DeleteNetworkDnsDomainsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkDnsDomainsIdResponse, error)
+
+	// PutNetworkDnsDomainsIdWithBodyWithResponse request with any body
+	PutNetworkDnsDomainsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkDnsDomainsIdResponse, error)
+
+	PutNetworkDnsDomainsIdWithResponse(ctx context.Context, id string, body PutNetworkDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkDnsDomainsIdResponse, error)
+
+	// GetNetworkDnsExportWithResponse request
+	GetNetworkDnsExportWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNetworkDnsExportResponse, error)
+
+	// GetNetworkDnsRecordsWithResponse request
+	GetNetworkDnsRecordsWithResponse(ctx context.Context, params *GetNetworkDnsRecordsParams, reqEditors ...RequestEditorFn) (*GetNetworkDnsRecordsResponse, error)
+
+	// PostNetworkDnsRecordsWithBodyWithResponse request with any body
+	PostNetworkDnsRecordsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkDnsRecordsResponse, error)
+
+	PostNetworkDnsRecordsWithResponse(ctx context.Context, body PostNetworkDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkDnsRecordsResponse, error)
+
+	// DeleteNetworkDnsRecordsIdWithResponse request
+	DeleteNetworkDnsRecordsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkDnsRecordsIdResponse, error)
+
+	// PutNetworkDnsRecordsIdWithBodyWithResponse request with any body
+	PutNetworkDnsRecordsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkDnsRecordsIdResponse, error)
+
+	PutNetworkDnsRecordsIdWithResponse(ctx context.Context, id string, body PutNetworkDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkDnsRecordsIdResponse, error)
+
+	// GetNetworkIntelligenceSourcesWithResponse request
+	GetNetworkIntelligenceSourcesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNetworkIntelligenceSourcesResponse, error)
+
+	// PostNetworkIntelligenceSourcesWithBodyWithResponse request with any body
+	PostNetworkIntelligenceSourcesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkIntelligenceSourcesResponse, error)
+
+	PostNetworkIntelligenceSourcesWithResponse(ctx context.Context, body PostNetworkIntelligenceSourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkIntelligenceSourcesResponse, error)
+
+	// DeleteNetworkIntelligenceSourcesIdWithResponse request
+	DeleteNetworkIntelligenceSourcesIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkIntelligenceSourcesIdResponse, error)
+
+	// PutNetworkIntelligenceSourcesIdWithBodyWithResponse request with any body
+	PutNetworkIntelligenceSourcesIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkIntelligenceSourcesIdResponse, error)
+
+	PutNetworkIntelligenceSourcesIdWithResponse(ctx context.Context, id string, body PutNetworkIntelligenceSourcesIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkIntelligenceSourcesIdResponse, error)
+
+	// PostNetworkIntelligenceSourcesIdSyncWithResponse request
+	PostNetworkIntelligenceSourcesIdSyncWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*PostNetworkIntelligenceSourcesIdSyncResponse, error)
 
 	// PostNetworkIpAnalysisHitTestWithBodyWithResponse request with any body
 	PostNetworkIpAnalysisHitTestWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkIpAnalysisHitTestResponse, error)
@@ -5405,6 +6838,53 @@ type ClientWithResponsesInterface interface {
 
 	// GetNetworkIpPoolsIdPreviewWithResponse request
 	GetNetworkIpPoolsIdPreviewWithResponse(ctx context.Context, id string, params *GetNetworkIpPoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*GetNetworkIpPoolsIdPreviewResponse, error)
+
+	// PostNetworkSiteAnalysisHitTestWithBodyWithResponse request with any body
+	PostNetworkSiteAnalysisHitTestWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSiteAnalysisHitTestResponse, error)
+
+	PostNetworkSiteAnalysisHitTestWithResponse(ctx context.Context, body PostNetworkSiteAnalysisHitTestJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSiteAnalysisHitTestResponse, error)
+
+	// GetNetworkSiteExportsWithResponse request
+	GetNetworkSiteExportsWithResponse(ctx context.Context, params *GetNetworkSiteExportsParams, reqEditors ...RequestEditorFn) (*GetNetworkSiteExportsResponse, error)
+
+	// PostNetworkSiteExportsWithBodyWithResponse request with any body
+	PostNetworkSiteExportsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSiteExportsResponse, error)
+
+	PostNetworkSiteExportsWithResponse(ctx context.Context, body PostNetworkSiteExportsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSiteExportsResponse, error)
+
+	// GetNetworkSiteExportsDownloadTaskIdWithResponse request
+	GetNetworkSiteExportsDownloadTaskIdWithResponse(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*GetNetworkSiteExportsDownloadTaskIdResponse, error)
+
+	// GetNetworkSiteExportsTaskTaskIdWithResponse request
+	GetNetworkSiteExportsTaskTaskIdWithResponse(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*GetNetworkSiteExportsTaskTaskIdResponse, error)
+
+	// DeleteNetworkSiteExportsIdWithResponse request
+	DeleteNetworkSiteExportsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkSiteExportsIdResponse, error)
+
+	// PostNetworkSiteExportsIdTriggerWithResponse request
+	PostNetworkSiteExportsIdTriggerWithResponse(ctx context.Context, id string, params *PostNetworkSiteExportsIdTriggerParams, reqEditors ...RequestEditorFn) (*PostNetworkSiteExportsIdTriggerResponse, error)
+
+	// GetNetworkSitePoolsWithResponse request
+	GetNetworkSitePoolsWithResponse(ctx context.Context, params *GetNetworkSitePoolsParams, reqEditors ...RequestEditorFn) (*GetNetworkSitePoolsResponse, error)
+
+	// PostNetworkSitePoolsWithBodyWithResponse request with any body
+	PostNetworkSitePoolsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsResponse, error)
+
+	PostNetworkSitePoolsWithResponse(ctx context.Context, body PostNetworkSitePoolsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsResponse, error)
+
+	// DeleteNetworkSitePoolsIdWithResponse request
+	DeleteNetworkSitePoolsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkSitePoolsIdResponse, error)
+
+	// DeleteNetworkSitePoolsIdEntriesWithResponse request
+	DeleteNetworkSitePoolsIdEntriesWithResponse(ctx context.Context, id string, params *DeleteNetworkSitePoolsIdEntriesParams, reqEditors ...RequestEditorFn) (*DeleteNetworkSitePoolsIdEntriesResponse, error)
+
+	// PostNetworkSitePoolsIdEntriesWithBodyWithResponse request with any body
+	PostNetworkSitePoolsIdEntriesWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsIdEntriesResponse, error)
+
+	PostNetworkSitePoolsIdEntriesWithResponse(ctx context.Context, id string, body PostNetworkSitePoolsIdEntriesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsIdEntriesResponse, error)
+
+	// GetNetworkSitePoolsIdPreviewWithResponse request
+	GetNetworkSitePoolsIdPreviewWithResponse(ctx context.Context, id string, params *GetNetworkSitePoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*GetNetworkSitePoolsIdPreviewResponse, error)
 
 	// GetRbacResourcesSuggestWithResponse request
 	GetRbacResourcesSuggestWithResponse(ctx context.Context, params *GetRbacResourcesSuggestParams, reqEditors ...RequestEditorFn) (*GetRbacResourcesSuggestResponse, error)
@@ -5560,7 +7040,8 @@ func (r PostActionsInstancesIdCancelResponse) StatusCode() int {
 type GetActionsInstancesIdLogsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *map[string]interface{}
+	JSON200      *ModelsTaskLogResponse
+	JSON401      *CommonResponse
 	JSON404      *CommonResponse
 }
 
@@ -5584,6 +7065,7 @@ type GetActionsManifestsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]ModelsStepManifest
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5606,6 +7088,9 @@ type PostActionsProbeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *map[string]string
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5725,6 +7210,7 @@ type PostActionsWorkflowsResponse struct {
 	JSON200      *ModelsWorkflow
 	JSON400      *CommonResponse
 	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 	JSON500      *CommonResponse
 }
 
@@ -5748,6 +7234,7 @@ type GetActionsWorkflowsSchemaResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *map[string]interface{}
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5771,6 +7258,7 @@ type PostActionsWorkflowsValidateResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *string
 	JSON400      *CommonResponse
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5793,6 +7281,8 @@ type DeleteActionsWorkflowsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 	JSON404      *CommonResponse
 }
 
@@ -5817,6 +7307,8 @@ type PutActionsWorkflowsIdResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *ModelsWorkflow
 	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 	JSON404      *CommonResponse
 }
 
@@ -5840,6 +7332,8 @@ type PostActionsWorkflowsIdWebhookResetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 	JSON404      *CommonResponse
 }
 
@@ -5864,6 +7358,8 @@ type PostActionsWorkflowsWorkflowIdRunResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *string
 	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 	JSON404      *CommonResponse
 	JSON409      *CommonResponse
 }
@@ -5888,6 +7384,8 @@ type GetAuditLogsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *UnderscoreAuditLogsGet200Response
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5910,6 +7408,9 @@ type PostAuditLogsCleanupResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsAuditCleanupResponse
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5932,6 +7433,8 @@ type GetAuthSessionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]ModelsSession
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5954,6 +7457,9 @@ type DeleteAuthSessionsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5976,6 +7482,7 @@ type GetDiscoveryCodesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]string
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -5998,6 +7505,9 @@ type GetDiscoveryLookupResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsLookupResponse
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6016,208 +7526,11 @@ func (r GetDiscoveryLookupResponse) StatusCode() int {
 	return 0
 }
 
-type GetDnsDomainsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *UnderscoreDnsDomainsGet200Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetDnsDomainsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetDnsDomainsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostDnsDomainsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ModelsDomain
-}
-
-// Status returns HTTPResponse.Status
-func (r PostDnsDomainsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostDnsDomainsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteDnsDomainsIdResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *string
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteDnsDomainsIdResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteDnsDomainsIdResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PutDnsDomainsIdResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ModelsDomain
-}
-
-// Status returns HTTPResponse.Status
-func (r PutDnsDomainsIdResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PutDnsDomainsIdResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetDnsExportResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ModelsDnsExportResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetDnsExportResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetDnsExportResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetDnsRecordsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *UnderscoreDnsRecordsGet200Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetDnsRecordsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetDnsRecordsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostDnsRecordsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ModelsRecord
-}
-
-// Status returns HTTPResponse.Status
-func (r PostDnsRecordsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostDnsRecordsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteDnsRecordsIdResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *string
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteDnsRecordsIdResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteDnsRecordsIdResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PutDnsRecordsIdResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ModelsRecord
-}
-
-// Status returns HTTPResponse.Status
-func (r PutDnsRecordsIdResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PutDnsRecordsIdResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type GetInfoResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ControllersAuthInfo
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6240,6 +7553,7 @@ type PostLoginResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsLoginResponse
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6262,6 +7576,7 @@ type PostLogoutResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6280,10 +7595,359 @@ func (r PostLogoutResponse) StatusCode() int {
 	return 0
 }
 
+type GetNetworkDnsDomainsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnderscoreNetworkDnsDomainsGet200Response
+	JSON401      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkDnsDomainsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkDnsDomainsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkDnsDomainsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsDomain
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkDnsDomainsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkDnsDomainsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNetworkDnsDomainsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNetworkDnsDomainsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNetworkDnsDomainsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutNetworkDnsDomainsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsDomain
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PutNetworkDnsDomainsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutNetworkDnsDomainsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkDnsExportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsDnsExportResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkDnsExportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkDnsExportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkDnsRecordsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnderscoreNetworkDnsRecordsGet200Response
+	JSON401      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkDnsRecordsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkDnsRecordsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkDnsRecordsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsRecord
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkDnsRecordsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkDnsRecordsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNetworkDnsRecordsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNetworkDnsRecordsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNetworkDnsRecordsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutNetworkDnsRecordsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsRecord
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PutNetworkDnsRecordsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutNetworkDnsRecordsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkIntelligenceSourcesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ModelsIntelligenceSource
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkIntelligenceSourcesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkIntelligenceSourcesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkIntelligenceSourcesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsIntelligenceSource
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkIntelligenceSourcesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkIntelligenceSourcesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNetworkIntelligenceSourcesIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNetworkIntelligenceSourcesIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNetworkIntelligenceSourcesIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutNetworkIntelligenceSourcesIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsIntelligenceSource
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PutNetworkIntelligenceSourcesIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutNetworkIntelligenceSourcesIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkIntelligenceSourcesIdSyncResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkIntelligenceSourcesIdSyncResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkIntelligenceSourcesIdSyncResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PostNetworkIpAnalysisHitTestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsIPAnalysisResult
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6306,6 +7970,8 @@ type GetNetworkIpAnalysisInfoResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsIPInfoResponse
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6328,6 +7994,7 @@ type GetNetworkIpExportsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *UnderscoreNetworkIpExportsGet200Response
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6350,6 +8017,9 @@ type PostNetworkIpExportsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsIPExport
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6393,6 +8063,8 @@ type GetNetworkIpExportsTaskTaskIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *IpExportTask
+	JSON401      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6415,6 +8087,9 @@ type DeleteNetworkIpExportsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6436,7 +8111,9 @@ func (r DeleteNetworkIpExportsIdResponse) StatusCode() int {
 type PostNetworkIpExportsIdTriggerResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *map[string]string
+	JSON200      *ModelsIPExportTriggerResponse
+	JSON401      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6459,6 +8136,7 @@ type GetNetworkIpPoolsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *UnderscoreNetworkIpPoolsGet200Response
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6481,6 +8159,9 @@ type PostNetworkIpPoolsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsIPGroup
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6503,6 +8184,9 @@ type DeleteNetworkIpPoolsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6525,6 +8209,10 @@ type DeleteNetworkIpPoolsIdEntriesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6547,6 +8235,10 @@ type PostNetworkIpPoolsIdEntriesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6569,6 +8261,8 @@ type GetNetworkIpPoolsIdPreviewResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsIPPoolPreviewResponse
+	JSON401      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6587,10 +8281,296 @@ func (r GetNetworkIpPoolsIdPreviewResponse) StatusCode() int {
 	return 0
 }
 
+type PostNetworkSiteAnalysisHitTestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsSiteAnalysisResult
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkSiteAnalysisHitTestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkSiteAnalysisHitTestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkSiteExportsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnderscoreNetworkSiteExportsGet200Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkSiteExportsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkSiteExportsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkSiteExportsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsSiteExport
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkSiteExportsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkSiteExportsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkSiteExportsDownloadTaskIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkSiteExportsDownloadTaskIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkSiteExportsDownloadTaskIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkSiteExportsTaskTaskIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SiteExportTask
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkSiteExportsTaskTaskIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkSiteExportsTaskTaskIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNetworkSiteExportsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNetworkSiteExportsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNetworkSiteExportsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkSiteExportsIdTriggerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkSiteExportsIdTriggerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkSiteExportsIdTriggerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkSitePoolsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnderscoreNetworkSitePoolsGet200Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkSitePoolsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkSitePoolsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkSitePoolsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsSiteGroup
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkSitePoolsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkSitePoolsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNetworkSitePoolsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNetworkSitePoolsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNetworkSitePoolsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNetworkSitePoolsIdEntriesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNetworkSitePoolsIdEntriesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNetworkSitePoolsIdEntriesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkSitePoolsIdEntriesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkSitePoolsIdEntriesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkSitePoolsIdEntriesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkSitePoolsIdPreviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsSitePoolPreviewResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkSitePoolsIdPreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkSitePoolsIdPreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetRbacResourcesSuggestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]ModelsDiscoverResult
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6613,6 +8593,8 @@ type GetRbacRolebindingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *UnderscoreRbacRolebindingsGet200Response
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6635,6 +8617,9 @@ type PostRbacRolebindingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsRoleBinding
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6657,6 +8642,9 @@ type DeleteRbacRolebindingsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6679,6 +8667,10 @@ type PutRbacRolebindingsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsRoleBinding
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6701,6 +8693,8 @@ type GetRbacRolesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *UnderscoreRbacRolesGet200Response
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6723,6 +8717,9 @@ type PostRbacRolesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsRole
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6745,6 +8742,9 @@ type DeleteRbacRolesIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6767,6 +8767,10 @@ type PutRbacRolesIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsRole
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6789,6 +8793,8 @@ type GetRbacServiceaccountsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *UnderscoreRbacServiceaccountsGet200Response
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6811,6 +8817,9 @@ type PostRbacServiceaccountsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsServiceAccount
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6833,6 +8842,9 @@ type DeleteRbacServiceaccountsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6855,6 +8867,10 @@ type PutRbacServiceaccountsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsServiceAccount
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6877,6 +8893,9 @@ type PostRbacServiceaccountsIdResetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsServiceAccount
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6899,6 +8918,9 @@ type PostRbacSimulateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ModelsResourcePermissions
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -6921,6 +8943,7 @@ type GetRbacVerbsSuggestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]string
+	JSON401      *CommonResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -7195,119 +9218,6 @@ func (c *ClientWithResponses) GetDiscoveryLookupWithResponse(ctx context.Context
 	return ParseGetDiscoveryLookupResponse(rsp)
 }
 
-// GetDnsDomainsWithResponse request returning *GetDnsDomainsResponse
-func (c *ClientWithResponses) GetDnsDomainsWithResponse(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetDnsDomainsResponse, error) {
-	rsp, err := c.GetDnsDomains(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetDnsDomainsResponse(rsp)
-}
-
-// PostDnsDomainsWithBodyWithResponse request with arbitrary body returning *PostDnsDomainsResponse
-func (c *ClientWithResponses) PostDnsDomainsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDnsDomainsResponse, error) {
-	rsp, err := c.PostDnsDomainsWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostDnsDomainsResponse(rsp)
-}
-
-func (c *ClientWithResponses) PostDnsDomainsWithResponse(ctx context.Context, body PostDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDnsDomainsResponse, error) {
-	rsp, err := c.PostDnsDomains(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostDnsDomainsResponse(rsp)
-}
-
-// DeleteDnsDomainsIdWithResponse request returning *DeleteDnsDomainsIdResponse
-func (c *ClientWithResponses) DeleteDnsDomainsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteDnsDomainsIdResponse, error) {
-	rsp, err := c.DeleteDnsDomainsId(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteDnsDomainsIdResponse(rsp)
-}
-
-// PutDnsDomainsIdWithBodyWithResponse request with arbitrary body returning *PutDnsDomainsIdResponse
-func (c *ClientWithResponses) PutDnsDomainsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutDnsDomainsIdResponse, error) {
-	rsp, err := c.PutDnsDomainsIdWithBody(ctx, id, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePutDnsDomainsIdResponse(rsp)
-}
-
-func (c *ClientWithResponses) PutDnsDomainsIdWithResponse(ctx context.Context, id string, body PutDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutDnsDomainsIdResponse, error) {
-	rsp, err := c.PutDnsDomainsId(ctx, id, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePutDnsDomainsIdResponse(rsp)
-}
-
-// GetDnsExportWithResponse request returning *GetDnsExportResponse
-func (c *ClientWithResponses) GetDnsExportWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDnsExportResponse, error) {
-	rsp, err := c.GetDnsExport(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetDnsExportResponse(rsp)
-}
-
-// GetDnsRecordsWithResponse request returning *GetDnsRecordsResponse
-func (c *ClientWithResponses) GetDnsRecordsWithResponse(ctx context.Context, params *GetDnsRecordsParams, reqEditors ...RequestEditorFn) (*GetDnsRecordsResponse, error) {
-	rsp, err := c.GetDnsRecords(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetDnsRecordsResponse(rsp)
-}
-
-// PostDnsRecordsWithBodyWithResponse request with arbitrary body returning *PostDnsRecordsResponse
-func (c *ClientWithResponses) PostDnsRecordsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDnsRecordsResponse, error) {
-	rsp, err := c.PostDnsRecordsWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostDnsRecordsResponse(rsp)
-}
-
-func (c *ClientWithResponses) PostDnsRecordsWithResponse(ctx context.Context, body PostDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDnsRecordsResponse, error) {
-	rsp, err := c.PostDnsRecords(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostDnsRecordsResponse(rsp)
-}
-
-// DeleteDnsRecordsIdWithResponse request returning *DeleteDnsRecordsIdResponse
-func (c *ClientWithResponses) DeleteDnsRecordsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteDnsRecordsIdResponse, error) {
-	rsp, err := c.DeleteDnsRecordsId(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteDnsRecordsIdResponse(rsp)
-}
-
-// PutDnsRecordsIdWithBodyWithResponse request with arbitrary body returning *PutDnsRecordsIdResponse
-func (c *ClientWithResponses) PutDnsRecordsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutDnsRecordsIdResponse, error) {
-	rsp, err := c.PutDnsRecordsIdWithBody(ctx, id, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePutDnsRecordsIdResponse(rsp)
-}
-
-func (c *ClientWithResponses) PutDnsRecordsIdWithResponse(ctx context.Context, id string, body PutDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutDnsRecordsIdResponse, error) {
-	rsp, err := c.PutDnsRecordsId(ctx, id, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePutDnsRecordsIdResponse(rsp)
-}
-
 // GetInfoWithResponse request returning *GetInfoResponse
 func (c *ClientWithResponses) GetInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInfoResponse, error) {
 	rsp, err := c.GetInfo(ctx, reqEditors...)
@@ -7341,6 +9251,180 @@ func (c *ClientWithResponses) PostLogoutWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParsePostLogoutResponse(rsp)
+}
+
+// GetNetworkDnsDomainsWithResponse request returning *GetNetworkDnsDomainsResponse
+func (c *ClientWithResponses) GetNetworkDnsDomainsWithResponse(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetNetworkDnsDomainsResponse, error) {
+	rsp, err := c.GetNetworkDnsDomains(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkDnsDomainsResponse(rsp)
+}
+
+// PostNetworkDnsDomainsWithBodyWithResponse request with arbitrary body returning *PostNetworkDnsDomainsResponse
+func (c *ClientWithResponses) PostNetworkDnsDomainsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkDnsDomainsResponse, error) {
+	rsp, err := c.PostNetworkDnsDomainsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkDnsDomainsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkDnsDomainsWithResponse(ctx context.Context, body PostNetworkDnsDomainsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkDnsDomainsResponse, error) {
+	rsp, err := c.PostNetworkDnsDomains(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkDnsDomainsResponse(rsp)
+}
+
+// DeleteNetworkDnsDomainsIdWithResponse request returning *DeleteNetworkDnsDomainsIdResponse
+func (c *ClientWithResponses) DeleteNetworkDnsDomainsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkDnsDomainsIdResponse, error) {
+	rsp, err := c.DeleteNetworkDnsDomainsId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNetworkDnsDomainsIdResponse(rsp)
+}
+
+// PutNetworkDnsDomainsIdWithBodyWithResponse request with arbitrary body returning *PutNetworkDnsDomainsIdResponse
+func (c *ClientWithResponses) PutNetworkDnsDomainsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkDnsDomainsIdResponse, error) {
+	rsp, err := c.PutNetworkDnsDomainsIdWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkDnsDomainsIdResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutNetworkDnsDomainsIdWithResponse(ctx context.Context, id string, body PutNetworkDnsDomainsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkDnsDomainsIdResponse, error) {
+	rsp, err := c.PutNetworkDnsDomainsId(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkDnsDomainsIdResponse(rsp)
+}
+
+// GetNetworkDnsExportWithResponse request returning *GetNetworkDnsExportResponse
+func (c *ClientWithResponses) GetNetworkDnsExportWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNetworkDnsExportResponse, error) {
+	rsp, err := c.GetNetworkDnsExport(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkDnsExportResponse(rsp)
+}
+
+// GetNetworkDnsRecordsWithResponse request returning *GetNetworkDnsRecordsResponse
+func (c *ClientWithResponses) GetNetworkDnsRecordsWithResponse(ctx context.Context, params *GetNetworkDnsRecordsParams, reqEditors ...RequestEditorFn) (*GetNetworkDnsRecordsResponse, error) {
+	rsp, err := c.GetNetworkDnsRecords(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkDnsRecordsResponse(rsp)
+}
+
+// PostNetworkDnsRecordsWithBodyWithResponse request with arbitrary body returning *PostNetworkDnsRecordsResponse
+func (c *ClientWithResponses) PostNetworkDnsRecordsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkDnsRecordsResponse, error) {
+	rsp, err := c.PostNetworkDnsRecordsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkDnsRecordsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkDnsRecordsWithResponse(ctx context.Context, body PostNetworkDnsRecordsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkDnsRecordsResponse, error) {
+	rsp, err := c.PostNetworkDnsRecords(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkDnsRecordsResponse(rsp)
+}
+
+// DeleteNetworkDnsRecordsIdWithResponse request returning *DeleteNetworkDnsRecordsIdResponse
+func (c *ClientWithResponses) DeleteNetworkDnsRecordsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkDnsRecordsIdResponse, error) {
+	rsp, err := c.DeleteNetworkDnsRecordsId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNetworkDnsRecordsIdResponse(rsp)
+}
+
+// PutNetworkDnsRecordsIdWithBodyWithResponse request with arbitrary body returning *PutNetworkDnsRecordsIdResponse
+func (c *ClientWithResponses) PutNetworkDnsRecordsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkDnsRecordsIdResponse, error) {
+	rsp, err := c.PutNetworkDnsRecordsIdWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkDnsRecordsIdResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutNetworkDnsRecordsIdWithResponse(ctx context.Context, id string, body PutNetworkDnsRecordsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkDnsRecordsIdResponse, error) {
+	rsp, err := c.PutNetworkDnsRecordsId(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkDnsRecordsIdResponse(rsp)
+}
+
+// GetNetworkIntelligenceSourcesWithResponse request returning *GetNetworkIntelligenceSourcesResponse
+func (c *ClientWithResponses) GetNetworkIntelligenceSourcesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNetworkIntelligenceSourcesResponse, error) {
+	rsp, err := c.GetNetworkIntelligenceSources(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkIntelligenceSourcesResponse(rsp)
+}
+
+// PostNetworkIntelligenceSourcesWithBodyWithResponse request with arbitrary body returning *PostNetworkIntelligenceSourcesResponse
+func (c *ClientWithResponses) PostNetworkIntelligenceSourcesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkIntelligenceSourcesResponse, error) {
+	rsp, err := c.PostNetworkIntelligenceSourcesWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkIntelligenceSourcesResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkIntelligenceSourcesWithResponse(ctx context.Context, body PostNetworkIntelligenceSourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkIntelligenceSourcesResponse, error) {
+	rsp, err := c.PostNetworkIntelligenceSources(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkIntelligenceSourcesResponse(rsp)
+}
+
+// DeleteNetworkIntelligenceSourcesIdWithResponse request returning *DeleteNetworkIntelligenceSourcesIdResponse
+func (c *ClientWithResponses) DeleteNetworkIntelligenceSourcesIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkIntelligenceSourcesIdResponse, error) {
+	rsp, err := c.DeleteNetworkIntelligenceSourcesId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNetworkIntelligenceSourcesIdResponse(rsp)
+}
+
+// PutNetworkIntelligenceSourcesIdWithBodyWithResponse request with arbitrary body returning *PutNetworkIntelligenceSourcesIdResponse
+func (c *ClientWithResponses) PutNetworkIntelligenceSourcesIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkIntelligenceSourcesIdResponse, error) {
+	rsp, err := c.PutNetworkIntelligenceSourcesIdWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkIntelligenceSourcesIdResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutNetworkIntelligenceSourcesIdWithResponse(ctx context.Context, id string, body PutNetworkIntelligenceSourcesIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkIntelligenceSourcesIdResponse, error) {
+	rsp, err := c.PutNetworkIntelligenceSourcesId(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkIntelligenceSourcesIdResponse(rsp)
+}
+
+// PostNetworkIntelligenceSourcesIdSyncWithResponse request returning *PostNetworkIntelligenceSourcesIdSyncResponse
+func (c *ClientWithResponses) PostNetworkIntelligenceSourcesIdSyncWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*PostNetworkIntelligenceSourcesIdSyncResponse, error) {
+	rsp, err := c.PostNetworkIntelligenceSourcesIdSync(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkIntelligenceSourcesIdSyncResponse(rsp)
 }
 
 // PostNetworkIpAnalysisHitTestWithBodyWithResponse request with arbitrary body returning *PostNetworkIpAnalysisHitTestResponse
@@ -7499,6 +9583,155 @@ func (c *ClientWithResponses) GetNetworkIpPoolsIdPreviewWithResponse(ctx context
 		return nil, err
 	}
 	return ParseGetNetworkIpPoolsIdPreviewResponse(rsp)
+}
+
+// PostNetworkSiteAnalysisHitTestWithBodyWithResponse request with arbitrary body returning *PostNetworkSiteAnalysisHitTestResponse
+func (c *ClientWithResponses) PostNetworkSiteAnalysisHitTestWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSiteAnalysisHitTestResponse, error) {
+	rsp, err := c.PostNetworkSiteAnalysisHitTestWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSiteAnalysisHitTestResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkSiteAnalysisHitTestWithResponse(ctx context.Context, body PostNetworkSiteAnalysisHitTestJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSiteAnalysisHitTestResponse, error) {
+	rsp, err := c.PostNetworkSiteAnalysisHitTest(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSiteAnalysisHitTestResponse(rsp)
+}
+
+// GetNetworkSiteExportsWithResponse request returning *GetNetworkSiteExportsResponse
+func (c *ClientWithResponses) GetNetworkSiteExportsWithResponse(ctx context.Context, params *GetNetworkSiteExportsParams, reqEditors ...RequestEditorFn) (*GetNetworkSiteExportsResponse, error) {
+	rsp, err := c.GetNetworkSiteExports(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkSiteExportsResponse(rsp)
+}
+
+// PostNetworkSiteExportsWithBodyWithResponse request with arbitrary body returning *PostNetworkSiteExportsResponse
+func (c *ClientWithResponses) PostNetworkSiteExportsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSiteExportsResponse, error) {
+	rsp, err := c.PostNetworkSiteExportsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSiteExportsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkSiteExportsWithResponse(ctx context.Context, body PostNetworkSiteExportsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSiteExportsResponse, error) {
+	rsp, err := c.PostNetworkSiteExports(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSiteExportsResponse(rsp)
+}
+
+// GetNetworkSiteExportsDownloadTaskIdWithResponse request returning *GetNetworkSiteExportsDownloadTaskIdResponse
+func (c *ClientWithResponses) GetNetworkSiteExportsDownloadTaskIdWithResponse(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*GetNetworkSiteExportsDownloadTaskIdResponse, error) {
+	rsp, err := c.GetNetworkSiteExportsDownloadTaskId(ctx, taskId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkSiteExportsDownloadTaskIdResponse(rsp)
+}
+
+// GetNetworkSiteExportsTaskTaskIdWithResponse request returning *GetNetworkSiteExportsTaskTaskIdResponse
+func (c *ClientWithResponses) GetNetworkSiteExportsTaskTaskIdWithResponse(ctx context.Context, taskId string, reqEditors ...RequestEditorFn) (*GetNetworkSiteExportsTaskTaskIdResponse, error) {
+	rsp, err := c.GetNetworkSiteExportsTaskTaskId(ctx, taskId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkSiteExportsTaskTaskIdResponse(rsp)
+}
+
+// DeleteNetworkSiteExportsIdWithResponse request returning *DeleteNetworkSiteExportsIdResponse
+func (c *ClientWithResponses) DeleteNetworkSiteExportsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkSiteExportsIdResponse, error) {
+	rsp, err := c.DeleteNetworkSiteExportsId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNetworkSiteExportsIdResponse(rsp)
+}
+
+// PostNetworkSiteExportsIdTriggerWithResponse request returning *PostNetworkSiteExportsIdTriggerResponse
+func (c *ClientWithResponses) PostNetworkSiteExportsIdTriggerWithResponse(ctx context.Context, id string, params *PostNetworkSiteExportsIdTriggerParams, reqEditors ...RequestEditorFn) (*PostNetworkSiteExportsIdTriggerResponse, error) {
+	rsp, err := c.PostNetworkSiteExportsIdTrigger(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSiteExportsIdTriggerResponse(rsp)
+}
+
+// GetNetworkSitePoolsWithResponse request returning *GetNetworkSitePoolsResponse
+func (c *ClientWithResponses) GetNetworkSitePoolsWithResponse(ctx context.Context, params *GetNetworkSitePoolsParams, reqEditors ...RequestEditorFn) (*GetNetworkSitePoolsResponse, error) {
+	rsp, err := c.GetNetworkSitePools(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkSitePoolsResponse(rsp)
+}
+
+// PostNetworkSitePoolsWithBodyWithResponse request with arbitrary body returning *PostNetworkSitePoolsResponse
+func (c *ClientWithResponses) PostNetworkSitePoolsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsResponse, error) {
+	rsp, err := c.PostNetworkSitePoolsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSitePoolsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkSitePoolsWithResponse(ctx context.Context, body PostNetworkSitePoolsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsResponse, error) {
+	rsp, err := c.PostNetworkSitePools(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSitePoolsResponse(rsp)
+}
+
+// DeleteNetworkSitePoolsIdWithResponse request returning *DeleteNetworkSitePoolsIdResponse
+func (c *ClientWithResponses) DeleteNetworkSitePoolsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkSitePoolsIdResponse, error) {
+	rsp, err := c.DeleteNetworkSitePoolsId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNetworkSitePoolsIdResponse(rsp)
+}
+
+// DeleteNetworkSitePoolsIdEntriesWithResponse request returning *DeleteNetworkSitePoolsIdEntriesResponse
+func (c *ClientWithResponses) DeleteNetworkSitePoolsIdEntriesWithResponse(ctx context.Context, id string, params *DeleteNetworkSitePoolsIdEntriesParams, reqEditors ...RequestEditorFn) (*DeleteNetworkSitePoolsIdEntriesResponse, error) {
+	rsp, err := c.DeleteNetworkSitePoolsIdEntries(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNetworkSitePoolsIdEntriesResponse(rsp)
+}
+
+// PostNetworkSitePoolsIdEntriesWithBodyWithResponse request with arbitrary body returning *PostNetworkSitePoolsIdEntriesResponse
+func (c *ClientWithResponses) PostNetworkSitePoolsIdEntriesWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsIdEntriesResponse, error) {
+	rsp, err := c.PostNetworkSitePoolsIdEntriesWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSitePoolsIdEntriesResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkSitePoolsIdEntriesWithResponse(ctx context.Context, id string, body PostNetworkSitePoolsIdEntriesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkSitePoolsIdEntriesResponse, error) {
+	rsp, err := c.PostNetworkSitePoolsIdEntries(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkSitePoolsIdEntriesResponse(rsp)
+}
+
+// GetNetworkSitePoolsIdPreviewWithResponse request returning *GetNetworkSitePoolsIdPreviewResponse
+func (c *ClientWithResponses) GetNetworkSitePoolsIdPreviewWithResponse(ctx context.Context, id string, params *GetNetworkSitePoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*GetNetworkSitePoolsIdPreviewResponse, error) {
+	rsp, err := c.GetNetworkSitePoolsIdPreview(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkSitePoolsIdPreviewResponse(rsp)
 }
 
 // GetRbacResourcesSuggestWithResponse request returning *GetRbacResourcesSuggestResponse
@@ -7814,11 +10047,18 @@ func ParseGetActionsInstancesIdLogsResponse(rsp *http.Response) (*GetActionsInst
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
+		var dest ModelsTaskLogResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest CommonResponse
@@ -7853,6 +10093,13 @@ func ParseGetActionsManifestsResponse(rsp *http.Response) (*GetActionsManifestsR
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -7878,6 +10125,27 @@ func ParsePostActionsProbeResponse(rsp *http.Response) (*PostActionsProbeRespons
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -8069,6 +10337,13 @@ func ParsePostActionsWorkflowsResponse(rsp *http.Response) (*PostActionsWorkflow
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest CommonResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -8101,6 +10376,13 @@ func ParseGetActionsWorkflowsSchemaResponse(rsp *http.Response) (*GetActionsWork
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	}
 
@@ -8135,6 +10417,13 @@ func ParsePostActionsWorkflowsValidateResponse(rsp *http.Response) (*PostActions
 		}
 		response.JSON400 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -8160,6 +10449,20 @@ func ParseDeleteActionsWorkflowsIdResponse(rsp *http.Response) (*DeleteActionsWo
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest CommonResponse
@@ -8201,6 +10504,20 @@ func ParsePutActionsWorkflowsIdResponse(rsp *http.Response) (*PutActionsWorkflow
 		}
 		response.JSON400 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest CommonResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -8233,6 +10550,20 @@ func ParsePostActionsWorkflowsIdWebhookResetResponse(rsp *http.Response) (*PostA
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest CommonResponse
@@ -8274,6 +10605,20 @@ func ParsePostActionsWorkflowsWorkflowIdRunResponse(rsp *http.Response) (*PostAc
 		}
 		response.JSON400 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest CommonResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -8314,6 +10659,20 @@ func ParseGetAuditLogsResponse(rsp *http.Response) (*GetAuditLogsResponse, error
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	}
 
 	return response, nil
@@ -8339,6 +10698,27 @@ func ParsePostAuditLogsCleanupResponse(rsp *http.Response) (*PostAuditLogsCleanu
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -8366,6 +10746,20 @@ func ParseGetAuthSessionsResponse(rsp *http.Response) (*GetAuthSessionsResponse,
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	}
 
 	return response, nil
@@ -8391,6 +10785,27 @@ func ParseDeleteAuthSessionsIdResponse(rsp *http.Response) (*DeleteAuthSessionsI
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
@@ -8418,6 +10833,13 @@ func ParseGetDiscoveryCodesResponse(rsp *http.Response) (*GetDiscoveryCodesRespo
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -8444,239 +10866,26 @@ func ParseGetDiscoveryLookupResponse(rsp *http.Response) (*GetDiscoveryLookupRes
 		}
 		response.JSON200 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseGetDnsDomainsResponse parses an HTTP response from a GetDnsDomainsWithResponse call
-func ParseGetDnsDomainsResponse(rsp *http.Response) (*GetDnsDomainsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetDnsDomainsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest UnderscoreDnsDomainsGet200Response
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON400 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParsePostDnsDomainsResponse parses an HTTP response from a PostDnsDomainsWithResponse call
-func ParsePostDnsDomainsResponse(rsp *http.Response) (*PostDnsDomainsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostDnsDomainsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsDomain
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON401 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseDeleteDnsDomainsIdResponse parses an HTTP response from a DeleteDnsDomainsIdWithResponse call
-func ParseDeleteDnsDomainsIdResponse(rsp *http.Response) (*DeleteDnsDomainsIdResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteDnsDomainsIdResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest string
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePutDnsDomainsIdResponse parses an HTTP response from a PutDnsDomainsIdWithResponse call
-func ParsePutDnsDomainsIdResponse(rsp *http.Response) (*PutDnsDomainsIdResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PutDnsDomainsIdResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsDomain
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetDnsExportResponse parses an HTTP response from a GetDnsExportWithResponse call
-func ParseGetDnsExportResponse(rsp *http.Response) (*GetDnsExportResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetDnsExportResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsDnsExportResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetDnsRecordsResponse parses an HTTP response from a GetDnsRecordsWithResponse call
-func ParseGetDnsRecordsResponse(rsp *http.Response) (*GetDnsRecordsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetDnsRecordsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest UnderscoreDnsRecordsGet200Response
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePostDnsRecordsResponse parses an HTTP response from a PostDnsRecordsWithResponse call
-func ParsePostDnsRecordsResponse(rsp *http.Response) (*PostDnsRecordsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostDnsRecordsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsRecord
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeleteDnsRecordsIdResponse parses an HTTP response from a DeleteDnsRecordsIdWithResponse call
-func ParseDeleteDnsRecordsIdResponse(rsp *http.Response) (*DeleteDnsRecordsIdResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteDnsRecordsIdResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePutDnsRecordsIdResponse parses an HTTP response from a PutDnsRecordsIdWithResponse call
-func ParsePutDnsRecordsIdResponse(rsp *http.Response) (*PutDnsRecordsIdResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PutDnsRecordsIdResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsRecord
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
+		response.JSON404 = &dest
 
 	}
 
@@ -8704,6 +10913,13 @@ func ParseGetInfoResponse(rsp *http.Response) (*GetInfoResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -8729,6 +10945,13 @@ func ParsePostLoginResponse(rsp *http.Response) (*PostLoginResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	}
 
@@ -8756,6 +10979,650 @@ func ParsePostLogoutResponse(rsp *http.Response) (*PostLogoutResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkDnsDomainsResponse parses an HTTP response from a GetNetworkDnsDomainsWithResponse call
+func ParseGetNetworkDnsDomainsResponse(rsp *http.Response) (*GetNetworkDnsDomainsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkDnsDomainsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnderscoreNetworkDnsDomainsGet200Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkDnsDomainsResponse parses an HTTP response from a PostNetworkDnsDomainsWithResponse call
+func ParsePostNetworkDnsDomainsResponse(rsp *http.Response) (*PostNetworkDnsDomainsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkDnsDomainsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsDomain
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNetworkDnsDomainsIdResponse parses an HTTP response from a DeleteNetworkDnsDomainsIdWithResponse call
+func ParseDeleteNetworkDnsDomainsIdResponse(rsp *http.Response) (*DeleteNetworkDnsDomainsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNetworkDnsDomainsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutNetworkDnsDomainsIdResponse parses an HTTP response from a PutNetworkDnsDomainsIdWithResponse call
+func ParsePutNetworkDnsDomainsIdResponse(rsp *http.Response) (*PutNetworkDnsDomainsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutNetworkDnsDomainsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsDomain
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkDnsExportResponse parses an HTTP response from a GetNetworkDnsExportWithResponse call
+func ParseGetNetworkDnsExportResponse(rsp *http.Response) (*GetNetworkDnsExportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkDnsExportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsDnsExportResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkDnsRecordsResponse parses an HTTP response from a GetNetworkDnsRecordsWithResponse call
+func ParseGetNetworkDnsRecordsResponse(rsp *http.Response) (*GetNetworkDnsRecordsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkDnsRecordsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnderscoreNetworkDnsRecordsGet200Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkDnsRecordsResponse parses an HTTP response from a PostNetworkDnsRecordsWithResponse call
+func ParsePostNetworkDnsRecordsResponse(rsp *http.Response) (*PostNetworkDnsRecordsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkDnsRecordsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsRecord
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNetworkDnsRecordsIdResponse parses an HTTP response from a DeleteNetworkDnsRecordsIdWithResponse call
+func ParseDeleteNetworkDnsRecordsIdResponse(rsp *http.Response) (*DeleteNetworkDnsRecordsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNetworkDnsRecordsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutNetworkDnsRecordsIdResponse parses an HTTP response from a PutNetworkDnsRecordsIdWithResponse call
+func ParsePutNetworkDnsRecordsIdResponse(rsp *http.Response) (*PutNetworkDnsRecordsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutNetworkDnsRecordsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsRecord
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkIntelligenceSourcesResponse parses an HTTP response from a GetNetworkIntelligenceSourcesWithResponse call
+func ParseGetNetworkIntelligenceSourcesResponse(rsp *http.Response) (*GetNetworkIntelligenceSourcesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkIntelligenceSourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ModelsIntelligenceSource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkIntelligenceSourcesResponse parses an HTTP response from a PostNetworkIntelligenceSourcesWithResponse call
+func ParsePostNetworkIntelligenceSourcesResponse(rsp *http.Response) (*PostNetworkIntelligenceSourcesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkIntelligenceSourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsIntelligenceSource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNetworkIntelligenceSourcesIdResponse parses an HTTP response from a DeleteNetworkIntelligenceSourcesIdWithResponse call
+func ParseDeleteNetworkIntelligenceSourcesIdResponse(rsp *http.Response) (*DeleteNetworkIntelligenceSourcesIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNetworkIntelligenceSourcesIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutNetworkIntelligenceSourcesIdResponse parses an HTTP response from a PutNetworkIntelligenceSourcesIdWithResponse call
+func ParsePutNetworkIntelligenceSourcesIdResponse(rsp *http.Response) (*PutNetworkIntelligenceSourcesIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutNetworkIntelligenceSourcesIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsIntelligenceSource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkIntelligenceSourcesIdSyncResponse parses an HTTP response from a PostNetworkIntelligenceSourcesIdSyncWithResponse call
+func ParsePostNetworkIntelligenceSourcesIdSyncResponse(rsp *http.Response) (*PostNetworkIntelligenceSourcesIdSyncResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkIntelligenceSourcesIdSyncResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -8781,6 +11648,20 @@ func ParsePostNetworkIpAnalysisHitTestResponse(rsp *http.Response) (*PostNetwork
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	}
 
@@ -8808,6 +11689,20 @@ func ParseGetNetworkIpAnalysisInfoResponse(rsp *http.Response) (*GetNetworkIpAna
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -8834,6 +11729,13 @@ func ParseGetNetworkIpExportsResponse(rsp *http.Response) (*GetNetworkIpExportsR
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -8859,6 +11761,27 @@ func ParsePostNetworkIpExportsResponse(rsp *http.Response) (*PostNetworkIpExport
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -8902,6 +11825,20 @@ func ParseGetNetworkIpExportsTaskTaskIdResponse(rsp *http.Response) (*GetNetwork
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -8928,6 +11865,27 @@ func ParseDeleteNetworkIpExportsIdResponse(rsp *http.Response) (*DeleteNetworkIp
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -8948,11 +11906,25 @@ func ParsePostNetworkIpExportsIdTriggerResponse(rsp *http.Response) (*PostNetwor
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]string
+		var dest ModelsIPExportTriggerResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
@@ -8980,6 +11952,13 @@ func ParseGetNetworkIpPoolsResponse(rsp *http.Response) (*GetNetworkIpPoolsRespo
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -9005,6 +11984,27 @@ func ParsePostNetworkIpPoolsResponse(rsp *http.Response) (*PostNetworkIpPoolsRes
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -9032,6 +12032,27 @@ func ParseDeleteNetworkIpPoolsIdResponse(rsp *http.Response) (*DeleteNetworkIpPo
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -9057,6 +12078,34 @@ func ParseDeleteNetworkIpPoolsIdEntriesResponse(rsp *http.Response) (*DeleteNetw
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
@@ -9084,6 +12133,34 @@ func ParsePostNetworkIpPoolsIdEntriesResponse(rsp *http.Response) (*PostNetworkI
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -9105,6 +12182,348 @@ func ParseGetNetworkIpPoolsIdPreviewResponse(rsp *http.Response) (*GetNetworkIpP
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ModelsIPPoolPreviewResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkSiteAnalysisHitTestResponse parses an HTTP response from a PostNetworkSiteAnalysisHitTestWithResponse call
+func ParsePostNetworkSiteAnalysisHitTestResponse(rsp *http.Response) (*PostNetworkSiteAnalysisHitTestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkSiteAnalysisHitTestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsSiteAnalysisResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkSiteExportsResponse parses an HTTP response from a GetNetworkSiteExportsWithResponse call
+func ParseGetNetworkSiteExportsResponse(rsp *http.Response) (*GetNetworkSiteExportsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkSiteExportsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnderscoreNetworkSiteExportsGet200Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkSiteExportsResponse parses an HTTP response from a PostNetworkSiteExportsWithResponse call
+func ParsePostNetworkSiteExportsResponse(rsp *http.Response) (*PostNetworkSiteExportsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkSiteExportsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsSiteExport
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkSiteExportsDownloadTaskIdResponse parses an HTTP response from a GetNetworkSiteExportsDownloadTaskIdWithResponse call
+func ParseGetNetworkSiteExportsDownloadTaskIdResponse(rsp *http.Response) (*GetNetworkSiteExportsDownloadTaskIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkSiteExportsDownloadTaskIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkSiteExportsTaskTaskIdResponse parses an HTTP response from a GetNetworkSiteExportsTaskTaskIdWithResponse call
+func ParseGetNetworkSiteExportsTaskTaskIdResponse(rsp *http.Response) (*GetNetworkSiteExportsTaskTaskIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkSiteExportsTaskTaskIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SiteExportTask
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNetworkSiteExportsIdResponse parses an HTTP response from a DeleteNetworkSiteExportsIdWithResponse call
+func ParseDeleteNetworkSiteExportsIdResponse(rsp *http.Response) (*DeleteNetworkSiteExportsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNetworkSiteExportsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkSiteExportsIdTriggerResponse parses an HTTP response from a PostNetworkSiteExportsIdTriggerWithResponse call
+func ParsePostNetworkSiteExportsIdTriggerResponse(rsp *http.Response) (*PostNetworkSiteExportsIdTriggerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkSiteExportsIdTriggerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkSitePoolsResponse parses an HTTP response from a GetNetworkSitePoolsWithResponse call
+func ParseGetNetworkSitePoolsResponse(rsp *http.Response) (*GetNetworkSitePoolsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkSitePoolsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnderscoreNetworkSitePoolsGet200Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkSitePoolsResponse parses an HTTP response from a PostNetworkSitePoolsWithResponse call
+func ParsePostNetworkSitePoolsResponse(rsp *http.Response) (*PostNetworkSitePoolsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkSitePoolsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsSiteGroup
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNetworkSitePoolsIdResponse parses an HTTP response from a DeleteNetworkSitePoolsIdWithResponse call
+func ParseDeleteNetworkSitePoolsIdResponse(rsp *http.Response) (*DeleteNetworkSitePoolsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNetworkSitePoolsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNetworkSitePoolsIdEntriesResponse parses an HTTP response from a DeleteNetworkSitePoolsIdEntriesWithResponse call
+func ParseDeleteNetworkSitePoolsIdEntriesResponse(rsp *http.Response) (*DeleteNetworkSitePoolsIdEntriesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNetworkSitePoolsIdEntriesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkSitePoolsIdEntriesResponse parses an HTTP response from a PostNetworkSitePoolsIdEntriesWithResponse call
+func ParsePostNetworkSitePoolsIdEntriesResponse(rsp *http.Response) (*PostNetworkSitePoolsIdEntriesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkSitePoolsIdEntriesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkSitePoolsIdPreviewResponse parses an HTTP response from a GetNetworkSitePoolsIdPreviewWithResponse call
+func ParseGetNetworkSitePoolsIdPreviewResponse(rsp *http.Response) (*GetNetworkSitePoolsIdPreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkSitePoolsIdPreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsSitePoolPreviewResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9136,6 +12555,13 @@ func ParseGetRbacResourcesSuggestResponse(rsp *http.Response) (*GetRbacResources
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -9161,6 +12587,20 @@ func ParseGetRbacRolebindingsResponse(rsp *http.Response) (*GetRbacRolebindingsR
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -9188,6 +12628,27 @@ func ParsePostRbacRolebindingsResponse(rsp *http.Response) (*PostRbacRolebinding
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	}
 
 	return response, nil
@@ -9213,6 +12674,27 @@ func ParseDeleteRbacRolebindingsIdResponse(rsp *http.Response) (*DeleteRbacRoleb
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
@@ -9240,6 +12722,34 @@ func ParsePutRbacRolebindingsIdResponse(rsp *http.Response) (*PutRbacRolebinding
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -9265,6 +12775,20 @@ func ParseGetRbacRolesResponse(rsp *http.Response) (*GetRbacRolesResponse, error
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -9292,6 +12816,27 @@ func ParsePostRbacRolesResponse(rsp *http.Response) (*PostRbacRolesResponse, err
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	}
 
 	return response, nil
@@ -9317,6 +12862,27 @@ func ParseDeleteRbacRolesIdResponse(rsp *http.Response) (*DeleteRbacRolesIdRespo
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
@@ -9344,6 +12910,34 @@ func ParsePutRbacRolesIdResponse(rsp *http.Response) (*PutRbacRolesIdResponse, e
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -9369,6 +12963,20 @@ func ParseGetRbacServiceaccountsResponse(rsp *http.Response) (*GetRbacServiceacc
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -9396,6 +13004,27 @@ func ParsePostRbacServiceaccountsResponse(rsp *http.Response) (*PostRbacServicea
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	}
 
 	return response, nil
@@ -9421,6 +13050,27 @@ func ParseDeleteRbacServiceaccountsIdResponse(rsp *http.Response) (*DeleteRbacSe
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
@@ -9448,6 +13098,34 @@ func ParsePutRbacServiceaccountsIdResponse(rsp *http.Response) (*PutRbacServicea
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -9473,6 +13151,27 @@ func ParsePostRbacServiceaccountsIdResetResponse(rsp *http.Response) (*PostRbacS
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
@@ -9500,6 +13199,27 @@ func ParsePostRbacSimulateResponse(rsp *http.Response) (*PostRbacSimulateRespons
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	}
 
 	return response, nil
@@ -9525,6 +13245,13 @@ func ParseGetRbacVerbsSuggestResponse(rsp *http.Response) (*GetRbacVerbsSuggestR
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	}
 
@@ -9605,33 +13332,6 @@ type ServerInterface interface {
 	// Discovery lookup
 	// (GET /discovery/lookup)
 	GetDiscoveryLookup(w http.ResponseWriter, r *http.Request, params GetDiscoveryLookupParams)
-	// List all domains
-	// (GET /network/dns/domains)
-	GetDnsDomains(w http.ResponseWriter, r *http.Request, params GetDnsDomainsParams)
-	// Create a domain
-	// (POST /network/dns/domains)
-	PostDnsDomains(w http.ResponseWriter, r *http.Request)
-	// Delete a domain
-	// (DELETE /network/dns/domains/{id})
-	DeleteDnsDomainsId(w http.ResponseWriter, r *http.Request, id string)
-	// Update a domain
-	// (PUT /network/dns/domains/{id})
-	PutDnsDomainsId(w http.ResponseWriter, r *http.Request, id string)
-	// Export all DNS configurations
-	// (GET /network/dns/export)
-	GetDnsExport(w http.ResponseWriter, r *http.Request)
-	// List all records
-	// (GET /network/dns/records)
-	GetDnsRecords(w http.ResponseWriter, r *http.Request, params GetDnsRecordsParams)
-	// Create a record
-	// (POST /network/dns/records)
-	PostDnsRecords(w http.ResponseWriter, r *http.Request)
-	// Delete a record
-	// (DELETE /network/dns/records/{id})
-	DeleteDnsRecordsId(w http.ResponseWriter, r *http.Request, id string)
-	// Update a record
-	// (PUT /network/dns/records/{id})
-	PutDnsRecordsId(w http.ResponseWriter, r *http.Request, id string)
 	// Get current user info
 	// (GET /info)
 	GetInfo(w http.ResponseWriter, r *http.Request)
@@ -9641,6 +13341,48 @@ type ServerInterface interface {
 	// Logout
 	// (POST /logout)
 	PostLogout(w http.ResponseWriter, r *http.Request)
+	// List all domains
+	// (GET /network/dns/domains)
+	GetNetworkDnsDomains(w http.ResponseWriter, r *http.Request, params GetNetworkDnsDomainsParams)
+	// Create a domain
+	// (POST /network/dns/domains)
+	PostNetworkDnsDomains(w http.ResponseWriter, r *http.Request)
+	// Delete a domain
+	// (DELETE /network/dns/domains/{id})
+	DeleteNetworkDnsDomainsId(w http.ResponseWriter, r *http.Request, id string)
+	// Update a domain
+	// (PUT /network/dns/domains/{id})
+	PutNetworkDnsDomainsId(w http.ResponseWriter, r *http.Request, id string)
+	// Export all DNS configurations
+	// (GET /network/dns/export)
+	GetNetworkDnsExport(w http.ResponseWriter, r *http.Request)
+	// List all records
+	// (GET /network/dns/records)
+	GetNetworkDnsRecords(w http.ResponseWriter, r *http.Request, params GetNetworkDnsRecordsParams)
+	// Create a record
+	// (POST /network/dns/records)
+	PostNetworkDnsRecords(w http.ResponseWriter, r *http.Request)
+	// Delete a record
+	// (DELETE /network/dns/records/{id})
+	DeleteNetworkDnsRecordsId(w http.ResponseWriter, r *http.Request, id string)
+	// Update a record
+	// (PUT /network/dns/records/{id})
+	PutNetworkDnsRecordsId(w http.ResponseWriter, r *http.Request, id string)
+	// List intelligence sources
+	// (GET /network/intelligence/sources)
+	GetNetworkIntelligenceSources(w http.ResponseWriter, r *http.Request)
+	// Create intelligence source
+	// (POST /network/intelligence/sources)
+	PostNetworkIntelligenceSources(w http.ResponseWriter, r *http.Request)
+	// Delete intelligence source
+	// (DELETE /network/intelligence/sources/{id})
+	DeleteNetworkIntelligenceSourcesId(w http.ResponseWriter, r *http.Request, id string)
+	// Update intelligence source
+	// (PUT /network/intelligence/sources/{id})
+	PutNetworkIntelligenceSourcesId(w http.ResponseWriter, r *http.Request, id string)
+	// Trigger manual sync
+	// (POST /network/intelligence/sources/{id}/sync)
+	PostNetworkIntelligenceSourcesIdSync(w http.ResponseWriter, r *http.Request, id string)
 	// Perform IP hit test
 	// (POST /network/ip/analysis/hit-test)
 	PostNetworkIpAnalysisHitTest(w http.ResponseWriter, r *http.Request)
@@ -9683,6 +13425,45 @@ type ServerInterface interface {
 	// Preview IP pool data (cursor-based)
 	// (GET /network/ip/pools/{id}/preview)
 	GetNetworkIpPoolsIdPreview(w http.ResponseWriter, r *http.Request, id string, params GetNetworkIpPoolsIdPreviewParams)
+	// Perform site hit test
+	// (POST /network/site/analysis/hit-test)
+	PostNetworkSiteAnalysisHitTest(w http.ResponseWriter, r *http.Request)
+	// List all site exports
+	// (GET /network/site/exports)
+	GetNetworkSiteExports(w http.ResponseWriter, r *http.Request, params GetNetworkSiteExportsParams)
+	// Create a site export
+	// (POST /network/site/exports)
+	PostNetworkSiteExports(w http.ResponseWriter, r *http.Request)
+	// Download site export result
+	// (GET /network/site/exports/download/{taskId})
+	GetNetworkSiteExportsDownloadTaskId(w http.ResponseWriter, r *http.Request, taskId string)
+	// Get site export task status
+	// (GET /network/site/exports/task/{taskId})
+	GetNetworkSiteExportsTaskTaskId(w http.ResponseWriter, r *http.Request, taskId string)
+	// Delete a site export
+	// (DELETE /network/site/exports/{id})
+	DeleteNetworkSiteExportsId(w http.ResponseWriter, r *http.Request, id string)
+	// Trigger site export
+	// (POST /network/site/exports/{id}/trigger)
+	PostNetworkSiteExportsIdTrigger(w http.ResponseWriter, r *http.Request, id string, params PostNetworkSiteExportsIdTriggerParams)
+	// List all site groups
+	// (GET /network/site/pools)
+	GetNetworkSitePools(w http.ResponseWriter, r *http.Request, params GetNetworkSitePoolsParams)
+	// Create a site group
+	// (POST /network/site/pools)
+	PostNetworkSitePools(w http.ResponseWriter, r *http.Request)
+	// Delete a site group
+	// (DELETE /network/site/pools/{id})
+	DeleteNetworkSitePoolsId(w http.ResponseWriter, r *http.Request, id string)
+	// Delete an entry from site pool
+	// (DELETE /network/site/pools/{id}/entries)
+	DeleteNetworkSitePoolsIdEntries(w http.ResponseWriter, r *http.Request, id string, params DeleteNetworkSitePoolsIdEntriesParams)
+	// Add or update an entry in site pool
+	// (POST /network/site/pools/{id}/entries)
+	PostNetworkSitePoolsIdEntries(w http.ResponseWriter, r *http.Request, id string)
+	// Preview site pool data (cursor-based)
+	// (GET /network/site/pools/{id}/preview)
+	GetNetworkSitePoolsIdPreview(w http.ResponseWriter, r *http.Request, id string, params GetNetworkSitePoolsIdPreviewParams)
 	// Suggest RBAC resources
 	// (GET /rbac/resources/suggest)
 	GetRbacResourcesSuggest(w http.ResponseWriter, r *http.Request, params GetRbacResourcesSuggestParams)
@@ -9744,6 +13525,12 @@ type MiddlewareFunc func(http.Handler) http.Handler
 
 // GetActionsInstances operation middleware
 func (siw *ServerInterfaceWrapper) GetActionsInstances(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetActionsInstances(w, r)
@@ -10466,296 +14253,6 @@ func (siw *ServerInterfaceWrapper) GetDiscoveryLookup(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
-// GetDnsDomains operation middleware
-func (siw *ServerInterfaceWrapper) GetDnsDomains(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDnsDomainsParams
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "pageSize" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "search" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDnsDomains(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PostDnsDomains operation middleware
-func (siw *ServerInterfaceWrapper) PostDnsDomains(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostDnsDomains(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeleteDnsDomainsId operation middleware
-func (siw *ServerInterfaceWrapper) DeleteDnsDomainsId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteDnsDomainsId(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PutDnsDomainsId operation middleware
-func (siw *ServerInterfaceWrapper) PutDnsDomainsId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutDnsDomainsId(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDnsExport operation middleware
-func (siw *ServerInterfaceWrapper) GetDnsExport(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDnsExport(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDnsRecords operation middleware
-func (siw *ServerInterfaceWrapper) GetDnsRecords(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDnsRecordsParams
-
-	// ------------- Optional query parameter "domainId" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "domainId", r.URL.Query(), &params.DomainId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domainId", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "pageSize" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "search" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDnsRecords(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PostDnsRecords operation middleware
-func (siw *ServerInterfaceWrapper) PostDnsRecords(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostDnsRecords(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeleteDnsRecordsId operation middleware
-func (siw *ServerInterfaceWrapper) DeleteDnsRecordsId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteDnsRecordsId(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PutDnsRecordsId operation middleware
-func (siw *ServerInterfaceWrapper) PutDnsRecordsId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutDnsRecordsId(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // GetInfo operation middleware
 func (siw *ServerInterfaceWrapper) GetInfo(w http.ResponseWriter, r *http.Request) {
 
@@ -10810,8 +14307,437 @@ func (siw *ServerInterfaceWrapper) PostLogout(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// GetNetworkDnsDomains operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkDnsDomains(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetworkDnsDomainsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkDnsDomains(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkDnsDomains operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkDnsDomains(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkDnsDomains(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNetworkDnsDomainsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNetworkDnsDomainsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNetworkDnsDomainsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutNetworkDnsDomainsId operation middleware
+func (siw *ServerInterfaceWrapper) PutNetworkDnsDomainsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutNetworkDnsDomainsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkDnsExport operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkDnsExport(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkDnsExport(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkDnsRecords operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkDnsRecords(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetworkDnsRecordsParams
+
+	// ------------- Optional query parameter "domainId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "domainId", r.URL.Query(), &params.DomainId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domainId", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkDnsRecords(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkDnsRecords operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkDnsRecords(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkDnsRecords(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNetworkDnsRecordsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNetworkDnsRecordsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNetworkDnsRecordsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutNetworkDnsRecordsId operation middleware
+func (siw *ServerInterfaceWrapper) PutNetworkDnsRecordsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutNetworkDnsRecordsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkIntelligenceSources operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkIntelligenceSources(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkIntelligenceSources(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkIntelligenceSources operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkIntelligenceSources(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkIntelligenceSources(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNetworkIntelligenceSourcesId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNetworkIntelligenceSourcesId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNetworkIntelligenceSourcesId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutNetworkIntelligenceSourcesId operation middleware
+func (siw *ServerInterfaceWrapper) PutNetworkIntelligenceSourcesId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutNetworkIntelligenceSourcesId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkIntelligenceSourcesIdSync operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkIntelligenceSourcesIdSync(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkIntelligenceSourcesIdSync(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // PostNetworkIpAnalysisHitTest operation middleware
 func (siw *ServerInterfaceWrapper) PostNetworkIpAnalysisHitTest(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostNetworkIpAnalysisHitTest(w, r)
@@ -10828,6 +14754,12 @@ func (siw *ServerInterfaceWrapper) PostNetworkIpAnalysisHitTest(w http.ResponseW
 func (siw *ServerInterfaceWrapper) GetNetworkIpAnalysisInfo(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetNetworkIpAnalysisInfoParams
@@ -10862,6 +14794,12 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpAnalysisInfo(w http.ResponseWrite
 func (siw *ServerInterfaceWrapper) GetNetworkIpExports(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetNetworkIpExportsParams
@@ -10904,6 +14842,12 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpExports(w http.ResponseWriter, r 
 // PostNetworkIpExports operation middleware
 func (siw *ServerInterfaceWrapper) PostNetworkIpExports(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostNetworkIpExports(w, r)
 	}))
@@ -10928,6 +14872,12 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpExportsDownloadTaskId(w http.Resp
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "taskId", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetNetworkIpExportsDownloadTaskId(w, r, taskId)
@@ -10954,6 +14904,12 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpExportsTaskTaskId(w http.Response
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetNetworkIpExportsTaskTaskId(w, r, taskId)
 	}))
@@ -10979,6 +14935,12 @@ func (siw *ServerInterfaceWrapper) DeleteNetworkIpExportsId(w http.ResponseWrite
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteNetworkIpExportsId(w, r, id)
 	}))
@@ -11003,6 +14965,12 @@ func (siw *ServerInterfaceWrapper) PostNetworkIpExportsIdTrigger(w http.Response
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PostNetworkIpExportsIdTriggerParams
@@ -11030,6 +14998,12 @@ func (siw *ServerInterfaceWrapper) PostNetworkIpExportsIdTrigger(w http.Response
 func (siw *ServerInterfaceWrapper) GetNetworkIpPools(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetNetworkIpPoolsParams
@@ -11072,6 +15046,12 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpPools(w http.ResponseWriter, r *h
 // PostNetworkIpPools operation middleware
 func (siw *ServerInterfaceWrapper) PostNetworkIpPools(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostNetworkIpPools(w, r)
 	}))
@@ -11097,6 +15077,12 @@ func (siw *ServerInterfaceWrapper) DeleteNetworkIpPoolsId(w http.ResponseWriter,
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteNetworkIpPoolsId(w, r, id)
 	}))
@@ -11121,6 +15107,12 @@ func (siw *ServerInterfaceWrapper) DeleteNetworkIpPoolsIdEntries(w http.Response
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteNetworkIpPoolsIdEntriesParams
@@ -11165,6 +15157,12 @@ func (siw *ServerInterfaceWrapper) PostNetworkIpPoolsIdEntries(w http.ResponseWr
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostNetworkIpPoolsIdEntries(w, r, id)
 	}))
@@ -11189,6 +15187,12 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpPoolsIdPreview(w http.ResponseWri
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetNetworkIpPoolsIdPreviewParams
@@ -11219,6 +15223,405 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpPoolsIdPreview(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetNetworkIpPoolsIdPreview(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkSiteAnalysisHitTest operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkSiteAnalysisHitTest(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkSiteAnalysisHitTest(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkSiteExports operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkSiteExports(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetworkSiteExportsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkSiteExports(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkSiteExports operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkSiteExports(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkSiteExports(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkSiteExportsDownloadTaskId operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkSiteExportsDownloadTaskId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "taskId" -------------
+	var taskId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "taskId", r.PathValue("taskId"), &taskId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "taskId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkSiteExportsDownloadTaskId(w, r, taskId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkSiteExportsTaskTaskId operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkSiteExportsTaskTaskId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "taskId" -------------
+	var taskId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "taskId", r.PathValue("taskId"), &taskId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "taskId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkSiteExportsTaskTaskId(w, r, taskId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNetworkSiteExportsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNetworkSiteExportsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNetworkSiteExportsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkSiteExportsIdTrigger operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkSiteExportsIdTrigger(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostNetworkSiteExportsIdTriggerParams
+
+	// ------------- Optional query parameter "format" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "format", r.URL.Query(), &params.Format, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "format", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkSiteExportsIdTrigger(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkSitePools operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkSitePools(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetworkSitePoolsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkSitePools(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkSitePools operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkSitePools(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkSitePools(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNetworkSitePoolsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNetworkSitePoolsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNetworkSitePoolsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNetworkSitePoolsIdEntries operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNetworkSitePoolsIdEntries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteNetworkSitePoolsIdEntriesParams
+
+	// ------------- Required query parameter "type" -------------
+
+	if paramValue := r.URL.Query().Get("type"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "type", r.URL.Query(), &params.Type, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "value" -------------
+
+	if paramValue := r.URL.Query().Get("value"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "value", r.URL.Query(), &params.Value, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNetworkSitePoolsIdEntries(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkSitePoolsIdEntries operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkSitePoolsIdEntries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkSitePoolsIdEntries(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkSitePoolsIdPreview operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkSitePoolsIdPreview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetworkSitePoolsIdPreviewParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkSitePoolsIdPreview(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11882,18 +16285,23 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/auth/sessions/{id}", wrapper.DeleteAuthSessionsId)
 	m.HandleFunc("GET "+options.BaseURL+"/discovery/codes", wrapper.GetDiscoveryCodes)
 	m.HandleFunc("GET "+options.BaseURL+"/discovery/lookup", wrapper.GetDiscoveryLookup)
-	m.HandleFunc("GET "+options.BaseURL+"/network/dns/domains", wrapper.GetDnsDomains)
-	m.HandleFunc("POST "+options.BaseURL+"/network/dns/domains", wrapper.PostDnsDomains)
-	m.HandleFunc("DELETE "+options.BaseURL+"/network/dns/domains/{id}", wrapper.DeleteDnsDomainsId)
-	m.HandleFunc("PUT "+options.BaseURL+"/network/dns/domains/{id}", wrapper.PutDnsDomainsId)
-	m.HandleFunc("GET "+options.BaseURL+"/network/dns/export", wrapper.GetDnsExport)
-	m.HandleFunc("GET "+options.BaseURL+"/network/dns/records", wrapper.GetDnsRecords)
-	m.HandleFunc("POST "+options.BaseURL+"/network/dns/records", wrapper.PostDnsRecords)
-	m.HandleFunc("DELETE "+options.BaseURL+"/network/dns/records/{id}", wrapper.DeleteDnsRecordsId)
-	m.HandleFunc("PUT "+options.BaseURL+"/network/dns/records/{id}", wrapper.PutDnsRecordsId)
 	m.HandleFunc("GET "+options.BaseURL+"/info", wrapper.GetInfo)
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.PostLogin)
 	m.HandleFunc("POST "+options.BaseURL+"/logout", wrapper.PostLogout)
+	m.HandleFunc("GET "+options.BaseURL+"/network/dns/domains", wrapper.GetNetworkDnsDomains)
+	m.HandleFunc("POST "+options.BaseURL+"/network/dns/domains", wrapper.PostNetworkDnsDomains)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/dns/domains/{id}", wrapper.DeleteNetworkDnsDomainsId)
+	m.HandleFunc("PUT "+options.BaseURL+"/network/dns/domains/{id}", wrapper.PutNetworkDnsDomainsId)
+	m.HandleFunc("GET "+options.BaseURL+"/network/dns/export", wrapper.GetNetworkDnsExport)
+	m.HandleFunc("GET "+options.BaseURL+"/network/dns/records", wrapper.GetNetworkDnsRecords)
+	m.HandleFunc("POST "+options.BaseURL+"/network/dns/records", wrapper.PostNetworkDnsRecords)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/dns/records/{id}", wrapper.DeleteNetworkDnsRecordsId)
+	m.HandleFunc("PUT "+options.BaseURL+"/network/dns/records/{id}", wrapper.PutNetworkDnsRecordsId)
+	m.HandleFunc("GET "+options.BaseURL+"/network/intelligence/sources", wrapper.GetNetworkIntelligenceSources)
+	m.HandleFunc("POST "+options.BaseURL+"/network/intelligence/sources", wrapper.PostNetworkIntelligenceSources)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/intelligence/sources/{id}", wrapper.DeleteNetworkIntelligenceSourcesId)
+	m.HandleFunc("PUT "+options.BaseURL+"/network/intelligence/sources/{id}", wrapper.PutNetworkIntelligenceSourcesId)
+	m.HandleFunc("POST "+options.BaseURL+"/network/intelligence/sources/{id}/sync", wrapper.PostNetworkIntelligenceSourcesIdSync)
 	m.HandleFunc("POST "+options.BaseURL+"/network/ip/analysis/hit-test", wrapper.PostNetworkIpAnalysisHitTest)
 	m.HandleFunc("GET "+options.BaseURL+"/network/ip/analysis/info", wrapper.GetNetworkIpAnalysisInfo)
 	m.HandleFunc("GET "+options.BaseURL+"/network/ip/exports", wrapper.GetNetworkIpExports)
@@ -11908,6 +16316,19 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/network/ip/pools/{id}/entries", wrapper.DeleteNetworkIpPoolsIdEntries)
 	m.HandleFunc("POST "+options.BaseURL+"/network/ip/pools/{id}/entries", wrapper.PostNetworkIpPoolsIdEntries)
 	m.HandleFunc("GET "+options.BaseURL+"/network/ip/pools/{id}/preview", wrapper.GetNetworkIpPoolsIdPreview)
+	m.HandleFunc("POST "+options.BaseURL+"/network/site/analysis/hit-test", wrapper.PostNetworkSiteAnalysisHitTest)
+	m.HandleFunc("GET "+options.BaseURL+"/network/site/exports", wrapper.GetNetworkSiteExports)
+	m.HandleFunc("POST "+options.BaseURL+"/network/site/exports", wrapper.PostNetworkSiteExports)
+	m.HandleFunc("GET "+options.BaseURL+"/network/site/exports/download/{taskId}", wrapper.GetNetworkSiteExportsDownloadTaskId)
+	m.HandleFunc("GET "+options.BaseURL+"/network/site/exports/task/{taskId}", wrapper.GetNetworkSiteExportsTaskTaskId)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/site/exports/{id}", wrapper.DeleteNetworkSiteExportsId)
+	m.HandleFunc("POST "+options.BaseURL+"/network/site/exports/{id}/trigger", wrapper.PostNetworkSiteExportsIdTrigger)
+	m.HandleFunc("GET "+options.BaseURL+"/network/site/pools", wrapper.GetNetworkSitePools)
+	m.HandleFunc("POST "+options.BaseURL+"/network/site/pools", wrapper.PostNetworkSitePools)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/site/pools/{id}", wrapper.DeleteNetworkSitePoolsId)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/site/pools/{id}/entries", wrapper.DeleteNetworkSitePoolsIdEntries)
+	m.HandleFunc("POST "+options.BaseURL+"/network/site/pools/{id}/entries", wrapper.PostNetworkSitePoolsIdEntries)
+	m.HandleFunc("GET "+options.BaseURL+"/network/site/pools/{id}/preview", wrapper.GetNetworkSitePoolsIdPreview)
 	m.HandleFunc("GET "+options.BaseURL+"/rbac/resources/suggest", wrapper.GetRbacResourcesSuggest)
 	m.HandleFunc("GET "+options.BaseURL+"/rbac/rolebindings", wrapper.GetRbacRolebindings)
 	m.HandleFunc("POST "+options.BaseURL+"/rbac/rolebindings", wrapper.PostRbacRolebindings)

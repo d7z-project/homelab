@@ -110,6 +110,16 @@ type SiteAnalysisResult struct {
 	RuleType uint8    `json:"ruleType"`
 	Pattern  string   `json:"pattern"`
 	Tags     []string `json:"tags"`
+
+	// DNS Intelligence
+	DNS *SiteDNSAnalysis `json:"dns,omitempty"`
+}
+
+type SiteDNSAnalysis struct {
+	A     []IPInfoResponse `json:"a,omitempty"`
+	AAAA  []IPInfoResponse `json:"aaaa,omitempty"`
+	CNAME []string         `json:"cname,omitempty"`
+	SOA   []string         `json:"soa,omitempty"`
 }
 
 // SiteHitTestRequest 域名命中推演请求

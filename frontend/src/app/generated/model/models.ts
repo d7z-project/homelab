@@ -36,6 +36,7 @@ export * from './modelsServiceAccount';
 export * from './modelsSession';
 export * from './modelsSimulatePermissionsRequest';
 export * from './modelsSiteAnalysisResult';
+export * from './modelsSiteDNSAnalysis';
 export * from './modelsSiteExport';
 export * from './modelsSiteGroup';
 export * from './modelsSitePoolEntry';

@@ -466,6 +466,10 @@ definitions:
     type: object
   models.SiteAnalysisResult:
     properties:
+      dns:
+        allOf:
+        - $ref: '#/definitions/models.SiteDNSAnalysis'
+        description: DNS Intelligence
       matched:
         type: boolean
       pattern:
@@ -473,6 +477,25 @@ definitions:
       ruleType:
         type: integer
       tags:
+        items:
+          type: string
+        type: array
+    type: object
+  models.SiteDNSAnalysis:
+    properties:
+      a:
+        items:
+          $ref: '#/definitions/models.IPInfoResponse'
+        type: array
+      aaaa:
+        items:
+          $ref: '#/definitions/models.IPInfoResponse'
+        type: array
+      cname:
+        items:
+          type: string
+        type: array
+      soa:
         items:
           type: string
         type: array
@@ -2005,6 +2028,49 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Delete intelligence source
+      tags:
+      - network/intelligence
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Source ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Source
+        in: body
+        name: source
+        required: true
+        schema:
+          $ref: '#/definitions/models.IntelligenceSource'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IntelligenceSource'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Update intelligence source
       tags:
       - network/intelligence
   /network/intelligence/sources/{id}/sync:

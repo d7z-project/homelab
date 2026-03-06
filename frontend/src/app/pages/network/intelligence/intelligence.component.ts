@@ -38,7 +38,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
   loading = signal(false);
   private pollInterval: any;
 
-  displayedColumns = ['type', 'name', 'url', 'status', 'lastUpdated', 'actions'];
+  displayedColumns = ['type', 'name', 'url', 'cron', 'status', 'lastUpdated', 'actions'];
 
   ngOnInit() {
     this.loadSources();
@@ -61,7 +61,6 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.intService.networkIntelligenceSourcesGet().subscribe({
       next: (data) => {
-        console.log(data);
         this.sources.set(data);
         this.loading.set(false);
       },
@@ -75,6 +74,13 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
 
   createSource() {
     this.dialog.open(CreateSourceDialogComponent, { width: '500px' })
+      .afterClosed().subscribe(res => {
+        if (res) this.loadSources();
+      });
+  }
+
+  editSource(source: ModelsIntelligenceSource) {
+    this.dialog.open(CreateSourceDialogComponent, { width: '500px', data: source })
       .afterClosed().subscribe(res => {
         if (res) this.loadSources();
       });

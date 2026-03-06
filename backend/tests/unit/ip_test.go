@@ -175,3 +175,27 @@ func TestIPPreviewCursor(t *testing.T) {
 	assert.Len(t, res2.Entries, 3)
 	assert.Equal(t, "1.1.1.3/32", res2.Entries[0].CIDR)
 }
+
+func TestIPIntelligence(t *testing.T) {
+	cleanup := tests.SetupTestDB()
+	defer cleanup()
+	mmdb := ip.NewMMDBManager()
+
+	// 测试私有 IP
+	res, err := mmdb.Lookup("192.168.1.1")
+	assert.NoError(t, err)
+	assert.Equal(t, uint(0), res.ASN)
+	assert.Equal(t, "Private Network", res.Org)
+	assert.Equal(t, "内网", res.Country)
+	assert.Equal(t, "私有地址", res.City)
+	assert.Equal(t, "0.000000,0.000000", res.Location)
+
+	// 测试回环 IP
+	res, err = mmdb.Lookup("127.0.0.1")
+	assert.NoError(t, err)
+	assert.Equal(t, "内网", res.Country)
+
+	// 测试无效 IP
+	_, err = mmdb.Lookup("invalid")
+	assert.Error(t, err)
+}

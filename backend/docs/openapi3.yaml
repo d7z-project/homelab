@@ -26,6 +26,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Unauthorized
+      security:
+      - ApiKeyAuth: []
       summary: List all task instances
       tags:
       - actions
@@ -45,9 +47,20 @@ paths:
           content:
             '*/*':
               schema:
-                additionalProperties: true
-                type: object
+                $ref: "#/components/schemas/models.TaskCleanupResponse"
           description: Number of deleted instances
+        "400":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Cleanup old task instances
@@ -68,7 +81,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/common.Response"
+                type: string
           description: success
         "400":
           content:
@@ -76,6 +89,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Bad Request
+        "401":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
         "404":
           content:
             '*/*':
@@ -142,9 +167,14 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                type: object
+                $ref: "#/components/schemas/models.TaskLogResponse"
           description: Logs and next offset
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
         "404":
           content:
             application/json:
@@ -169,6 +199,12 @@ paths:
                   $ref: "#/components/schemas/models.StepManifest"
                 type: array
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: List all step manifests
@@ -194,6 +230,24 @@ paths:
                   type: string
                 type: object
           description: Processor Output Data
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Test a single processor
@@ -223,6 +277,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Invalid Regex
+        "401":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Validate a regular expression
@@ -362,6 +422,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
         "500":
           content:
             application/json:
@@ -386,6 +452,12 @@ paths:
                 additionalProperties: true
                 type: object
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Get workflow JSON schema
@@ -415,6 +487,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Validation Error
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Validate a workflow configuration
@@ -439,6 +517,18 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
         "404":
           content:
             application/json:
@@ -480,6 +570,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
         "404":
           content:
             application/json:
@@ -510,6 +612,18 @@ paths:
               schema:
                 type: string
           description: New Webhook Token
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
         "404":
           content:
             application/json:
@@ -552,6 +666,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
         "404":
           content:
             application/json:
@@ -595,6 +721,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/_audit_logs_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: List audit logs
@@ -616,6 +754,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.AuditCleanupResponse"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Cleanup old audit logs
@@ -632,6 +788,18 @@ paths:
                   $ref: "#/components/schemas/models.Session"
                 type: array
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: List all active root sessions
@@ -653,6 +821,24 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Session Not Found
       security:
       - ApiKeyAuth: []
       summary: Revoke a session
@@ -670,6 +856,12 @@ paths:
                   type: string
                 type: array
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: List discovery codes
@@ -707,6 +899,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.LookupResponse"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Code Not Found
       security:
       - ApiKeyAuth: []
       summary: Discovery lookup
@@ -721,6 +931,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/controllers.AuthInfo"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Get current user info
@@ -742,6 +958,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.LoginResponse"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       summary: Login to get session
       tags:
       - auth
@@ -755,6 +977,12 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Logout
@@ -785,6 +1013,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/_network_dns_domains_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: List all domains
@@ -805,6 +1039,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Domain"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Create a domain
@@ -827,6 +1079,24 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Domain Not Found
       security:
       - ApiKeyAuth: []
       summary: Delete a domain
@@ -854,6 +1124,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Domain"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Domain Not Found
       security:
       - ApiKeyAuth: []
       summary: Update a domain
@@ -870,6 +1164,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.DnsExportResponse"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Export all DNS configurations
@@ -905,6 +1211,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/_network_dns_records_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: List all records
@@ -925,6 +1237,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Record"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Create a record
@@ -947,6 +1277,24 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Record Not Found
       security:
       - ApiKeyAuth: []
       summary: Delete a record
@@ -974,6 +1322,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Record"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Record Not Found
       security:
       - ApiKeyAuth: []
       summary: Update a record
@@ -985,19 +1357,33 @@ paths:
       responses:
         "200":
           content:
-            '*/*':
+            application/json:
               schema:
                 items:
                   $ref: "#/components/schemas/models.IntelligenceSource"
                 type: array
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
       summary: List intelligence sources
       tags:
       - network/intelligence
     post:
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/models.IntelligenceSource"
         description: Source
@@ -1005,10 +1391,30 @@ paths:
       responses:
         "200":
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: "#/components/schemas/models.IntelligenceSource"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
       summary: Create intelligence source
       tags:
       - network/intelligence
@@ -1025,13 +1431,85 @@ paths:
       responses:
         "200":
           content:
-            '*/*':
+            application/json:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Source Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Delete intelligence source
       tags:
       - network/intelligence
+    put:
+      parameters:
+      - description: Source ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.IntelligenceSource"
+        description: Source
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IntelligenceSource"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Update intelligence source
+      tags:
+      - network/intelligence
+      x-codegen-request-body-name: source
   /network/intelligence/sources/{id}/sync:
     post:
       parameters:
@@ -1044,10 +1522,30 @@ paths:
       responses:
         "200":
           content:
-            '*/*':
+            application/json:
               schema:
                 type: string
           description: sync started
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Source Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Trigger manual sync
       tags:
       - network/intelligence
@@ -1057,7 +1555,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: "#/components/schemas/models.IPHitTestRequest"
         description: Hit test request
         required: true
       responses:
@@ -1067,6 +1565,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.IPAnalysisResult"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+      security:
+      - ApiKeyAuth: []
       summary: Perform IP hit test
       tags:
       - network/ip
@@ -1087,6 +1599,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.IPInfoResponse"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+      security:
+      - ApiKeyAuth: []
       summary: Get IP intelligence info
       tags:
       - network/ip
@@ -1115,6 +1641,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/_network_ip_exports_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+      security:
+      - ApiKeyAuth: []
       summary: List all IP exports
       tags:
       - network/ip
@@ -1133,6 +1667,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.IPExport"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
       summary: Create an IP export
       tags:
       - network/ip
@@ -1154,6 +1708,20 @@ paths:
                 format: binary
                 type: string
           description: OK
+        "401":
+          content:
+            application/octet-stream:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/octet-stream:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: File Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Download export result
       tags:
       - network/ip
@@ -1173,6 +1741,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/ip.ExportTask"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Task Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Get export task status
       tags:
       - network/ip
@@ -1192,6 +1774,26 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Export Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Delete an IP export
       tags:
       - network/ip
@@ -1214,10 +1816,22 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties:
-                  type: string
-                type: object
+                $ref: "#/components/schemas/models.IPExportTriggerResponse"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Export Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Trigger dynamic export
       tags:
       - network/ip
@@ -1246,6 +1860,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/_network_ip_pools_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+      security:
+      - ApiKeyAuth: []
       summary: List all IP groups
       tags:
       - network/ip
@@ -1264,6 +1886,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.IPGroup"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
       summary: Create an IP group
       tags:
       - network/ip
@@ -1284,6 +1926,26 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Group Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Delete an IP group
       tags:
       - network/ip
@@ -1309,6 +1971,32 @@ paths:
               schema:
                 type: string
           description: success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Group Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Delete an entry from IP pool
       tags:
       - network/ip
@@ -1334,6 +2022,32 @@ paths:
               schema:
                 type: string
           description: success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Group Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Add or update an entry in IP pool
       tags:
       - network/ip
@@ -1369,6 +2083,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.IPPoolPreviewResponse"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Group Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Preview IP pool data (cursor-based)
       tags:
       - network/ip
@@ -1697,6 +2425,12 @@ paths:
                   $ref: "#/components/schemas/models.DiscoverResult"
                 type: array
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Suggest RBAC resources
@@ -1727,6 +2461,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/_rbac_rolebindings_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: List all role bindings
@@ -1747,6 +2493,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.RoleBinding"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Create a role binding
@@ -1769,6 +2533,24 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Role Binding Not Found
       security:
       - ApiKeyAuth: []
       summary: Delete a role binding
@@ -1796,6 +2578,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.RoleBinding"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Role Binding Not Found
       security:
       - ApiKeyAuth: []
       summary: Update a role binding
@@ -1827,6 +2633,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/_rbac_roles_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: List all roles
@@ -1847,6 +2665,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Role"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Create a role
@@ -1869,6 +2705,24 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Role Not Found
       security:
       - ApiKeyAuth: []
       summary: Delete a role
@@ -1896,6 +2750,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.Role"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Role Not Found
       security:
       - ApiKeyAuth: []
       summary: Update a role
@@ -1927,6 +2805,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/_rbac_serviceaccounts_get_200_response"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: List all service accounts
@@ -1947,6 +2837,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.ServiceAccount"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Create a service account
@@ -1969,6 +2877,24 @@ paths:
               schema:
                 type: string
           description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Service Account Not Found
       security:
       - ApiKeyAuth: []
       summary: Delete a service account
@@ -1996,6 +2922,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.ServiceAccount"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Service Account Not Found
       security:
       - ApiKeyAuth: []
       summary: Update a service account
@@ -2018,6 +2968,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.ServiceAccount"
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Service Account Not Found
       security:
       - ApiKeyAuth: []
       summary: Reset a service account token
@@ -2039,6 +3007,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/models.ResourcePermissions"
           description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
       security:
       - ApiKeyAuth: []
       summary: Simulate permissions for a service account
@@ -2062,6 +3048,12 @@ paths:
                   type: string
                 type: array
           description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
       security:
       - ApiKeyAuth: []
       summary: Suggest RBAC verbs for a resource
@@ -2312,6 +3304,13 @@ components:
         updatedAt:
           type: string
       type: object
+    models.IPExportTriggerResponse:
+      example:
+        taskId: taskId
+      properties:
+        taskId:
+          type: string
+      type: object
     models.IPGroup:
       example:
         createdAt: createdAt
@@ -2337,6 +3336,15 @@ components:
         name:
           type: string
         updatedAt:
+          type: string
+      type: object
+    models.IPHitTestRequest:
+      properties:
+        groupIds:
+          items:
+            type: string
+          type: array
+        ip:
           type: string
       type: object
     models.IPInfoResponse:
@@ -2722,12 +3730,18 @@ components:
     models.SiteAnalysisResult:
       example:
         ruleType: 0
+        dns: "{}"
         pattern: pattern
         matched: true
         tags:
         - tags
         - tags
       properties:
+        dns:
+          allOf:
+          - $ref: "#/components/schemas/models.SiteDNSAnalysis"
+          description: DNS Intelligence
+          type: object
         matched:
           type: boolean
         pattern:
@@ -2735,6 +3749,25 @@ components:
         ruleType:
           type: integer
         tags:
+          items:
+            type: string
+          type: array
+      type: object
+    models.SiteDNSAnalysis:
+      properties:
+        a:
+          items:
+            $ref: "#/components/schemas/models.IPInfoResponse"
+          type: array
+        aaaa:
+          items:
+            $ref: "#/components/schemas/models.IPInfoResponse"
+          type: array
+        cname:
+          items:
+            type: string
+          type: array
+        soa:
           items:
             type: string
           type: array
@@ -2944,6 +3977,13 @@ components:
         startedAt:
           type: string
       type: object
+    models.TaskCleanupResponse:
+      example:
+        deleted: 0
+      properties:
+        deleted:
+          type: integer
+      type: object
     models.TaskInstance:
       example:
         outputs:
@@ -3040,6 +4080,24 @@ components:
           type: string
         workspace:
           type: string
+      type: object
+    models.TaskLogResponse:
+      example:
+        nextOffset: 0
+        logs:
+        - stepId: stepId
+          message: message
+          timestamp: timestamp
+        - stepId: stepId
+          message: message
+          timestamp: timestamp
+      properties:
+        logs:
+          items:
+            $ref: "#/components/schemas/models.LogEntry"
+          type: array
+        nextOffset:
+          type: integer
       type: object
     models.VarDefinition:
       example:

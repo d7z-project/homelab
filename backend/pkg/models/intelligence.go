@@ -32,5 +32,8 @@ func (s *IntelligenceSource) Bind(r *http.Request) error {
 	if !validTypes[s.Type] {
 		return errors.New("invalid type: must be asn, city or country")
 	}
+	if s.AutoUpdate && s.UpdateCron == "" {
+		return errors.New("cron expression is required when auto update is enabled")
+	}
 	return nil
 }

@@ -5,6 +5,7 @@
         title="统一研判实验室"
         subtitle="实时探测 IP 或域名在全球威胁情报与私有资产池中的命中轨迹"
         icon="science"
+        [hideStats]="true"
       ></app-page-header>
 
       <!-- Unified Search Section -->
@@ -107,36 +108,135 @@
                   </div>
                 </div>
                 <div class="p-8">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                    <div class="space-y-1">
-                      <div class="text-[10px] font-bold text-outline uppercase tracking-widest">自治系统 (ASN)</div>
-                      <div class="flex items-baseline gap-2">
-                        <span class="text-2xl font-mono font-black text-primary">AS{{ ipInfo()?.asn }}</span>
-                        <span class="text-sm text-outline truncate">{{ ipInfo()?.org }}</span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                    <div class="flex flex-col min-w-0">
+                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-1 opacity-70">自治系统 (ASN)</div>
+                      <div class="text-4xl md:text-5xl font-mono font-black text-primary leading-none truncate">AS{{ ipInfo()?.asn }}</div>
+                      <div class="text-base text-outline font-medium truncate opacity-90 mt-2">{{ ipInfo()?.org }}</div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-1 opacity-70">地理归属</div>
+                      <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                          <span class="px-3 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold border border-secondary/20 shadow-sm shrink-0">{{ ipInfo()?.country }}</span>
+                          <span class="text-2xl md:text-3xl font-bold tracking-tight truncate">{{ ipInfo()?.city }}</span>
+                        </div>
+                        <div class="text-xs text-outline opacity-60 flex items-center gap-1 uppercase tracking-tighter">
+                          <mat-icon class="!w-4 !h-4 !text-[14px]">verified</mat-icon>
+                          MaxMind Verified Data
+                        </div>
                       </div>
                     </div>
-                    <div class="space-y-1">
-                      <div class="text-[10px] font-bold text-outline uppercase tracking-widest">地理归属</div>
-                      <div class="flex items-center gap-2 py-1">
-                        <span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container text-xs font-bold">{{ ipInfo()?.country }}</span>
-                        <span class="text-lg font-medium">{{ ipInfo()?.city }}</span>
-                      </div>
-                    </div>
-                    <div class="sm:col-span-2 pt-4">
-                      <div class="text-[10px] font-bold text-outline uppercase tracking-widest mb-3">经纬度坐标</div>
-                      <div class="h-32 bg-surface-container-highest rounded-2xl border border-outline-variant flex items-center justify-center relative overflow-hidden">
-                        <div class="text-primary font-mono font-bold text-xl z-10">{{ ipInfo()?.location }}</div>
-                        <mat-icon class="absolute !text-9xl opacity-[0.03] scale-150">map</mat-icon>
+                    <div class="sm:col-span-2 pt-2">
+                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-3 opacity-70">坐标研判与全球定位</div>
+                      <div class="map-wrapper bg-[#0f172a] rounded-[32px] border border-outline-variant relative overflow-hidden group shadow-2xl">
+                        <!-- ECharts Container -->
+                        <div #mapContainer class="w-full h-full"></div>
+                        
+                        <!-- Location Badge (Floating) -->
+                        <div class="absolute bottom-6 left-6 px-4 py-1.5 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl z-20 pointer-events-none animate-in fade-in slide-in-from-bottom-2">
+                          <span class="text-lg font-mono font-black text-white tracking-widest">{{ ipInfo()?.location }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </mat-card>
-            } @else if (query() && !checkIsIP(query())) {
-              <!-- Domain specific intelligence info can be added here -->
-              <div class="h-full flex items-center justify-center p-12 text-outline/40 italic border-2 border-dashed border-outline-variant rounded-[32px]">
-                域名全球情报模块（Whois/DNS历史）正在内测中...
-              </div>
+            } @else if (siteResult()) {
+              <mat-card class="bg-surface border border-outline-variant shadow-sm rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div class="px-8 py-6 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <mat-icon class="text-primary">public</mat-icon>
+                    </div>
+                    <span class="font-bold tracking-tight text-lg">域名全球情报 (DNS Intelligence)</span>
+                  </div>
+                </div>
+                
+                <div class="p-8">
+                  <div class="grid grid-cols-1 gap-10">
+                    <!-- DNS Analysis List -->
+                    <div class="space-y-6">
+                      <!-- A / AAAA Section -->
+                      <div class="space-y-3">
+                        <div class="text-xs font-bold text-outline uppercase tracking-widest opacity-70">解析地址与地理溯源</div>
+                        <div class="flex flex-col border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest">
+                          @for (a of siteResult()?.dns?.a; track a.ip) {
+                            <div class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group">
+                              <div class="flex-1 flex items-center gap-4 min-w-0">
+                                <span class="text-lg font-mono font-black text-primary clickable-link" (click)="pivotSearch(a.ip)">{{ a.ip }}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase shrink-0">AS{{ a.asn }}</span>
+                                <span class="text-sm text-outline truncate opacity-80">{{ a.org }}</span>
+                              </div>
+                              <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-xs px-2 py-0.5 rounded bg-outline/10 text-outline font-bold">{{ a.country }}</span>
+                                <span class="text-xs font-bold">{{ a.city }}</span>
+                              </div>
+                            </div>
+                          }
+                          @for (aaaa of siteResult()?.dns?.aaaa; track aaaa.ip) {
+                            <div class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
+                              <div class="flex-1 flex items-center gap-4 min-w-0">
+                                <span class="text-base font-mono font-black text-secondary clickable-link truncate" (click)="pivotSearch(aaaa.ip)" [matTooltip]="aaaa.ip">{{ aaaa.ip }}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase shrink-0">AS{{ aaaa.asn }}</span>
+                                <span class="text-sm text-outline truncate opacity-80">{{ aaaa.org }}</span>
+                              </div>
+                              <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-outline/10 text-outline font-black border border-outline/20">IPv6</span>
+                                <span class="text-xs px-2 py-0.5 rounded bg-outline/10 text-outline font-bold">{{ aaaa.country }}</span>
+                                <span class="text-xs font-bold">{{ aaaa.city }}</span>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- CNAME & SOA Section -->
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @if (siteResult()?.dns?.cname?.length) {
+                          <div class="space-y-3">
+                            <div class="text-xs font-bold text-outline uppercase tracking-widest opacity-70">CNAME 别名</div>
+                            <div class="flex flex-col gap-2">
+                              @for (cname of siteResult()?.dns?.cname; track cname) {
+                                <div class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3 group">
+                                  <mat-icon class="text-secondary !w-4 !h-4 !text-[16px]">link</mat-icon>
+                                  <span class="text-sm font-mono font-medium text-secondary truncate flex-1 clickable-link" (click)="pivotSearch(cname)">{{ cname }}</span>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                        @if (siteResult()?.dns?.soa?.length) {
+                          <div class="space-y-3">
+                            <div class="text-xs font-bold text-outline uppercase tracking-widest opacity-70">SOA 权威</div>
+                            <div class="flex flex-col gap-2">
+                              @for (soa of siteResult()?.dns?.soa; track soa) {
+                                <div class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3">
+                                  <mat-icon class="text-primary !w-4 !h-4 !text-[16px]">verified_user</mat-icon>
+                                  <span class="text-sm font-mono font-medium text-outline truncate flex-1 clickable-link" (click)="pivotSearch(soa)">{{ soa }}</span>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Map -->
+                    <div class="pt-2">
+                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-3 opacity-70">全球节点分布图</div>
+                      <div class="map-wrapper bg-[#0f172a] rounded-[32px] border border-outline-variant relative overflow-hidden group shadow-2xl">
+                        <div #mapContainer class="w-full h-full"></div>
+                        
+                        <!-- Floating Location Count -->
+                        <div class="absolute bottom-6 left-6 px-4 py-1.5 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl z-20 pointer-events-none animate-in fade-in slide-in-from-bottom-2">
+                          <span class="text-xs font-mono font-black text-white tracking-widest uppercase">Detected {{ (siteResult()?.dns?.a?.length || 0) + (siteResult()?.dns?.aaaa?.length || 0) }} Endpoints</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-card>
             }
           </div>
         </div>

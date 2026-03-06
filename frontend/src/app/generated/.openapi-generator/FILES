@@ -52,6 +52,7 @@ model/modelsServiceAccount.ts
 model/modelsSession.ts
 model/modelsSimulatePermissionsRequest.ts
 model/modelsSiteAnalysisResult.ts
+model/modelsSiteDNSAnalysis.ts
 model/modelsSiteExport.ts
 model/modelsSiteGroup.ts
 model/modelsSitePoolEntry.ts

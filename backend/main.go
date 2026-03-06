@@ -121,13 +121,16 @@ func main() {
 	processors.RegisterIPProcessors(ipPoolService, mmdbManager)
 
 	// Initialize Site Services
-	siteAnalysisEngine := site.NewAnalysisEngine()
+	siteAnalysisEngine := site.NewAnalysisEngine(mmdbManager)
 	sitePoolService := site.NewSitePoolService(siteAnalysisEngine)
 	siteExportManager := site.NewExportManager(siteAnalysisEngine)
 	controllers.InitSiteControllers(sitePoolService, siteAnalysisEngine, siteExportManager)
 	site.RegisterSiteProcessors(sitePoolService)
 
 	intelligenceService := intelligence.NewIntelligenceService(mmdbManager)
+	if err := intelligenceService.Init(ctx); err != nil {
+		log.Printf("Failed to initialize intelligence service: %v", err)
+	}
 	controllers.InitIntelligenceControllers(intelligenceService)
 
 	actions.BootUpSelfHealing()

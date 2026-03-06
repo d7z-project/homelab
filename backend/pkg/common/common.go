@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"strings"
@@ -15,6 +16,8 @@ var DB kv.KV
 var Locker lock.Locker
 var FS afero.Fs
 var TempDir afero.Fs
+
+var ErrNotFound = errors.New("resource not found")
 
 type Response struct {
 	Code    int         `json:"code"`

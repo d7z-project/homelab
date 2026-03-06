@@ -7,9 +7,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsSiteDNSAnalysis } from './modelsSiteDNSAnalysis';
 
 
 export interface ModelsSiteAnalysisResult { 
+    /**
+     * DNS Intelligence
+     */
+    dns?: ModelsSiteDNSAnalysis;
     matched?: boolean;
     pattern?: string;
     ruleType?: number;

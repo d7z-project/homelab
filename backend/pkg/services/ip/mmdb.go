@@ -80,6 +80,16 @@ func (m *MMDBManager) Lookup(ipStr string) (*models.IPInfoResponse, error) {
 		IP: ipStr,
 	}
 
+	// 检查是否为私有 IP 或回环 IP (RFC 1918, RFC 4193, RFC 1122 等)
+	if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() {
+		res.ASN = 0
+		res.Org = "Private Network"
+		res.Country = "内网"
+		res.City = "私有地址"
+		res.Location = "0.000000,0.000000"
+		return res, nil
+	}
+
 	if m.asn != nil {
 		if asn, err := m.asn.ASN(ip); err == nil {
 			res.ASN = asn.AutonomousSystemNumber

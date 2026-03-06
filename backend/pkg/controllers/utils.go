@@ -28,6 +28,11 @@ func HandleError(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
+	if errors.Is(err, common.ErrNotFound) {
+		common.Error(w, r, http.StatusNotFound, 404, err.Error())
+		return
+	}
+
 	// Default to 500
 	common.InternalServerError(w, r, 500, err.Error())
 }

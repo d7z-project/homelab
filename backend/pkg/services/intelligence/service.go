@@ -9,30 +9,130 @@ import (
 	repo "homelab/pkg/repositories/intelligence"
 	"homelab/pkg/services/ip"
 	"io"
+	"log"
 	"net/http"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/robfig/cron/v3"
+)
+
+var (
+	ErrSourceNotFound = fmt.Errorf("%w: intelligence source not found", common.ErrNotFound)
 )
 
 type IntelligenceService struct {
-	mmdb *ip.MMDBManager
+	mmdb    *ip.MMDBManager
+	cron    *cron.Cron
+	entries map[string]cron.EntryID
+	mu      sync.Mutex
 }
 
 func NewIntelligenceService(mmdb *ip.MMDBManager) *IntelligenceService {
-	return &IntelligenceService{mmdb: mmdb}
+	s := &IntelligenceService{
+		mmdb:    mmdb,
+		cron:    cron.New(),
+		entries: make(map[string]cron.EntryID),
+	}
+	s.cron.Start()
+	return s
+}
+
+func (s *IntelligenceService) Init(ctx context.Context) error {
+	sources, err := repo.ListSources(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for i := range sources {
+		src := &sources[i]
+		// Reset "Downloading" status if stuck from previous run
+		if src.Status == "Downloading" {
+			src.Status = "Error"
+			src.ErrorMessage = "Interrupted by system restart"
+			_ = repo.SaveSource(ctx, src)
+		}
+
+		if src.AutoUpdate && src.UpdateCron != "" {
+			s.addCronJob(*src)
+		}
+	}
+	log.Printf("IntelligenceService: initialized and cleaned up stuck tasks")
+	return nil
+}
+
+func (s *IntelligenceService) addCronJob(src models.IntelligenceSource) {
+	id := src.ID
+	entryID, err := s.cron.AddFunc(src.UpdateCron, func() {
+		log.Printf("IntelligenceService: running scheduled update for %s (%s)", src.Name, src.ID)
+		s.runDownload(id)
+	})
+	if err != nil {
+		log.Printf("IntelligenceService: failed to schedule job for %s: %v", src.Name, err)
+		return
+	}
+	s.entries[id] = entryID
+}
+
+func (s *IntelligenceService) updateCronJob(src models.IntelligenceSource) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Remove existing if any
+	if entryID, ok := s.entries[src.ID]; ok {
+		s.cron.Remove(entryID)
+		delete(s.entries, src.ID)
+	}
+
+	// Add new if enabled
+	if src.AutoUpdate && src.UpdateCron != "" {
+		s.addCronJob(src)
+	}
+}
+
+func (s *IntelligenceService) removeCronJob(id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if entryID, ok := s.entries[id]; ok {
+		s.cron.Remove(entryID)
+		delete(s.entries, id)
+	}
 }
 
 func (s *IntelligenceService) CreateSource(ctx context.Context, source *models.IntelligenceSource) error {
 	source.ID = uuid.NewString()
 	source.Status = "Ready"
 	source.LastUpdatedAt = time.Time{}
-	return repo.SaveSource(ctx, source)
+	if err := repo.SaveSource(ctx, source); err != nil {
+		return err
+	}
+	s.updateCronJob(*source)
+	return nil
 }
 
 func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.IntelligenceSource) error {
-	return repo.SaveSource(ctx, source)
+	existing, err := repo.GetSource(ctx, source.ID)
+	if err != nil {
+		return ErrSourceNotFound
+	}
+	// Preserve immutable or managed fields
+	source.Status = existing.Status
+	source.LastUpdatedAt = existing.LastUpdatedAt
+	source.ErrorMessage = existing.ErrorMessage
+
+	if err := repo.SaveSource(ctx, source); err != nil {
+		return err
+	}
+
+	s.updateCronJob(*source)
+	commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Name, "Success", true)
+	return nil
 }
 
 func (s *IntelligenceService) ListSources(ctx context.Context) ([]models.IntelligenceSource, error) {
@@ -40,7 +140,11 @@ func (s *IntelligenceService) ListSources(ctx context.Context) ([]models.Intelli
 }
 
 func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error {
-	return repo.DeleteSource(ctx, id)
+	if err := repo.DeleteSource(ctx, id); err != nil {
+		return err
+	}
+	s.removeCronJob(id)
+	return nil
 }
 
 func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {

@@ -77,3 +77,38 @@ func TestIntelligenceService(t *testing.T) {
 	sources, _ = service.ListSources(ctx)
 	assert.Len(t, sources, 0)
 }
+
+func TestIntelligenceUpdate(t *testing.T) {
+	cleanup := tests.SetupTestDB()
+	defer cleanup()
+	ctx := tests.SetupMockRootContext()
+
+	mmdb := ip.NewMMDBManager()
+	service := intelligence.NewIntelligenceService(mmdb)
+
+	source := &models.IntelligenceSource{
+		Name: "Original Name",
+		Type: "asn",
+		URL:  "http://example.com/asn.mmdb",
+	}
+	_ = service.CreateSource(ctx, source)
+
+	// Update existing source
+	source.Name = "Updated Name"
+	err := service.UpdateSource(ctx, source)
+	assert.NoError(t, err)
+
+	updated, _ := repo.GetSource(ctx, source.ID)
+	assert.Equal(t, "Updated Name", updated.Name)
+
+	// Update non-existing source
+	nonExisting := &models.IntelligenceSource{
+		ID:   "non-existing-id",
+		Name: "Non Existing",
+		Type: "asn",
+		URL:  "http://example.com/asn.mmdb",
+	}
+	err = service.UpdateSource(ctx, nonExisting)
+	assert.Error(t, err)
+	assert.True(t, assert.ErrorIs(t, err, common.ErrNotFound))
+}

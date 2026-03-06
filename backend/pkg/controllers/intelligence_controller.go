@@ -51,6 +51,29 @@ func CreateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, source)
 }
 
+// UpdateIntelligenceSourceHandler godoc
+// @Summary Update intelligence source
+// @Tags network/intelligence
+// @Accept json
+// @Produce json
+// @Param id path string true "Source ID"
+// @Param source body models.IntelligenceSource true "Source"
+// @Success 200 {object} models.IntelligenceSource
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Not Found"
+// @Security ApiKeyAuth
+// @Router /network/intelligence/sources/{id} [put]
+func UpdateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var source models.IntelligenceSource
+	if err := render.Bind(r, &source); err != nil { common.BadRequestError(w, r, http.StatusBadRequest, err.Error()); return }
+	source.ID = id
+	if err := intelligenceService.UpdateSource(r.Context(), &source); err != nil { HandleError(w, r, err); return }
+	common.Success(w, r, source)
+}
+
 // DeleteIntelligenceSourceHandler godoc
 // @Summary Delete intelligence source
 // @Tags network/intelligence
@@ -90,6 +113,7 @@ func IntelligenceRouter(r chi.Router) {
 		r.Use(middlewares.RequirePermission("admin", "network/intelligence"))
 		r.Get("/sources", ListIntelligenceSourcesHandler)
 		r.Post("/sources", CreateIntelligenceSourceHandler)
+		r.Put("/sources/{id}", UpdateIntelligenceSourceHandler)
 		r.Delete("/sources/{id}", DeleteIntelligenceSourceHandler)
 		r.Post("/sources/{id}/sync", SyncIntelligenceSourceHandler)
 	})
