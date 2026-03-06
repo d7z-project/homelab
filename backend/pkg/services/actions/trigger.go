@@ -1,11 +1,11 @@
-package orchestration
+package actions
 
 import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"homelab/pkg/models"
-	repo "homelab/pkg/repositories/orchestration"
+	repo "homelab/pkg/repositories/actions"
 	"log"
 	"sync"
 

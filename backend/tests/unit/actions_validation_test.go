@@ -2,8 +2,8 @@ package unit
 
 import (
 	"homelab/pkg/models"
-	"homelab/pkg/services/orchestration"
-	_ "homelab/pkg/services/orchestration/processors"
+	"homelab/pkg/services/actions"
+	_ "homelab/pkg/services/actions/processors"
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
 	"strings"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func TestOrchestrationRegexValidation(t *testing.T) {
+func TestActionsRegexValidation(t *testing.T) {
 	teardown := tests.SetupTestDB()
 	defer teardown()
 
@@ -41,13 +41,13 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 
 		// Valid input
-		_, err := orchestration.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"env": "prod"})
+		_, err := actions.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"env": "prod"})
 		if err != nil {
 			t.Errorf("Expected success for valid regex variable, got: %v", err)
 		}
 
 		// Invalid input
-		_, err = orchestration.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"env": "dev"})
+		_, err = actions.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"env": "dev"})
 		if err == nil {
 			t.Error("Expected error for invalid regex variable, got nil")
 		}
@@ -71,7 +71,7 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -79,7 +79,7 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		// Wait for completion (should fail)
 		var instance *models.TaskInstance
 		for i := 0; i < 10; i++ {
-			instance, _ = orchestration.GetTaskInstance(ctx, instanceID)
+			instance, _ = actions.GetTaskInstance(ctx, instanceID)
 			if instance != nil && instance.Status != "Running" {
 				break
 			}
@@ -120,7 +120,7 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -128,7 +128,7 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = orchestration.GetTaskInstance(ctx, instanceID)
+			instance, _ = actions.GetTaskInstance(ctx, instanceID)
 			if instance != nil && instance.Status != "Running" {
 				break
 			}
@@ -161,7 +161,7 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		err := orchestration.ValidateWorkflow(ctx, workflow)
+		err := actions.ValidateWorkflow(ctx, workflow)
 		if err == nil {
 			t.Error("Expected ValidateWorkflow to fail for invalid static parameter, but it succeeded")
 		} else if !strings.Contains(err.Error(), "does not match required format") {
@@ -173,7 +173,7 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 			"timeout": {Required: true},
 		}
 		workflow.Steps[0].Params["duration"] = "${{ vars.timeout }}"
-		err = orchestration.ValidateWorkflow(ctx, workflow)
+		err = actions.ValidateWorkflow(ctx, workflow)
 		if err != nil {
 			t.Errorf("Expected ValidateWorkflow to skip validation for template variable, but it failed: %v", err)
 		}
@@ -214,14 +214,14 @@ func TestOrchestrationRegexValidation(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 
 		// 1. Test ValidateWorkflow (Step Parameters)
-		err := orchestration.ValidateWorkflow(ctx, workflow)
+		err := actions.ValidateWorkflow(ctx, workflow)
 		if err != nil {
 			t.Errorf("ValidateWorkflow failed for empty optional parameter: %v", err)
 		}
 
 		// 2. Test TriggerWorkflow (Workflow Variables)
 		// Empty input for optional_var should succeed despite regex
-		_, err = orchestration.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"optional_var": ""})
+		_, err = actions.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"optional_var": ""})
 		if err != nil && !strings.Contains(err.Error(), "not found") { // Ignore "target workflow not found" error from the processor execution part
 			if strings.Contains(err.Error(), "match required format") {
 				t.Errorf("TriggerWorkflow failed regex for empty optional variable: %v", err)

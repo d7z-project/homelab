@@ -4,17 +4,17 @@ import (
 	"fmt"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
-	"homelab/pkg/services/orchestration"
+	"homelab/pkg/services/actions"
 )
 
 type DnsRecordProcessor struct{}
 
 func init() {
-	orchestration.Register(&DnsRecordProcessor{})
+	actions.Register(&DnsRecordProcessor{})
 }
 
-func (p *DnsRecordProcessor) Manifest() orchestration.StepManifest {
-	return orchestration.StepManifest{
+func (p *DnsRecordProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
 		ID:          "dns/record/create",
 		Name:        "DNS Record Creator",
 		Description: "在指定域名下创建一条新的解析记录，支持 A, CNAME, TXT 等类型。",
@@ -31,7 +31,7 @@ func (p *DnsRecordProcessor) Manifest() orchestration.StepManifest {
 	}
 }
 
-func (p *DnsRecordProcessor) Execute(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+func (p *DnsRecordProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 	domainID := inputs["domain_id"]
 	name := inputs["name"]
 	recordType := inputs["type"]

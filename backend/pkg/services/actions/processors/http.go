@@ -3,7 +3,7 @@ package processors
 import (
 	"fmt"
 	"homelab/pkg/models"
-	"homelab/pkg/services/orchestration"
+	"homelab/pkg/services/actions"
 	"io"
 	"net/http"
 )
@@ -11,11 +11,11 @@ import (
 type HttpFetchProcessor struct{}
 
 func init() {
-	orchestration.Register(&HttpFetchProcessor{})
+	actions.Register(&HttpFetchProcessor{})
 }
 
-func (p *HttpFetchProcessor) Manifest() orchestration.StepManifest {
-	return orchestration.StepManifest{
+func (p *HttpFetchProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
 		ID:          "core/fetch/http",
 		Name:        "HTTP Fetcher",
 		Description: "从指定 URL 下载文件到任务工作目录，支持 HTTP/HTTPS 协议。",
@@ -35,7 +35,7 @@ func (p *HttpFetchProcessor) Manifest() orchestration.StepManifest {
 	}
 }
 
-func (p *HttpFetchProcessor) Execute(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+func (p *HttpFetchProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 	url, ok := inputs["url"]
 	if !ok {
 		return nil, fmt.Errorf("missing required parameter: url")

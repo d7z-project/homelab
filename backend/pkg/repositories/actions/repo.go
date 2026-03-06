@@ -1,4 +1,4 @@
-package orchestration
+package actions
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 // Workflow Repo
 
 func GetWorkflow(ctx context.Context, id string) (*models.Workflow, error) {
-	db := common.DB.Child("system", "orchestration", "workflows")
+	db := common.DB.Child("system", "actions", "workflows")
 	data, err := db.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func GetWorkflow(ctx context.Context, id string) (*models.Workflow, error) {
 }
 
 func SaveWorkflow(ctx context.Context, workflow *models.Workflow) error {
-	db := common.DB.Child("system", "orchestration", "workflows")
+	db := common.DB.Child("system", "actions", "workflows")
 	data, err := json.Marshal(workflow)
 	if err != nil {
 		return err
@@ -34,12 +34,12 @@ func SaveWorkflow(ctx context.Context, workflow *models.Workflow) error {
 }
 
 func DeleteWorkflow(ctx context.Context, id string) error {
-	_, err := common.DB.Child("system", "orchestration", "workflows").Delete(ctx, id)
+	_, err := common.DB.Child("system", "actions", "workflows").Delete(ctx, id)
 	return err
 }
 
 func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
-	db := common.DB.Child("system", "orchestration", "workflows")
+	db := common.DB.Child("system", "actions", "workflows")
 	items, err := db.List(ctx, "")
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
 // TaskInstance Repo
 
 func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, error) {
-	db := common.DB.Child("system", "orchestration", "instances")
+	db := common.DB.Child("system", "actions", "instances")
 	data, err := db.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 }
 
 func SaveTaskInstance(ctx context.Context, instance *models.TaskInstance) error {
-	db := common.DB.Child("system", "orchestration", "instances")
+	db := common.DB.Child("system", "actions", "instances")
 	data, err := json.Marshal(instance)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func SaveTaskInstance(ctx context.Context, instance *models.TaskInstance) error 
 }
 
 func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
-	db := common.DB.Child("system", "orchestration", "instances")
+	db := common.DB.Child("system", "actions", "instances")
 	items, err := db.List(ctx, "")
 	if err != nil {
 		return nil, err
@@ -95,6 +95,6 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 }
 
 func DeleteTaskInstance(ctx context.Context, id string) error {
-	_, err := common.DB.Child("system", "orchestration", "instances").Delete(ctx, id)
+	_, err := common.DB.Child("system", "actions", "instances").Delete(ctx, id)
 	return err
 }

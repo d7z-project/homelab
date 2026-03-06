@@ -1,3 +1,4 @@
+export * from './actionsProbeRequest';
 export * from './auditLogsGet200Response';
 export * from './commonPaginatedResponse';
 export * from './commonResponse';
@@ -31,7 +32,6 @@ export * from './modelsStepTiming';
 export * from './modelsTaskInstance';
 export * from './modelsVarDefinition';
 export * from './modelsWorkflow';
-export * from './orchestrationProbeRequest';
 export * from './rbacRolebindingsGet200Response';
 export * from './rbacRolesGet200Response';
 export * from './rbacServiceaccountsGet200Response';

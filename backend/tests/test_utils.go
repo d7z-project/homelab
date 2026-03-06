@@ -7,8 +7,8 @@ import (
 	"homelab/pkg/models"
 	dnsrepo "homelab/pkg/repositories/dns"
 	rbacrepo "homelab/pkg/repositories/rbac"
+	"homelab/pkg/services/actions"
 	dnsservice "homelab/pkg/services/dns"
-	"homelab/pkg/services/orchestration"
 	"log"
 
 	"gopkg.d7z.net/middleware/kv"
@@ -45,7 +45,7 @@ func SetupTestDB() func() {
 	temp, _ := common.InitVFS("memory://")
 	common.TempDir = temp
 
-	orchestration.Init()
+	actions.Init()
 
 	return func() {
 		db.Close()

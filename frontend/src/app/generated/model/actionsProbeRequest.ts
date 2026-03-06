@@ -9,7 +9,7 @@
  */
 
 
-export interface OrchestrationProbeRequest { 
+export interface ActionsProbeRequest { 
     params?: { [key: string]: string; };
     processorId?: string;
 }

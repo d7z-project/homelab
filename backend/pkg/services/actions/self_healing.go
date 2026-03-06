@@ -1,8 +1,8 @@
-package orchestration
+package actions
 
 import (
 	"context"
-	repo "homelab/pkg/repositories/orchestration"
+	repo "homelab/pkg/repositories/actions"
 	"log"
 	"strings"
 
@@ -25,15 +25,15 @@ func BootUpSelfHealing() {
 			log.Printf("Self-healing: marked task %s as Failed", instance.ID)
 		}
 	}
-	// Clean up temp dirs in orch sub-directory (orchFS is already scoped to 'orch')
-	matches, err := afero.Glob(orchFS, "*")
+	// Clean up temp dirs in actions sub-directory (actionsFS is already scoped to 'orch')
+	matches, err := afero.Glob(actionsFS, "*")
 	if err != nil {
-		log.Printf("Self-healing failed to glob orchFS temp dirs: %v", err)
+		log.Printf("Self-healing failed to glob actionsFS temp dirs: %v", err)
 		return
 	}
 
 	for _, match := range matches {
-		if info, err := orchFS.Stat(match); err == nil && info.IsDir() {
+		if info, err := actionsFS.Stat(match); err == nil && info.IsDir() {
 			if strings.HasPrefix(match, TaskPrefix) {
 				// Parse instance ID (e.g., task_12345)
 				parts := strings.Split(match, "_")
@@ -43,7 +43,7 @@ func BootUpSelfHealing() {
 
 					// If task not found or NOT running, it's safe to clean up
 					if err != nil || (inst != nil && inst.Status != "Running") {
-						_ = orchFS.RemoveAll(match)
+						_ = actionsFS.RemoveAll(match)
 						log.Printf("Self-healing: removed legacy task directory %s", match)
 					} else {
 						log.Printf("Self-healing: skipped active task directory %s", match)

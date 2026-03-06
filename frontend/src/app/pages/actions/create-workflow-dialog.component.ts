@@ -43,7 +43,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import {
-  OrchestrationService,
+  ActionsService,
   RbacService,
   ModelsWorkflow,
   ModelsStep,
@@ -589,7 +589,7 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
 })
 export class CreateWorkflowDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private orchService = inject(OrchestrationService);
+  private orchService = inject(ActionsService);
   private rbacService = inject(RbacService);
   private cdr = inject(ChangeDetectorRef);
   private snackBar = inject(MatSnackBar);
@@ -633,7 +633,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   async ngOnInit() {
     try {
-      const manifests = await firstValueFrom(this.orchService.orchestrationManifestsGet());
+      const manifests = await firstValueFrom(this.orchService.actionsManifestsGet());
       this.manifests.set(manifests || []);
     } catch (e) {
       console.error('Failed to load initial data', e);
@@ -921,7 +921,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
     try {
       // Pre-save validation via backend
-      await firstValueFrom(this.orchService.orchestrationWorkflowsValidatePost(workflow));
+      await firstValueFrom(this.orchService.actionsWorkflowsValidatePost(workflow));
       this.dialogRef.close(workflow);
     } catch (err: any) {
       const errorMsg = err.error?.message || '配置校验失败';

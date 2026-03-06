@@ -13,12 +13,13 @@ func Router(r chi.Router) {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/ping", middlewares.PingHandler)
 		r.Post("/login", controllers.LoginHandler)
-		r.Route("/orchestration/webhooks/{token}", func(r chi.Router) {
+		r.Route("/actions/webhooks/{token}", func(r chi.Router) {
 			r.Get("/", controllers.WebhookHandler)
 			r.Post("/", controllers.WebhookHandler)
 		})
 
 		r.Group(func(r chi.Router) {
+			r.Use(render.SetContentType(render.ContentTypeJSON))
 			r.Use(middlewares.AuthMiddleware)
 			r.Get("/info", controllers.InfoHandler)
 			r.Post("/logout", controllers.LogoutHandler)
@@ -48,9 +49,9 @@ func Router(r chi.Router) {
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "orchestration"))
-				r.Use(middlewares.AuditMiddleware("orchestration"))
-				controllers.OrchestrationRouter(r)
+				r.Use(middlewares.RequirePermission("admin", "actions"))
+				r.Use(middlewares.AuditMiddleware("actions"))
+				controllers.ActionsRouter(r)
 			})
 		})
 	})

@@ -11,7 +11,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-var OrchIdRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+var ActionIdRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 // VarDefinition 描述一个工作流的输入变量
 type VarDefinition struct {
@@ -51,7 +51,7 @@ func (w *Workflow) Bind(r *http.Request) error {
 
 	// Validate Variable Keys
 	for k, v := range w.Vars {
-		if !OrchIdRegex.MatchString(k) {
+		if !ActionIdRegex.MatchString(k) {
 			return fmt.Errorf("invalid variable key '%s': only lowercase letters, numbers and underscores are allowed", k)
 		}
 		if w.CronEnabled && v.Required && v.Default == "" {
@@ -74,7 +74,7 @@ func (w *Workflow) Bind(r *http.Request) error {
 		if step.ID == "" {
 			return fmt.Errorf("step %d: ID is required", i+1)
 		}
-		if !OrchIdRegex.MatchString(step.ID) {
+		if !ActionIdRegex.MatchString(step.ID) {
 			return fmt.Errorf("step %d: invalid ID '%s': only lowercase letters, numbers and underscores are allowed", i+1, step.ID)
 		}
 		if stepIDs[step.ID] {

@@ -192,18 +192,18 @@ export class MainComponent {
         ],
       },
       {
-        link: '/orchestration',
-        icon: 'schema',
-        label: '任务编排',
+        link: '/actions',
+        icon: 'bolt',
+        label: '自动化',
         children: [
           {
-            link: '/orchestration',
+            link: '/actions',
             queryParams: { tab: 'workflow' },
             icon: 'view_kanban',
             label: '工作流模板',
           },
           {
-            link: '/orchestration',
+            link: '/actions',
             queryParams: { tab: 'instance' },
             icon: 'history',
             label: '运行记录',

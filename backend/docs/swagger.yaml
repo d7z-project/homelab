@@ -1,5 +1,14 @@
 basePath: /api/v1
 definitions:
+  actions.ProbeRequest:
+    properties:
+      params:
+        additionalProperties:
+          type: string
+        type: object
+      processorId:
+        type: string
+    type: object
   common.PaginatedResponse:
     properties:
       items: {}
@@ -456,21 +465,491 @@ definitions:
         description: Webhook 触发令牌
         type: string
     type: object
-  orchestration.ProbeRequest:
-    properties:
-      params:
-        additionalProperties:
-          type: string
-        type: object
-      processorId:
-        type: string
-    type: object
 info:
   contact: {}
   description: This is a sample server for homelab.
   title: Homelab API
   version: "1.0"
 paths:
+  /actions/instances:
+    get:
+      description: Retrieves a history of all triggered workflow instances and their
+        current status.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.TaskInstance'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+      summary: List all task instances
+      tags:
+      - actions
+  /actions/instances/{id}:
+    delete:
+      description: Removes a specific task instance and its execution logs.
+      parameters:
+      - description: Task Instance ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/common.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Instance Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a task instance
+      tags:
+      - actions
+  /actions/instances/{id}/cancel:
+    post:
+      description: Attempts to terminate a running task instance gracefully by sending
+        a cancellation signal.
+      parameters:
+      - description: Task Instance ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "404":
+          description: Instance Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel a task instance
+      tags:
+      - actions
+  /actions/instances/{id}/logs:
+    get:
+      description: Returns execution logs for a specific task instance or step, supporting
+        line offset for real-time refresh.
+      parameters:
+      - description: Task Instance ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Step Index (0 for engine, 1+ for steps)
+        in: query
+        name: stepIndex
+        type: integer
+      - description: Line offset to start reading from
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logs and next offset
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Instance Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get task instance logs
+      tags:
+      - actions
+  /actions/instances/cleanup:
+    post:
+      description: Removes task instances and logs older than the specified number
+        of days.
+      parameters:
+      - description: Days older than which instances will be deleted
+        in: query
+        name: days
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Number of deleted instances
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Cleanup old task instances
+      tags:
+      - actions
+  /actions/manifests:
+    get:
+      description: Returns the specifications (inputs/outputs) for all registered
+        task processors in the system.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.StepManifest'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List all step manifests
+      tags:
+      - actions
+  /actions/probe:
+    post:
+      consumes:
+      - application/json
+      description: Executes a specific processor in isolation within a temporary workspace.
+        Useful for debugging or testing parameters.
+      parameters:
+      - description: Probe Configuration
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/actions.ProbeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Processor Output Data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Test a single processor
+      tags:
+      - actions
+  /actions/validate/regex:
+    post:
+      description: Checks if a regex string is syntactically correct for Go.
+      parameters:
+      - description: Regex to validate
+        in: query
+        name: regex
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "400":
+          description: Invalid Regex
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Validate a regular expression
+      tags:
+      - actions
+  /actions/webhooks/{token}:
+    get:
+      description: Asynchronously triggers a workflow using its unique security token.
+        No standard authentication required.
+      parameters:
+      - description: Unique Webhook Token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: instanceId
+          schema:
+            type: string
+        "401":
+          description: Invalid Token
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Workflow Disabled
+          schema:
+            $ref: '#/definitions/common.Response'
+        "409":
+          description: Already Running
+          schema:
+            $ref: '#/definitions/common.Response'
+      summary: Trigger a workflow via webhook
+      tags:
+      - actions
+    post:
+      description: Asynchronously triggers a workflow using its unique security token.
+        No standard authentication required.
+      parameters:
+      - description: Unique Webhook Token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: instanceId
+          schema:
+            type: string
+        "401":
+          description: Invalid Token
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Workflow Disabled
+          schema:
+            $ref: '#/definitions/common.Response'
+        "409":
+          description: Already Running
+          schema:
+            $ref: '#/definitions/common.Response'
+      summary: Trigger a workflow via webhook
+      tags:
+      - actions
+  /actions/workflows:
+    get:
+      description: Retrieves a list of all defined workflow templates.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Workflow'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List all workflows
+      tags:
+      - actions
+    post:
+      consumes:
+      - application/json
+      description: Creates a new workflow template with the provided steps and configuration.
+      parameters:
+      - description: Workflow Configuration
+        in: body
+        name: workflow
+        required: true
+        schema:
+          $ref: '#/definitions/models.Workflow'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Workflow'
+        "400":
+          description: Bad Request (Validation Error)
+          schema:
+            $ref: '#/definitions/common.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a workflow
+      tags:
+      - actions
+  /actions/workflows/{id}:
+    delete:
+      description: Deletes a workflow template and all its associated task instances
+        and triggers.
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a workflow
+      tags:
+      - actions
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing workflow template. Performs validation on the
+        new configuration.
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated Workflow Configuration
+        in: body
+        name: workflow
+        required: true
+        schema:
+          $ref: '#/definitions/models.Workflow'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Workflow'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a workflow
+      tags:
+      - actions
+  /actions/workflows/{id}/webhook/reset:
+    post:
+      description: Regenerates the unique token used for Webhook triggering. The old
+        token will be immediately invalidated.
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New Webhook Token
+          schema:
+            type: string
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Reset a workflow webhook token
+      tags:
+      - actions
+  /actions/workflows/{workflowId}/run:
+    post:
+      consumes:
+      - application/json
+      description: Triggers the immediate execution of a workflow template. Returns
+        the generated instance ID.
+      parameters:
+      - description: Workflow ID to execute
+        in: path
+        name: workflowId
+        required: true
+        type: string
+      - description: Workflow Inputs
+        in: body
+        name: req
+        schema:
+          $ref: '#/definitions/models.RunWorkflowRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: instanceId
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+        "409":
+          description: Conflict (Already Running)
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Run a workflow manually
+      tags:
+      - actions
+  /actions/workflows/validate:
+    post:
+      consumes:
+      - application/json
+      description: Checks if a workflow configuration is valid, including variable
+        references and 'if' expressions.
+      parameters:
+      - description: Workflow to validate
+        in: body
+        name: workflow
+        required: true
+        schema:
+          $ref: '#/definitions/models.Workflow'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "400":
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Validate a workflow configuration
+      tags:
+      - actions
   /audit/logs:
     get:
       parameters:
@@ -889,485 +1368,6 @@ paths:
       summary: Logout
       tags:
       - auth
-  /orchestration/instances:
-    get:
-      description: Retrieves a history of all triggered workflow instances and their
-        current status.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.TaskInstance'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-      summary: List all task instances
-      tags:
-      - orchestration
-  /orchestration/instances/{id}:
-    delete:
-      description: Removes a specific task instance and its execution logs.
-      parameters:
-      - description: Task Instance ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: success
-          schema:
-            $ref: '#/definitions/common.Response'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/common.Response'
-        "404":
-          description: Instance Not Found
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a task instance
-      tags:
-      - orchestration
-  /orchestration/instances/{id}/cancel:
-    post:
-      description: Attempts to terminate a running task instance gracefully by sending
-        a cancellation signal.
-      parameters:
-      - description: Task Instance ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-        "404":
-          description: Instance Not Found
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Cancel a task instance
-      tags:
-      - orchestration
-  /orchestration/instances/{id}/logs:
-    get:
-      description: Returns execution logs for a specific task instance or step, supporting
-        line offset for real-time refresh.
-      parameters:
-      - description: Task Instance ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Step Index (0 for engine, 1+ for steps)
-        in: query
-        name: stepIndex
-        type: integer
-      - description: Line offset to start reading from
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Logs and next offset
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Instance Not Found
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Get task instance logs
-      tags:
-      - orchestration
-  /orchestration/instances/cleanup:
-    post:
-      description: Removes task instances and logs older than the specified number
-        of days.
-      parameters:
-      - description: Days older than which instances will be deleted
-        in: query
-        name: days
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: Number of deleted instances
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Cleanup old task instances
-      tags:
-      - orchestration
-  /orchestration/manifests:
-    get:
-      description: Returns the specifications (inputs/outputs) for all registered
-        task processors in the system.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.StepManifest'
-            type: array
-      security:
-      - ApiKeyAuth: []
-      summary: List all step manifests
-      tags:
-      - orchestration
-  /orchestration/probe:
-    post:
-      consumes:
-      - application/json
-      description: Executes a specific processor in isolation within a temporary workspace.
-        Useful for debugging or testing parameters.
-      parameters:
-      - description: Probe Configuration
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/orchestration.ProbeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Processor Output Data
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Test a single processor
-      tags:
-      - orchestration
-  /orchestration/validate/regex:
-    post:
-      description: Checks if a regex string is syntactically correct for Go.
-      parameters:
-      - description: Regex to validate
-        in: query
-        name: regex
-        required: true
-        type: string
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-        "400":
-          description: Invalid Regex
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Validate a regular expression
-      tags:
-      - orchestration
-  /orchestration/webhooks/{token}:
-    get:
-      description: Asynchronously triggers a workflow using its unique security token.
-        No standard authentication required.
-      parameters:
-      - description: Unique Webhook Token
-        in: path
-        name: token
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: instanceId
-          schema:
-            type: string
-        "401":
-          description: Invalid Token
-          schema:
-            $ref: '#/definitions/common.Response'
-        "403":
-          description: Workflow Disabled
-          schema:
-            $ref: '#/definitions/common.Response'
-        "409":
-          description: Already Running
-          schema:
-            $ref: '#/definitions/common.Response'
-      summary: Trigger a workflow via webhook
-      tags:
-      - orchestration
-    post:
-      description: Asynchronously triggers a workflow using its unique security token.
-        No standard authentication required.
-      parameters:
-      - description: Unique Webhook Token
-        in: path
-        name: token
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: instanceId
-          schema:
-            type: string
-        "401":
-          description: Invalid Token
-          schema:
-            $ref: '#/definitions/common.Response'
-        "403":
-          description: Workflow Disabled
-          schema:
-            $ref: '#/definitions/common.Response'
-        "409":
-          description: Already Running
-          schema:
-            $ref: '#/definitions/common.Response'
-      summary: Trigger a workflow via webhook
-      tags:
-      - orchestration
-  /orchestration/workflows:
-    get:
-      description: Retrieves a list of all defined workflow templates.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Workflow'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: List all workflows
-      tags:
-      - orchestration
-    post:
-      consumes:
-      - application/json
-      description: Creates a new workflow template with the provided steps and configuration.
-      parameters:
-      - description: Workflow Configuration
-        in: body
-        name: workflow
-        required: true
-        schema:
-          $ref: '#/definitions/models.Workflow'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Workflow'
-        "400":
-          description: Bad Request (Validation Error)
-          schema:
-            $ref: '#/definitions/common.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Create a workflow
-      tags:
-      - orchestration
-  /orchestration/workflows/{id}:
-    delete:
-      description: Deletes a workflow template and all its associated task instances
-        and triggers.
-      parameters:
-      - description: Workflow ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-        "404":
-          description: Workflow Not Found
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a workflow
-      tags:
-      - orchestration
-    put:
-      consumes:
-      - application/json
-      description: Updates an existing workflow template. Performs validation on the
-        new configuration.
-      parameters:
-      - description: Workflow ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Updated Workflow Configuration
-        in: body
-        name: workflow
-        required: true
-        schema:
-          $ref: '#/definitions/models.Workflow'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Workflow'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/common.Response'
-        "404":
-          description: Workflow Not Found
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Update a workflow
-      tags:
-      - orchestration
-  /orchestration/workflows/{id}/webhook/reset:
-    post:
-      description: Regenerates the unique token used for Webhook triggering. The old
-        token will be immediately invalidated.
-      parameters:
-      - description: Workflow ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: New Webhook Token
-          schema:
-            type: string
-        "404":
-          description: Workflow Not Found
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Reset a workflow webhook token
-      tags:
-      - orchestration
-  /orchestration/workflows/{workflowId}/run:
-    post:
-      consumes:
-      - application/json
-      description: Triggers the immediate execution of a workflow template. Returns
-        the generated instance ID.
-      parameters:
-      - description: Workflow ID to execute
-        in: path
-        name: workflowId
-        required: true
-        type: string
-      - description: Workflow Inputs
-        in: body
-        name: req
-        schema:
-          $ref: '#/definitions/models.RunWorkflowRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: instanceId
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/common.Response'
-        "404":
-          description: Workflow Not Found
-          schema:
-            $ref: '#/definitions/common.Response'
-        "409":
-          description: Conflict (Already Running)
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Run a workflow manually
-      tags:
-      - orchestration
-  /orchestration/workflows/validate:
-    post:
-      consumes:
-      - application/json
-      description: Checks if a workflow configuration is valid, including variable
-        references and 'if' expressions.
-      parameters:
-      - description: Workflow to validate
-        in: body
-        name: workflow
-        required: true
-        schema:
-          $ref: '#/definitions/models.Workflow'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-        "400":
-          description: Validation Error
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Validate a workflow configuration
-      tags:
-      - orchestration
   /rbac/resources/suggest:
     get:
       parameters:

@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { ActionsProbeRequest } from '../model/actionsProbeRequest';
+// @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
 import { ModelsRunWorkflowRequest } from '../model/modelsRunWorkflowRequest';
@@ -26,8 +28,6 @@ import { ModelsStepManifest } from '../model/modelsStepManifest';
 import { ModelsTaskInstance } from '../model/modelsTaskInstance';
 // @ts-ignore
 import { ModelsWorkflow } from '../model/modelsWorkflow';
-// @ts-ignore
-import { OrchestrationProbeRequest } from '../model/orchestrationProbeRequest';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -39,7 +39,7 @@ import { BaseService } from '../api.base.service';
 @Injectable({
   providedIn: 'root'
 })
-export class OrchestrationService extends BaseService {
+export class ActionsService extends BaseService {
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
@@ -48,18 +48,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Cleanup old task instances
      * Removes task instances and logs older than the specified number of days.
-     * @endpoint post /orchestration/instances/cleanup
+     * @endpoint post /actions/instances/cleanup
      * @param days Days older than which instances will be deleted
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationInstancesCleanupPost(days: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<{ [key: string]: any; }>;
-    public orchestrationInstancesCleanupPost(days: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<{ [key: string]: any; }>>;
-    public orchestrationInstancesCleanupPost(days: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<{ [key: string]: any; }>>;
-    public orchestrationInstancesCleanupPost(days: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsInstancesCleanupPost(days: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<{ [key: string]: any; }>;
+    public actionsInstancesCleanupPost(days: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<{ [key: string]: any; }>>;
+    public actionsInstancesCleanupPost(days: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<{ [key: string]: any; }>>;
+    public actionsInstancesCleanupPost(days: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (days === null || days === undefined) {
-            throw new Error('Required parameter days was null or undefined when calling orchestrationInstancesCleanupPost.');
+            throw new Error('Required parameter days was null or undefined when calling actionsInstancesCleanupPost.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -101,7 +101,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/instances/cleanup`;
+        let localVarPath = `/actions/instances/cleanup`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<{ [key: string]: any; }>('post', `${basePath}${localVarPath}`,
             {
@@ -120,15 +120,15 @@ export class OrchestrationService extends BaseService {
     /**
      * List all task instances
      * Retrieves a history of all triggered workflow instances and their current status.
-     * @endpoint get /orchestration/instances
+     * @endpoint get /actions/instances
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationInstancesGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<ModelsTaskInstance>>;
-    public orchestrationInstancesGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<ModelsTaskInstance>>>;
-    public orchestrationInstancesGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<ModelsTaskInstance>>>;
-    public orchestrationInstancesGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsInstancesGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<ModelsTaskInstance>>;
+    public actionsInstancesGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<ModelsTaskInstance>>>;
+    public actionsInstancesGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<ModelsTaskInstance>>>;
+    public actionsInstancesGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -155,7 +155,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/instances`;
+        let localVarPath = `/actions/instances`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Array<ModelsTaskInstance>>('get', `${basePath}${localVarPath}`,
             {
@@ -173,18 +173,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Cancel a task instance
      * Attempts to terminate a running task instance gracefully by sending a cancellation signal.
-     * @endpoint post /orchestration/instances/{id}/cancel
+     * @endpoint post /actions/instances/{id}/cancel
      * @param id Task Instance ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationInstancesIdCancelPost(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationInstancesIdCancelPost(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationInstancesIdCancelPost(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationInstancesIdCancelPost(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsInstancesIdCancelPost(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsInstancesIdCancelPost(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsInstancesIdCancelPost(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsInstancesIdCancelPost(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling orchestrationInstancesIdCancelPost.');
+            throw new Error('Required parameter id was null or undefined when calling actionsInstancesIdCancelPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -215,7 +215,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/instances/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/cancel`;
+        let localVarPath = `/actions/instances/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/cancel`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
             {
@@ -233,18 +233,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Delete a task instance
      * Removes a specific task instance and its execution logs.
-     * @endpoint delete /orchestration/instances/{id}
+     * @endpoint delete /actions/instances/{id}
      * @param id Task Instance ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationInstancesIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<CommonResponse>;
-    public orchestrationInstancesIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<CommonResponse>>;
-    public orchestrationInstancesIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<CommonResponse>>;
-    public orchestrationInstancesIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsInstancesIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<CommonResponse>;
+    public actionsInstancesIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<CommonResponse>>;
+    public actionsInstancesIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<CommonResponse>>;
+    public actionsInstancesIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling orchestrationInstancesIdDelete.');
+            throw new Error('Required parameter id was null or undefined when calling actionsInstancesIdDelete.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -275,7 +275,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/instances/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/actions/instances/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<CommonResponse>('delete', `${basePath}${localVarPath}`,
             {
@@ -293,7 +293,7 @@ export class OrchestrationService extends BaseService {
     /**
      * Get task instance logs
      * Returns execution logs for a specific task instance or step, supporting line offset for real-time refresh.
-     * @endpoint get /orchestration/instances/{id}/logs
+     * @endpoint get /actions/instances/{id}/logs
      * @param id Task Instance ID
      * @param stepIndex Step Index (0 for engine, 1+ for steps)
      * @param offset Line offset to start reading from
@@ -301,12 +301,12 @@ export class OrchestrationService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<{ [key: string]: any; }>;
-    public orchestrationInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<{ [key: string]: any; }>>;
-    public orchestrationInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<{ [key: string]: any; }>>;
-    public orchestrationInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<{ [key: string]: any; }>;
+    public actionsInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<{ [key: string]: any; }>>;
+    public actionsInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<{ [key: string]: any; }>>;
+    public actionsInstancesIdLogsGet(id: string, stepIndex?: number, offset?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling orchestrationInstancesIdLogsGet.');
+            throw new Error('Required parameter id was null or undefined when calling actionsInstancesIdLogsGet.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -357,7 +357,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/instances/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/logs`;
+        let localVarPath = `/actions/instances/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/logs`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<{ [key: string]: any; }>('get', `${basePath}${localVarPath}`,
             {
@@ -376,15 +376,15 @@ export class OrchestrationService extends BaseService {
     /**
      * List all step manifests
      * Returns the specifications (inputs/outputs) for all registered task processors in the system.
-     * @endpoint get /orchestration/manifests
+     * @endpoint get /actions/manifests
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationManifestsGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<ModelsStepManifest>>;
-    public orchestrationManifestsGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<ModelsStepManifest>>>;
-    public orchestrationManifestsGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<ModelsStepManifest>>>;
-    public orchestrationManifestsGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsManifestsGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<ModelsStepManifest>>;
+    public actionsManifestsGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<ModelsStepManifest>>>;
+    public actionsManifestsGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<ModelsStepManifest>>>;
+    public actionsManifestsGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -414,7 +414,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/manifests`;
+        let localVarPath = `/actions/manifests`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Array<ModelsStepManifest>>('get', `${basePath}${localVarPath}`,
             {
@@ -432,18 +432,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Test a single processor
      * Executes a specific processor in isolation within a temporary workspace. Useful for debugging or testing parameters.
-     * @endpoint post /orchestration/probe
+     * @endpoint post /actions/probe
      * @param req Probe Configuration
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationProbePost(req: OrchestrationProbeRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<{ [key: string]: string; }>;
-    public orchestrationProbePost(req: OrchestrationProbeRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<{ [key: string]: string; }>>;
-    public orchestrationProbePost(req: OrchestrationProbeRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<{ [key: string]: string; }>>;
-    public orchestrationProbePost(req: OrchestrationProbeRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsProbePost(req: ActionsProbeRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<{ [key: string]: string; }>;
+    public actionsProbePost(req: ActionsProbeRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<{ [key: string]: string; }>>;
+    public actionsProbePost(req: ActionsProbeRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<{ [key: string]: string; }>>;
+    public actionsProbePost(req: ActionsProbeRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (req === null || req === undefined) {
-            throw new Error('Required parameter req was null or undefined when calling orchestrationProbePost.');
+            throw new Error('Required parameter req was null or undefined when calling actionsProbePost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -483,7 +483,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/probe`;
+        let localVarPath = `/actions/probe`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<{ [key: string]: string; }>('post', `${basePath}${localVarPath}`,
             {
@@ -502,18 +502,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Validate a regular expression
      * Checks if a regex string is syntactically correct for Go.
-     * @endpoint post /orchestration/validate/regex
+     * @endpoint post /actions/validate/regex
      * @param regex Regex to validate
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationValidateRegexPost(regex: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationValidateRegexPost(regex: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationValidateRegexPost(regex: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationValidateRegexPost(regex: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsValidateRegexPost(regex: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsValidateRegexPost(regex: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsValidateRegexPost(regex: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsValidateRegexPost(regex: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: '*/*', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (regex === null || regex === undefined) {
-            throw new Error('Required parameter regex was null or undefined when calling orchestrationValidateRegexPost.');
+            throw new Error('Required parameter regex was null or undefined when calling actionsValidateRegexPost.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -555,7 +555,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/validate/regex`;
+        let localVarPath = `/actions/validate/regex`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
             {
@@ -574,18 +574,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Trigger a workflow via webhook
      * Asynchronously triggers a workflow using its unique security token. No standard authentication required.
-     * @endpoint get /orchestration/webhooks/{token}
+     * @endpoint get /actions/webhooks/{token}
      * @param token Unique Webhook Token
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWebhooksTokenGet(token: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationWebhooksTokenGet(token: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationWebhooksTokenGet(token: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationWebhooksTokenGet(token: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWebhooksTokenGet(token: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsWebhooksTokenGet(token: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsWebhooksTokenGet(token: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsWebhooksTokenGet(token: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (token === null || token === undefined) {
-            throw new Error('Required parameter token was null or undefined when calling orchestrationWebhooksTokenGet.');
+            throw new Error('Required parameter token was null or undefined when calling actionsWebhooksTokenGet.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -613,7 +613,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/webhooks/${this.configuration.encodeParam({name: "token", value: token, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/actions/webhooks/${this.configuration.encodeParam({name: "token", value: token, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('get', `${basePath}${localVarPath}`,
             {
@@ -631,18 +631,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Trigger a workflow via webhook
      * Asynchronously triggers a workflow using its unique security token. No standard authentication required.
-     * @endpoint post /orchestration/webhooks/{token}
+     * @endpoint post /actions/webhooks/{token}
      * @param token Unique Webhook Token
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWebhooksTokenPost(token: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationWebhooksTokenPost(token: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationWebhooksTokenPost(token: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationWebhooksTokenPost(token: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWebhooksTokenPost(token: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsWebhooksTokenPost(token: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsWebhooksTokenPost(token: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsWebhooksTokenPost(token: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (token === null || token === undefined) {
-            throw new Error('Required parameter token was null or undefined when calling orchestrationWebhooksTokenPost.');
+            throw new Error('Required parameter token was null or undefined when calling actionsWebhooksTokenPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -670,7 +670,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/webhooks/${this.configuration.encodeParam({name: "token", value: token, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/actions/webhooks/${this.configuration.encodeParam({name: "token", value: token, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
             {
@@ -688,15 +688,15 @@ export class OrchestrationService extends BaseService {
     /**
      * List all workflows
      * Retrieves a list of all defined workflow templates.
-     * @endpoint get /orchestration/workflows
+     * @endpoint get /actions/workflows
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<ModelsWorkflow>>;
-    public orchestrationWorkflowsGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<ModelsWorkflow>>>;
-    public orchestrationWorkflowsGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<ModelsWorkflow>>>;
-    public orchestrationWorkflowsGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWorkflowsGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<ModelsWorkflow>>;
+    public actionsWorkflowsGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<ModelsWorkflow>>>;
+    public actionsWorkflowsGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<ModelsWorkflow>>>;
+    public actionsWorkflowsGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -726,7 +726,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/workflows`;
+        let localVarPath = `/actions/workflows`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Array<ModelsWorkflow>>('get', `${basePath}${localVarPath}`,
             {
@@ -744,18 +744,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Delete a workflow
      * Deletes a workflow template and all its associated task instances and triggers.
-     * @endpoint delete /orchestration/workflows/{id}
+     * @endpoint delete /actions/workflows/{id}
      * @param id Workflow ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationWorkflowsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationWorkflowsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationWorkflowsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWorkflowsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsWorkflowsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsWorkflowsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsWorkflowsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling orchestrationWorkflowsIdDelete.');
+            throw new Error('Required parameter id was null or undefined when calling actionsWorkflowsIdDelete.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -786,7 +786,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/workflows/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/actions/workflows/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('delete', `${basePath}${localVarPath}`,
             {
@@ -804,22 +804,22 @@ export class OrchestrationService extends BaseService {
     /**
      * Update a workflow
      * Updates an existing workflow template. Performs validation on the new configuration.
-     * @endpoint put /orchestration/workflows/{id}
+     * @endpoint put /actions/workflows/{id}
      * @param id Workflow ID
      * @param workflow Updated Workflow Configuration
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsWorkflow>;
-    public orchestrationWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsWorkflow>>;
-    public orchestrationWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsWorkflow>>;
-    public orchestrationWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsWorkflow>;
+    public actionsWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsWorkflow>>;
+    public actionsWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsWorkflow>>;
+    public actionsWorkflowsIdPut(id: string, workflow: ModelsWorkflow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling orchestrationWorkflowsIdPut.');
+            throw new Error('Required parameter id was null or undefined when calling actionsWorkflowsIdPut.');
         }
         if (workflow === null || workflow === undefined) {
-            throw new Error('Required parameter workflow was null or undefined when calling orchestrationWorkflowsIdPut.');
+            throw new Error('Required parameter workflow was null or undefined when calling actionsWorkflowsIdPut.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -859,7 +859,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/workflows/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/actions/workflows/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsWorkflow>('put', `${basePath}${localVarPath}`,
             {
@@ -878,18 +878,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Reset a workflow webhook token
      * Regenerates the unique token used for Webhook triggering. The old token will be immediately invalidated.
-     * @endpoint post /orchestration/workflows/{id}/webhook/reset
+     * @endpoint post /actions/workflows/{id}/webhook/reset
      * @param id Workflow ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationWorkflowsIdWebhookResetPost(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWorkflowsIdWebhookResetPost(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsWorkflowsIdWebhookResetPost(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsWorkflowsIdWebhookResetPost(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsWorkflowsIdWebhookResetPost(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling orchestrationWorkflowsIdWebhookResetPost.');
+            throw new Error('Required parameter id was null or undefined when calling actionsWorkflowsIdWebhookResetPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -920,7 +920,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/workflows/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/webhook/reset`;
+        let localVarPath = `/actions/workflows/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/webhook/reset`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
             {
@@ -938,18 +938,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Create a workflow
      * Creates a new workflow template with the provided steps and configuration.
-     * @endpoint post /orchestration/workflows
+     * @endpoint post /actions/workflows
      * @param workflow Workflow Configuration
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsPost(workflow: ModelsWorkflow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsWorkflow>;
-    public orchestrationWorkflowsPost(workflow: ModelsWorkflow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsWorkflow>>;
-    public orchestrationWorkflowsPost(workflow: ModelsWorkflow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsWorkflow>>;
-    public orchestrationWorkflowsPost(workflow: ModelsWorkflow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWorkflowsPost(workflow: ModelsWorkflow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsWorkflow>;
+    public actionsWorkflowsPost(workflow: ModelsWorkflow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsWorkflow>>;
+    public actionsWorkflowsPost(workflow: ModelsWorkflow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsWorkflow>>;
+    public actionsWorkflowsPost(workflow: ModelsWorkflow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (workflow === null || workflow === undefined) {
-            throw new Error('Required parameter workflow was null or undefined when calling orchestrationWorkflowsPost.');
+            throw new Error('Required parameter workflow was null or undefined when calling actionsWorkflowsPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -989,7 +989,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/workflows`;
+        let localVarPath = `/actions/workflows`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsWorkflow>('post', `${basePath}${localVarPath}`,
             {
@@ -1008,18 +1008,18 @@ export class OrchestrationService extends BaseService {
     /**
      * Validate a workflow configuration
      * Checks if a workflow configuration is valid, including variable references and \&#39;if\&#39; expressions.
-     * @endpoint post /orchestration/workflows/validate
+     * @endpoint post /actions/workflows/validate
      * @param workflow Workflow to validate
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationWorkflowsValidatePost(workflow: ModelsWorkflow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsWorkflowsValidatePost(workflow: ModelsWorkflow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsWorkflowsValidatePost(workflow: ModelsWorkflow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (workflow === null || workflow === undefined) {
-            throw new Error('Required parameter workflow was null or undefined when calling orchestrationWorkflowsValidatePost.');
+            throw new Error('Required parameter workflow was null or undefined when calling actionsWorkflowsValidatePost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -1059,7 +1059,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/workflows/validate`;
+        let localVarPath = `/actions/workflows/validate`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
             {
@@ -1078,19 +1078,19 @@ export class OrchestrationService extends BaseService {
     /**
      * Run a workflow manually
      * Triggers the immediate execution of a workflow template. Returns the generated instance ID.
-     * @endpoint post /orchestration/workflows/{workflowId}/run
+     * @endpoint post /actions/workflows/{workflowId}/run
      * @param workflowId Workflow ID to execute
      * @param req Workflow Inputs
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public orchestrationWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public actionsWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public actionsWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public actionsWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public actionsWorkflowsWorkflowIdRunPost(workflowId: string, req?: ModelsRunWorkflowRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (workflowId === null || workflowId === undefined) {
-            throw new Error('Required parameter workflowId was null or undefined when calling orchestrationWorkflowsWorkflowIdRunPost.');
+            throw new Error('Required parameter workflowId was null or undefined when calling actionsWorkflowsWorkflowIdRunPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -1130,7 +1130,7 @@ export class OrchestrationService extends BaseService {
             }
         }
 
-        let localVarPath = `/orchestration/workflows/${this.configuration.encodeParam({name: "workflowId", value: workflowId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/run`;
+        let localVarPath = `/actions/workflows/${this.configuration.encodeParam({name: "workflowId", value: workflowId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/run`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
             {

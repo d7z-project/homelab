@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
-	"homelab/pkg/services/orchestration"
+	"homelab/pkg/services/actions"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,15 +16,15 @@ import (
 // ListWorkflowsHandler godoc
 // @Summary List all workflows
 // @Description Retrieves a list of all defined workflow templates.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Success 200 {array} models.Workflow
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 500 {object} common.Response "Internal Server Error"
 // @Security ApiKeyAuth
-// @Router /orchestration/workflows [get]
+// @Router /actions/workflows [get]
 func ListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
-	res, err := orchestration.ListWorkflows(r.Context())
+	res, err := actions.ListWorkflows(r.Context())
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -35,7 +35,7 @@ func ListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
 // CreateWorkflowHandler godoc
 // @Summary Create a workflow
 // @Description Creates a new workflow template with the provided steps and configuration.
-// @Tags orchestration
+// @Tags actions
 // @Accept json
 // @Produce json
 // @Param workflow body models.Workflow true "Workflow Configuration"
@@ -44,7 +44,7 @@ func ListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 500 {object} common.Response "Internal Server Error"
 // @Security ApiKeyAuth
-// @Router /orchestration/workflows [post]
+// @Router /actions/workflows [post]
 func CreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	var workflow models.Workflow
 	if err := render.Bind(r, &workflow); err != nil {
@@ -52,7 +52,7 @@ func CreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := orchestration.CreateWorkflow(r.Context(), &workflow)
+	res, err := actions.CreateWorkflow(r.Context(), &workflow)
 	if err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -63,7 +63,7 @@ func CreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // UpdateWorkflowHandler godoc
 // @Summary Update a workflow
 // @Description Updates an existing workflow template. Performs validation on the new configuration.
-// @Tags orchestration
+// @Tags actions
 // @Accept json
 // @Produce json
 // @Param id path string true "Workflow ID"
@@ -72,7 +72,7 @@ func CreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Security ApiKeyAuth
-// @Router /orchestration/workflows/{id} [put]
+// @Router /actions/workflows/{id} [put]
 func UpdateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var workflow models.Workflow
@@ -81,7 +81,7 @@ func UpdateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := orchestration.UpdateWorkflow(r.Context(), id, &workflow)
+	res, err := actions.UpdateWorkflow(r.Context(), id, &workflow)
 	if err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -92,16 +92,16 @@ func UpdateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteWorkflowHandler godoc
 // @Summary Delete a workflow
 // @Description Deletes a workflow template and all its associated task instances and triggers.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Param id path string true "Workflow ID"
 // @Success 200 {string} string "success"
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Security ApiKeyAuth
-// @Router /orchestration/workflows/{id} [delete]
+// @Router /actions/workflows/{id} [delete]
 func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := orchestration.DeleteWorkflow(r.Context(), id); err != nil {
+	if err := actions.DeleteWorkflow(r.Context(), id); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -111,13 +111,13 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // ListInstancesHandler godoc
 // @Summary List all task instances
 // @Description Retrieves a history of all triggered workflow instances and their current status.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Success 200 {array} models.TaskInstance
 // @Failure 401 {object} common.Response "Unauthorized"
-// @Router /orchestration/instances [get]
+// @Router /actions/instances [get]
 func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
-	res, err := orchestration.ListTaskInstances(r.Context())
+	res, err := actions.ListTaskInstances(r.Context())
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -128,7 +128,7 @@ func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // RunWorkflowHandler godoc
 // @Summary Run a workflow manually
 // @Description Triggers the immediate execution of a workflow template. Returns the generated instance ID.
-// @Tags orchestration
+// @Tags actions
 // @Accept json
 // @Produce json
 // @Param workflowId path string true "Workflow ID to execute"
@@ -138,7 +138,7 @@ func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Failure 409 {object} common.Response "Conflict (Already Running)"
 // @Security ApiKeyAuth
-// @Router /orchestration/workflows/{workflowId}/run [post]
+// @Router /actions/workflows/{workflowId}/run [post]
 func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowId")
 
@@ -146,7 +146,7 @@ func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	// Ignore errors, body is optional
 	_ = render.Bind(r, &req)
 
-	instanceID, err := orchestration.RunWorkflow(r.Context(), workflowID, req.Inputs, req.Trigger)
+	instanceID, err := actions.RunWorkflow(r.Context(), workflowID, req.Inputs, req.Trigger)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -157,16 +157,16 @@ func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteInstanceHandler godoc
 // @Summary Delete a task instance
 // @Description Removes a specific task instance and its execution logs.
-// @Tags orchestration
+// @Tags actions
 // @Param id path string true "Task Instance ID"
 // @Success 200 {object} common.Response "success"
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 404 {object} common.Response "Instance Not Found"
 // @Security ApiKeyAuth
-// @Router /orchestration/instances/{id} [delete]
+// @Router /actions/instances/{id} [delete]
 func DeleteInstanceHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := orchestration.DeleteTaskInstance(r.Context(), id); err != nil {
+	if err := actions.DeleteTaskInstance(r.Context(), id); err != nil {
 		common.BadRequestError(w, r, 0, err.Error())
 		return
 	}
@@ -176,11 +176,11 @@ func DeleteInstanceHandler(w http.ResponseWriter, r *http.Request) {
 // CleanupInstancesHandler godoc
 // @Summary Cleanup old task instances
 // @Description Removes task instances and logs older than the specified number of days.
-// @Tags orchestration
+// @Tags actions
 // @Param days query int true "Days older than which instances will be deleted"
 // @Success 200 {object} map[string]interface{} "Number of deleted instances"
 // @Security ApiKeyAuth
-// @Router /orchestration/instances/cleanup [post]
+// @Router /actions/instances/cleanup [post]
 func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 	daysStr := r.URL.Query().Get("days")
 	days, err := strconv.Atoi(daysStr)
@@ -189,7 +189,7 @@ func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := orchestration.CleanupTaskInstances(r.Context(), days)
+	count, err := actions.CleanupTaskInstances(r.Context(), days)
 	if err != nil {
 		common.InternalServerError(w, r, 0, err.Error())
 		return
@@ -200,7 +200,7 @@ func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // GetInstanceLogsHandler godoc
 // @Summary Get task instance logs
 // @Description Returns execution logs for a specific task instance or step, supporting line offset for real-time refresh.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Param id path string true "Task Instance ID"
 // @Param stepIndex query int false "Step Index (0 for engine, 1+ for steps)"
@@ -208,7 +208,7 @@ func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} map[string]interface{} "Logs and next offset"
 // @Failure 404 {object} common.Response "Instance Not Found"
 // @Security ApiKeyAuth
-// @Router /orchestration/instances/{id}/logs [get]
+// @Router /actions/instances/{id}/logs [get]
 func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	stepIndexStr := r.URL.Query().Get("stepIndex")
@@ -219,7 +219,7 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Sscanf(stepIndexStr, "%d", &stepIndex)
 		fmt.Sscanf(offsetStr, "%d", &offset)
 
-		logs, nextOffset, err := orchestration.GetStepLogs(r.Context(), id, stepIndex, offset)
+		logs, nextOffset, err := actions.GetStepLogs(r.Context(), id, stepIndex, offset)
 		if err != nil {
 			common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 			return
@@ -232,7 +232,7 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Default to all logs if no stepIndex provided
-	logs, err := orchestration.GetTaskLogs(r.Context(), id)
+	logs, err := actions.GetTaskLogs(r.Context(), id)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -243,16 +243,16 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 // CancelInstanceHandler godoc
 // @Summary Cancel a task instance
 // @Description Attempts to terminate a running task instance gracefully by sending a cancellation signal.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Param id path string true "Task Instance ID"
 // @Success 200 {string} string "success"
 // @Failure 404 {object} common.Response "Instance Not Found"
 // @Security ApiKeyAuth
-// @Router /orchestration/instances/{id}/cancel [post]
+// @Router /actions/instances/{id}/cancel [post]
 func CancelInstanceHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := orchestration.CancelTaskInstance(r.Context(), id); err != nil {
+	if err := actions.CancelTaskInstance(r.Context(), id); err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -262,34 +262,34 @@ func CancelInstanceHandler(w http.ResponseWriter, r *http.Request) {
 // ListManifestsHandler godoc
 // @Summary List all step manifests
 // @Description Returns the specifications (inputs/outputs) for all registered task processors in the system.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Success 200 {array} models.StepManifest
 // @Security ApiKeyAuth
-// @Router /orchestration/manifests [get]
+// @Router /actions/manifests [get]
 func ListManifestsHandler(w http.ResponseWriter, r *http.Request) {
-	res := orchestration.ListManifests()
+	res := actions.ListManifests()
 	common.Success(w, r, res)
 }
 
 // ProbeHandler godoc
 // @Summary Test a single processor
 // @Description Executes a specific processor in isolation within a temporary workspace. Useful for debugging or testing parameters.
-// @Tags orchestration
+// @Tags actions
 // @Accept json
 // @Produce json
-// @Param req body orchestration.ProbeRequest true "Probe Configuration"
+// @Param req body actions.ProbeRequest true "Probe Configuration"
 // @Success 200 {object} map[string]string "Processor Output Data"
 // @Security ApiKeyAuth
-// @Router /orchestration/probe [post]
+// @Router /actions/probe [post]
 func ProbeHandler(w http.ResponseWriter, r *http.Request) {
-	var req orchestration.ProbeRequest
+	var req actions.ProbeRequest
 	if err := render.Bind(r, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	res, err := orchestration.Probe(r.Context(), &req)
+	res, err := actions.Probe(r.Context(), &req)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -300,14 +300,14 @@ func ProbeHandler(w http.ResponseWriter, r *http.Request) {
 // ValidateWorkflowHandler godoc
 // @Summary Validate a workflow configuration
 // @Description Checks if a workflow configuration is valid, including variable references and 'if' expressions.
-// @Tags orchestration
+// @Tags actions
 // @Accept json
 // @Produce json
 // @Param workflow body models.Workflow true "Workflow to validate"
 // @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Validation Error"
 // @Security ApiKeyAuth
-// @Router /orchestration/workflows/validate [post]
+// @Router /actions/workflows/validate [post]
 func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	var workflow models.Workflow
 	if err := render.Bind(r, &workflow); err != nil {
@@ -315,7 +315,7 @@ func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := orchestration.ValidateWorkflow(r.Context(), &workflow); err != nil {
+	if err := actions.ValidateWorkflow(r.Context(), &workflow); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -325,16 +325,16 @@ func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // ResetWebhookTokenHandler godoc
 // @Summary Reset a workflow webhook token
 // @Description Regenerates the unique token used for Webhook triggering. The old token will be immediately invalidated.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Param id path string true "Workflow ID"
 // @Success 200 {string} string "New Webhook Token"
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Security ApiKeyAuth
-// @Router /orchestration/workflows/{id}/webhook/reset [post]
+// @Router /actions/workflows/{id}/webhook/reset [post]
 func ResetWebhookTokenHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	token, err := orchestration.ResetWebhookToken(r.Context(), id)
+	token, err := actions.ResetWebhookToken(r.Context(), id)
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -345,15 +345,15 @@ func ResetWebhookTokenHandler(w http.ResponseWriter, r *http.Request) {
 // WebhookHandler godoc
 // @Summary Trigger a workflow via webhook
 // @Description Asynchronously triggers a workflow using its unique security token. No standard authentication required.
-// @Tags orchestration
+// @Tags actions
 // @Produce json
 // @Param token path string true "Unique Webhook Token"
 // @Success 200 {string} string "instanceId"
 // @Failure 401 {object} common.Response "Invalid Token"
 // @Failure 403 {object} common.Response "Workflow Disabled"
 // @Failure 409 {object} common.Response "Already Running"
-// @Router /orchestration/webhooks/{token} [post]
-// @Router /orchestration/webhooks/{token} [get]
+// @Router /actions/webhooks/{token} [post]
+// @Router /actions/webhooks/{token} [get]
 func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
 	if token == "" {
@@ -362,7 +362,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find workflow by token
-	workflows, err := orchestration.ListWorkflows(r.Context())
+	workflows, err := actions.ListWorkflows(r.Context())
 	if err != nil {
 		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -390,7 +390,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Asynchronous execution
-	instanceID, err := orchestration.TriggerWorkflow(r.Context(), target, target.ServiceAccountID, "Webhook", inputs)
+	instanceID, err := actions.TriggerWorkflow(r.Context(), target, target.ServiceAccountID, "Webhook", inputs)
 	if err != nil {
 		errStr := err.Error()
 		if strings.Contains(errStr, "is disabled") {
@@ -411,24 +411,24 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 // ValidateRegexHandler godoc
 // @Summary Validate a regular expression
 // @Description Checks if a regex string is syntactically correct for Go.
-// @Tags orchestration
+// @Tags actions
 // @Param regex query string true "Regex to validate"
 // @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Invalid Regex"
 // @Security ApiKeyAuth
-// @Router /orchestration/validate/regex [post]
+// @Router /actions/validate/regex [post]
 func ValidateRegexHandler(w http.ResponseWriter, r *http.Request) {
 	regex := r.URL.Query().Get("regex")
-	if err := orchestration.ValidateRegex(regex); err != nil {
+	if err := actions.ValidateRegex(regex); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 	common.Success(w, r, "success")
 }
 
-// OrchestrationRouter registers the orchestration routes
-func OrchestrationRouter(r chi.Router) {
-	r.Route("/orchestration", func(r chi.Router) {
+// ActionsRouter registers the actions routes
+func ActionsRouter(r chi.Router) {
+	r.Route("/actions", func(r chi.Router) {
 		r.Get("/workflows", ListWorkflowsHandler)
 		r.Post("/workflows", CreateWorkflowHandler)
 		r.Post("/workflows/validate", ValidateWorkflowHandler)

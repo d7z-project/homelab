@@ -20,7 +20,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import {
-  OrchestrationService,
+  ActionsService,
   ModelsTaskInstance,
   ModelsLogEntry,
   ModelsWorkflow,
@@ -327,7 +327,7 @@ import { interval, Subscription, firstValueFrom } from 'rxjs';
 export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
 
-  private orchService = inject(OrchestrationService);
+  private orchService = inject(ActionsService);
   private breakpointObserver = inject(BreakpointObserver);
   private pollSubscription?: Subscription;
   private dialogData = inject(MAT_DIALOG_DATA);
@@ -375,7 +375,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     }, 1000);
 
     try {
-      const workflows = await firstValueFrom(this.orchService.orchestrationWorkflowsGet());
+      const workflows = await firstValueFrom(this.orchService.actionsWorkflowsGet());
       const wf = workflows.find((w) => w.id === this.instance().workflowId);
       if (wf) {
         this.workflowName.set(wf.name || wf.id || '');
@@ -407,7 +407,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
   async refresh() {
     try {
-      const insts = await firstValueFrom(this.orchService.orchestrationInstancesGet());
+      const insts = await firstValueFrom(this.orchService.actionsInstancesGet());
       const updated = insts.find((i) => i.id === this.instance().id);
       if (updated) {
         this.instance.set(updated);
@@ -483,7 +483,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
     try {
       const res = await firstValueFrom<any>(
-        this.orchService.orchestrationInstancesIdLogsGet(
+        this.orchService.actionsInstancesIdLogsGet(
           id,
           this.selectedStepIndex(),
           this.currentOffset,
@@ -506,7 +506,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     const id = this.instance().id;
     if (!id) return;
     try {
-      await firstValueFrom(this.orchService.orchestrationInstancesIdCancelPost(id));
+      await firstValueFrom(this.orchService.actionsInstancesIdCancelPost(id));
       this.refresh();
     } catch (e) {}
   }

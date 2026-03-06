@@ -1,15 +1,16 @@
 api.base.service.ts
 api.module.ts
+api/actions.service.ts
 api/api.ts
 api/audit.service.ts
 api/auth.service.ts
 api/discovery.service.ts
 api/dns.service.ts
-api/orchestration.service.ts
 api/rbac.service.ts
 configuration.ts
 encoder.ts
 index.ts
+model/actionsProbeRequest.ts
 model/auditLogsGet200Response.ts
 model/commonPaginatedResponse.ts
 model/commonResponse.ts
@@ -44,7 +45,6 @@ model/modelsStepTiming.ts
 model/modelsTaskInstance.ts
 model/modelsVarDefinition.ts
 model/modelsWorkflow.ts
-model/orchestrationProbeRequest.ts
 model/rbacRolebindingsGet200Response.ts
 model/rbacRolesGet200Response.ts
 model/rbacServiceaccountsGet200Response.ts

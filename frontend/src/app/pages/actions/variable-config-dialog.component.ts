@@ -7,7 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { OrchestrationService } from '../../generated';
+import { ActionsService } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -69,7 +69,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class VariableConfigDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private orchService = inject(OrchestrationService);
+  private orchService = inject(ActionsService);
   private snackBar = inject(MatSnackBar);
   private cdr = inject(ChangeDetectorRef);
 
@@ -109,7 +109,7 @@ export class VariableConfigDialogComponent implements OnInit {
         }
 
         try {
-          await firstValueFrom(this.orchService.orchestrationValidateRegexPost(regexFrontend));
+          await firstValueFrom(this.orchService.actionsValidateRegexPost(regexFrontend));
         } catch (e: any) {
           this.form
             .get('regexFrontend')
@@ -120,7 +120,7 @@ export class VariableConfigDialogComponent implements OnInit {
 
       if (regexBackend) {
         try {
-          await firstValueFrom(this.orchService.orchestrationValidateRegexPost(regexBackend));
+          await firstValueFrom(this.orchService.actionsValidateRegexPost(regexBackend));
         } catch (e: any) {
           this.form
             .get('regexBackend')

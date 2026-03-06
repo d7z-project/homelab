@@ -1,4 +1,4 @@
-# 通用任务编排引擎 (Shared Task Orchestration Engine)
+# 通用自动化引擎 (Shared Task Actions Engine)
 
 ## 1. 核心设计原则 (Core Principles)
 - **空间隔离与虚拟化**: 每个任务实例运行期间拥有独立的 **虚拟工作目录 (Scoped Workspace)**（锚定在 `common.TempDir/orch`）。采用 `afero.Fs` 实现 100% 逻辑路径操作，任务结束自动逻辑清理。
@@ -65,7 +65,7 @@ type TaskContext struct {
 ### 第二阶段：触发器与权限加固
 - [x] **Task 4: [Triggers]** 实现 `TriggerManager`：集成 Cron 调度与 Webhook Token 认证流。
 - [x] **Task 5: [RBAC]** 完成 Service 层细粒度资源过滤与显示名称/变量插值的权限隔离。
-- [x] **Task 6: [Discovery]** 注册 `orchestration` 资源到 RBAC 发现中心，支持 ID 级权限分配。
+- [x] **Task 6: [Discovery]** 注册 `actions` 资源到 RBAC 发现中心，支持 ID 级权限分配。
 
 ### 第三阶段：架构虚拟化与一致性重构 (NEW)
 - [x] **Task 7: [VFS]** 集成 `afero` 并实现基于 URL 的双重沙箱初始化。

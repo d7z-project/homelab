@@ -2,7 +2,7 @@ package unit
 
 import (
 	"homelab/pkg/models"
-	"homelab/pkg/services/orchestration"
+	"homelab/pkg/services/actions"
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
 	"testing"
@@ -12,8 +12,8 @@ func TestDataConsistency(t *testing.T) {
 	teardown := tests.SetupTestDB()
 	defer teardown()
 
-	// Use MockProcessor from orchestration_test.go
-	orchestration.Register(&MockProcessor{})
+	// Use MockProcessor from actions_test.go
+	actions.Register(&MockProcessor{})
 
 	ctx := tests.SetupMockRootContext()
 
@@ -47,7 +47,7 @@ func TestDataConsistency(t *testing.T) {
 		}
 	})
 
-	t.Run("Orchestration: Workflow with non-existent SA", func(t *testing.T) {
+	t.Run("Actions: Workflow with non-existent SA", func(t *testing.T) {
 		wf := &models.Workflow{
 			Name:             "Invalid WF",
 			ServiceAccountID: "non-existent-sa",
@@ -56,7 +56,7 @@ func TestDataConsistency(t *testing.T) {
 				{ID: "s1", Type: "test/mock", Name: "Step 1"},
 			},
 		}
-		_, err := orchestration.CreateWorkflow(ctx, wf)
+		_, err := actions.CreateWorkflow(ctx, wf)
 		if err == nil {
 			t.Error("Expected error when creating Workflow with non-existent SA")
 		}
@@ -79,7 +79,7 @@ func TestDataConsistency(t *testing.T) {
 				{ID: "s1", Type: "test/mock", Name: "Step 1"},
 			},
 		}
-		_, err = orchestration.CreateWorkflow(ctx, wf)
+		_, err = actions.CreateWorkflow(ctx, wf)
 		if err != nil {
 			t.Fatalf("Failed to create Workflow: %v", err)
 		}
@@ -94,7 +94,7 @@ func TestDataConsistency(t *testing.T) {
 
 		// 4. Delete Workflow first
 		// Need to get the generated ID
-		wfs, _ := orchestration.ListWorkflows(ctx)
+		wfs, _ := actions.ListWorkflows(ctx)
 		var wfID string
 		for _, w := range wfs {
 			if w.Name == "Worker Workflow" {
@@ -102,7 +102,7 @@ func TestDataConsistency(t *testing.T) {
 				break
 			}
 		}
-		err = orchestration.DeleteWorkflow(ctx, wfID)
+		err = actions.DeleteWorkflow(ctx, wfID)
 		if err != nil {
 			t.Fatalf("Failed to delete Workflow: %v", err)
 		}
@@ -114,7 +114,7 @@ func TestDataConsistency(t *testing.T) {
 		}
 	})
 
-	t.Run("Orchestration: RunWorkflow Idempotency with Lock", func(t *testing.T) {
+	t.Run("Actions: RunWorkflow Idempotency with Lock", func(t *testing.T) {
 		saID := "idemp-sa"
 		rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: saID, Name: "Idemp SA"})
 		wf := &models.Workflow{
@@ -123,13 +123,13 @@ func TestDataConsistency(t *testing.T) {
 			Enabled:          true,
 			Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},
 		}
-		wf, _ = orchestration.CreateWorkflow(ctx, wf)
+		wf, _ = actions.CreateWorkflow(ctx, wf)
 
 		// Trigger multiple times concurrently
 		results := make(chan error, 5)
 		for i := 0; i < 5; i++ {
 			go func() {
-				_, err := orchestration.RunWorkflow(ctx, wf.ID, nil)
+				_, err := actions.RunWorkflow(ctx, wf.ID, nil, "Manual")
 				results <- err
 			}()
 		}

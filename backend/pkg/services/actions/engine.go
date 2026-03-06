@@ -1,11 +1,11 @@
-package orchestration
+package actions
 
 import (
 	"context"
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
-	repo "homelab/pkg/repositories/orchestration"
+	repo "homelab/pkg/repositories/actions"
 	"regexp"
 	"runtime/debug"
 	"sync"
@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	OrchSubDir     = "orch"
+	ActionsSubDir  = "actions"
 	ProbeSubDir    = "probe"
 	LogSubDir      = "logs"
 	TaskPrefix     = "task_"
@@ -24,18 +24,18 @@ const (
 )
 
 var (
-	orchFS  afero.Fs
-	probeFS afero.Fs
-	logFS   afero.Fs
+	actionsFS afero.Fs
+	probeFS   afero.Fs
+	logFS     afero.Fs
 )
 
 // Init initializes the module-scoped virtual filesystems.
 // Must be called after common.TempDir is initialized.
 func Init() {
-	_ = common.TempDir.MkdirAll(OrchSubDir, 0755)
+	_ = common.TempDir.MkdirAll(ActionsSubDir, 0755)
 	_ = common.TempDir.MkdirAll(ProbeSubDir, 0755)
 	_ = common.TempDir.MkdirAll(LogSubDir, 0755)
-	orchFS = afero.NewBasePathFs(common.TempDir, OrchSubDir)
+	actionsFS = afero.NewBasePathFs(common.TempDir, ActionsSubDir)
 	probeFS = afero.NewBasePathFs(common.TempDir, ProbeSubDir)
 	logFS = afero.NewBasePathFs(common.TempDir, LogSubDir)
 }
@@ -70,7 +70,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	// Update activeWorkflows with the real instance ID
 	e.activeWorkflows.Store(workflow.ID, instance.ID)
 
-	workspace, err := afero.TempDir(orchFS, "", instance.ID)
+	workspace, err := afero.TempDir(actionsFS, "", instance.ID)
 	if err != nil {
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
@@ -78,7 +78,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	instance.Workspace = workspace
 
 	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
-		_ = orchFS.RemoveAll(workspace)
+		_ = actionsFS.RemoveAll(workspace)
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
 	}
@@ -142,7 +142,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 
 		if instance.Workspace != "" {
 			logger.Logf("Cleaning up workspace...")
-			_ = orchFS.RemoveAll(instance.Workspace)
+			_ = actionsFS.RemoveAll(instance.Workspace)
 		}
 
 		if instance.Status == "Running" {
@@ -251,7 +251,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		taskCtx := &TaskContext{
 			WorkflowID: workflow.ID,
 			InstanceID: instance.ID,
-			Workspace:  afero.NewBasePathFs(orchFS, instance.Workspace),
+			Workspace:  afero.NewBasePathFs(actionsFS, instance.Workspace),
 			UserID:     instance.UserID,
 			Context:    ctx,
 			CancelFunc: cancel,

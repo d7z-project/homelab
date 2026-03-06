@@ -15,7 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDividerModule } from '@angular/material/divider';
-import { OrchestrationService, ModelsWorkflow, ModelsTaskInstance } from '../../generated';
+import { ActionsService, ModelsWorkflow, ModelsTaskInstance } from '../../generated';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -37,7 +37,7 @@ import { TaskDetailDialogComponent } from './task-detail-dialog.component';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 
 @Component({
-  selector: 'app-orchestration',
+  selector: 'app-actions',
   standalone: true,
   imports: [
     CommonModule,
@@ -56,10 +56,10 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
     MatSlideToggleModule,
     PageHeaderComponent,
   ],
-  templateUrl: './orchestration.component.html',
+  templateUrl: './actions.component.html',
 })
-export class OrchestrationComponent implements OnInit, OnDestroy {
-  private orchService = inject(OrchestrationService);
+export class ActionsComponent implements OnInit, OnDestroy {
+  private orchService = inject(ActionsService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private clipboard = inject(Clipboard);
@@ -232,14 +232,14 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
   }
 
   async loadWorkflows() {
-    const data = await firstValueFrom(this.orchService.orchestrationWorkflowsGet());
+    const data = await firstValueFrom(this.orchService.actionsWorkflowsGet());
     this.workflows.set(data || []);
   }
 
   async loadInstances(silent = false) {
     if (!silent) this.loading.set(true);
     try {
-      const data = await firstValueFrom(this.orchService.orchestrationInstancesGet());
+      const data = await firstValueFrom(this.orchService.actionsInstancesGet());
       // Sort by startedAt descending
       const sorted = (data || []).sort((a, b) => {
         return new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime();
@@ -297,7 +297,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
         if (result) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.orchService.orchestrationWorkflowsPost(result));
+            await firstValueFrom(this.orchService.actionsWorkflowsPost(result));
             this.snackBar.open('工作流已创建', '关闭', { duration: 2000 });
             await this.loadWorkflows();
           } catch (err: any) {
@@ -324,7 +324,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
         if (result && wf.id) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.orchService.orchestrationWorkflowsIdPut(wf.id, result));
+            await firstValueFrom(this.orchService.actionsWorkflowsIdPut(wf.id, result));
             this.snackBar.open('工作流已更新', '关闭', { duration: 2000 });
             await this.loadWorkflows();
           } catch (err: any) {
@@ -352,7 +352,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       if (result && wf.id) {
         this.loading.set(true);
         try {
-          await firstValueFrom(this.orchService.orchestrationWorkflowsIdDelete(wf.id));
+          await firstValueFrom(this.orchService.actionsWorkflowsIdDelete(wf.id));
           this.snackBar.open('工作流已删除', '关闭', { duration: 2000 });
           await this.loadWorkflows();
         } catch (err) {
@@ -400,7 +400,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     try {
       await firstValueFrom(
-        this.orchService.orchestrationWorkflowsWorkflowIdRunPost(wf.id!, { inputs }),
+        this.orchService.actionsWorkflowsWorkflowIdRunPost(wf.id!, { inputs }),
       );
       this.snackBar.open('工作流已启动', '关闭', { duration: 3000 });
       this.filterByWorkflow(wf.id!);
@@ -416,7 +416,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     if (!inst.id) return;
     this.loading.set(true);
     try {
-      await firstValueFrom(this.orchService.orchestrationInstancesIdCancelPost(inst.id));
+      await firstValueFrom(this.orchService.actionsInstancesIdCancelPost(inst.id));
       this.snackBar.open('任务已取消', '关闭', { duration: 2000 });
       await this.loadInstances();
     } catch (err) {
@@ -441,7 +441,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
       if (result && inst.id) {
         this.loading.set(true);
         try {
-          await firstValueFrom(this.orchService.orchestrationInstancesIdDelete(inst.id));
+          await firstValueFrom(this.orchService.actionsInstancesIdDelete(inst.id));
           this.snackBar.open('记录已删除', '关闭', { duration: 2000 });
           await this.loadInstances();
         } catch (err) {
@@ -469,7 +469,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
         this.loading.set(true);
         try {
           const res = await firstValueFrom(
-            this.orchService.orchestrationInstancesCleanupPost(days),
+            this.orchService.actionsInstancesCleanupPost(days),
           );
           this.snackBar.open(`清理完成，共删除 ${(res as any).deleted || 0} 条记录`, '关闭', {
             duration: 3000,
@@ -518,7 +518,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     try {
       const newToken = await firstValueFrom(
-        this.orchService.orchestrationWorkflowsIdWebhookResetPost(wf.id),
+        this.orchService.actionsWorkflowsIdWebhookResetPost(wf.id),
       );
       wf.webhookToken = newToken; // Update local ref
       this.snackBar
@@ -534,7 +534,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
 
   copyWebhookUrl(wf: ModelsWorkflow) {
     if (!wf.webhookToken) return;
-    const url = `${window.location.protocol}//${window.location.host}/api/v1/orchestration/webhooks/${wf.webhookToken}`;
+    const url = `${window.location.protocol}//${window.location.host}/api/v1/actions/webhooks/${wf.webhookToken}`;
     this.clipboard.copy(url);
     this.snackBar.open('Webhook URL 已复制到剪贴板', '确定', { duration: 2000 });
   }
@@ -548,7 +548,7 @@ export class OrchestrationComponent implements OnInit, OnDestroy {
     wf.enabled = newStatus;
 
     try {
-      await firstValueFrom(this.orchService.orchestrationWorkflowsIdPut(wf.id, wf));
+      await firstValueFrom(this.orchService.actionsWorkflowsIdPut(wf.id, wf));
       this.snackBar.open(newStatus ? '工作流已启用' : '工作流已禁用', '关闭', { duration: 2000 });
     } catch (err) {
       wf.enabled = originalStatus; // Rollback

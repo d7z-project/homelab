@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"homelab/pkg/models"
-	"homelab/pkg/services/orchestration"
+	"homelab/pkg/services/actions"
 	"time"
 )
 
 type LoggerProcessor struct{}
 
 func init() {
-	orchestration.Register(&LoggerProcessor{})
-	orchestration.Register(&SleepProcessor{})
-	orchestration.Register(&FailProcessor{})
-	orchestration.Register(&WorkflowCallProcessor{})
+	actions.Register(&LoggerProcessor{})
+	actions.Register(&SleepProcessor{})
+	actions.Register(&FailProcessor{})
+	actions.Register(&WorkflowCallProcessor{})
 }
 
-func (p *LoggerProcessor) Manifest() orchestration.StepManifest {
-	return orchestration.StepManifest{
+func (p *LoggerProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
 		ID:          "core/logger",
 		Name:        "日志输出",
 		Description: "将指定的消息打印到任务日志中。",
@@ -29,7 +29,7 @@ func (p *LoggerProcessor) Manifest() orchestration.StepManifest {
 	}
 }
 
-func (p *LoggerProcessor) Execute(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+func (p *LoggerProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 	message := inputs["message"]
 	ctx.Logger.Log(message)
 	return nil, nil
@@ -38,8 +38,8 @@ func (p *LoggerProcessor) Execute(ctx *orchestration.TaskContext, inputs map[str
 // SleepProcessor pauses execution for a given duration.
 type SleepProcessor struct{}
 
-func (p *SleepProcessor) Manifest() orchestration.StepManifest {
-	return orchestration.StepManifest{
+func (p *SleepProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
 		ID:          "core/sleep",
 		Name:        "休眠等待",
 		Description: "暂停任务执行一段时间。",
@@ -56,7 +56,7 @@ func (p *SleepProcessor) Manifest() orchestration.StepManifest {
 	}
 }
 
-func (p *SleepProcessor) Execute(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+func (p *SleepProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 	d, err := time.ParseDuration(inputs["duration"])
 	if err != nil {
 		return nil, fmt.Errorf("invalid duration: %v", err)
@@ -73,8 +73,8 @@ func (p *SleepProcessor) Execute(ctx *orchestration.TaskContext, inputs map[stri
 // FailProcessor immediately fails the workflow.
 type FailProcessor struct{}
 
-func (p *FailProcessor) Manifest() orchestration.StepManifest {
-	return orchestration.StepManifest{
+func (p *FailProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
 		ID:          "core/fail",
 		Name:        "立即失败",
 		Description: "中断任务并标记为失败状态。",
@@ -85,15 +85,15 @@ func (p *FailProcessor) Manifest() orchestration.StepManifest {
 	}
 }
 
-func (p *FailProcessor) Execute(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+func (p *FailProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 	return nil, fmt.Errorf("explicit failure: %s", inputs["message"])
 }
 
 // WorkflowCallProcessor calls another workflow synchronously.
 type WorkflowCallProcessor struct{}
 
-func (p *WorkflowCallProcessor) Manifest() orchestration.StepManifest {
-	return orchestration.StepManifest{
+func (p *WorkflowCallProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
 		ID:          "core/workflow_call",
 		Name:        "调用工作流",
 		Description: "同步调用另一个工作流，并等待其执行完成。不允许自我调用。",
@@ -102,7 +102,7 @@ func (p *WorkflowCallProcessor) Manifest() orchestration.StepManifest {
 				Name:        "workflow_id",
 				Description: "要调用的目标工作流 ID",
 				Optional:    false,
-				LookupCode:  "orchestration/workflows",
+				LookupCode:  "actions/workflows",
 			},
 			{
 				Name:          "vars",
@@ -119,7 +119,7 @@ func (p *WorkflowCallProcessor) Manifest() orchestration.StepManifest {
 	}
 }
 
-func (p *WorkflowCallProcessor) Execute(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+func (p *WorkflowCallProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 	targetID := inputs["workflow_id"]
 	if targetID == ctx.WorkflowID {
 		return nil, fmt.Errorf("recursion detected: a workflow cannot call itself")
@@ -134,13 +134,13 @@ func (p *WorkflowCallProcessor) Execute(ctx *orchestration.TaskContext, inputs m
 	}
 
 	// Fetch target workflow
-	wf, err := orchestration.GetWorkflow(ctx.Context, targetID)
+	wf, err := actions.GetWorkflow(ctx.Context, targetID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch target workflow %s: %v", targetID, err)
 	}
 
 	ctx.Logger.Logf("Triggering sub-workflow: %s (%s)", wf.Name, targetID)
-	instanceID, err := orchestration.GlobalExecutor.Execute(ctx.Context, ctx.UserID, wf, "SubWorkflow:"+ctx.InstanceID, subVars)
+	instanceID, err := actions.GlobalExecutor.Execute(ctx.Context, ctx.UserID, wf, "SubWorkflow:"+ctx.InstanceID, subVars)
 	if err != nil {
 		return nil, fmt.Errorf("failed to trigger sub-workflow: %v", err)
 	}
@@ -156,7 +156,7 @@ func (p *WorkflowCallProcessor) Execute(ctx *orchestration.TaskContext, inputs m
 		case <-ctx.Context.Done():
 			return nil, ctx.Context.Err()
 		case <-ticker.C:
-			inst, err := orchestration.GetTaskInstance(ctx.Context, instanceID)
+			inst, err := actions.GetTaskInstance(ctx.Context, instanceID)
 			if err != nil {
 				return nil, fmt.Errorf("failed to poll sub-workflow status: %v", err)
 			}

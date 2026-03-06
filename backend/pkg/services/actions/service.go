@@ -1,4 +1,4 @@
-package orchestration
+package actions
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
-	repo "homelab/pkg/repositories/orchestration"
+	repo "homelab/pkg/repositories/actions"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	"homelab/pkg/services/discovery"
 	"homelab/pkg/services/rbac"
@@ -35,8 +35,8 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 
 	// Validate variables
 	for k, v := range workflow.Vars {
-		if !models.OrchIdRegex.MatchString(k) {
-			return fmt.Errorf("invalid variable key: %s (must match %s)", k, models.OrchIdRegex.String())
+		if !models.ActionIdRegex.MatchString(k) {
+			return fmt.Errorf("invalid variable key: %s (must match %s)", k, models.ActionIdRegex.String())
 		}
 		if v.RegexBackend != "" {
 			if _, err := regexp.Compile(v.RegexBackend); err != nil {
@@ -147,9 +147,9 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 		return nil, err
 	}
 
-	// Permission check: orchestration/<workflow-id>
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
-		return nil, fmt.Errorf("permission denied: orchestration/%s", id)
+	// Permission check: actions/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
+		return nil, fmt.Errorf("permission denied: actions/%s", id)
 	}
 
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
@@ -226,9 +226,9 @@ func ResetWebhookToken(ctx context.Context, id string) (string, error) {
 		return "", err
 	}
 
-	// Permission check: orchestration/<workflow-id>
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
-		return "", fmt.Errorf("permission denied: orchestration/%s", id)
+	// Permission check: actions/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
+		return "", fmt.Errorf("permission denied: actions/%s", id)
 	}
 
 	wf.WebhookToken = GenerateWebhookToken()
@@ -248,9 +248,9 @@ func GetWorkflow(ctx context.Context, id string) (*models.Workflow, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Permission check: orchestration/<workflow-id>
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
-		return nil, fmt.Errorf("permission denied: orchestration/%s", id)
+	// Permission check: actions/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
+		return nil, fmt.Errorf("permission denied: actions/%s", id)
 	}
 	return wf, nil
 }
@@ -261,9 +261,9 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 		return err
 	}
 
-	// Permission check: orchestration/<workflow-id>
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + id) {
-		return fmt.Errorf("permission denied: orchestration/%s", id)
+	// Permission check: actions/<workflow-id>
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
+		return fmt.Errorf("permission denied: actions/%s", id)
 	}
 
 	// Cascade delete instances and logs
@@ -297,7 +297,7 @@ func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
 	perms := commonauth.PermissionsFromContext(ctx)
 	var filtered []models.Workflow
 	for _, wf := range all {
-		if perms.IsAllowed("orchestration/" + wf.ID) {
+		if perms.IsAllowed("actions/" + wf.ID) {
 			filtered = append(filtered, wf)
 		}
 	}
@@ -314,8 +314,8 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 
 	// Permission check for the workflow itself
 	if triggerSource == "Manual" {
-		if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + workflow.ID) {
-			return "", fmt.Errorf("permission denied: orchestration/%s", workflow.ID)
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + workflow.ID) {
+			return "", fmt.Errorf("permission denied: actions/%s", workflow.ID)
 		}
 	}
 
@@ -362,7 +362,7 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 
 func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]string, triggerSource string) (string, error) {
 	// Use distributed lock to prevent concurrent triggers for the same workflow
-	lockKey := "orch:trigger:" + workflowID
+	lockKey := "action:trigger:" + workflowID
 	release := common.Locker.TryLock(ctx, lockKey)
 	if release == nil {
 		return "", fmt.Errorf("workflow '%s' is already being triggered, please wait", workflowID)
@@ -375,8 +375,8 @@ func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]strin
 	}
 
 	// Explicit permission check
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + workflowID) {
-		return "", fmt.Errorf("permission denied: orchestration/%s", workflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + workflowID) {
+		return "", fmt.Errorf("permission denied: actions/%s", workflowID)
 	}
 
 	authCtx := commonauth.FromContext(ctx)
@@ -402,8 +402,8 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 		return nil, err
 	}
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + inst.WorkflowID) {
-		return nil, fmt.Errorf("permission denied: orchestration/%s", inst.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.WorkflowID) {
+		return nil, fmt.Errorf("permission denied: actions/%s", inst.WorkflowID)
 	}
 
 	// Populate logs from all parts
@@ -426,7 +426,7 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	perms := commonauth.PermissionsFromContext(ctx)
 	var filtered []models.TaskInstance
 	for _, inst := range all {
-		if perms.IsAllowed("orchestration/" + inst.WorkflowID) {
+		if perms.IsAllowed("actions/" + inst.WorkflowID) {
 			// Populate logs from all parts
 			logs, _ := ReadAllTaskLogs(inst.ID)
 			if logs != nil {
@@ -447,8 +447,8 @@ func DeleteTaskInstance(ctx context.Context, id string) error {
 	}
 
 	// Permission check for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + inst.WorkflowID) {
-		return fmt.Errorf("permission denied: orchestration/%s", inst.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.WorkflowID) {
+		return fmt.Errorf("permission denied: actions/%s", inst.WorkflowID)
 	}
 
 	// Don't allow deleting running tasks
@@ -477,7 +477,7 @@ func CleanupTaskInstances(ctx context.Context, days int) (int, error) {
 
 	for _, inst := range all {
 		// Only cleanup instances we have permission for
-		if !perms.IsAllowed("orchestration/" + inst.WorkflowID) {
+		if !perms.IsAllowed("actions/" + inst.WorkflowID) {
 			continue
 		}
 
@@ -498,8 +498,8 @@ func CancelTaskInstance(ctx context.Context, id string) error {
 	}
 
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + instance.WorkflowID) {
-		return fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.WorkflowID) {
+		return fmt.Errorf("permission denied: actions/%s", instance.WorkflowID)
 	}
 
 	message := fmt.Sprintf("Requested cancellation of task instance %s", id)
@@ -535,8 +535,8 @@ func GetTaskLogs(ctx context.Context, id string) ([]models.LogEntry, error) {
 	}
 
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + instance.WorkflowID) {
-		return nil, fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.WorkflowID) {
+		return nil, fmt.Errorf("permission denied: actions/%s", instance.WorkflowID)
 	}
 
 	// Read all logs from VFS
@@ -555,8 +555,8 @@ func GetStepLogs(ctx context.Context, id string, stepIndex int, offset int) ([]m
 	}
 
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration/" + instance.WorkflowID) {
-		return nil, 0, fmt.Errorf("permission denied: orchestration/%s", instance.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.WorkflowID) {
+		return nil, 0, fmt.Errorf("permission denied: actions/%s", instance.WorkflowID)
 	}
 
 	return ReadStepLogs(id, stepIndex, offset)
@@ -626,8 +626,8 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 
 func init() {
 	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
-	rbac.RegisterResourceWithVerbs("orchestration", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
-		// prefix is everything after "orchestration/"
+	rbac.RegisterResourceWithVerbs("actions", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+		// prefix is everything after "actions/"
 		subs := []string{"workflows", "instances", "manifests", "probe"}
 		res := make([]models.DiscoverResult, 0)
 		for _, s := range subs {
@@ -670,8 +670,8 @@ func init() {
 		return res, nil
 	}, standardVerbs)
 
-	discovery.Register("orchestration/workflows", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
-		if !commonauth.PermissionsFromContext(ctx).IsAllowed("orchestration") {
+	discovery.Register("actions/workflows", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions") {
 			return nil, 0, fmt.Errorf("permission denied")
 		}
 		workflows, err := repo.ListWorkflows(ctx)

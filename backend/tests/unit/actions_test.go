@@ -3,8 +3,8 @@ package unit
 import (
 	"context"
 	"homelab/pkg/models"
-	"homelab/pkg/services/orchestration"
-	_ "homelab/pkg/services/orchestration/processors"
+	"homelab/pkg/services/actions"
+	_ "homelab/pkg/services/actions/processors"
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
 	"strings"
@@ -13,11 +13,11 @@ import (
 )
 
 type MockProcessor struct {
-	ExecuteFunc func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error)
+	ExecuteFunc func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error)
 }
 
-func (m *MockProcessor) Manifest() orchestration.StepManifest {
-	return orchestration.StepManifest{
+func (m *MockProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
 		ID:          "test/mock",
 		Description: "A mock processor for testing.",
 		Params: []models.ParamDefinition{
@@ -29,11 +29,11 @@ func (m *MockProcessor) Manifest() orchestration.StepManifest {
 	}
 }
 
-func (m *MockProcessor) Execute(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+func (m *MockProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 	return m.ExecuteFunc(ctx, inputs)
 }
 
-func TestOrchestrationEngine(t *testing.T) {
+func TestActionsEngine(t *testing.T) {
 	teardown := tests.SetupTestDB()
 	defer teardown()
 
@@ -45,10 +45,10 @@ func TestOrchestrationEngine(t *testing.T) {
 
 	// Register mock
 	mock := &MockProcessor{}
-	orchestration.Register(mock)
+	actions.Register(mock)
 
 	t.Run("Basic Execution and Parameter Mapping", func(t *testing.T) {
-		mock.ExecuteFunc = func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			if ctx.InstanceID == "probe" {
 				return nil, nil
 			}
@@ -78,7 +78,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "test-user", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "test-user", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -86,7 +86,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = orchestration.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
 			if instance != nil && instance.Status != "Running" {
 				break
 			}
@@ -104,7 +104,7 @@ func TestOrchestrationEngine(t *testing.T) {
 	t.Run("If Condition Evaluation", func(t *testing.T) {
 		step1Executed := false
 		step2Executed := false
-		mock.ExecuteFunc = func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			if inputs["input_val"] == "run_me" {
 				step1Executed = true
 			}
@@ -135,14 +135,14 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
 		// Wait for completion
 		for i := 0; i < 10; i++ {
-			inst, _ := orchestration.GetTaskInstance(context.Background(), instanceID)
+			inst, _ := actions.GetTaskInstance(context.Background(), instanceID)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
@@ -158,7 +158,7 @@ func TestOrchestrationEngine(t *testing.T) {
 	})
 
 	t.Run("Concurrency Control", func(t *testing.T) {
-		mock.ExecuteFunc = func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			time.Sleep(1 * time.Second)
 			return nil, nil
 		}
@@ -174,21 +174,21 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Start first instance
-		id1, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		id1, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("First execution failed: %v", err)
 		}
-		defer orchestration.GlobalExecutor.Cancel(id1)
+		defer actions.GlobalExecutor.Cancel(id1)
 
 		// Try to start second instance immediately
-		_, err = orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		_, err = actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err == nil {
 			t.Error("Expected second execution to fail due to concurrency control")
 		}
 	})
 
 	t.Run("Timeout Mechanism", func(t *testing.T) {
-		mock.ExecuteFunc = func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			select {
 			case <-ctx.Context.Done():
 				return nil, ctx.Context.Err()
@@ -208,7 +208,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -216,7 +216,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		// Wait for timeout
 		var instance *models.TaskInstance
 		for i := 0; i < 30; i++ {
-			instance, _ = orchestration.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
 			if instance != nil && (instance.Status == "Failed" || instance.Status == "Cancelled") {
 				break
 			}
@@ -229,7 +229,7 @@ func TestOrchestrationEngine(t *testing.T) {
 	})
 
 	t.Run("Variable Interpolation", func(t *testing.T) {
-		mock.ExecuteFunc = func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			return map[string]string{"result": inputs["input_val"] + "-ok"}, nil
 		}
 
@@ -253,7 +253,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		inputs := map[string]string{"target": "PROD", "opt": "yes"}
-		instanceID, err := orchestration.TriggerWorkflow(context.Background(), workflow, "root", "Manual", inputs)
+		instanceID, err := actions.TriggerWorkflow(context.Background(), workflow, "root", "Manual", inputs)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -261,7 +261,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = orchestration.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
 			if instance != nil && instance.Status == "Success" {
 				break
 			}
@@ -275,7 +275,7 @@ func TestOrchestrationEngine(t *testing.T) {
 
 	t.Run("Optional Variable Syntax", func(t *testing.T) {
 		var receivedInput string
-		mock.ExecuteFunc = func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			receivedInput = inputs["input_val"]
 			return nil, nil
 		}
@@ -294,14 +294,14 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.TriggerWorkflow(context.Background(), workflow, "root", "Manual", nil)
+		instanceID, err := actions.TriggerWorkflow(context.Background(), workflow, "root", "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
-			inst, _ := orchestration.GetTaskInstance(context.Background(), instanceID)
+			inst, _ := actions.GetTaskInstance(context.Background(), instanceID)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
@@ -315,7 +315,7 @@ func TestOrchestrationEngine(t *testing.T) {
 	})
 
 	t.Run("Panic Recovery", func(t *testing.T) {
-		mock.ExecuteFunc = func(ctx *orchestration.TaskContext, inputs map[string]string) (map[string]string, error) {
+		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			panic("intentional panic for testing")
 		}
 
@@ -329,7 +329,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := orchestration.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -337,7 +337,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = orchestration.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
 			if instance != nil && instance.Status == "Failed" {
 				break
 			}
@@ -362,14 +362,14 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// 1. TriggerWorkflow (simulating Cron/Webhook) should fail
-		_, err := orchestration.TriggerWorkflow(context.Background(), workflow, "cron", "Cron", nil)
+		_, err := actions.TriggerWorkflow(context.Background(), workflow, "cron", "Cron", nil)
 		if err == nil {
 			t.Error("Expected TriggerWorkflow to fail for disabled workflow")
 		}
 
 		// 2. RunWorkflow (Manual) should ALSO fail if disabled (as per new requirements)
 		ctx := tests.SetupMockRootContext()
-		_, err = orchestration.TriggerWorkflow(ctx, workflow, "root", "Manual", nil)
+		_, err = actions.TriggerWorkflow(ctx, workflow, "root", "Manual", nil)
 		if err == nil {
 			t.Error("Expected Manual trigger to fail for disabled workflow")
 		}
@@ -387,7 +387,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			},
 			Steps: []models.Step{{ID: "s1", Type: "test/mock"}},
 		}
-		err := orchestration.ValidateWorkflow(ctx, wf1)
+		err := actions.ValidateWorkflow(ctx, wf1)
 		if err == nil {
 			t.Error("Expected error for invalid variable key (capitals)")
 		}
@@ -400,7 +400,7 @@ func TestOrchestrationEngine(t *testing.T) {
 				{ID: "Step_1", Type: "test/mock"},
 			},
 		}
-		err = orchestration.ValidateWorkflow(ctx, wf2)
+		err = actions.ValidateWorkflow(ctx, wf2)
 		if err == nil {
 			t.Error("Expected error for invalid step ID (capitals)")
 		}
@@ -416,7 +416,7 @@ func TestOrchestrationEngine(t *testing.T) {
 				{ID: "valid_step_id", Type: "test/mock"},
 			},
 		}
-		err = orchestration.ValidateWorkflow(ctx, wf3)
+		err = actions.ValidateWorkflow(ctx, wf3)
 		if err != nil {
 			t.Errorf("Expected no error for valid IDs, got: %v", err)
 		}
@@ -427,28 +427,28 @@ func TestOrchestrationEngine(t *testing.T) {
 		wf1 := &models.Workflow{Name: "WF 1", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
 		wf2 := &models.Workflow{Name: "WF 2", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
 		var err error
-		wf1, err = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf1)
+		wf1, err = actions.CreateWorkflow(tests.SetupMockRootContext(), wf1)
 		if err != nil {
 			t.Fatalf("Failed to create wf1: %v", err)
 		}
-		wf2, err = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf2)
+		wf2, err = actions.CreateWorkflow(tests.SetupMockRootContext(), wf2)
 		if err != nil {
 			t.Fatalf("Failed to create wf2: %v", err)
 		}
 
 		// Mock user with permission only for wf1.ID
 		userCtx := tests.SetupMockContext("user1", []models.PolicyRule{
-			{Resource: "orchestration/" + wf1.ID, Verbs: []string{"get", "list"}},
+			{Resource: "actions/" + wf1.ID, Verbs: []string{"get", "list"}},
 		})
 
 		// ListWorkflows should only return wf1
-		list, _ := orchestration.ListWorkflows(userCtx)
+		list, _ := actions.ListWorkflows(userCtx)
 		if len(list) != 1 || list[0].ID != wf1.ID {
 			t.Errorf("Expected 1 workflow (wf1), got %d", len(list))
 		}
 
 		// GetWorkflow wf2 should fail
-		_, err = orchestration.GetWorkflow(userCtx, wf2.ID)
+		_, err = actions.GetWorkflow(userCtx, wf2.ID)
 		if err == nil {
 			t.Error("Expected GetWorkflow wf2 to fail due to RBAC")
 		}
@@ -464,7 +464,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},
 		}
 		var err error
-		wf, err = orchestration.CreateWorkflow(tests.SetupMockRootContext(), wf)
+		wf, err = actions.CreateWorkflow(tests.SetupMockRootContext(), wf)
 		if err != nil {
 			t.Fatalf("Create failed: %v", err)
 		}
@@ -475,7 +475,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Reset token
-		newToken, err := orchestration.ResetWebhookToken(tests.SetupMockRootContext(), wf.ID)
+		newToken, err := actions.ResetWebhookToken(tests.SetupMockRootContext(), wf.ID)
 		if err != nil {
 			t.Fatalf("Reset failed: %v", err)
 		}
@@ -485,7 +485,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Verify in repo
-		updated, _ := orchestration.GetWorkflow(tests.SetupMockRootContext(), wf.ID)
+		updated, _ := actions.GetWorkflow(tests.SetupMockRootContext(), wf.ID)
 		if updated.WebhookToken != newToken {
 			t.Error("Token in repo does not match new token")
 		}
@@ -508,7 +508,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -516,7 +516,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = orchestration.GetTaskInstance(ctx, instanceID)
+			instance, _ = actions.GetTaskInstance(ctx, instanceID)
 			if instance != nil && instance.Status != "Running" {
 				break
 			}
@@ -528,7 +528,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Query all logs
-		logs, err := orchestration.GetTaskLogs(ctx, instanceID)
+		logs, err := actions.GetTaskLogs(ctx, instanceID)
 		if err != nil {
 			t.Fatalf("GetTaskLogs failed: %v", err)
 		}
@@ -538,7 +538,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Verify per-step logs
-		stepLogs, nextOffset, err := orchestration.GetStepLogs(ctx, instanceID, 1, 0)
+		stepLogs, nextOffset, err := actions.GetStepLogs(ctx, instanceID, 1, 0)
 		if err != nil {
 			t.Fatalf("GetStepLogs failed: %v", err)
 		}
@@ -577,14 +577,14 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
-			inst, _ := orchestration.GetTaskInstance(ctx, instanceID)
+			inst, _ := actions.GetTaskInstance(ctx, instanceID)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
@@ -592,7 +592,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Query logs
-		logs, err := orchestration.GetTaskLogs(ctx, instanceID)
+		logs, err := actions.GetTaskLogs(ctx, instanceID)
 		if err != nil {
 			t.Fatalf("GetTaskLogs failed: %v", err)
 		}
@@ -625,14 +625,14 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
-			inst, _ := orchestration.GetTaskInstance(ctx, instanceID)
+			inst, _ := actions.GetTaskInstance(ctx, instanceID)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
@@ -640,7 +640,7 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Get instance again
-		inst, err := orchestration.GetTaskInstance(ctx, instanceID)
+		inst, err := actions.GetTaskInstance(ctx, instanceID)
 		if err != nil {
 			t.Fatalf("GetTaskInstance failed: %v", err)
 		}
@@ -662,11 +662,11 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		id, _ := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		id, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
-			inst, _ := orchestration.GetTaskInstance(ctx, id)
+			inst, _ := actions.GetTaskInstance(ctx, id)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
@@ -674,27 +674,27 @@ func TestOrchestrationEngine(t *testing.T) {
 		}
 
 		// Delete single instance
-		err := orchestration.DeleteTaskInstance(ctx, id)
+		err := actions.DeleteTaskInstance(ctx, id)
 		if err != nil {
 			t.Errorf("DeleteTaskInstance failed: %v", err)
 		}
 
-		_, err = orchestration.GetTaskInstance(ctx, id)
+		_, err = actions.GetTaskInstance(ctx, id)
 		if err == nil {
 			t.Error("Instance should have been deleted")
 		}
 
 		// Cleanup (0 days should cleanup everything)
-		id2, _ := orchestration.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		id2, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
 		for i := 0; i < 20; i++ {
-			inst, _ := orchestration.GetTaskInstance(ctx, id2)
+			inst, _ := actions.GetTaskInstance(ctx, id2)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		deleted, err := orchestration.CleanupTaskInstances(ctx, 0)
+		deleted, err := actions.CleanupTaskInstances(ctx, 0)
 		if err != nil {
 			t.Errorf("CleanupTaskInstances failed: %v", err)
 		}
@@ -702,7 +702,7 @@ func TestOrchestrationEngine(t *testing.T) {
 			t.Error("CleanupTaskInstances should have deleted at least one instance")
 		}
 
-		_, err = orchestration.GetTaskInstance(ctx, id2)
+		_, err = actions.GetTaskInstance(ctx, id2)
 		if err == nil {
 			t.Error("Instance id2 should have been cleaned up")
 		}

@@ -8,7 +8,7 @@ import (
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
-	orchrepo "homelab/pkg/repositories/orchestration"
+	actionsrepo "homelab/pkg/repositories/actions"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
 	"homelab/pkg/services/discovery"
@@ -122,7 +122,7 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	}
 
 	// Check if used by any Workflow
-	workflows, err := orchrepo.ListWorkflows(ctx)
+	workflows, err := actionsrepo.ListWorkflows(ctx)
 	if err == nil {
 		for _, wf := range workflows {
 			if wf.ServiceAccountID == id {
