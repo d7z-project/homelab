@@ -20,6 +20,7 @@ import (
 // @Produce json
 // @Param request body models.LoginRequest true "Login Request"
 // @Success 200 {object} models.LoginResponse
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
@@ -57,6 +58,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags auth
 // @Produce json
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /logout [post]
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +69,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = authservice.Logout(r.Context(), token)
-	common.Success(w, r, nil)
+	common.Success(w, r, "success")
 }
 
 type AuthInfo struct {
@@ -81,6 +83,7 @@ type AuthInfo struct {
 // @Tags auth
 // @Produce json
 // @Success 200 {object} AuthInfo
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /info [get]
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,6 +105,8 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags auth
 // @Produce json
 // @Success 200 {array} models.Session
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /auth/sessions [get]
 func ListSessionsHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,6 +124,9 @@ func ListSessionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Session ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Session Not Found"
 // @Security ApiKeyAuth
 // @Router /auth/sessions/{id} [delete]
 func RevokeSessionHandler(w http.ResponseWriter, r *http.Request) {

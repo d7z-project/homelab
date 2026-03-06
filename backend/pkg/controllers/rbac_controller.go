@@ -19,6 +19,8 @@ import (
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name or id"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.ServiceAccount}
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [get]
 func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +42,9 @@ func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param sa body models.ServiceAccount true "Service Account"
 // @Success 200 {object} models.ServiceAccount
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [post]
 func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +70,10 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Service Account ID"
 // @Param sa body models.ServiceAccount true "Service Account"
 // @Success 200 {object} models.ServiceAccount
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Service Account Not Found"
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts/{id} [put]
 func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +98,9 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Service Account ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Service Account Not Found"
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts/{id} [delete]
 func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +120,8 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name or id"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Role}
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/roles [get]
 func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,6 +143,9 @@ func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param role body models.Role true "Role"
 // @Success 200 {object} models.Role
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/roles [post]
 func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +171,10 @@ func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Role ID"
 // @Param role body models.Role true "Role"
 // @Success 200 {object} models.Role
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Role Not Found"
 // @Security ApiKeyAuth
 // @Router /rbac/roles/{id} [put]
 func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -178,6 +199,9 @@ func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Role ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Role Not Found"
 // @Security ApiKeyAuth
 // @Router /rbac/roles/{id} [delete]
 func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,6 +221,8 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name or id"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.RoleBinding}
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings [get]
 func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
@@ -218,6 +244,9 @@ func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param rb body models.RoleBinding true "Role Binding"
 // @Success 200 {object} models.RoleBinding
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings [post]
 func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
@@ -243,6 +272,10 @@ func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Role Binding ID"
 // @Param rb body models.RoleBinding true "Role Binding"
 // @Success 200 {object} models.RoleBinding
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Role Binding Not Found"
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings/{id} [put]
 func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
@@ -267,6 +300,9 @@ func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Role Binding ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Role Binding Not Found"
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings/{id} [delete]
 func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
@@ -284,6 +320,9 @@ func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Service Account ID"
 // @Success 200 {object} models.ServiceAccount
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Service Account Not Found"
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts/{id}/reset [post]
 func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -303,6 +342,9 @@ func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param request body models.SimulatePermissionsRequest true "Simulation Request"
 // @Success 200 {object} models.ResourcePermissions
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/simulate [post]
 func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
@@ -326,6 +368,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param prefix query string false "Prefix to filter resources"
 // @Success 200 {array} models.DiscoverResult
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /rbac/resources/suggest [get]
 func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
@@ -344,6 +387,7 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param resource query string false "Resource prefix"
 // @Success 200 {array} string
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /rbac/verbs/suggest [get]
 func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {

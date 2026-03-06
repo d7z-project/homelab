@@ -26,6 +26,9 @@ func DiscoveryController(r chi.Router) {
 // @Param offset query int false "Offset"
 // @Param limit query int false "Limit"
 // @Success 200 {object} models.LookupResponse
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Code Not Found"
 // @Router /discovery/lookup [get]
 // @Security ApiKeyAuth
 func lookupHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +71,7 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Success 200 {array} string
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Router /discovery/codes [get]
 // @Security ApiKeyAuth
 func listCodesHandler(w http.ResponseWriter, r *http.Request) {

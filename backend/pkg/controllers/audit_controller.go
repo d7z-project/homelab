@@ -19,6 +19,8 @@ import (
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search query"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.AuditLog}
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /audit/logs [get]
 func ListAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +42,9 @@ func ListAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param days query int true "Logs older than these days will be deleted"
 // @Success 200 {object} models.AuditCleanupResponse
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /audit/logs/cleanup [post]
 func CleanupAuditLogsHandler(w http.ResponseWriter, r *http.Request) {

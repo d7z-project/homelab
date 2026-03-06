@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/actions/instances": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Retrieves a history of all triggered workflow instances and their current status.",
                 "produces": [
                     "application/json"
@@ -69,8 +74,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Number of deleted instances",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.TaskCleanupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -101,11 +117,23 @@ const docTemplate = `{
                     "200": {
                         "description": "success",
                         "schema": {
-                            "$ref": "#/definitions/common.Response"
+                            "type": "string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
@@ -199,8 +227,13 @@ const docTemplate = `{
                     "200": {
                         "description": "Logs and next offset",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.TaskLogResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     },
                     "404": {
@@ -235,6 +268,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.StepManifest"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -278,6 +317,24 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -312,6 +369,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid Regex",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
@@ -497,6 +560,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/common.Response"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -527,6 +596,12 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -570,6 +645,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Validation Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
@@ -626,6 +707,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/common.Response"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
                     "404": {
                         "description": "Workflow Not Found",
                         "schema": {
@@ -662,6 +755,18 @@ const docTemplate = `{
                         "description": "success",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     },
                     "404": {
@@ -702,6 +807,18 @@ const docTemplate = `{
                         "description": "New Webhook Token",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     },
                     "404": {
@@ -757,6 +874,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
@@ -831,6 +960,18 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -864,6 +1005,24 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.AuditCleanupResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -890,6 +1049,18 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.Session"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -924,6 +1095,24 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Session Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -954,6 +1143,12 @@ const docTemplate = `{
                             "items": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1010,6 +1205,24 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.LookupResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Code Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -1033,6 +1246,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/controllers.AuthInfo"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1067,6 +1286,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.LoginResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -1090,6 +1315,12 @@ const docTemplate = `{
                         "description": "success",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1150,6 +1381,12 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -1185,6 +1422,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.Domain"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1231,6 +1486,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Domain"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Domain Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -1262,6 +1541,24 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Domain Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -1286,6 +1583,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.DnsExportResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1352,6 +1661,12 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -1387,6 +1702,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.Record"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1433,6 +1766,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Record"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Record Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -1464,12 +1821,38 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Record Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/intelligence/sources": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "network/intelligence"
                 ],
@@ -1483,10 +1866,33 @@ const docTemplate = `{
                                 "$ref": "#/definitions/models.IntelligenceSource"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "network/intelligence"
                 ],
@@ -1508,12 +1914,38 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.IntelligenceSource"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/intelligence/sources/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "network/intelligence"
                 ],
@@ -1533,12 +1965,38 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Source Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/intelligence/sources/{id}/sync": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "network/intelligence"
                 ],
@@ -1558,12 +2016,35 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Source Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/analysis/hit-test": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -1581,7 +2062,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/models.IPHitTestRequest"
                         }
                     }
                 ],
@@ -1591,12 +2072,29 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.IPAnalysisResult"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/analysis/info": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1619,12 +2117,29 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.IPInfoResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/exports": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1673,10 +2188,21 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -1704,12 +2230,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.IPExport"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/exports/download/{taskId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/octet-stream"
                 ],
@@ -1732,12 +2281,29 @@ const docTemplate = `{
                         "schema": {
                             "type": "file"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "File Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/exports/task/{taskId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1760,12 +2326,29 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/ip.ExportTask"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Task Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/exports/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1788,12 +2371,35 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Export Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/exports/{id}/trigger": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1820,10 +2426,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.IPExportTriggerResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Export Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -1831,6 +2446,11 @@ const docTemplate = `{
         },
         "/network/ip/pools": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1879,10 +2499,21 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -1910,12 +2541,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.IPGroup"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/pools/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1938,12 +2592,35 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Group Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/pools/{id}/entries": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -1978,10 +2655,39 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Group Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2011,12 +2717,41 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Group Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
         },
         "/network/ip/pools/{id}/preview": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2056,6 +2791,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.IPPoolPreviewResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Group Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -2570,6 +3317,12 @@ const docTemplate = `{
                                 "$ref": "#/definitions/models.DiscoverResult"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -2629,6 +3382,18 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -2664,6 +3429,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.RoleBinding"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -2710,6 +3493,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.RoleBinding"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Role Binding Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -2740,6 +3547,24 @@ const docTemplate = `{
                         "description": "success",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Role Binding Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -2800,6 +3625,18 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -2835,6 +3672,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.Role"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -2881,6 +3736,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Role"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Role Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -2911,6 +3790,24 @@ const docTemplate = `{
                         "description": "success",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Role Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -2971,6 +3868,18 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -3006,6 +3915,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.ServiceAccount"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -3052,6 +3979,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.ServiceAccount"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Service Account Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             },
@@ -3082,6 +4033,24 @@ const docTemplate = `{
                         "description": "success",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Service Account Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -3115,6 +4084,24 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.ServiceAccount"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Service Account Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -3154,6 +4141,24 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.ResourcePermissions"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
                     }
                 }
             }
@@ -3188,6 +4193,12 @@ const docTemplate = `{
                             "items": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -3446,6 +4457,14 @@ const docTemplate = `{
                 }
             }
         },
+        "models.IPExportTriggerResponse": {
+            "type": "object",
+            "properties": {
+                "taskId": {
+                    "type": "string"
+                }
+            }
+        },
         "models.IPGroup": {
             "type": "object",
             "properties": {
@@ -3470,6 +4489,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPHitTestRequest": {
+            "type": "object",
+            "properties": {
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ip": {
                     "type": "string"
                 }
             }
@@ -4071,6 +5104,14 @@ const docTemplate = `{
                 }
             }
         },
+        "models.TaskCleanupResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.TaskInstance": {
             "type": "object",
             "properties": {
@@ -4146,6 +5187,20 @@ const docTemplate = `{
                 },
                 "workspace": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TaskLogResponse": {
+            "type": "object",
+            "properties": {
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.LogEntry"
+                    }
+                },
+                "nextOffset": {
+                    "type": "integer"
                 }
             }
         },

@@ -19,6 +19,7 @@ import (
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Domain}
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/dns/domains [get]
 func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +41,9 @@ func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param domain body models.Domain true "Domain"
 // @Success 200 {object} models.Domain
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /network/dns/domains [post]
 func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +69,10 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Domain ID"
 // @Param domain body models.Domain true "Domain"
 // @Success 200 {object} models.Domain
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Domain Not Found"
 // @Security ApiKeyAuth
 // @Router /network/dns/domains/{id} [put]
 func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +97,9 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Domain ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Domain Not Found"
 // @Security ApiKeyAuth
 // @Router /network/dns/domains/{id} [delete]
 func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
@@ -109,6 +120,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name or value"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Record}
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/dns/records [get]
 func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
@@ -131,6 +143,9 @@ func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param record body models.Record true "Record"
 // @Success 200 {object} models.Record
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /network/dns/records [post]
 func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
@@ -156,6 +171,10 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Record ID"
 // @Param record body models.Record true "Record"
 // @Success 200 {object} models.Record
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Record Not Found"
 // @Security ApiKeyAuth
 // @Router /network/dns/records/{id} [put]
 func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +199,9 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Record ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Record Not Found"
 // @Security ApiKeyAuth
 // @Router /network/dns/records/{id} [delete]
 func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,6 +219,8 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/dns
 // @Produce json
 // @Success 200 {object} models.DnsExportResponse
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /network/dns/export [get]
 func ExportHandler(w http.ResponseWriter, r *http.Request) {

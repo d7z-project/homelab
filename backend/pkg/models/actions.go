@@ -161,3 +161,14 @@ type RunWorkflowRequest struct {
 func (r *RunWorkflowRequest) Bind(req *http.Request) error {
 	return nil
 }
+
+// TaskCleanupResponse 任务清理响应
+type TaskCleanupResponse struct {
+	Deleted int `json:"deleted"`
+}
+
+// TaskLogResponse 任务日志响应
+type TaskLogResponse struct {
+	Logs       []LogEntry `json:"logs"`
+	NextOffset int        `json:"nextOffset"`
+}

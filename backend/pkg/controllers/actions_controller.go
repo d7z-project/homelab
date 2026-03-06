@@ -43,6 +43,7 @@ func ListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} models.Workflow
 // @Failure 400 {object} common.Response "Bad Request (Validation Error)"
 // @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Failure 500 {object} common.Response "Internal Server Error"
 // @Security ApiKeyAuth
 // @Router /actions/workflows [post]
@@ -71,6 +72,8 @@ func CreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Param workflow body models.Workflow true "Updated Workflow Configuration"
 // @Success 200 {object} models.Workflow
 // @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{id} [put]
@@ -97,6 +100,8 @@ func UpdateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Workflow ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{id} [delete]
@@ -116,6 +121,7 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Success 200 {array} models.TaskInstance
 // @Failure 401 {object} common.Response "Unauthorized"
+// @Security ApiKeyAuth
 // @Router /actions/instances [get]
 func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := actions.ListTaskInstances(r.Context())
@@ -136,6 +142,8 @@ func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // @Param req body models.RunWorkflowRequest false "Workflow Inputs"
 // @Success 200 {string} string "instanceId"
 // @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Failure 409 {object} common.Response "Conflict (Already Running)"
 // @Security ApiKeyAuth
@@ -160,8 +168,10 @@ func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Removes a specific task instance and its execution logs.
 // @Tags actions
 // @Param id path string true "Task Instance ID"
-// @Success 200 {object} common.Response "success"
+// @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Instance Not Found"
 // @Security ApiKeyAuth
 // @Router /actions/instances/{id} [delete]
@@ -179,7 +189,9 @@ func DeleteInstanceHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Removes task instances and logs older than the specified number of days.
 // @Tags actions
 // @Param days query int true "Days older than which instances will be deleted"
-// @Success 200 {object} map[string]interface{} "Number of deleted instances"
+// @Success 200 {object} models.TaskCleanupResponse "Number of deleted instances"
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/instances/cleanup [post]
 func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +207,7 @@ func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, map[string]interface{}{"deleted": count})
+	common.Success(w, r, &models.TaskCleanupResponse{Deleted: count})
 }
 
 // GetInstanceLogsHandler godoc
@@ -206,7 +218,8 @@ func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Task Instance ID"
 // @Param stepIndex query int false "Step Index (0 for engine, 1+ for steps)"
 // @Param offset query int false "Line offset to start reading from"
-// @Success 200 {object} map[string]interface{} "Logs and next offset"
+// @Success 200 {object} models.TaskLogResponse "Logs and next offset"
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "Instance Not Found"
 // @Security ApiKeyAuth
 // @Router /actions/instances/{id}/logs [get]
@@ -225,9 +238,9 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 			HandleError(w, r, err)
 			return
 		}
-		common.Success(w, r, map[string]interface{}{
-			"logs":       logs,
-			"nextOffset": nextOffset,
+		common.Success(w, r, &models.TaskLogResponse{
+			Logs:       logs,
+			NextOffset: nextOffset,
 		})
 		return
 	}
@@ -238,7 +251,9 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, logs)
+	common.Success(w, r, &models.TaskLogResponse{
+		Logs: logs,
+	})
 }
 
 // CancelInstanceHandler godoc
@@ -266,6 +281,7 @@ func CancelInstanceHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags actions
 // @Produce json
 // @Success 200 {array} models.StepManifest
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/manifests [get]
 func ListManifestsHandler(w http.ResponseWriter, r *http.Request) {
@@ -279,6 +295,7 @@ func ListManifestsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags actions
 // @Produce json
 // @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/workflows/schema [get]
 func GetWorkflowSchemaHandler(w http.ResponseWriter, r *http.Request) {
@@ -294,6 +311,9 @@ func GetWorkflowSchemaHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param req body actions.ProbeRequest true "Probe Configuration"
 // @Success 200 {object} map[string]string "Processor Output Data"
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /actions/probe [post]
 func ProbeHandler(w http.ResponseWriter, r *http.Request) {
@@ -320,6 +340,7 @@ func ProbeHandler(w http.ResponseWriter, r *http.Request) {
 // @Param workflow body models.Workflow true "Workflow to validate"
 // @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Validation Error"
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/workflows/validate [post]
 func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
@@ -343,6 +364,8 @@ func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Workflow ID"
 // @Success 200 {string} string "New Webhook Token"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Workflow Not Found"
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{id}/webhook/reset [post]
@@ -429,6 +452,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 // @Param regex query string true "Regex to validate"
 // @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Invalid Regex"
+// @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/validate/regex [post]
 func ValidateRegexHandler(w http.ResponseWriter, r *http.Request) {

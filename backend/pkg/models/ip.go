@@ -99,6 +99,17 @@ type IPAnalysisResult struct {
 	Tags    []string `json:"tags"` // 命中的 Tags
 }
 
+// IPHitTestRequest IP 命中推演请求
+type IPHitTestRequest struct {
+	IP       string   `json:"ip"`
+	GroupIDs []string `json:"groupIds"`
+}
+
+// IPExportTriggerResponse 导出任务触发响应
+type IPExportTriggerResponse struct {
+	TaskID string `json:"taskId"`
+}
+
 // IPInfoResponse IP 情报查询结果
 type IPInfoResponse struct {
 	IP       string `json:"ip"`

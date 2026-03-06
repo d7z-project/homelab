@@ -111,3 +111,14 @@ type SiteAnalysisResult struct {
 	Pattern  string   `json:"pattern"`
 	Tags     []string `json:"tags"`
 }
+
+// SiteHitTestRequest 域名命中推演请求
+type SiteHitTestRequest struct {
+	Domain   string   `json:"domain"`
+	GroupIDs []string `json:"groupIds"`
+}
+
+// SiteExportTriggerResponse 导出任务触发响应
+type SiteExportTriggerResponse struct {
+	TaskID string `json:"taskId"`
+}

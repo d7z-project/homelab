@@ -33,6 +33,8 @@ func InitIPControllers(service *ipservice.IPPoolService, engine *ipservice.Analy
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.IPGroup}
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Security ApiKeyAuth
 // @Router /network/ip/pools [get]
 func ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
@@ -53,6 +55,10 @@ func ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param group body models.IPGroup true "IP Group"
 // @Success 200 {object} models.IPGroup
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Security ApiKeyAuth
 // @Router /network/ip/pools [post]
 func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	var group models.IPGroup
@@ -76,6 +82,9 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Param limit query int false "Number of entries to return"
 // @Param search query string false "Search prefix or tag"
 // @Success 200 {object} models.IPPoolPreviewResponse
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Group Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/pools/{id}/preview [get]
 func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -102,6 +111,10 @@ func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Group ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Group Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/pools/{id} [delete]
 func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -120,6 +133,8 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.IPExport}
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Security ApiKeyAuth
 // @Router /network/ip/exports [get]
 func ListExportsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
@@ -140,6 +155,10 @@ func ListExportsHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param export body models.IPExport true "IP Export"
 // @Success 200 {object} models.IPExport
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Security ApiKeyAuth
 // @Router /network/ip/exports [post]
 func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
 	var export models.IPExport
@@ -160,6 +179,10 @@ func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Export ID"
 // @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Export Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/exports/{id} [delete]
 func DeleteExportHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -175,14 +198,14 @@ func DeleteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Accept json
 // @Produce json
-// @Param request body object true "Hit test request"
+// @Param request body models.IPHitTestRequest true "Hit test request"
 // @Success 200 {object} models.IPAnalysisResult
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Security ApiKeyAuth
 // @Router /network/ip/analysis/hit-test [post]
 func HitTestHandler(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		IP       string   `json:"ip"`
-		GroupIDs []string `json:"groupIds"`
-	}
+	var req models.IPHitTestRequest
 	if err := render.DecodeJSON(r.Body, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -201,6 +224,9 @@ func HitTestHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param ip query string true "IP address"
 // @Success 200 {object} models.IPInfoResponse
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Security ApiKeyAuth
 // @Router /network/ip/analysis/info [get]
 func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
 	ipStr := r.URL.Query().Get("ip")
@@ -218,7 +244,10 @@ func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Export ID"
 // @Param format query string false "Format: text, json, yaml"
-// @Success 200 {object} map[string]string
+// @Success 200 {object} models.IPExportTriggerResponse
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Export Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/exports/{id}/trigger [post]
 func TriggerExportHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -231,7 +260,7 @@ func TriggerExportHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, map[string]string{"taskId": taskID})
+	common.Success(w, r, &models.IPExportTriggerResponse{TaskID: taskID})
 }
 
 // ExportTaskStatusHandler godoc
@@ -240,6 +269,9 @@ func TriggerExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param taskId path string true "Task ID"
 // @Success 200 {object} ipservice.ExportTask
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Task Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/exports/task/{taskId} [get]
 func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	taskId := chi.URLParam(r, "taskId")
@@ -257,6 +289,9 @@ func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce octet-stream
 // @Param taskId path string true "Task ID"
 // @Success 200 {file} file
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "File Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/exports/download/{taskId} [get]
 func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 	taskId := chi.URLParam(r, "taskId")
@@ -289,6 +324,11 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Group ID"
 // @Param entry body models.IPPoolEntryRequest true "IP/CIDR Entry"
 // @Success 200 {string} string "success"
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Group Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/pools/{id}/entries [post]
 func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -311,6 +351,11 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Group ID"
 // @Param cidr query string true "CIDR or IP to delete"
 // @Success 200 {string} string "success"
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Group Not Found"
+// @Security ApiKeyAuth
 // @Router /network/ip/pools/{id}/entries [delete]
 func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
