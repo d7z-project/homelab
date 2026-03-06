@@ -119,9 +119,9 @@ import { Router } from '@angular/router';
             <div class="overflow-auto max-h-[50vh] border-t border-outline-variant/10" #scrollContainer (scroll)="onScroll($event)">
               <table mat-table [dataSource]="entries()" class="w-full">
                 <ng-container matColumnDef="cidr">
-                  <th mat-header-cell *matHeaderCellDef class="!pl-6 bg-surface-container-low font-bold text-primary">IP/CIDR 地址</th>
-                  <td mat-cell *matCellDef="let element" class="!pl-6 py-4">
-                    <a class="font-mono text-sm tracking-tight text-primary hover:underline cursor-pointer flex items-center gap-1"
+                  <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-primary text-center">IP/CIDR 地址</th>
+                  <td mat-cell *matCellDef="let element" class="py-4 text-center">
+                    <a class="font-mono text-sm tracking-tight text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
                        (click)="goToAnalysis(element.cidr)"
                        matTooltip="点击在统一研判实验室中分析此地址">
                       <mat-icon class="!w-3 !h-3 !text-[12px]">biotech</mat-icon>
@@ -131,9 +131,9 @@ import { Router } from '@angular/router';
                 </ng-container>
 
                 <ng-container matColumnDef="tags">
-                  <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-primary">关联标签</th>
+                  <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-primary text-center">关联标签</th>
                   <td mat-cell *matCellDef="let element" class="py-4">
-                    <div class="flex flex-wrap gap-1.5">
+                    <div class="flex flex-wrap gap-1.5 justify-center">
                       @for (t of element.tags; track t) {
                         <span class="px-2.5 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tighter"
                               [class.bg-primary/10]="!t.startsWith('_')"
@@ -154,9 +154,9 @@ import { Router } from '@angular/router';
                 </ng-container>
 
                 <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef class="!pr-6 bg-surface-container-low font-bold text-primary text-right">管理</th>
-                  <td mat-cell *matCellDef="let element" class="!pr-6 text-right py-4">
-                    <div class="flex justify-end gap-1">
+                  <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-primary text-center">管理</th>
+                  <td mat-cell *matCellDef="let element" class="text-center py-4">
+                    <div class="flex justify-center gap-1">
                       <button mat-icon-button (click)="editEntry(element)" matTooltip="修改标签内容">
                         <mat-icon class="!text-[18px]">edit_note</mat-icon>
                       </button>
@@ -288,6 +288,18 @@ export class ManageEntriesDialogComponent implements OnInit {
     this.ipService.networkIpPoolsIdPreviewGet(this.data.pool.id!, this.nextCursor, 50, this.searchQuery).subscribe({
       next: (res) => {
         const newEntries = res.entries || [];
+        // 排序标签：带下划线的排在第一位
+        newEntries.forEach(entry => {
+          if (entry.tags) {
+            entry.tags.sort((a, b) => {
+              const aInt = a.startsWith('_');
+              const bInt = b.startsWith('_');
+              if (aInt && !bInt) return -1;
+              if (!aInt && bInt) return 1;
+              return a.localeCompare(b);
+            });
+          }
+        });
         if (reset) {
           this.entries.set(newEntries);
         } else {

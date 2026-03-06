@@ -78,6 +78,7 @@ export class AnalysisComponent implements OnInit {
 
   query = signal('');
   loading = signal(false);
+  hitTestLoading = signal(false);
 
   // Results
   ipResult = signal<ModelsIPAnalysisResult | null>(null);
@@ -86,7 +87,7 @@ export class AnalysisComponent implements OnInit {
   
   private chart?: echarts.ECharts;
 
-  hasResult = computed(() => !!(this.ipResult() || this.ipInfo() || this.siteResult()));
+  hasResult = computed(() => !!(this.ipResult() || this.ipInfo() || this.siteResult() || this.hitTestLoading()));
 
   constructor() {
     effect(() => {
@@ -205,6 +206,7 @@ export class AnalysisComponent implements OnInit {
     }
 
     this.loading.set(true);
+    this.hitTestLoading.set(true);
     this.ipResult.set(null);
     this.ipInfo.set(null);
     this.siteResult.set(null);
@@ -233,8 +235,14 @@ export class AnalysisComponent implements OnInit {
 
   private analyzeIP(ip: string) {
     this.ipService.networkIpAnalysisHitTestPost({ ip, groupIds: [] }).subscribe({
-      next: (res) => this.ipResult.set(res),
-      error: (err) => this.handleError(err)
+      next: (res) => {
+        this.ipResult.set(res);
+        this.hitTestLoading.set(false);
+      },
+      error: (err) => {
+        this.handleError(err);
+        this.hitTestLoading.set(false);
+      }
     });
 
     this.ipService.networkIpAnalysisInfoGet(ip).subscribe({
@@ -250,10 +258,12 @@ export class AnalysisComponent implements OnInit {
     this.siteService.networkSiteAnalysisHitTestPost({ domain, groupIds: [] }).subscribe({
       next: (res) => {
         this.siteResult.set(res);
+        this.hitTestLoading.set(false);
         this.loading.set(false);
       },
       error: (err) => {
         this.handleError(err);
+        this.hitTestLoading.set(false);
         this.loading.set(false);
       }
     });

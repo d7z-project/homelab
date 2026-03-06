@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -773,27 +775,112 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		for _, e := range v2Entries {
 			addEntryToAggregate(e.Prefix, []uint32{internalTagIdx, getTagIdx(e.CountryCode)})
 		}
+	} else if policy.Format == "csv" {
+		f, err := os.Open(tempSrc.Name())
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		sep := policy.Config["separator"]
+		if sep == "" {
+			sep = ","
+		}
+
+		ipIdx, _ := strconv.Atoi(policy.Config["ipColumn"])
+		tagIdxStr, tagOk := policy.Config["tagColumn"]
+		tagCol := -1
+		if tagOk && tagIdxStr != "" {
+			tagCol, _ = strconv.Atoi(tagIdxStr)
+		}
+
+		// 全局附加标签 (支持多个，逗号分隔)
+		additionalTags := strings.Split(policy.Config["tags"], ",")
+		var globalTagIdxs []uint32
+		for _, t := range additionalTags {
+			t = strings.TrimSpace(t)
+			if t != "" {
+				globalTagIdxs = append(globalTagIdxs, getTagIdx(t))
+			}
+		}
+
+		reader := csv.NewReader(f)
+		reader.Comma = rune(sep[0])
+		reader.FieldsPerRecord = -1
+
+		records, err := reader.ReadAll()
+		if err != nil {
+			return fmt.Errorf("failed to read csv: %w", err)
+		}
+
+		for _, row := range records {
+			if len(row) <= ipIdx {
+				continue
+			}
+			ipStr := strings.TrimSpace(row[ipIdx])
+			if ipStr == "" || strings.HasPrefix(ipStr, "#") {
+				continue
+			}
+
+			prefix, err := netip.ParsePrefix(ipStr)
+			if err != nil {
+				addr, err := netip.ParseAddr(ipStr)
+				if err != nil {
+					continue
+				}
+				prefix = netip.PrefixFrom(addr, addr.BitLen())
+			}
+
+			idxs := []uint32{internalTagIdx}
+			idxs = append(idxs, globalTagIdxs...)
+
+			if tagCol >= 0 && len(row) > tagCol {
+				tagVal := strings.TrimSpace(row[tagCol])
+				if tagVal != "" {
+					idxs = append(idxs, getTagIdx(tagVal))
+				}
+			}
+			addEntryToAggregate(prefix, idxs)
+		}
 	} else {
 		data, err := os.ReadFile(tempSrc.Name())
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
-		defaultTag := policy.Config["tag"]
-		if defaultTag == "" { defaultTag = "sync" }
-		extTagIdx := getTagIdx(defaultTag)
+		// 全局附加标签 (支持多个，逗号分隔)
+		additionalTags := strings.Split(policy.Config["tags"], ",")
+		var globalTagIdxs []uint32
+		for _, t := range additionalTags {
+			t = strings.TrimSpace(t)
+			if t != "" {
+				globalTagIdxs = append(globalTagIdxs, getTagIdx(t))
+			}
+		}
+		// 如果没设 tags，默认用 sync
+		if len(globalTagIdxs) == 0 {
+			globalTagIdxs = append(globalTagIdxs, getTagIdx("sync"))
+		}
 
 		lines := strings.Split(string(data), "\n")
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
-			if line == "" || strings.HasPrefix(line, "#") { continue }
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
 			prefix, err := netip.ParsePrefix(line)
 			if err != nil {
 				addr, err := netip.ParseAddr(line)
-				if err != nil { continue }
+				if err != nil {
+					continue
+				}
 				prefix = netip.PrefixFrom(addr, addr.BitLen())
 			}
-			addEntryToAggregate(prefix, []uint32{internalTagIdx, extTagIdx})
+			newIdxs := append([]uint32{internalTagIdx}, globalTagIdxs...)
+			addEntryToAggregate(prefix, newIdxs)
 		}
 	}
+
 
 	if len(aggregate) == 0 {
 		return fmt.Errorf("no valid IP/CIDR found in source")

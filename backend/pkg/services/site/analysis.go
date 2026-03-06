@@ -6,6 +6,7 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/site"
+	iprepo "homelab/pkg/repositories/ip"
 	"homelab/pkg/services/ip"
 	"io"
 	"net"
@@ -94,16 +95,44 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []
 		}
 
 		if ok, ruleType, pattern, tags := matcher.Match(domain); ok {
-			// 去重
-			slices.Sort(tags)
-			tags = slices.Compact(tags)
+			// 1. 获取池名称
+			poolName := gid
+			if group, err := repo.GetGroup(ctx, gid); err == nil && group.Name != "" {
+				poolName = group.Name
+			}
+
+			// 2. 处理标签：去重并转换内部 ID
+			finalTags := make([]string, 0, len(tags)+1)
+			finalTags = append(finalTags, "地址池: "+poolName)
+			tagSet := make(map[string]struct{})
+			tagSet[poolName] = struct{}{}
+
+			for _, t := range tags {
+				// 强制小写处理，确保匹配稳健
+				tid := strings.ToLower(t)
+				displayTag := t
+				if strings.HasPrefix(tid, "_") {
+					// 尝试作为同步策略查找
+					if policy, err := iprepo.GetSyncPolicy(ctx, tid); err == nil && policy.Name != "" {
+						displayTag = "策略: " + policy.Name
+					}
+				}
+
+				if _, exists := tagSet[displayTag]; !exists {
+					tagSet[displayTag] = struct{}{}
+					finalTags = append(finalTags, displayTag)
+				}
+			}
+
+			slices.Sort(finalTags)
 			res.Matched = true
 			res.RuleType = ruleType
 			res.Pattern = pattern
-			res.Tags = tags
+			res.Tags = finalTags
 			break
 		}
 	}
+
 
 	// Always attempt DNS analysis for domain intelligence
 	res.DNS = e.dnsLookup(domain)

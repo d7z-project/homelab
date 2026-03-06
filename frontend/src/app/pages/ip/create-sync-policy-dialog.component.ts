@@ -52,6 +52,7 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
             <mat-label>数据格式</mat-label>
             <mat-select formControlName="format" required>
               <mat-option value="text">文本 (Text/CIDR)</mat-option>
+              <mat-option value="csv">CSV (Comma Separated)</mat-option>
               <mat-option value="geoip">GeoIP (MMDB)</mat-option>
               <mat-option value="geoip-dat">GeoIP (V2Ray Dat)</mat-option>
             </mat-select>
@@ -70,12 +71,32 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
         <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant space-y-4 animate-in fade-in slide-in-from-top-2">
           <div class="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">同步配置</div>
           
-          @if (form.get('format')?.value === 'text') {
+          @if (form.get('format')?.value === 'text' || form.get('format')?.value === 'csv') {
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>默认标签</mat-label>
-              <input matInput formControlName="tag" placeholder="sync" />
-              <mat-hint>同步进来的条目将带上此标签</mat-hint>
+              <mat-label>附加标签 (Tags)</mat-label>
+              <input matInput formControlName="tags" placeholder="sync, cloud, office" />
+              <mat-hint>使用逗号分隔多个标签</mat-hint>
             </mat-form-field>
+          }
+
+          @if (form.get('format')?.value === 'csv') {
+            <div class="grid grid-cols-3 gap-4">
+              <mat-form-field appearance="outline">
+                <mat-label>分隔符</mat-label>
+                <input matInput formControlName="separator" maxlength="1" />
+                <mat-hint>默认为 ,</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>IP 列索引</mat-label>
+                <input matInput type="number" formControlName="ipColumn" min="0" />
+                <mat-hint>从 0 开始</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>标签列索引</mat-label>
+                <input matInput type="number" formControlName="tagColumn" min="0" />
+                <mat-hint>可选</mat-hint>
+              </mat-form-field>
+            </div>
           }
 
           @if (form.get('format')?.value === 'geoip') {
@@ -193,11 +214,14 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
     cron: [this.data.policy?.cron || '0 0 * * *', Validators.required],
     enabled: [this.data.policy?.enabled ?? true],
     // Specific configs
-    tag: [this.data.policy?.config?.['tag'] || 'sync'],
+    tags: [this.data.policy?.config?.['tags'] || (this.data.policy?.config?.['tag'] || 'sync')],
     language: [this.data.policy?.config?.['language'] || 'zh-CN'],
     code: [this.data.policy?.config?.['code'] === '*' ? '' : (this.data.policy?.config?.['code'] || 'CN')],
     importAll: [this.data.policy?.config?.['code'] === '*' || this.data.policy?.config?.['code'] === 'all'],
     tagMappings: this.fb.array([]),
+    separator: [this.data.policy?.config?.['separator'] || ','],
+    ipColumn: [this.data.policy?.config?.['ipColumn'] || 0],
+    tagColumn: [this.data.policy?.config?.['tagColumn'] || ''],
   });
 
   get tagMappings() {
@@ -250,7 +274,14 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
 
     const config: Record<string, string> = {};
     if (val.format === 'text') {
-      config['tag'] = val.tag || 'sync';
+      config['tags'] = val.tags || 'sync';
+    } else if (val.format === 'csv') {
+      config['tags'] = val.tags || '';
+      config['separator'] = val.separator || ',';
+      config['ipColumn'] = (val.ipColumn ?? 0).toString();
+      if (val.tagColumn !== null && val.tagColumn !== undefined && val.tagColumn !== '') {
+        config['tagColumn'] = val.tagColumn.toString();
+      }
     } else if (val.format === 'geoip') {
       config['language'] = val.language || 'zh-CN';
     } else if (val.format === 'geoip-dat') {

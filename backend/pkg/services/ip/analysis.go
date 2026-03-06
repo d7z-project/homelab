@@ -10,15 +10,16 @@ import (
 	"net/netip"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 type AnalysisEngine struct {
-	mu         sync.RWMutex
-	trieCache  *lru.Cache[string, *IPPoolTrie]
-	mmdb       *MMDBManager
+	mu        sync.RWMutex
+	trieCache *lru.Cache[string, *IPPoolTrie]
+	mmdb      *MMDBManager
 }
 
 func NewAnalysisEngine(mmdb *MMDBManager) *AnalysisEngine {
@@ -99,13 +100,40 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 		}
 		prefix, tags, ok := trie.Lookup(ip)
 		if ok {
-			// 去重
-			slices.Sort(tags)
-			tags = slices.Compact(tags)
+			// 1. 获取池名称
+			poolName := gid
+			if group, err := repo.GetGroup(ctx, gid); err == nil && group.Name != "" {
+				poolName = group.Name
+			}
+
+			// 2. 处理标签：去重并转换内部 ID
+			finalTags := make([]string, 0, len(tags)+1)
+			finalTags = append(finalTags, "地址池: "+poolName) // 注入来源池名称
+			tagSet := make(map[string]struct{})
+			tagSet[poolName] = struct{}{}
+
+			for _, t := range tags {
+				// 强制小写处理，确保匹配稳健
+				tid := strings.ToLower(t)
+				displayTag := t
+				if strings.HasPrefix(tid, "_") {
+					// 尝试作为同步策略查找
+					if policy, err := repo.GetSyncPolicy(ctx, tid); err == nil && policy.Name != "" {
+						displayTag = "策略: " + policy.Name
+					}
+				}
+
+				if _, exists := tagSet[displayTag]; !exists {
+					tagSet[displayTag] = struct{}{}
+					finalTags = append(finalTags, displayTag)
+				}
+			}
+
+			slices.Sort(finalTags)
 			return &models.IPAnalysisResult{
 				Matched: true,
 				CIDR:    prefix.String(),
-				Tags:    tags,
+				Tags:    finalTags,
 			}, nil
 		}
 	}

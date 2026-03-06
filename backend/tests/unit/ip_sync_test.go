@@ -87,14 +87,14 @@ func TestIPSyncLogic(t *testing.T) {
 
 		policyA := &models.IPSyncPolicy{
 			ID: "_pa", Name: "PA", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
-			Config: map[string]string{"tag": "SOURCE_A"},
+			Config: map[string]string{"tags": "SOURCE_A"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyA)
 		_ = service.Sync(ctx, "_pa")
 
 		policyB := &models.IPSyncPolicy{
 			ID: "_pb", Name: "PB", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
-			Config: map[string]string{"tag": "SOURCE_B"},
+			Config: map[string]string{"tags": "SOURCE_B"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyB)
 		_ = service.Sync(ctx, "_pb")
@@ -139,7 +139,7 @@ func TestIPSyncLogic(t *testing.T) {
 
 		policyRem := &models.IPSyncPolicy{
 			ID: "_prem", Name: "Removal Test", SourceURL: serverRem.URL, Format: "text",
-			Mode: "overwrite", TargetGroupID: "test_pool", Config: map[string]string{"tag": "TAG_A"},
+			Mode: "overwrite", TargetGroupID: "test_pool", Config: map[string]string{"tags": "TAG_A"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyRem)
 		_ = service.Sync(ctx, "_prem")
@@ -148,7 +148,7 @@ func TestIPSyncLogic(t *testing.T) {
 		assert.Contains(t, res.Entries[0].Tags, "TAG_A")
 
 		// 2. 模拟源数据更新：修改配置，将标签改为 TAG_B
-		policyRem.Config["tag"] = "TAG_B"
+		policyRem.Config["tags"] = "TAG_B"
 		_ = service.UpdateSyncPolicy(ctx, policyRem)
 		_ = service.Sync(ctx, "_prem")
 

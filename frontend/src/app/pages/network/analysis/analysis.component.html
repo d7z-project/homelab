@@ -26,10 +26,10 @@
         </mat-card>
       </div>
 
-      @if (loading()) {
+      @if (loading() && !hasResult()) {
         <div class="py-20 flex flex-col items-center gap-4 animate-in fade-in">
           <mat-spinner diameter="48"></mat-spinner>
-          <div class="text-outline text-sm tracking-widest font-medium uppercase">规则全集扫描中...</div>
+          <div class="text-outline text-sm tracking-widest font-medium uppercase">探测任务启动中...</div>
         </div>
       }
 
@@ -37,10 +37,18 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in zoom-in-95 duration-500">
           <!-- Matching Result (Private Pools) -->
           <div class="lg:col-span-1 space-y-6">
-            <mat-card class="!rounded-[32px] border overflow-hidden shadow-md" 
-                      [class.border-green-500]="ipResult()?.matched || siteResult()?.matched" 
-                      [class.border-red-200]="!(ipResult()?.matched || siteResult()?.matched)">
-              <div class="p-8 flex flex-col items-center text-center">
+            <mat-card class="!rounded-[32px] border overflow-hidden shadow-md relative min-h-[280px]" 
+                      [class.border-green-500]="(ipResult()?.matched || siteResult()?.matched) && !hitTestLoading()" 
+                      [class.border-red-200]="!(ipResult()?.matched || siteResult()?.matched) && !hitTestLoading()">
+              
+              @if (hitTestLoading()) {
+                <div class="absolute inset-0 bg-surface/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-4 animate-in fade-in">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-primary animate-pulse">正在扫描私有资产库...</div>
+                </div>
+              }
+
+              <div class="p-8 flex flex-col items-center text-center" [class.opacity-20]="hitTestLoading()">
                 <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6" 
                      [class.bg-green-100]="ipResult()?.matched || siteResult()?.matched" 
                      [class.bg-red-50]="!(ipResult()?.matched || siteResult()?.matched)">
@@ -57,32 +65,43 @@
                 <p class="text-outline text-xs uppercase tracking-widest font-bold opacity-60">私有池探测状态</p>
               </div>
               
-              @if (ipResult()?.matched) {
-                <div class="bg-green-600 text-white p-4 text-center">
-                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">IP 前缀匹配 (LPM)</div>
-                  <div class="text-xl font-mono font-medium">{{ ipResult()?.cidr }}</div>
-                </div>
-              }
-              @if (siteResult()?.matched) {
-                <div class="bg-green-600 text-white p-4 text-center border-t border-white/10">
-                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">
-                    命中规则: 
-                    @switch (siteResult()?.ruleType) {
-                      @case (0) { keyword }
-                      @case (1) { regex }
-                      @case (2) { domain }
-                      @case (3) { full }
-                    }
+              <div [class.opacity-20]="hitTestLoading()">
+                @if (ipResult()?.matched) {
+                  <div class="bg-green-600 text-white p-4 text-center">
+                    <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">IP 前缀匹配 (LPM)</div>
+                    <div class="text-xl font-mono font-medium">{{ ipResult()?.cidr }}</div>
                   </div>
-                  <div class="text-lg font-mono font-medium truncate px-4">{{ siteResult()?.pattern }}</div>
-                </div>
-              }
+                }
+                @if (siteResult()?.matched) {
+                  <div class="bg-green-600 text-white p-4 text-center border-t border-white/10">
+                    <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">
+                      命中规则: 
+                      @switch (siteResult()?.ruleType) {
+                        @case (0) { keyword }
+                        @case (1) { regex }
+                        @case (2) { domain }
+                        @case (3) { full }
+                      }
+                    </div>
+                    <div class="text-lg font-mono font-medium truncate px-4">{{ siteResult()?.pattern }}</div>
+                  </div>
+                }
+              </div>
             </mat-card>
 
             <!-- Tags Section -->
-            @if (ipResult()?.matched || siteResult()?.matched) {
-              <mat-card class="!rounded-[32px] bg-surface-container-high border-none shadow-sm overflow-hidden">
-                <div class="p-6">
+            @if ((ipResult()?.matched || siteResult()?.matched) || hitTestLoading()) {
+              <mat-card class="!rounded-[32px] bg-surface-container-high border-none shadow-sm overflow-hidden relative min-h-[120px]">
+                @if (hitTestLoading()) {
+                  <div class="absolute inset-0 bg-surface-container-high/40 flex items-center justify-center">
+                    <div class="flex gap-1">
+                      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]"></div>
+                      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]"></div>
+                      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"></div>
+                    </div>
+                  </div>
+                }
+                <div class="p-6" [class.opacity-20]="hitTestLoading()">
                   <div class="flex items-center gap-2 mb-4 text-primary">
                     <mat-icon class="!w-5 !h-5 !text-[20px]">local_offer</mat-icon>
                     <span class="text-sm font-bold uppercase tracking-widest">研判属性标签</span>
