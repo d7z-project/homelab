@@ -247,7 +247,7 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 
 	// Permission check: actions/<workflow-id>
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
-		return nil, fmt.Errorf("permission denied: actions/%s", id)
+		return nil, fmt.Errorf("permission denied: actions/%s (write access required)", id)
 	}
 
 	// 2. Ensure ID consistency before validation
@@ -325,7 +325,7 @@ func ResetWebhookToken(ctx context.Context, id string) (string, error) {
 
 	// Permission check: actions/<workflow-id>
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
-		return "", fmt.Errorf("permission denied: actions/%s", id)
+		return "", fmt.Errorf("permission denied: actions/%s (write access required)", id)
 	}
 
 	wf.WebhookToken = GenerateWebhookToken()
@@ -360,7 +360,7 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 
 	// Permission check: actions/<workflow-id>
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
-		return fmt.Errorf("permission denied: actions/%s", id)
+		return fmt.Errorf("permission denied: actions/%s (write access required)", id)
 	}
 
 	// Cascade delete instances and logs
@@ -473,7 +473,7 @@ func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]strin
 
 	// Explicit permission check
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + workflowID) {
-		return "", fmt.Errorf("permission denied: actions/%s", workflowID)
+		return "", fmt.Errorf("permission denied: actions/%s (execution access required)", workflowID)
 	}
 
 	authCtx := commonauth.FromContext(ctx)
@@ -545,7 +545,7 @@ func DeleteTaskInstance(ctx context.Context, id string) error {
 
 	// Permission check for the parent workflow
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.WorkflowID) {
-		return fmt.Errorf("permission denied: actions/%s", inst.WorkflowID)
+		return fmt.Errorf("permission denied: actions/%s (write access required)", inst.WorkflowID)
 	}
 
 	// Don't allow deleting running tasks
@@ -596,7 +596,7 @@ func CancelTaskInstance(ctx context.Context, id string) error {
 
 	// Check permission for the parent workflow
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.WorkflowID) {
-		return fmt.Errorf("permission denied: actions/%s", instance.WorkflowID)
+		return fmt.Errorf("permission denied: actions/%s (write access required)", instance.WorkflowID)
 	}
 
 	message := fmt.Sprintf("Requested cancellation of task instance %s", id)
@@ -714,13 +714,14 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 	}
 
 	taskCtx := &TaskContext{
-		WorkflowID: "_probe",
-		InstanceID: instanceID,
-		Workspace:  afero.NewBasePathFs(actionsFS, workspace),
-		UserID:     userID,
-		Context:    ctx,
-		CancelFunc: func() {},
-		Logger:     logger,
+		WorkflowID:       "_probe",
+		InstanceID:       instanceID,
+		Workspace:        afero.NewBasePathFs(actionsFS, workspace),
+		UserID:           userID,
+		ServiceAccountID: "root", // Probes run as root for full validation
+		Context:          ctx,
+		CancelFunc:       func() {},
+		Logger:           logger,
 	}
 
 	return processor.Execute(taskCtx, req.Params)

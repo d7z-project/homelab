@@ -106,21 +106,22 @@ type StepTiming struct {
 
 // TaskInstance 代表一个正在执行或已完成的任务实例
 type TaskInstance struct {
-	ID          string              `json:"id"`
-	WorkflowID  string              `json:"workflowId"`
-	Status      string              `json:"status"`      // Pending, Running, Success, Failed, Cancelled
-	CurrentStep int                 `json:"currentStep"` // 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
-	Trigger     string              `json:"trigger"`     // Manual, Cron, Webhook
-	UserID      string              `json:"userId"`      // 触发者 ID
-	Inputs      map[string]string   `json:"inputs"`      // 实际传入的变量值
-	Workspace   string              `json:"workspace"`
-	StartedAt   time.Time           `json:"startedAt"`
-	FinishedAt  *time.Time          `json:"finishedAt,omitempty"`
-	Error       string              `json:"error,omitempty"`
-	Outputs     map[string]string   `json:"outputs"`     // 任务最终输出
-	Logs        []LogEntry          `json:"logs"`        // 任务日志
-	Steps       []Step              `json:"steps"`       // 运行时的步骤快照 (防篡改)
-	StepTimings map[int]*StepTiming `json:"stepTimings"` // 步骤执行耗时追踪
+	ID               string              `json:"id"`
+	WorkflowID       string              `json:"workflowId"`
+	Status           string              `json:"status"`           // Pending, Running, Success, Failed, Cancelled
+	CurrentStep      int                 `json:"currentStep"`      // 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
+	Trigger          string              `json:"trigger"`          // Manual, Cron, Webhook
+	UserID           string              `json:"userId"`           // 触发者 ID
+	ServiceAccountID string              `json:"serviceAccountId"` // 执行该工作流时使用的身份 (Impersonation)
+	Inputs           map[string]string   `json:"inputs"`           // 实际传入的变量值
+	Workspace        string              `json:"workspace"`
+	StartedAt        time.Time           `json:"startedAt"`
+	FinishedAt       *time.Time          `json:"finishedAt,omitempty"`
+	Error            string              `json:"error,omitempty"`
+	Outputs          map[string]string   `json:"outputs"`     // 任务最终输出
+	Logs             []LogEntry          `json:"logs"`        // 任务日志
+	Steps            []Step              `json:"steps"`       // 运行时的步骤快照 (防篡改)
+	StepTimings      map[int]*StepTiming `json:"stepTimings"` // 步骤执行耗时追踪
 }
 
 type LogEntry struct {

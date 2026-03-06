@@ -100,13 +100,19 @@ type ResourcePermissions struct {
 	MatchedRule      *PolicyRule `json:"matchedRule,omitempty"` // Records which rule allowed the access
 }
 
-// IsAllowed precisely checks if a specific resource instance is allowed.
+// IsAllowed precisely checks if a specific resource instance or prefix is allowed.
+// For example, if resourceName is "actions/wf-1", it matches if AllowedAll is true,
+// OR if "actions/wf-1" is in AllowedInstances, OR if "actions" is in AllowedInstances.
 func (p *ResourcePermissions) IsAllowed(resourceName string) bool {
-	if p == nil || p.AllowedAll {
+	if p == nil {
+		return false
+	}
+	if p.AllowedAll {
 		return true
 	}
 	for _, inst := range p.AllowedInstances {
-		if inst == resourceName {
+		// Exact match or prefix match (e.g., "actions" matches "actions/wf-1")
+		if inst == resourceName || strings.HasPrefix(resourceName, inst+"/") {
 			return true
 		}
 	}

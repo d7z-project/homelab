@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"homelab/pkg/common"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/actions"
 	"regexp"
@@ -56,16 +57,17 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	}
 
 	instance := &models.TaskInstance{
-		ID:          fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano()),
-		WorkflowID:  workflow.ID,
-		Status:      "Running",
-		Trigger:     trigger,
-		UserID:      userID,
-		Inputs:      inputs,
-		StartedAt:   time.Now(),
-		Outputs:     make(map[string]string),
-		Steps:       make([]models.Step, len(workflow.Steps)),
-		StepTimings: make(map[int]*models.StepTiming),
+		ID:               fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano()),
+		WorkflowID:       workflow.ID,
+		Status:           "Running",
+		Trigger:          trigger,
+		UserID:           userID,
+		ServiceAccountID: workflow.ServiceAccountID,
+		Inputs:           inputs,
+		StartedAt:        time.Now(),
+		Outputs:          make(map[string]string),
+		Steps:            make([]models.Step, len(workflow.Steps)),
+		StepTimings:      make(map[int]*models.StepTiming),
 	}
 	copy(instance.Steps, workflow.Steps)
 
@@ -177,6 +179,14 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		instance.StepTimings[instance.CurrentStep] = &models.StepTiming{StartedAt: time.Now()}
 		logger.SetStep(instance.CurrentStep)
 		e.updateInstanceState(instance, logger)
+
+		// Create impersonated context for this step
+		// This ensures all repo calls and processor logic respect the SA permissions
+		impersonatedCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
+			ID:   instance.ServiceAccountID,
+			Type: "sa",
+		})
+
 		select {
 		case <-ctx.Done():
 			e.fail(instance, ctx.Err(), logger)
@@ -245,13 +255,14 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		}
 
 		taskCtx := &TaskContext{
-			WorkflowID: workflow.ID,
-			InstanceID: instance.ID,
-			Workspace:  afero.NewBasePathFs(actionsFS, instance.Workspace),
-			UserID:     instance.UserID,
-			Context:    ctx,
-			CancelFunc: cancel,
-			Logger:     logger,
+			WorkflowID:       workflow.ID,
+			InstanceID:       instance.ID,
+			Workspace:        afero.NewBasePathFs(actionsFS, instance.Workspace),
+			UserID:           instance.UserID,
+			ServiceAccountID: workflow.ServiceAccountID,
+			Context:          impersonatedCtx, // Use impersonated context
+			CancelFunc:       cancel,
+			Logger:           logger,
 		}
 
 		outputs, err := processor.Execute(taskCtx, inputs)

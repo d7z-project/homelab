@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
@@ -219,14 +221,21 @@ func VerifySAToken(ctx context.Context, tokenString string) (string, error) {
 	return saID, nil
 }
 
+func HashToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
+}
+
 func IsSAEnabled(ctx context.Context, saID string, currentToken string) bool {
 	sa, err := rbacrepo.GetServiceAccount(ctx, saID)
 	if err != nil || sa == nil {
 		return false
 	}
-	// If currentToken is provided, it MUST match.
-	if currentToken != "" && sa.Token != currentToken {
-		return false
+	// If currentToken is provided, it MUST match the hash stored in DB.
+	if currentToken != "" {
+		if sa.Token != HashToken(currentToken) {
+			return false
+		}
 	}
 	return sa.Enabled
 }

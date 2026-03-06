@@ -8,13 +8,14 @@ import (
 )
 
 type TaskContext struct {
-	WorkflowID string
-	InstanceID string
-	Workspace  afero.Fs           // 作用域沙箱文件系统
-	UserID     string             // 用于实时 RBAC 校验的触发者 ID
-	Context    context.Context    // 用于传递取消信号
-	CancelFunc context.CancelFunc // 允许手动终止任务
-	Logger     *TaskLogger        // 实时流式日志记录器
+	WorkflowID       string
+	InstanceID       string
+	Workspace        afero.Fs           // 作用域沙箱文件系统
+	UserID           string             // 触发任务的原始用户 ID
+	ServiceAccountID string             // 执行该工作流时使用的身份 (Impersonation)
+	Context          context.Context    // 用于传递取消信号
+	CancelFunc       context.CancelFunc // 允许手动终止任务
+	Logger           *TaskLogger        // 实时流式日志记录器
 }
 
 type StepManifest = models.StepManifest
