@@ -4924,6 +4924,13 @@ const docTemplate = `{
         "models.IPSyncPolicy": {
             "type": "object",
             "properties": {
+                "config": {
+                    "description": "格式特定的配置",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -4939,6 +4946,10 @@ const docTemplate = `{
                 "errorMessage": {
                     "type": "string"
                 },
+                "format": {
+                    "description": "\"text\", \"geoip\"",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -4947,6 +4958,10 @@ const docTemplate = `{
                 },
                 "lastStatus": {
                     "description": "\"success\", \"failed\"",
+                    "type": "string"
+                },
+                "mode": {
+                    "description": "\"overwrite\", \"append\"",
                     "type": "string"
                 },
                 "name": {

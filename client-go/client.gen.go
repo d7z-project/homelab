@@ -311,16 +311,24 @@ type ModelsIPPoolPreviewResponse struct {
 
 // ModelsIPSyncPolicy defines model for models.IPSyncPolicy.
 type ModelsIPSyncPolicy struct {
-	CreatedAt    *string `json:"createdAt,omitempty"`
-	Cron         *string `json:"cron,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	Enabled      *bool   `json:"enabled,omitempty"`
-	ErrorMessage *string `json:"errorMessage,omitempty"`
-	Id           *string `json:"id,omitempty"`
-	LastRunAt    *string `json:"lastRunAt,omitempty"`
+	// Config 格式特定的配置
+	Config       *map[string]string `json:"config,omitempty"`
+	CreatedAt    *string            `json:"createdAt,omitempty"`
+	Cron         *string            `json:"cron,omitempty"`
+	Description  *string            `json:"description,omitempty"`
+	Enabled      *bool              `json:"enabled,omitempty"`
+	ErrorMessage *string            `json:"errorMessage,omitempty"`
+
+	// Format "text", "geoip"
+	Format    *string `json:"format,omitempty"`
+	Id        *string `json:"id,omitempty"`
+	LastRunAt *string `json:"lastRunAt,omitempty"`
 
 	// LastStatus "success", "failed"
-	LastStatus    *string `json:"lastStatus,omitempty"`
+	LastStatus *string `json:"lastStatus,omitempty"`
+
+	// Mode "overwrite", "append"
+	Mode          *string `json:"mode,omitempty"`
 	Name          *string `json:"name,omitempty"`
 	SourceUrl     *string `json:"sourceUrl,omitempty"`
 	TargetGroupId *string `json:"targetGroupId,omitempty"`

@@ -227,3 +227,47 @@ func (r *Reader) Next() (netip.Prefix, []string, error) {
 
 	return prefix, tags, nil
 }
+
+func (r *Reader) NextIndices() (netip.Prefix, []uint32, error) {
+	var family uint8
+	if err := binary.Read(r.r, binary.LittleEndian, &family); err != nil {
+		return netip.Prefix{}, nil, err
+	}
+	var ipBytes []byte
+	if family == 4 {
+		ipBytes = make([]byte, 4)
+	} else if family == 6 {
+		ipBytes = make([]byte, 16)
+	} else {
+		return netip.Prefix{}, nil, ErrCorruptedData
+	}
+
+	if _, err := io.ReadFull(r.r, ipBytes); err != nil {
+		return netip.Prefix{}, nil, err
+	}
+	var mask uint8
+	if err := binary.Read(r.r, binary.LittleEndian, &mask); err != nil {
+		return netip.Prefix{}, nil, err
+	}
+
+	addr, ok := netip.AddrFromSlice(ipBytes)
+	if !ok {
+		return netip.Prefix{}, nil, ErrCorruptedData
+	}
+	prefix := netip.PrefixFrom(addr, int(mask))
+
+	var tagCount uint16
+	if err := binary.Read(r.r, binary.LittleEndian, &tagCount); err != nil {
+		return netip.Prefix{}, nil, err
+	}
+	indices := make([]uint32, tagCount)
+	for i := uint16(0); i < tagCount; i++ {
+		var idx uint32
+		if err := binary.Read(r.r, binary.LittleEndian, &idx); err != nil {
+			return netip.Prefix{}, nil, err
+		}
+		indices[i] = idx
+	}
+
+	return prefix, indices, nil
+}

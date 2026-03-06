@@ -19,7 +19,10 @@ type IPSyncPolicy struct {
 	Name          string    `json:"name"`
 	Description   string    `json:"description"`
 	SourceURL     string    `json:"sourceUrl"`
-	TargetGroupID string    `json:"targetGroupId"`
+	Format        string            `json:"format"` // "text", "geoip"
+	Mode          string            `json:"mode"`   // "overwrite", "append"
+	Config        map[string]string `json:"config"` // 格式特定的配置
+	TargetGroupID string            `json:"targetGroupId"`
 	Cron          string    `json:"cron"`
 	Enabled       bool      `json:"enabled"`
 	CreatedAt     time.Time `json:"createdAt"`
@@ -51,6 +54,15 @@ func (p *IPSyncPolicy) Bind(r *http.Request) error {
 		}
 	} else {
 		return errors.New("cron expression is required")
+	}
+	if p.Format == "" {
+		p.Format = "text"
+	}
+	if p.Mode == "" {
+		p.Mode = "overwrite"
+	}
+	if p.Config == nil {
+		p.Config = make(map[string]string)
 	}
 	return nil
 }

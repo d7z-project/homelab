@@ -10,17 +10,29 @@
 
 
 export interface ModelsIPSyncPolicy { 
+    /**
+     * 格式特定的配置
+     */
+    config?: { [key: string]: string; };
     createdAt?: string;
     cron?: string;
     description?: string;
     enabled?: boolean;
     errorMessage?: string;
+    /**
+     * \"text\", \"geoip\"
+     */
+    format?: string;
     id?: string;
     lastRunAt?: string;
     /**
      * \"success\", \"failed\"
      */
     lastStatus?: string;
+    /**
+     * \"overwrite\", \"append\"
+     */
+    mode?: string;
     name?: string;
     sourceUrl?: string;
     targetGroupId?: string;

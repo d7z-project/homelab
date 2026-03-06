@@ -3614,18 +3614,27 @@ components:
     models.IPSyncPolicy:
       example:
         cron: cron
-        sourceUrl: sourceUrl
-        createdAt: createdAt
         lastRunAt: lastRunAt
         errorMessage: errorMessage
-        name: name
+        format: format
         description: description
+        enabled: true
+        mode: mode
+        sourceUrl: sourceUrl
+        createdAt: createdAt
+        name: name
         targetGroupId: targetGroupId
         id: id
-        enabled: true
+        config:
+          key: config
         lastStatus: lastStatus
         updatedAt: updatedAt
       properties:
+        config:
+          additionalProperties:
+            type: string
+          description: 格式特定的配置
+          type: object
         createdAt:
           type: string
         cron:
@@ -3636,12 +3645,18 @@ components:
           type: boolean
         errorMessage:
           type: string
+        format:
+          description: "\"text\", \"geoip\""
+          type: string
         id:
           type: string
         lastRunAt:
           type: string
         lastStatus:
           description: "\"success\", \"failed\""
+          type: string
+        mode:
+          description: "\"overwrite\", \"append\""
           type: string
         name:
           type: string
@@ -4625,27 +4640,35 @@ components:
         page: 0
         items:
         - cron: cron
-          sourceUrl: sourceUrl
-          createdAt: createdAt
           lastRunAt: lastRunAt
           errorMessage: errorMessage
-          name: name
+          format: format
           description: description
+          enabled: true
+          mode: mode
+          sourceUrl: sourceUrl
+          createdAt: createdAt
+          name: name
           targetGroupId: targetGroupId
           id: id
-          enabled: true
+          config:
+            key: config
           lastStatus: lastStatus
           updatedAt: updatedAt
         - cron: cron
-          sourceUrl: sourceUrl
-          createdAt: createdAt
           lastRunAt: lastRunAt
           errorMessage: errorMessage
-          name: name
+          format: format
           description: description
+          enabled: true
+          mode: mode
+          sourceUrl: sourceUrl
+          createdAt: createdAt
+          name: name
           targetGroupId: targetGroupId
           id: id
-          enabled: true
+          config:
+            key: config
           lastStatus: lastStatus
           updatedAt: updatedAt
     _network_site_exports_get_200_response:

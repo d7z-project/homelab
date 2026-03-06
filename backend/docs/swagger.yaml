@@ -253,6 +253,11 @@ definitions:
     type: object
   models.IPSyncPolicy:
     properties:
+      config:
+        additionalProperties:
+          type: string
+        description: 格式特定的配置
+        type: object
       createdAt:
         type: string
       cron:
@@ -263,12 +268,18 @@ definitions:
         type: boolean
       errorMessage:
         type: string
+      format:
+        description: '"text", "geoip"'
+        type: string
       id:
         type: string
       lastRunAt:
         type: string
       lastStatus:
         description: '"success", "failed"'
+        type: string
+      mode:
+        description: '"overwrite", "append"'
         type: string
       name:
         type: string

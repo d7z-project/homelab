@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
-	"net"
+	"net/netip"
 	"sync"
 
-	"github.com/oschwald/geoip2-golang"
+	"github.com/oschwald/geoip2-golang/v2"
 	"github.com/spf13/afero"
 )
 
@@ -59,7 +59,7 @@ func (m *MMDBManager) loadReader(path string) *geoip2.Reader {
 	if err != nil {
 		return nil
 	}
-	reader, err := geoip2.FromBytes(data)
+	reader, err := geoip2.OpenBytes(data)
 	if err != nil {
 		return nil
 	}
@@ -71,8 +71,8 @@ func (m *MMDBManager) Lookup(ipStr string) (*models.IPInfoResponse, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	ip := net.ParseIP(ipStr)
-	if ip == nil {
+	ip, err := netip.ParseAddr(ipStr)
+	if err != nil {
 		return nil, fmt.Errorf("invalid ip: %s", ipStr)
 	}
 
@@ -99,21 +99,21 @@ func (m *MMDBManager) Lookup(ipStr string) (*models.IPInfoResponse, error) {
 
 	if m.city != nil {
 		if city, err := m.city.City(ip); err == nil {
-			res.City = city.City.Names["zh-CN"]
+			res.City = city.City.Names.SimplifiedChinese
 			if res.City == "" {
-				res.City = city.City.Names["en"]
+				res.City = city.City.Names.English
 			}
-			res.Country = city.Country.Names["zh-CN"]
+			res.Country = city.Country.Names.SimplifiedChinese
 			if res.Country == "" {
-				res.Country = city.Country.Names["en"]
+				res.Country = city.Country.Names.English
 			}
 			res.Location = fmt.Sprintf("%f,%f", city.Location.Latitude, city.Location.Longitude)
 		}
 	} else if m.country != nil {
 		if country, err := m.country.Country(ip); err == nil {
-			res.Country = country.Country.Names["zh-CN"]
+			res.Country = country.Country.Names.SimplifiedChinese
 			if res.Country == "" {
-				res.Country = country.Country.Names["en"]
+				res.Country = country.Country.Names.English
 			}
 		}
 	}

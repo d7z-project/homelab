@@ -85,7 +85,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   displayedColumns = computed(() =>
     this.isHandset()
       ? ['enabled', 'name', 'status', 'actions']
-      : ['enabled', 'name', 'target', 'cron', 'status', 'actions']
+      : ['enabled', 'name', 'target', 'format', 'mode', 'cron', 'status', 'actions']
   );
 
   hasSearchContent = computed(() => this.search().length > 0);

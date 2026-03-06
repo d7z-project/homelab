@@ -4917,6 +4917,13 @@
         "models.IPSyncPolicy": {
             "type": "object",
             "properties": {
+                "config": {
+                    "description": "格式特定的配置",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -4932,6 +4939,10 @@
                 "errorMessage": {
                     "type": "string"
                 },
+                "format": {
+                    "description": "\"text\", \"geoip\"",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -4940,6 +4951,10 @@
                 },
                 "lastStatus": {
                     "description": "\"success\", \"failed\"",
+                    "type": "string"
+                },
+                "mode": {
+                    "description": "\"overwrite\", \"append\"",
                     "type": "string"
                 },
                 "name": {

@@ -79,10 +79,38 @@
 
             <ng-container matColumnDef="target">
               <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                目标地址池
+                目标池
               </th>
-              <td mat-cell *matCellDef="let element" class="py-4 text-sm">
+              <td mat-cell *matCellDef="let element" class="py-4 text-sm font-medium">
                 {{ element.targetGroupId }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="format">
+              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+                格式
+              </th>
+              <td mat-cell *matCellDef="let element" class="py-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                  [class.bg-primary-container]="element.format === 'geoip'"
+                  [class.text-on-primary-container]="element.format === 'geoip'"
+                  [class.border-outline-variant]="element.format === 'text'">
+                  {{ element.format === 'geoip' ? 'GeoIP' : '文本' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="mode">
+              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+                模式
+              </th>
+              <td mat-cell *matCellDef="let element" class="py-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                  [class.bg-secondary-container]="element.mode === 'append'"
+                  [class.text-on-secondary-container]="element.mode === 'append'"
+                  [class.border-outline-variant]="element.mode === 'overwrite'">
+                  {{ element.mode === 'append' ? '追加' : '覆盖' }}
+                </span>
               </td>
             </ng-container>
 

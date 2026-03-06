@@ -15,6 +15,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -22,6 +23,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/oschwald/geoip2-golang/v2"
+	"github.com/oschwald/maxminddb-golang/v2"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/afero"
 )
@@ -561,6 +564,14 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 }
 
 func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy) error {
+	// 1. 下载原始数据到临时文件
+	tempSrc, err := os.CreateTemp("", "sync_src_*.tmp")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tempSrc.Name())
+	defer tempSrc.Close()
+
 	resp, err := http.Get(policy.SourceURL)
 	if err != nil {
 		return err
@@ -571,47 +582,119 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if _, err := io.Copy(tempSrc, resp.Body); err != nil {
 		return err
 	}
+	_ = tempSrc.Close()
 
-	lines := strings.Split(string(body), "\n")
-	var entries []Entry
-	var allTags []string
-	tagSet := make(map[string]struct{})
+	// 2. 解析数据
+	var newEntries []Entry
+	var newTags []string
+	tagMap := make(map[string]uint32)
 
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
+	getTagIdx := func(t string) uint32 {
+		if idx, ok := tagMap[t]; ok {
+			return idx
 		}
-		
-		// 简单的解析逻辑：可能是 CIDR 或 IP
-		prefix, err := netip.ParsePrefix(line)
-		if err != nil {
-			addr, err := netip.ParseAddr(line)
-			if err != nil {
-				continue // 忽略无效行
-			}
-			prefix = netip.PrefixFrom(addr, addr.BitLen())
-		}
-
-		// 默认同步进来的记录带有 "sync" 标签
-		tag := "sync"
-		if _, ok := tagSet[tag]; !ok {
-			tagSet[tag] = struct{}{}
-			allTags = append(allTags, tag)
-		}
-		idx := slices.Index(allTags, tag)
-		entries = append(entries, Entry{Prefix: prefix, TagIndices: []uint32{uint32(idx)}})
+		idx := uint32(len(newTags))
+		newTags = append(newTags, t)
+		tagMap[t] = idx
+		return idx
 	}
 
-	if len(entries) == 0 {
+	if policy.Format == "geoip" {
+		db, err := geoip2.Open(tempSrc.Name())
+		if err != nil {
+			return fmt.Errorf("failed to open geoip db: %w", err)
+		}
+		defer db.Close()
+
+		// 遍历 MMDB 所有的网络 (使用底层的 maxminddb Reader)
+		networks := db.Metadata().BinaryFormatMajorVersion
+		_ = networks
+		
+		// geoip2.Reader 没有直接暴露 Networks 迭代器，我们需要使用底层的 maxminddb
+		// 这里简化逻辑，因为直接从 MMDB 提取所有 CIDR 是一个比较重的操作
+		// 实际上由于项目已经有了 MMDBManager，我们可以考虑不同的实现，
+		// 但为了满足用户需求，我们这里采用一种兼容方案。
+		
+		// 重新打开为 maxminddb 以便迭代
+		mdb, err := maxminddb.Open(tempSrc.Name())
+		if err != nil {
+			return fmt.Errorf("failed to open as maxminddb: %w", err)
+		}
+		defer mdb.Close()
+
+		for result := range mdb.Networks() {
+			record := &struct {
+				Country struct {
+					IsoCode string `maxminddb:"iso_code"`
+				} `maxminddb:"country"`
+				City struct {
+					Names map[string]string `maxminddb:"names"`
+				} `maxminddb:"city"`
+			}{}
+			if err := result.Decode(record); err != nil {
+				continue
+			}
+			
+			prefix := result.Prefix()
+
+			var indices []uint32
+			if record.Country.IsoCode != "" {
+				indices = append(indices, getTagIdx(record.Country.IsoCode))
+			}
+			if record.City.Names != nil {
+				lang := policy.Config["language"]
+				if lang == "" {
+					lang = "en"
+				}
+				if cityName, ok := record.City.Names[lang]; ok && cityName != "" {
+					indices = append(indices, getTagIdx(cityName))
+				} else if cityName, ok := record.City.Names["en"]; ok && cityName != "" {
+					indices = append(indices, getTagIdx(cityName))
+				}
+			}
+			if len(indices) == 0 {
+				indices = append(indices, getTagIdx("unknown"))
+			}
+			newEntries = append(newEntries, Entry{Prefix: prefix, TagIndices: indices})
+		}
+	} else {
+		// 默认 Text 格式
+		data, err := os.ReadFile(tempSrc.Name())
+		if err != nil {
+			return err
+		}
+		
+		defaultTag := policy.Config["tag"]
+		if defaultTag == "" {
+			defaultTag = "sync"
+		}
+
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			prefix, err := netip.ParsePrefix(line)
+			if err != nil {
+				addr, err := netip.ParseAddr(line)
+				if err != nil {
+					continue
+				}
+				prefix = netip.PrefixFrom(addr, addr.BitLen())
+			}
+			newEntries = append(newEntries, Entry{Prefix: prefix, TagIndices: []uint32{getTagIdx(defaultTag)}})
+		}
+	}
+
+	if len(newEntries) == 0 {
 		return fmt.Errorf("no valid IP/CIDR found in source")
 	}
 
-	// 写入目标池
+	// 3. 写入目标池 (处理 Overwrite 或 Append)
 	poolWriteMutex.Lock()
 	defer poolWriteMutex.Unlock()
 
@@ -623,12 +706,48 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	_ = common.FS.MkdirAll(PoolsDir, 0755)
 	poolPath := filepath.Join(PoolsDir, policy.TargetGroupID+".bin")
 	tempFile := filepath.Join(PoolsDir, policy.TargetGroupID+".bin.tmp")
+
+	finalEntries := newEntries
+	finalTags := newTags
+
+	if policy.Mode == "append" {
+		// 加载旧数据并合并
+		if exists, _ := afero.Exists(common.FS, poolPath); exists {
+			pf, err := common.FS.Open(poolPath)
+			if err == nil {
+				reader, _ := NewReader(pf)
+				// 解析旧 Tags 并建立映射
+				oldTags := reader.Tags()
+				oldToNewIdx := make(map[uint32]uint32)
+				for i, t := range oldTags {
+					oldToNewIdx[uint32(i)] = getTagIdx(t)
+				}
+
+				for {
+					prefix, tagIdxs, err := reader.NextIndices()
+					if err == io.EOF {
+						break
+					}
+					// 转换为新索引
+					newIdxs := make([]uint32, len(tagIdxs))
+					for i, oldIdx := range tagIdxs {
+						newIdxs[i] = oldToNewIdx[oldIdx]
+					}
+					finalEntries = append(finalEntries, Entry{Prefix: prefix, TagIndices: newIdxs})
+				}
+				pf.Close()
+				finalTags = newTags // 已经更新过的 Tags 列表
+			}
+		}
+	}
+
+	// 写入最终文件
 	tf, err := common.FS.Create(tempFile)
 	if err != nil {
 		return err
 	}
 	codec := NewCodec()
-	err = codec.WritePool(tf, allTags, entries)
+	err = codec.WritePool(tf, finalTags, finalEntries)
 	tf.Close()
 	if err != nil {
 		return err
@@ -636,13 +755,12 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	_ = common.FS.Rename(tempFile, poolPath)
 
 	// 更新元数据
-	group.EntryCount = int64(len(entries))
+	group.EntryCount = int64(len(finalEntries))
 	group.UpdatedAt = time.Now()
-	
 	hf := sha256.New()
 	content, _ := afero.ReadFile(common.FS, poolPath)
 	hf.Write(content)
 	group.Checksum = hex.EncodeToString(hf.Sum(nil))
-	
+
 	return repo.SaveGroup(ctx, group)
 }
