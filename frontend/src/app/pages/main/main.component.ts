@@ -205,6 +205,15 @@ export class MainComponent {
         label: '网络管理',
         children: [
           {
+            link: '/dns',
+            icon: 'dns',
+            label: 'DNS 管理',
+            children: [
+              { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
+              { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
+            ],
+          },
+          {
             link: '/ip',
             icon: 'router',
             label: 'IP 管理',
@@ -215,12 +224,13 @@ export class MainComponent {
             ],
           },
           {
-            link: '/dns',
-            icon: 'dns',
-            label: 'DNS 管理',
+            link: '/site',
+            icon: 'web',
+            label: '域名池管理',
             children: [
-              { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
-              { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
+              { link: '/site', queryParams: { tab: 'pool' }, icon: 'view_list', label: '域名池' },
+              { link: '/site', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+              { link: '/site', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
             ],
           },
         ],

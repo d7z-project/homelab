@@ -44,6 +44,11 @@ export const routes: Routes = [
         data: { toolbar: { shadow: false, sticky: false } },
       },
       {
+        path: 'site',
+        loadComponent: () => import('./pages/site/site.component').then((m) => m.SiteComponent),
+        data: { toolbar: { shadow: false, sticky: false } },
+      },
+      {
         path: 'actions',
         component: ActionsComponent,
         data: { toolbar: { shadow: false, sticky: false } },

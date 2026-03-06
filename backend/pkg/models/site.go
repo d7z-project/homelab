@@ -1,0 +1,113 @@
+package models
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+)
+
+var siteIDRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+// RuleType 定义
+const (
+	RuleTypeKeyword uint8 = 0
+	RuleTypeRegex   uint8 = 1
+	RuleTypeDomain  uint8 = 2
+	RuleTypeFull    uint8 = 3
+)
+
+// SiteGroup 代表一个域名池的元数据
+type SiteGroup struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Checksum    string    `json:"checksum"`   // 数据指纹
+	EntryCount  int64     `json:"entryCount"` // 条目总数
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+func (g *SiteGroup) Bind(r *http.Request) error {
+	g.Name = strings.TrimSpace(g.Name)
+	if g.Name == "" {
+		return errors.New("name is required")
+	}
+	if g.ID != "" && !siteIDRegex.MatchString(g.ID) {
+		return fmt.Errorf("invalid id format: %s", g.ID)
+	}
+	return nil
+}
+
+// SiteExport 代表一个动态导出规则
+type SiteExport struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Rule        string    `json:"rule"`      // go-expr 表达式
+	GroupIDs    []string  `json:"groupIds"`  // 依赖的域名池 ID 列表
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+func (e *SiteExport) Bind(r *http.Request) error {
+	e.Name = strings.TrimSpace(e.Name)
+	if e.Name == "" {
+		return errors.New("name is required")
+	}
+	if e.ID != "" && !siteIDRegex.MatchString(e.ID) {
+		return fmt.Errorf("invalid id format: %s", e.ID)
+	}
+	if e.Rule == "" {
+		return errors.New("rule expression is required")
+	}
+	if len(e.GroupIDs) == 0 {
+		return errors.New("at least one source group is required")
+	}
+	return nil
+}
+
+// SitePoolEntry 代表域名池中的单条记录
+type SitePoolEntry struct {
+	Type uint8    `json:"type"` // 0:Keyword, 1:Regex, 2:Domain, 3:Full
+	Value string   `json:"value"`
+	Tags  []string `json:"tags"`
+}
+
+// SitePoolEntryRequest 用于维护条目的请求
+type SitePoolEntryRequest struct {
+	Type  uint8    `json:"type"`
+	Value string   `json:"value"`
+	Tags  []string `json:"tags"`
+}
+
+func (req *SitePoolEntryRequest) Bind(r *http.Request) error {
+	req.Value = strings.TrimSpace(req.Value)
+	if req.Value == "" {
+		return errors.New("value is required")
+	}
+	if req.Type > 3 {
+		return errors.New("invalid rule type")
+	}
+	for i, t := range req.Tags {
+		req.Tags[i] = strings.ToLower(strings.TrimSpace(t))
+	}
+	return nil
+}
+
+// SitePoolPreviewResponse 游标分页预览
+type SitePoolPreviewResponse struct {
+	Entries    []SitePoolEntry `json:"entries"`
+	NextCursor int64           `json:"nextCursor"`
+	Total      int64           `json:"total"`
+}
+
+// SiteAnalysisResult 命中推演结果
+type SiteAnalysisResult struct {
+	Matched  bool     `json:"matched"`
+	RuleType uint8    `json:"ruleType"`
+	Pattern  string   `json:"pattern"`
+	Tags     []string `json:"tags"`
+}

@@ -7,6 +7,7 @@ api/auth.service.ts
 api/discovery.service.ts
 api/dns.service.ts
 api/networkIp.service.ts
+api/networkSite.service.ts
 api/rbac.service.ts
 configuration.ts
 encoder.ts
@@ -48,6 +49,12 @@ model/modelsRunWorkflowRequest.ts
 model/modelsServiceAccount.ts
 model/modelsSession.ts
 model/modelsSimulatePermissionsRequest.ts
+model/modelsSiteAnalysisResult.ts
+model/modelsSiteExport.ts
+model/modelsSiteGroup.ts
+model/modelsSitePoolEntry.ts
+model/modelsSitePoolEntryRequest.ts
+model/modelsSitePoolPreviewResponse.ts
 model/modelsStep.ts
 model/modelsStepManifest.ts
 model/modelsStepTiming.ts
@@ -56,9 +63,12 @@ model/modelsVarDefinition.ts
 model/modelsWorkflow.ts
 model/networkIpExportsGet200Response.ts
 model/networkIpPoolsGet200Response.ts
+model/networkSiteExportsGet200Response.ts
+model/networkSitePoolsGet200Response.ts
 model/rbacRolebindingsGet200Response.ts
 model/rbacRolesGet200Response.ts
 model/rbacServiceaccountsGet200Response.ts
+model/siteExportTask.ts
 param.ts
 provide-api.ts
 query.params.ts

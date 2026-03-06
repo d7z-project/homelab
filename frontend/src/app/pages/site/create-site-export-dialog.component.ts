@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,10 +8,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
-import { NetworkIpService, ModelsIPGroup } from '../../generated';
+import { NetworkSiteService, ModelsSiteGroup } from '../../generated';
 
 @Component({
-  selector: 'app-create-export-dialog',
+  selector: 'app-create-site-export-dialog',
   standalone: true,
   imports: [
     CommonModule,
@@ -24,7 +24,7 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
     MatIconModule,
   ],
   template: `
-    <h2 mat-dialog-title>新建导出配置</h2>
+    <h2 mat-dialog-title>新建域名导出配置</h2>
     <mat-dialog-content>
       <form [formGroup]="form" class="flex flex-col gap-4 pt-2">
         <mat-form-field appearance="outline">
@@ -40,14 +40,14 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
         <mat-form-field appearance="outline">
           <mat-label>过滤规则 (go-expr)</mat-label>
           <textarea matInput formControlName="rule" required rows="3" class="font-mono text-sm"></textarea>
-          <mat-hint>可用变量: tags ([]string), cidr (string), ip (string). 示例: <code>"cn" in tags || cidr == "8.8.8.8/32"</code></mat-hint>
+          <mat-hint>可用变量: tags ([]string), domain (string), type (uint8)</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>依赖的数据池</mat-label>
+          <mat-label>依赖的域名池</mat-label>
           <mat-select formControlName="groupIds" multiple required>
             @for (pool of pools(); track pool.id) {
-              <mat-option [value]="pool.id">{{ pool.name }} ({{ pool.id }})</mat-option>
+              <mat-option [value]="pool.id">{{ pool.name }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -61,14 +61,14 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
     </mat-dialog-actions>
   `,
 })
-export class CreateExportDialogComponent implements OnInit {
+export class CreateSiteExportDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private ipService = inject(NetworkIpService);
-  private dialogRef = inject(MatDialogRef<CreateExportDialogComponent>);
+  private siteService = inject(NetworkSiteService);
+  private dialogRef = inject(MatDialogRef<CreateSiteExportDialogComponent>);
   private snackBar = inject(MatSnackBar);
 
   loading = signal(false);
-  pools = signal<ModelsIPGroup[]>([]);
+  pools = signal<ModelsSiteGroup[]>([]);
 
   form = this.fb.group({
     name: ['', Validators.required],
@@ -78,7 +78,7 @@ export class CreateExportDialogComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.ipService.networkIpPoolsGet(1, 1000).subscribe({
+    this.siteService.networkSitePoolsGet(1, 1000).subscribe({
       next: (res) => this.pools.set(res.items || []),
     });
   }
@@ -88,8 +88,8 @@ export class CreateExportDialogComponent implements OnInit {
     this.loading.set(true);
     const val = this.form.value;
 
-    this.ipService
-      .networkIpExportsPost({
+    this.siteService
+      .networkSiteExportsPost({
         name: val.name!,
         description: val.description || undefined,
         rule: val.rule!,
