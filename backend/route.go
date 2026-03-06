@@ -65,6 +65,10 @@ func Router(r chi.Router) {
 				r.Use(middlewares.AuditMiddleware("network/site"))
 				controllers.SiteRouter(r)
 			})
+
+			r.Group(func(r chi.Router) {
+				controllers.IntelligenceRouter(r)
+			})
 		})
 	})
 }

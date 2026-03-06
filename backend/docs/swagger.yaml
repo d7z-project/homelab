@@ -237,6 +237,31 @@ definitions:
         description: 总条数
         type: integer
     type: object
+  models.IntelligenceSource:
+    properties:
+      autoUpdate:
+        type: boolean
+      cron:
+        type: string
+      enabled:
+        type: boolean
+      errorMessage:
+        type: string
+      id:
+        type: string
+      lastUpdatedAt:
+        type: string
+      name:
+        type: string
+      status:
+        description: Ready, Downloading, Error
+        type: string
+      type:
+        description: asn, city, country
+        type: string
+      url:
+        type: string
+    type: object
   models.LogEntry:
     properties:
       message:
@@ -1616,6 +1641,66 @@ paths:
       summary: Update a record
       tags:
       - network/dns
+  /network/intelligence/sources:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.IntelligenceSource'
+            type: array
+      summary: List intelligence sources
+      tags:
+      - network/intelligence
+    post:
+      parameters:
+      - description: Source
+        in: body
+        name: source
+        required: true
+        schema:
+          $ref: '#/definitions/models.IntelligenceSource'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IntelligenceSource'
+      summary: Create intelligence source
+      tags:
+      - network/intelligence
+  /network/intelligence/sources/{id}:
+    delete:
+      parameters:
+      - description: Source ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete intelligence source
+      tags:
+      - network/intelligence
+  /network/intelligence/sources/{id}/sync:
+    post:
+      parameters:
+      - description: Source ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: sync started
+          schema:
+            type: string
+      summary: Trigger manual sync
+      tags:
+      - network/intelligence
   /network/ip/analysis/hit-test:
     post:
       consumes:

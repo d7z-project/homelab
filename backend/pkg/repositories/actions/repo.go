@@ -44,7 +44,7 @@ func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
 	if err != nil {
 		return nil, err
 	}
-	var res []models.Workflow
+	res := make([]models.Workflow, 0)
 	for _, v := range items {
 		var workflow models.Workflow
 		if err := json.Unmarshal([]byte(v.Value), &workflow); err == nil {
@@ -84,7 +84,7 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	var res []models.TaskInstance
+	res := make([]models.TaskInstance, 0)
 	for _, v := range items {
 		var instance models.TaskInstance
 		if err := json.Unmarshal([]byte(v.Value), &instance); err == nil {

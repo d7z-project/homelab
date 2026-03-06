@@ -77,7 +77,7 @@ func ListServiceAccounts(ctx context.Context, page uint64, pageSize uint, search
 	if err != nil {
 		return nil, 0, err
 	}
-	var res []models.ServiceAccount
+	res := make([]models.ServiceAccount, 0)
 	search = strings.ToLower(search)
 	for _, v := range items {
 		var sa models.ServiceAccount
@@ -146,7 +146,7 @@ func ListRoles(ctx context.Context, page uint64, pageSize uint, search string) (
 	if err != nil {
 		return nil, 0, err
 	}
-	var res []models.Role
+	res := make([]models.Role, 0)
 	search = strings.ToLower(search)
 	for _, v := range items {
 		var role models.Role
@@ -210,7 +210,7 @@ func ListRoleBindings(ctx context.Context, page uint64, pageSize uint, search st
 	if err != nil {
 		return nil, 0, err
 	}
-	var res []models.RoleBinding
+	res := make([]models.RoleBinding, 0)
 	search = strings.ToLower(search)
 	for _, v := range items {
 		var rb models.RoleBinding
@@ -246,7 +246,7 @@ func ListRoleBindingsAll(ctx context.Context) ([]models.RoleBinding, error) {
 	if err != nil {
 		return nil, err
 	}
-	var res []models.RoleBinding
+	res := make([]models.RoleBinding, 0)
 	for _, v := range items {
 		var rb models.RoleBinding
 		if err := json.Unmarshal([]byte(v.Value), &rb); err == nil {

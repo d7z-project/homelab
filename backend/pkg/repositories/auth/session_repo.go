@@ -39,9 +39,9 @@ func ListSessions(ctx context.Context) ([]models.Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	var res []models.Session
-	for _, item := range items {
-		parts := strings.Split(item.Value, "|")
+	res := make([]models.Session, 0)
+	for _, v := range items {
+		parts := strings.Split(v.Value, "|")
 		userType := parts[0]
 		createdAt := ""
 		ip := ""
@@ -56,7 +56,7 @@ func ListSessions(ctx context.Context) ([]models.Session, error) {
 			ua = parts[3]
 		}
 		res = append(res, models.Session{
-			ID:        item.Key,
+			ID:        v.Key,
 			UserType:  userType,
 			CreatedAt: createdAt,
 			IP:        ip,

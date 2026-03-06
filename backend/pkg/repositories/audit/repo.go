@@ -74,7 +74,7 @@ func ListLogs(ctx context.Context, page, pageSize int, search string) ([]models.
 		}
 	}
 
-	var logs []models.AuditLog
+	logs := make([]models.AuditLog, 0)
 	searchLower := strings.ToLower(search)
 
 	// Iterate backwards through gathered items for newest first

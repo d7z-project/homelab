@@ -108,7 +108,7 @@ func ListDomains(ctx context.Context, page int, pageSize int, search string) ([]
 		domainListCache.Add("all", all)
 	}
 
-	var res []models.Domain
+	res := make([]models.Domain, 0)
 	search = strings.ToLower(search)
 	for _, domain := range all {
 		if search == "" || strings.Contains(strings.ToLower(domain.Name), search) || strings.Contains(strings.ToLower(domain.ID), search) {
@@ -202,7 +202,7 @@ func ListRecords(ctx context.Context, domainID string, page int, pageSize int, s
 		recordListCache.Add(cacheKey, all)
 	}
 
-	var res []models.Record
+	res := make([]models.Record, 0)
 	search = strings.ToLower(search)
 	for _, record := range all {
 		if search == "" || strings.Contains(strings.ToLower(record.Name), search) || strings.Contains(strings.ToLower(record.Value), search) || strings.Contains(strings.ToLower(record.ID), search) {

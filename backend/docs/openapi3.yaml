@@ -677,7 +677,7 @@ paths:
       - discovery
   /discovery/lookup:
     get:
-      description: Search for items in a specific discovery code (e.g. dns/domains)
+      description: Search for items in a specific discovery code (e.g. network/dns/domains)
       parameters:
       - description: Discovery code
         in: query
@@ -712,226 +712,6 @@ paths:
       summary: Discovery lookup
       tags:
       - discovery
-  /dns/domains:
-    get:
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        schema:
-          type: integer
-      - description: Items per page
-        in: query
-        name: pageSize
-        schema:
-          type: integer
-      - description: Search by name
-        in: query
-        name: search
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/_dns_domains_get_200_response"
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: List all domains
-      tags:
-      - dns
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/models.Domain"
-        description: Domain
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/models.Domain"
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: Create a domain
-      tags:
-      - dns
-      x-codegen-request-body-name: domain
-  /dns/domains/{id}:
-    delete:
-      parameters:
-      - description: Domain ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: string
-          description: success
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a domain
-      tags:
-      - dns
-    put:
-      parameters:
-      - description: Domain ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/models.Domain"
-        description: Domain
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/models.Domain"
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: Update a domain
-      tags:
-      - dns
-      x-codegen-request-body-name: domain
-  /dns/export:
-    get:
-      description: Returns all enabled DNS domains and records in a structured format.
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/models.DnsExportResponse"
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: Export all DNS configurations
-      tags:
-      - dns
-  /dns/records:
-    get:
-      parameters:
-      - description: Filter by domain ID
-        in: query
-        name: domainId
-        schema:
-          type: string
-      - description: Page number
-        in: query
-        name: page
-        schema:
-          type: integer
-      - description: Items per page
-        in: query
-        name: pageSize
-        schema:
-          type: integer
-      - description: Search by name or value
-        in: query
-        name: search
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/_dns_records_get_200_response"
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: List all records
-      tags:
-      - dns
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/models.Record"
-        description: Record
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/models.Record"
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: Create a record
-      tags:
-      - dns
-      x-codegen-request-body-name: record
-  /dns/records/{id}:
-    delete:
-      parameters:
-      - description: Record ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: string
-          description: success
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a record
-      tags:
-      - dns
-    put:
-      parameters:
-      - description: Record ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/models.Record"
-        description: Record
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/models.Record"
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: Update a record
-      tags:
-      - dns
-      x-codegen-request-body-name: record
   /info:
     get:
       responses:
@@ -980,6 +760,297 @@ paths:
       summary: Logout
       tags:
       - auth
+  /network/dns/domains:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_dns_domains_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all domains
+      tags:
+      - network/dns
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Domain"
+        description: Domain
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Domain"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a domain
+      tags:
+      - network/dns
+      x-codegen-request-body-name: domain
+  /network/dns/domains/{id}:
+    delete:
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a domain
+      tags:
+      - network/dns
+    put:
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Domain"
+        description: Domain
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Domain"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a domain
+      tags:
+      - network/dns
+      x-codegen-request-body-name: domain
+  /network/dns/export:
+    get:
+      description: Returns all enabled DNS domains and records in a structured format.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.DnsExportResponse"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Export all DNS configurations
+      tags:
+      - network/dns
+  /network/dns/records:
+    get:
+      parameters:
+      - description: Filter by domain ID
+        in: query
+        name: domainId
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name or value
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_dns_records_get_200_response"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all records
+      tags:
+      - network/dns
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Record"
+        description: Record
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Record"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create a record
+      tags:
+      - network/dns
+      x-codegen-request-body-name: record
+  /network/dns/records/{id}:
+    delete:
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a record
+      tags:
+      - network/dns
+    put:
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.Record"
+        description: Record
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Record"
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Update a record
+      tags:
+      - network/dns
+      x-codegen-request-body-name: record
+  /network/intelligence/sources:
+    get:
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: "#/components/schemas/models.IntelligenceSource"
+                type: array
+          description: OK
+      summary: List intelligence sources
+      tags:
+      - network/intelligence
+    post:
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/models.IntelligenceSource"
+        description: Source
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/models.IntelligenceSource"
+          description: OK
+      summary: Create intelligence source
+      tags:
+      - network/intelligence
+      x-codegen-request-body-name: source
+  /network/intelligence/sources/{id}:
+    delete:
+      parameters:
+      - description: Source ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: success
+      summary: Delete intelligence source
+      tags:
+      - network/intelligence
+  /network/intelligence/sources/{id}/sync:
+    post:
+      parameters:
+      - description: Source ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: sync started
+      summary: Trigger manual sync
+      tags:
+      - network/intelligence
   /network/ip/analysis/hit-test:
     post:
       requestBody:
@@ -1301,6 +1372,314 @@ paths:
       summary: Preview IP pool data (cursor-based)
       tags:
       - network/ip
+  /network/site/analysis/hit-test:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        description: Hit test request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.SiteAnalysisResult"
+          description: OK
+      summary: Perform site hit test
+      tags:
+      - network/site
+      x-codegen-request-body-name: request
+  /network/site/exports:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_site_exports_get_200_response"
+          description: OK
+      summary: List all site exports
+      tags:
+      - network/site
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SiteExport"
+        description: Site Export
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.SiteExport"
+          description: OK
+      summary: Create a site export
+      tags:
+      - network/site
+      x-codegen-request-body-name: export
+  /network/site/exports/download/{taskId}:
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/octet-stream:
+              schema:
+                format: binary
+                type: string
+          description: OK
+      summary: Download site export result
+      tags:
+      - network/site
+  /network/site/exports/task/{taskId}:
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/site.ExportTask"
+          description: OK
+      summary: Get site export task status
+      tags:
+      - network/site
+  /network/site/exports/{id}:
+    delete:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Delete a site export
+      tags:
+      - network/site
+  /network/site/exports/{id}/trigger:
+    post:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "Format: text, json, yaml"
+        in: query
+        name: format
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+      summary: Trigger site export
+      tags:
+      - network/site
+  /network/site/pools:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_site_pools_get_200_response"
+          description: OK
+      summary: List all site groups
+      tags:
+      - network/site
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SiteGroup"
+        description: Site Group
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.SiteGroup"
+          description: OK
+      summary: Create a site group
+      tags:
+      - network/site
+      x-codegen-request-body-name: group
+  /network/site/pools/{id}:
+    delete:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Delete a site group
+      tags:
+      - network/site
+  /network/site/pools/{id}/entries:
+    delete:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Rule type
+        in: query
+        name: type
+        required: true
+        schema:
+          type: integer
+      - description: Rule value
+        in: query
+        name: value
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Delete an entry from site pool
+      tags:
+      - network/site
+    post:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SitePoolEntryRequest"
+        description: Site Entry
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Add or update an entry in site pool
+      tags:
+      - network/site
+      x-codegen-request-body-name: entry
+  /network/site/pools/{id}/preview:
+    get:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Byte offset cursor
+        in: query
+        name: cursor
+        schema:
+          type: integer
+      - description: Number of entries to return
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search prefix or tag
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.SitePoolPreviewResponse"
+          description: OK
+      summary: Preview site pool data (cursor-based)
+      tags:
+      - network/site
   /rbac/resources/suggest:
     get:
       parameters:
@@ -2031,6 +2410,42 @@ components:
           description: 总条数
           type: integer
       type: object
+    models.IntelligenceSource:
+      example:
+        cron: cron
+        autoUpdate: true
+        lastUpdatedAt: lastUpdatedAt
+        errorMessage: errorMessage
+        name: name
+        id: id
+        type: type
+        enabled: true
+        url: url
+        status: status
+      properties:
+        autoUpdate:
+          type: boolean
+        cron:
+          type: string
+        enabled:
+          type: boolean
+        errorMessage:
+          type: string
+        id:
+          type: string
+        lastUpdatedAt:
+          type: string
+        name:
+          type: string
+        status:
+          description: "Ready, Downloading, Error"
+          type: string
+        type:
+          description: "asn, city, country"
+          type: string
+        url:
+          type: string
+      type: object
     models.LogEntry:
       example:
         stepId: stepId
@@ -2303,6 +2718,138 @@ components:
           type: string
         verb:
           type: string
+      type: object
+    models.SiteAnalysisResult:
+      example:
+        ruleType: 0
+        pattern: pattern
+        matched: true
+        tags:
+        - tags
+        - tags
+      properties:
+        matched:
+          type: boolean
+        pattern:
+          type: string
+        ruleType:
+          type: integer
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
+    models.SiteExport:
+      example:
+        createdAt: createdAt
+        groupIds:
+        - groupIds
+        - groupIds
+        name: name
+        description: description
+        rule: rule
+        id: id
+        updatedAt: updatedAt
+      properties:
+        createdAt:
+          type: string
+        description:
+          type: string
+        groupIds:
+          description: 依赖的域名池 ID 列表
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        name:
+          type: string
+        rule:
+          description: go-expr 表达式
+          type: string
+        updatedAt:
+          type: string
+      type: object
+    models.SiteGroup:
+      example:
+        createdAt: createdAt
+        entryCount: 5
+        checksum: checksum
+        name: name
+        description: description
+        id: id
+        updatedAt: updatedAt
+      properties:
+        checksum:
+          description: 数据指纹
+          type: string
+        createdAt:
+          type: string
+        description:
+          type: string
+        entryCount:
+          description: 条目总数
+          type: integer
+        id:
+          type: string
+        name:
+          type: string
+        updatedAt:
+          type: string
+      type: object
+    models.SitePoolEntry:
+      example:
+        type: 0
+        value: value
+        tags:
+        - tags
+        - tags
+      properties:
+        tags:
+          items:
+            type: string
+          type: array
+        type:
+          description: "0:Keyword, 1:Regex, 2:Domain, 3:Full"
+          type: integer
+        value:
+          type: string
+      type: object
+    models.SitePoolEntryRequest:
+      properties:
+        tags:
+          items:
+            type: string
+          type: array
+        type:
+          type: integer
+        value:
+          type: string
+      type: object
+    models.SitePoolPreviewResponse:
+      example:
+        nextCursor: 6
+        entries:
+        - type: 0
+          value: value
+          tags:
+          - tags
+          - tags
+        - type: 0
+          value: value
+          tags:
+          - tags
+          - tags
+        total: 1
+      properties:
+        entries:
+          items:
+            $ref: "#/components/schemas/models.SitePoolEntry"
+          type: array
+        nextCursor:
+          type: integer
+        total:
+          type: integer
       type: object
     models.Step:
       example:
@@ -2596,6 +3143,29 @@ components:
           description: Webhook 触发令牌
           type: string
       type: object
+    site.ExportTask:
+      example:
+        format: format
+        progress: 0.8008281904610115
+        resultURL: resultURL
+        id: id
+        error: error
+        status: status
+      properties:
+        error:
+          type: string
+        format:
+          type: string
+        id:
+          type: string
+        progress:
+          format: float64
+          type: number
+        resultURL:
+          type: string
+        status:
+          type: string
+      type: object
     _audit_logs_get_200_response:
       allOf:
       - $ref: "#/components/schemas/common.PaginatedResponse"
@@ -2630,7 +3200,7 @@ components:
           message: message
           status: status
           timestamp: timestamp
-    _dns_domains_get_200_response:
+    _network_dns_domains_get_200_response:
       allOf:
       - $ref: "#/components/schemas/common.PaginatedResponse"
       - properties:
@@ -2656,7 +3226,7 @@ components:
           id: id
           enabled: true
           updatedAt: updatedAt
-    _dns_records_get_200_response:
+    _network_dns_records_get_200_response:
       allOf:
       - $ref: "#/components/schemas/common.PaginatedResponse"
       - properties:
@@ -2727,6 +3297,66 @@ components:
           items:
             items:
               $ref: "#/components/schemas/models.IPGroup"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - createdAt: createdAt
+          entryCount: 5
+          checksum: checksum
+          name: name
+          description: description
+          id: id
+          updatedAt: updatedAt
+        - createdAt: createdAt
+          entryCount: 5
+          checksum: checksum
+          name: name
+          description: description
+          id: id
+          updatedAt: updatedAt
+    _network_site_exports_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.SiteExport"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - createdAt: createdAt
+          groupIds:
+          - groupIds
+          - groupIds
+          name: name
+          description: description
+          rule: rule
+          id: id
+          updatedAt: updatedAt
+        - createdAt: createdAt
+          groupIds:
+          - groupIds
+          - groupIds
+          name: name
+          description: description
+          rule: rule
+          id: id
+          updatedAt: updatedAt
+    _network_site_pools_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.SiteGroup"
             type: array
         type: object
       example:

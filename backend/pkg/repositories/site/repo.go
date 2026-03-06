@@ -94,7 +94,7 @@ func ListGroups(ctx context.Context, page, pageSize int, search string) ([]model
 		groupListCache.Add("all", all)
 	}
 
-	var res []models.SiteGroup
+	res := make([]models.SiteGroup, 0)
 	search = strings.ToLower(search)
 	for _, g := range all {
 		if search == "" || strings.Contains(strings.ToLower(g.Name), search) || strings.Contains(strings.ToLower(g.ID), search) {
@@ -173,7 +173,7 @@ func ListExports(ctx context.Context, page, pageSize int, search string) ([]mode
 		exportListCache.Add("all", all)
 	}
 
-	var res []models.SiteExport
+	res := make([]models.SiteExport, 0)
 	search = strings.ToLower(search)
 	for _, e := range all {
 		if search == "" || strings.Contains(strings.ToLower(e.Name), search) || strings.Contains(strings.ToLower(e.ID), search) {

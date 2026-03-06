@@ -11,8 +11,6 @@ import (
 	"time"
 	"net/netip"
 	"os"
-	"net/http"
-	"net/http/httptest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/spf13/afero"
@@ -353,33 +351,5 @@ func TestIPProcessors(t *testing.T) {
 		// Verify import
 		g, _ := service.GetGroup(ctx, "import_pool")
 		assert.Equal(t, int64(2), g.EntryCount)
-	})
-
-	// 2. Test MMDBDownloadProcessor
-	t.Run("MMDB Download Processor", func(t *testing.T) {
-		// Mock HTTP Server
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("mock mmdb data"))
-		}))
-		defer server.Close()
-
-		p, ok := actions.GetProcessor("ip/download/mmdb")
-		assert.True(t, ok)
-
-		taskCtx := &actions.TaskContext{
-			Context: ctx,
-			Logger:  logger,
-		}
-
-		_, err := p.Execute(taskCtx, map[string]string{
-			"url":  server.URL,
-			"type": "asn",
-		})
-		assert.NoError(t, err)
-
-		// Verify file exists in VFS
-		exists, _ := afero.Exists(common.FS, ip.MMDBPathASN)
-		assert.True(t, exists)
 	})
 }

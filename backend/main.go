@@ -12,6 +12,7 @@ import (
 	"homelab/pkg/services/actions/processors"
 	"homelab/pkg/services/ip"
 	"homelab/pkg/services/site"
+	"homelab/pkg/services/intelligence"
 	"io/fs"
 	"log"
 	"net/http"
@@ -125,6 +126,9 @@ func main() {
 	siteExportManager := site.NewExportManager(siteAnalysisEngine)
 	controllers.InitSiteControllers(sitePoolService, siteAnalysisEngine, siteExportManager)
 	site.RegisterSiteProcessors(sitePoolService)
+
+	intelligenceService := intelligence.NewIntelligenceService(mmdbManager)
+	controllers.InitIntelligenceControllers(intelligenceService)
 
 	actions.BootUpSelfHealing()
 	if err := actions.GlobalTriggerManager.InitTriggers(ctx); err != nil {

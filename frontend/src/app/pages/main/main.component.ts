@@ -204,6 +204,8 @@ export class MainComponent {
         icon: 'public',
         label: '网络管理',
         children: [
+          { link: '/network/analysis', icon: 'science', label: '研判实验室' },
+          { link: '/network/intelligence', icon: 'hub', label: '情报数据管理' },
           {
             link: '/network/dns',
             icon: 'dns',
@@ -220,7 +222,6 @@ export class MainComponent {
             children: [
               { link: '/network/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
               { link: '/network/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
-              { link: '/network/ip', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
             ],
           },
           {
@@ -230,7 +231,6 @@ export class MainComponent {
             children: [
               { link: '/network/site', queryParams: { tab: 'pool' }, icon: 'view_list', label: '域名池' },
               { link: '/network/site', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
-              { link: '/network/site', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
             ],
           },
         ],

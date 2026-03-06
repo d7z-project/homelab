@@ -100,7 +100,7 @@ func ListGroups(ctx context.Context, page int, pageSize int, search string) ([]m
 		groupListCache.Add("all", all)
 	}
 
-	var res []models.IPGroup
+	res := make([]models.IPGroup, 0)
 	search = strings.ToLower(search)
 	for _, g := range all {
 		if search == "" || strings.Contains(strings.ToLower(g.Name), search) || strings.Contains(strings.ToLower(g.ID), search) {
@@ -187,7 +187,7 @@ func ListExports(ctx context.Context, page int, pageSize int, search string) ([]
 		exportListCache.Add("all", all)
 	}
 
-	var res []models.IPExport
+	res := make([]models.IPExport, 0)
 	search = strings.ToLower(search)
 	for _, e := range all {
 		if search == "" || strings.Contains(strings.ToLower(e.Name), search) || strings.Contains(strings.ToLower(e.ID), search) {

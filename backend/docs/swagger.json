@@ -1461,6 +1461,100 @@
                 }
             }
         },
+        "/network/intelligence/sources": {
+            "get": {
+                "tags": [
+                    "network/intelligence"
+                ],
+                "summary": "List intelligence sources",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.IntelligenceSource"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "network/intelligence"
+                ],
+                "summary": "Create intelligence source",
+                "parameters": [
+                    {
+                        "description": "Source",
+                        "name": "source",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IntelligenceSource"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IntelligenceSource"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/intelligence/sources/{id}": {
+            "delete": {
+                "tags": [
+                    "network/intelligence"
+                ],
+                "summary": "Delete intelligence source",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/intelligence/sources/{id}/sync": {
+            "post": {
+                "tags": [
+                    "network/intelligence"
+                ],
+                "summary": "Trigger manual sync",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "sync started",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/network/ip/analysis/hit-test": {
             "post": {
                 "consumes": [
@@ -3441,6 +3535,43 @@
                 "total": {
                     "description": "总条数",
                     "type": "integer"
+                }
+            }
+        },
+        "models.IntelligenceSource": {
+            "type": "object",
+            "properties": {
+                "autoUpdate": {
+                    "type": "boolean"
+                },
+                "cron": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastUpdatedAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Ready, Downloading, Error",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "asn, city, country",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         },

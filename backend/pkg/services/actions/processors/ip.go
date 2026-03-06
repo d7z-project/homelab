@@ -10,7 +10,6 @@ import (
 	"homelab/pkg/services/ip"
 	repo "homelab/pkg/repositories/ip"
 	"io"
-	"net/http"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -27,10 +26,6 @@ type IPPoolImportProcessor struct {
 	service *ip.IPPoolService
 }
 
-type MMDBDownloadProcessor struct {
-	manager *ip.MMDBManager
-}
-
 func init() {
 	// 这些处理器需要依赖 Service，可能需要一种方式注入。
 	// 但目前 actions.Register 是静态的。
@@ -40,7 +35,6 @@ func init() {
 
 func RegisterIPProcessors(service *ip.IPPoolService, mmdb *ip.MMDBManager) {
 	actions.Register(&IPPoolImportProcessor{service: service})
-	actions.Register(&MMDBDownloadProcessor{manager: mmdb})
 }
 
 // IPPoolImportProcessor 实现 ip/pool/import
@@ -170,63 +164,3 @@ func (p *IPPoolImportProcessor) Execute(ctx *actions.TaskContext, inputs map[str
 	return nil, nil
 }
 
-// MMDBDownloadProcessor 实现 ip/download/mmdb
-func (p *MMDBDownloadProcessor) Manifest() actions.StepManifest {
-	return actions.StepManifest{
-		ID:          "ip/download/mmdb",
-		Name:        "MaxMind 数据库更新",
-		Description: "从指定 URL 下载并更新 MaxMind GeoIP/ASN 数据库。",
-		Params: []models.ParamDefinition{
-			{Name: "url", Description: "下载链接", Optional: false},
-			{Name: "type", Description: "数据库类型 (asn, city, country)", Optional: false},
-		},
-	}
-}
-
-func (p *MMDBDownloadProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
-	url := inputs["url"]
-	dbType := inputs["type"]
-
-	var targetPath string
-	switch dbType {
-	case "asn":
-		targetPath = ip.MMDBPathASN
-	case "city":
-		targetPath = ip.MMDBPathCity
-	case "country":
-		targetPath = ip.MMDBPathCountry
-	default:
-		return nil, fmt.Errorf("invalid db type: %s", dbType)
-	}
-
-	ctx.Logger.Logf("Downloading MMDB (%s) from %s...", dbType, url)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to download: status %d", resp.StatusCode)
-	}
-
-	// 写入 VFS
-	_ = common.FS.MkdirAll(filepath.Dir(targetPath), 0755)
-	f, err := common.FS.Create(targetPath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// 触发 Reload
-	_ = p.manager.Reload()
-
-	ctx.Logger.Logf("MMDB (%s) updated successfully.", dbType)
-	return nil, nil
-}

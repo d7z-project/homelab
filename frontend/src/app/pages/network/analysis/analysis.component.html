@@ -1,0 +1,151 @@
+<div class="animate-in fade-in duration-500 pb-20">
+  <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
+    <div class="max-w-5xl mx-auto space-y-6">
+      <app-page-header
+        title="统一研判实验室"
+        subtitle="实时探测 IP 或域名在全球威胁情报与私有资产池中的命中轨迹"
+        icon="science"
+      ></app-page-header>
+
+      <!-- Unified Search Section -->
+      <div class="flex flex-col md:flex-row gap-4 items-stretch animate-in slide-in-from-top-4 duration-500">
+        <mat-card class="flex-1 !rounded-full border border-outline-variant shadow-sm bg-surface p-1">
+          <div class="flex items-center gap-2 pl-4 pr-1">
+            <mat-form-field appearance="fill" class="flex-1 search-field-m3">
+              <mat-icon matPrefix class="mr-2 text-primary opacity-70">manage_search</mat-icon>
+              <input matInput [(ngModel)]="query" 
+                     placeholder="输入待分析的 IP 地址或域名" (keyup.enter)="runAnalysis()"
+                     class="text-base font-medium">
+            </mat-form-field>
+            <button mat-flat-button color="primary" class="!rounded-full h-[48px] px-8 font-bold" 
+                    [disabled]="!query() || loading()" (click)="runAnalysis()">
+              探测研判
+            </button>
+          </div>
+        </mat-card>
+      </div>
+
+      @if (loading()) {
+        <div class="py-20 flex flex-col items-center gap-4 animate-in fade-in">
+          <mat-spinner diameter="48"></mat-spinner>
+          <div class="text-outline text-sm tracking-widest font-medium uppercase">规则全集扫描中...</div>
+        </div>
+      }
+
+      @if (hasResult()) {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in zoom-in-95 duration-500">
+          <!-- Matching Result (Private Pools) -->
+          <div class="lg:col-span-1 space-y-6">
+            <mat-card class="!rounded-[32px] border overflow-hidden shadow-md" 
+                      [class.border-green-500]="ipResult()?.matched || siteResult()?.matched" 
+                      [class.border-red-200]="!(ipResult()?.matched || siteResult()?.matched)">
+              <div class="p-8 flex flex-col items-center text-center">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6" 
+                     [class.bg-green-100]="ipResult()?.matched || siteResult()?.matched" 
+                     [class.bg-red-50]="!(ipResult()?.matched || siteResult()?.matched)">
+                  <mat-icon [class.text-green-600]="ipResult()?.matched || siteResult()?.matched" 
+                            [class.text-red-600]="!(ipResult()?.matched || siteResult()?.matched)" class="!text-5xl !w-12 !h-12">
+                    {{ (ipResult()?.matched || siteResult()?.matched) ? 'verified_user' : 'gpp_bad' }}
+                  </mat-icon>
+                </div>
+                <h3 class="text-2xl font-black m-0 mb-2 tracking-tight" 
+                    [class.text-green-700]="ipResult()?.matched || siteResult()?.matched" 
+                    [class.text-red-700]="!(ipResult()?.matched || siteResult()?.matched)">
+                  {{ (ipResult()?.matched || siteResult()?.matched) ? '资产匹配：命中' : '资产匹配：未命中' }}
+                </h3>
+                <p class="text-outline text-xs uppercase tracking-widest font-bold opacity-60">私有池探测状态</p>
+              </div>
+              
+              @if (ipResult()?.matched) {
+                <div class="bg-green-600 text-on-primary p-4 text-center">
+                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80">IP 前缀匹配 (LPM)</div>
+                  <div class="text-xl font-mono font-medium">{{ ipResult()?.cidr }}</div>
+                </div>
+              }
+              @if (siteResult()?.matched) {
+                <div class="bg-green-600 text-on-primary p-4 text-center border-t border-white/10">
+                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80">
+                    命中规则: 
+                    @switch (siteResult()?.ruleType) {
+                      @case (0) { keyword }
+                      @case (1) { regex }
+                      @case (2) { domain }
+                      @case (3) { full }
+                    }
+                  </div>
+                  <div class="text-lg font-mono font-medium truncate px-4">{{ siteResult()?.pattern }}</div>
+                </div>
+              }
+            </mat-card>
+
+            <!-- Tags Section -->
+            @if (ipResult()?.matched || siteResult()?.matched) {
+              <mat-card class="!rounded-[32px] bg-surface-container-high border-none shadow-sm overflow-hidden">
+                <div class="p-6">
+                  <div class="flex items-center gap-2 mb-4 text-primary">
+                    <mat-icon class="!w-5 !h-5 !text-[20px]">local_offer</mat-icon>
+                    <span class="text-sm font-bold uppercase tracking-widest">研判属性标签</span>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    @for (tag of (ipResult()?.tags || siteResult()?.tags); track tag) {
+                      <span class="px-3 py-1 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm">{{ tag }}</span>
+                    }
+                  </div>
+                </div>
+              </mat-card>
+            }
+          </div>
+
+          <!-- Intelligence Section (IP only for now) -->
+          <div class="lg:col-span-2 space-y-6">
+            @if (ipInfo()) {
+              <mat-card class="!rounded-[32px] bg-surface border border-outline-variant shadow-sm overflow-hidden">
+                <div class="bg-surface-container-low px-8 py-4 border-b border-outline-variant flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <mat-icon class="text-primary">public</mat-icon>
+                    <span class="font-bold tracking-tight text-lg">全球情报追踪 (MaxMind)</span>
+                  </div>
+                </div>
+                <div class="p-8">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div class="space-y-1">
+                      <div class="text-[10px] font-bold text-outline uppercase tracking-widest">自治系统 (ASN)</div>
+                      <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-mono font-black text-primary">AS{{ ipInfo()?.asn }}</span>
+                        <span class="text-sm text-outline truncate">{{ ipInfo()?.org }}</span>
+                      </div>
+                    </div>
+                    <div class="space-y-1">
+                      <div class="text-[10px] font-bold text-outline uppercase tracking-widest">地理归属</div>
+                      <div class="flex items-center gap-2 py-1">
+                        <span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container text-xs font-bold">{{ ipInfo()?.country }}</span>
+                        <span class="text-lg font-medium">{{ ipInfo()?.city }}</span>
+                      </div>
+                    </div>
+                    <div class="sm:col-span-2 pt-4">
+                      <div class="text-[10px] font-bold text-outline uppercase tracking-widest mb-3">经纬度坐标</div>
+                      <div class="h-32 bg-surface-container-highest rounded-2xl border border-outline-variant flex items-center justify-center relative overflow-hidden">
+                        <div class="text-primary font-mono font-bold text-xl z-10">{{ ipInfo()?.location }}</div>
+                        <mat-icon class="absolute !text-9xl opacity-[0.03] scale-150">map</mat-icon>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-card>
+            } @else if (query() && !checkIsIP(query())) {
+              <!-- Domain specific intelligence info can be added here -->
+              <div class="h-full flex items-center justify-center p-12 text-outline/40 italic border-2 border-dashed border-outline-variant rounded-[32px]">
+                域名全球情报模块（Whois/DNS历史）正在内测中...
+              </div>
+            }
+          </div>
+        </div>
+      } @else if (!loading() && query()) {
+        <div class="py-20 flex flex-col items-center text-outline opacity-30 gap-2">
+          <mat-icon class="!text-6xl">travel_explore</mat-icon>
+          <p class="font-medium tracking-widest">输入 IP 或域名开启全网溯源探测</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,112 @@
+<div class="animate-in fade-in duration-500 pb-20">
+  <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+      <app-page-header
+        title="情报数据管理"
+        subtitle="维护全局 IP 情报数据库 (ASN/GeoIP) 的同步来源与自动更新计划"
+        icon="hub"
+        [total]="sources().length"
+        unit="个数据源"
+        [loading]="loading()"
+        (refresh)="loadSources()"
+      ></app-page-header>
+
+      <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+        <div class="p-4 flex justify-between items-center border-b border-outline-variant bg-surface-container-low">
+          <span class="text-sm font-bold uppercase tracking-widest opacity-60 ml-2">数据源列表</span>
+          <button mat-flat-button color="primary" (click)="createSource()">
+            <mat-icon>add</mat-icon>
+            配置数据源
+          </button>
+        </div>
+
+        <table mat-table [dataSource]="sources()" class="w-full bg-transparent">
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef class="font-bold">数据库类型</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase border"
+                    [class.bg-blue-50]="element.type === 'asn'"
+                    [class.text-blue-700]="element.type === 'asn'"
+                    [class.border-blue-200]="element.type === 'asn'"
+                    [class.bg-purple-50]="element.type === 'city'"
+                    [class.text-purple-700]="element.type === 'city'"
+                    [class.border-purple-200]="element.type === 'city'"
+                    [class.bg-orange-50]="element.type === 'country'"
+                    [class.text-orange-700]="element.type === 'country'"
+                    [class.border-orange-200]="element.type === 'country'">
+                {{ element.type }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef class="font-bold">名称</th>
+            <td mat-cell *matCellDef="let element" class="font-medium text-primary">{{ element.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="url">
+            <th mat-header-cell *matHeaderCellDef class="font-bold">下载地址</th>
+            <td mat-cell *matCellDef="let element" class="max-w-xs">
+              <div class="truncate text-xs text-outline font-mono opacity-60" [matTooltip]="element.url">{{ element.url }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="font-bold">当前状态</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="flex items-center gap-2">
+                @if (element.status === 'Downloading') {
+                  <mat-spinner diameter="16"></mat-spinner>
+                  <span class="text-[10px] font-bold text-primary animate-pulse">同步中...</span>
+                } @else if (element.status === 'Error') {
+                  <mat-icon class="text-red-500 !w-4 !h-4 !text-[16px]" [matTooltip]="element.errorMessage">error_outline</mat-icon>
+                  <span class="text-[10px] font-bold text-red-600">同步失败</span>
+                } @else {
+                  <mat-icon class="text-green-600 !w-4 !h-4 !text-[16px]">check_circle_outline</mat-icon>
+                  <span class="text-[10px] font-bold text-green-700">就绪</span>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="lastUpdated">
+            <th mat-header-cell *matHeaderCellDef class="font-bold">最近成功同步</th>
+            <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono">
+              {{ element.lastUpdatedAt === '0001-01-01T00:00:00Z' ? '从未同步' : (element.lastUpdatedAt | date:'short') }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 font-bold" style="width: 1px">操作</th>
+            <td mat-cell *matCellDef="let element" class="text-right !pr-6">
+              <div class="flex justify-end gap-1">
+                <button mat-icon-button (click)="syncSource(element)" matTooltip="立即同步" [disabled]="element.status === 'Downloading'">
+                  <mat-icon class="!text-[20px]">sync</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteSource(element)" matTooltip="删除配置">
+                  <mat-icon class="!text-[20px]">delete_outline</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-surface-container-low/50 transition-colors"></tr>
+        </table>
+      </div>
+
+      <div class="p-6 bg-primary/5 rounded-[32px] border border-primary/10">
+        <div class="flex gap-4">
+          <mat-icon class="text-primary !w-8 !h-8 !text-[32px]">info</mat-icon>
+          <div class="space-y-1">
+            <h4 class="font-bold text-primary m-0">同步说明</h4>
+            <p class="text-sm text-outline m-0 leading-relaxed">
+              情报数据采用原子替换机制。同步任务在后台异步执行，完成后会自动触发研判引擎的重载。
+              推荐使用 MaxMind 官方的直链或定期维护的第三方镜像源。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
