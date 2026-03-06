@@ -81,6 +81,23 @@ import { UiService } from '../../ui.service';
         color: var(--mat-sys-on-secondary-container) !important;
       }
 
+      ::ng-deep .no-panel-padding {
+        .mat-expansion-panel-body {
+          padding: 0 !important;
+        }
+      }
+      ::ng-deep .level-3-panel {
+        .mat-expansion-panel-header {
+          padding-left: 40px !important;
+        }
+        .mat-expansion-panel-body {
+          padding: 0 !important;
+        }
+      }
+      .sub-menu-container {
+        display: flex;
+        flex-direction: column;
+      }
       .nav-item-active-parent {
         color: var(--mat-sys-primary) !important;
         font-weight: 600 !important;
@@ -183,22 +200,29 @@ export class MainComponent {
         ],
       },
       {
-        link: '/dns',
-        icon: 'dns',
-        label: 'DNS 管理',
+        link: '/network',
+        icon: 'public',
+        label: '网络管理',
         children: [
-          { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
-          { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
-        ],
-      },
-      {
-        link: '/ip',
-        icon: 'router',
-        label: 'IP 管理',
-        children: [
-          { link: '/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
-          { link: '/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
-          { link: '/ip', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
+          {
+            link: '/ip',
+            icon: 'router',
+            label: 'IP 管理',
+            children: [
+              { link: '/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
+              { link: '/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+              { link: '/ip', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
+            ],
+          },
+          {
+            link: '/dns',
+            icon: 'dns',
+            label: 'DNS 管理',
+            children: [
+              { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
+              { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
+            ],
+          },
         ],
       },
       {
@@ -264,15 +288,27 @@ export class MainComponent {
 
   currentPageLabel = computed(() => {
     const url = this.currentPath();
-    const item = this.menuItems().find((m) => {
-      const linkPath = m.link.split('?')[0];
-      if (url === linkPath) return true;
-      if (m.children) {
-        return m.children.some((c: any) => c.link === url || url.startsWith(c.link + '/'));
+    const tab = this.currentTab();
+
+    const findInItems = (items: any[]): string | null => {
+      for (const item of items) {
+        const itemPath = item.link.split('?')[0];
+        const isPathMatch = url === itemPath;
+        const isTabMatch = !item.queryParams?.tab || item.queryParams.tab === tab;
+
+        if (isPathMatch && isTabMatch) {
+          return item.label;
+        }
+
+        if (item.children) {
+          const childLabel = findInItems(item.children);
+          if (childLabel) return childLabel;
+        }
       }
-      return url.startsWith(linkPath + '/');
-    });
-    return item ? item.label : '系统';
+      return null;
+    };
+
+    return findInItems(this.menuItems()) || '系统';
   });
 
   onMenuClick(item: any, event: Event) {

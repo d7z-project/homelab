@@ -61,7 +61,7 @@
         } @else {
           <mat-expansion-panel
             [expanded]="currentPath().startsWith(item.link)"
-            class="!bg-transparent !shadow-none !border-none !mx-0"
+            class="!bg-transparent !shadow-none !border-none !mx-0 no-panel-padding"
             togglePosition="after"
           >
             <mat-expansion-panel-header
@@ -76,20 +76,58 @@
 
             <div class="sub-menu-container mb-2">
               @for (child of item.children; track child.label) {
-                <a
-                  mat-list-item
-                  class="!h-12 !mx-2 !w-auto"
-                  [class.nav-item-active]="
-                    currentPath() === child.link &&
-                    (!child.queryParams || currentTab() === child.queryParams['tab'])
-                  "
-                  (click)="onMenuClick(child, $event)"
-                >
-                  <mat-icon matListItemIcon class="!mr-3 !text-[18px] opacity-70">{{
-                    child.icon
-                  }}</mat-icon>
-                  <span matListItemTitle class="text-xs font-medium">{{ child.label }}</span>
-                </a>
+                @if (!child.children) {
+                  <a
+                    mat-list-item
+                    class="!h-12 !mx-2 !w-auto"
+                    [class.nav-item-active]="
+                      currentPath() === child.link &&
+                      (!child.queryParams || currentTab() === child.queryParams['tab'])
+                    "
+                    (click)="onMenuClick(child, $event)"
+                  >
+                    <mat-icon matListItemIcon class="!mr-3 !text-[18px] opacity-70">{{
+                      child.icon
+                    }}</mat-icon>
+                    <span matListItemTitle class="text-sm font-medium">{{ child.label }}</span>
+                  </a>
+                } @else {
+                  <!-- Third Level Nesting -->
+                  <mat-expansion-panel
+                    [expanded]="currentPath().startsWith(child.link)"
+                    class="!bg-transparent !shadow-none !border-none !mx-0 level-3-panel"
+                    togglePosition="after"
+                  >
+                    <mat-expansion-panel-header
+                      class="!h-12 !pl-10 !pr-4 !rounded-r-[24px] !mr-3 hover:!bg-surface-container-high transition-colors"
+                    >
+                      <mat-panel-title class="flex items-center gap-3">
+                        <mat-icon class="!text-[18px] opacity-70">{{ child.icon }}</mat-icon>
+                        <span class="text-sm font-medium">{{ child.label }}</span>
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <div class="level-3-container mb-1">
+                      @for (subChild of child.children; track subChild.label) {
+                        <a
+                          mat-list-item
+                          class="!h-10 !mx-2 !w-auto !pl-12"
+                          [class.nav-item-active]="
+                            currentPath() === subChild.link &&
+                            (!subChild.queryParams || currentTab() === subChild.queryParams['tab'])
+                          "
+                          (click)="onMenuClick(subChild, $event)"
+                        >
+                          <mat-icon matListItemIcon class="!mr-2 !text-[16px] opacity-50">{{
+                            subChild.icon
+                          }}</mat-icon>
+                          <span matListItemTitle class="text-xs font-medium">{{
+                            subChild.label
+                          }}</span>
+                        </a>
+                      }
+                    </div>
+                  </mat-expansion-panel>
+                }
               }
             </div>
           </mat-expansion-panel>
