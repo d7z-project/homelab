@@ -57,10 +57,17 @@ func AuthMiddleware(next http.Handler) http.Handler {
 					jti, _ := claims["jti"].(string)
 					isRoot, _ := authservice.Verify(r.Context(), token, ip, ua)
 					if isRoot {
+						// 1. Inject Identity
 						ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
 							Type:      "root",
 							SessionID: jti,
 						})
+						// 2. Inject Global Permissions (important for manual service-layer checks)
+						perms := &models.ResourcePermissions{
+							AllowedAll: true,
+						}
+						ctx = context.WithValue(ctx, commonauth.PermissionsContextKey, perms)
+
 						next.ServeHTTP(w, r.WithContext(ctx))
 						return
 					}
@@ -68,10 +75,16 @@ func AuthMiddleware(next http.Handler) http.Handler {
 					// 2. ServiceAccount: Needs Enabled check and Token match, no IP/UA check
 					saID, _ := claims["sa_id"].(string)
 					if saID != "" && authservice.IsSAEnabled(r.Context(), saID, token) {
+						// Load full permissions for this SA
+						// Verb "*" and Resource "*" used here to load the generic permissions object
+						perms, _ := authservice.GetPermissions(r.Context(), saID, "*", "*")
+
 						ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
 							Type: "sa",
 							ID:   saID,
 						})
+						ctx = context.WithValue(ctx, commonauth.PermissionsContextKey, perms)
+
 						authservice.UpdateSALastUsed(saID)
 						next.ServeHTTP(w, r.WithContext(ctx))
 						return

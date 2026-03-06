@@ -32,6 +32,10 @@ export interface ModelsTaskInstance {
      * 任务最终输出
      */
     outputs?: { [key: string]: string; };
+    /**
+     * 执行该工作流时使用的身份 (Impersonation)
+     */
+    serviceAccountId?: string;
     startedAt?: string;
     /**
      * Pending, Running, Success, Failed, Cancelled

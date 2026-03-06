@@ -2,7 +2,6 @@ package dns
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"homelab/pkg/common"
@@ -13,7 +12,6 @@ import (
 	"homelab/pkg/services/discovery"
 	"homelab/pkg/services/rbac"
 	"net"
-	"regexp"
 	"strings"
 	"time"
 
@@ -21,8 +19,14 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
+const (
+	defaultSOARefresh = 7200
+	defaultSOARetry   = 3600
+	defaultSOAExpire  = 1209600
+	defaultSOAMinimum = 86400
+)
+
 var (
-	domainRegex = regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
 	exportCache *lru.Cache[string, exportCacheEntry]
 )
 
@@ -35,66 +39,35 @@ func init() {
 	exportCache, _ = lru.New[string, exportCacheEntry](128)
 
 	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
-	rbac.RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
-		// prefix is everything after "dns/"
-		prefixLower := strings.ToLower(prefix)
-		parts := strings.Split(prefixLower, "/")
 
-		// Get all domains to match against the first part
-		domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
+	rbac.RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+		res := make([]models.DiscoverResult, 0)
+		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, "")
 		if err != nil {
-			return []models.DiscoverResult{}, err
+			return nil, err
 		}
 
-		res := make([]models.DiscoverResult, 0)
 		for _, d := range domains {
-			domainNameLower := strings.ToLower(d.Name)
-			// Check if domain matches parts[0]
-			if !strings.HasPrefix(domainNameLower, parts[0]) {
-				continue
-			}
-
-			if len(parts) <= 1 {
-				// Level 1: Suggest domains
+			if strings.HasPrefix(d.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: d.Name,
-					Name:   "Domain: " + d.Name,
-					Final:  false,
+					Name:   d.Name,
+					Final:  true,
 				})
-			} else {
-				// Level 2 & 3: We have a full domain match, suggest records
-				if domainNameLower != parts[0] {
-					continue
+			}
+
+			if d.Name == prefix || strings.HasPrefix(prefix, d.Name+"/") {
+				idPrefix := ""
+				if strings.HasPrefix(prefix, d.Name+"/") {
+					idPrefix = strings.TrimPrefix(prefix, d.Name+"/")
 				}
 
-				records, _, err := dnsrepo.ListRecords(ctx, d.ID, 0, 1000, "")
-				if err != nil {
-					continue
-				}
-
-				for _, r := range records {
-					recordNameLower := strings.ToLower(r.Name)
-					// Check if record host matches parts[1]
-					if !strings.HasPrefix(recordNameLower, parts[1]) {
-						continue
-					}
-
-					if len(parts) <= 2 {
-						// Level 2: Suggest hostnames
-						res = append(res, models.DiscoverResult{
-							FullID: d.Name + "/" + r.Name,
-							Name:   "Record: " + r.Name,
-							Final:  false,
-						})
-						// Also suggest full path with type as it's common in rbac checks
-						res = append(res, models.DiscoverResult{
-							FullID: d.Name + "/" + r.Name + "/" + r.Type,
-							Name:   fmt.Sprintf("%s (%s)", r.Name, r.Type),
-							Final:  true,
-						})
-					} else {
-						// Level 3: Suggest types
-						if recordNameLower == parts[1] && strings.HasPrefix(strings.ToLower(r.Type), parts[2]) {
+				records, _, err := dnsrepo.ListRecords(ctx, d.ID, 0, 10000, "")
+				if err == nil {
+					seen := make(map[string]bool)
+					for _, r := range records {
+						if strings.HasPrefix(r.Name, idPrefix) && !seen[r.Name+"/"+r.Type] {
+							seen[r.Name+"/"+r.Type] = true
 							res = append(res, models.DiscoverResult{
 								FullID: d.Name + "/" + r.Name + "/" + r.Type,
 								Name:   r.Type,
@@ -105,7 +78,6 @@ func init() {
 				}
 			}
 		}
-
 		return res, nil
 	}, standardVerbs)
 
@@ -126,6 +98,9 @@ func init() {
 			}
 		}
 		total := len(items)
+		if limit <= 0 {
+			limit = 20
+		}
 		if offset >= total {
 			return []models.LookupItem{}, total, nil
 		}
@@ -144,7 +119,6 @@ func init() {
 		perms := commonauth.PermissionsFromContext(ctx)
 		domainCache := make(map[string]*models.Domain)
 		var items []models.LookupItem
-		search = strings.ToLower(search)
 		for _, r := range records {
 			domain, ok := domainCache[r.DomainID]
 			if !ok {
@@ -157,15 +131,17 @@ func init() {
 			resourceDomain := fmt.Sprintf("dns/%s", domain.Name)
 			resourceRecord := fmt.Sprintf("dns/%s/%s/%s", domain.Name, r.Name, r.Type)
 			if perms.IsAllowed(resourceDomain) || perms.IsAllowed(resourceRecord) {
-				// Search check (already done in ListRecords, but adding ID check explicitly if needed)
 				items = append(items, models.LookupItem{
 					ID:          r.ID,
-					Name:        fmt.Sprintf("%s.%s (%s)", r.Name, domain.Name, r.Type),
+					Name:        fmt.Sprintf("%s (%s) - %s", r.Name, r.Type, domain.Name),
 					Description: r.Value,
 				})
 			}
 		}
 		total := len(items)
+		if limit <= 0 {
+			limit = 20
+		}
 		if offset >= total {
 			return []models.LookupItem{}, total, nil
 		}
@@ -175,55 +151,6 @@ func init() {
 		}
 		return items[offset:end], total, nil
 	})
-}
-
-func ClearCache() {
-	exportCache.Purge()
-}
-
-const (
-	defaultSOARefresh = 7200
-	defaultSOARetry   = 3600
-	defaultSOAExpire  = 1209600
-	defaultSOAMinimum = 3600
-)
-
-func generateSOASerial() string {
-	return time.Now().Format("20060102") + "01"
-}
-
-func parseSOA(value string) (mname, rname, rest string, err error) {
-	parts := strings.Fields(value)
-	if len(parts) < 2 {
-		return "", "", "", errors.New("invalid SOA value")
-	}
-	mname = parts[0]
-	rname = parts[1]
-	if len(parts) > 2 {
-		rest = strings.Join(parts[2:], " ")
-	}
-	return mname, rname, rest, nil
-}
-
-func incrementSerial(currentValue string) string {
-	parts := strings.Fields(currentValue)
-	if len(parts) < 3 {
-		return generateSOASerial()
-	}
-	currentSerial := parts[2]
-	today := time.Now().Format("20060102")
-	if strings.HasPrefix(currentSerial, today) {
-		// Increment within same day
-		serialNum := 0
-		fmt.Sscanf(currentSerial[len(today):], "%d", &serialNum)
-		serialNum++
-		return fmt.Sprintf("%s%02d", today, serialNum)
-	}
-	return today + "01"
-}
-
-func GetLastModified() time.Time {
-	return dnsrepo.GetLastModified()
 }
 
 // Domain Service
@@ -237,8 +164,7 @@ func ListDomains(ctx context.Context, page, pageSize int, search string) (*commo
 	perms := commonauth.PermissionsFromContext(ctx)
 	var filteredDomains []models.Domain
 	for _, d := range domains {
-		resource := fmt.Sprintf("dns/%s", d.Name)
-		if perms.IsAllowed(resource) {
+		if perms.IsAllowed("dns") || perms.IsAllowed("dns/"+d.Name) {
 			filteredDomains = append(filteredDomains, d)
 		}
 	}
@@ -258,26 +184,18 @@ func ListDomains(ctx context.Context, page, pageSize int, search string) (*commo
 		items = append(items, filteredDomains[i])
 	}
 
-	return &common.PaginatedResponse{
-		Items: items,
-		Total: total,
-		Page:  page,
-	}, nil
+	return &common.PaginatedResponse{Items: items, Total: total, Page: page}, nil
 }
 
 func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, error) {
 	if err := domain.Bind(nil); err != nil {
 		return nil, err
 	}
-	// Structural validation is now in models.Domain.Bind
-
-	// Permission check for creating domain: dns/<name>
-	resource := fmt.Sprintf("dns/%s", domain.Name)
+	resource := "dns/" + domain.Name
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
-		return nil, errors.New("permission denied: " + resource)
+		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	// Check if domain already exists (exact match)
 	existingDomains, _, _ := dnsrepo.ListDomains(ctx, 0, 1000, domain.Name)
 	for _, ed := range existingDomains {
 		if strings.EqualFold(ed.Name, domain.Name) {
@@ -289,29 +207,19 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 	domain.CreatedAt = time.Now()
 	domain.UpdatedAt = time.Now()
 
-	message := fmt.Sprintf("Created domain %s (enabled: %v, comments: '%s')", domain.Name, domain.Enabled, domain.Comments)
 	if err := dnsrepo.SaveDomain(ctx, domain); err != nil {
-		commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, false)
+		commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, "Failed: "+err.Error(), false)
 		return nil, err
 	}
 
-	// Generate default SOA record
 	defaultSOA := &models.Record{
-		ID:       uuid.New().String(),
-		DomainID: domain.ID,
-		Name:     "@",
-		Type:     "SOA",
-		Value:    fmt.Sprintf("ns1.%s. admin.%s. %s %d %d %d %d", domain.Name, domain.Name, generateSOASerial(), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum),
-		TTL:      3600,
-		Enabled:  true,
-		Comments: "System generated default SOA",
+		ID: uuid.New().String(), DomainID: domain.ID, Name: "@", Type: "SOA",
+		Value: fmt.Sprintf("ns1.%s. admin.%s. %s %d %d %d %d", domain.Name, domain.Name, generateSOASerial(), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum),
+		TTL:   3600, Enabled: true, Comments: "System generated SOA",
 	}
-	if err := dnsrepo.SaveRecord(ctx, defaultSOA); err != nil {
-		// Log error but domain is already created
-		commonaudit.FromContext(ctx).Log("CreateRecord (SOA)", defaultSOA.Name+"."+domain.Name, "Failed to create default SOA record: "+err.Error(), false)
-	}
+	_ = dnsrepo.SaveRecord(ctx, defaultSOA)
 
-	commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, message, true)
+	commonaudit.FromContext(ctx).Log("CreateDomain", domain.Name, "Created", true)
 	return domain, nil
 }
 
@@ -321,67 +229,40 @@ func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*model
 	}
 	existing, err := dnsrepo.GetDomain(ctx, id)
 	if err != nil {
-		return nil, errors.New("domain not found")
+		return nil, errors.New("not found")
 	}
-
-	// Permission check: dns/<domain-name>
-	resource := fmt.Sprintf("dns/%s", existing.Name)
+	resource := "dns/" + existing.Name
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
-		return nil, errors.New("permission denied: " + resource)
-	}
-
-	changes := []string{}
-	if existing.Enabled != domain.Enabled {
-		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, domain.Enabled))
-	}
-	if existing.Comments != domain.Comments {
-		changes = append(changes, fmt.Sprintf("comments: '%s' -> '%s'", existing.Comments, domain.Comments))
-	}
-	message := fmt.Sprintf("Updated domain %s", existing.Name)
-	if len(changes) > 0 {
-		message += ": " + strings.Join(changes, ", ")
-	} else {
-		message += " (no changes)"
+		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
 	domain.ID = id
-	domain.Name = existing.Name // Cannot change name
+	domain.Name = existing.Name
 	domain.CreatedAt = existing.CreatedAt
 	domain.UpdatedAt = time.Now()
 
 	if err := dnsrepo.SaveDomain(ctx, domain); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Name, message, false)
+		commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Name, "Failed: "+err.Error(), false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Name, message, true)
+	commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Name, "Updated", true)
 	return domain, nil
 }
 
 func DeleteDomain(ctx context.Context, id string) error {
 	existing, err := dnsrepo.GetDomain(ctx, id)
 	if err != nil {
-		return errors.New("domain not found")
+		return errors.New("not found")
 	}
-
-	// Permission check: dns/<domain-name>
-	resource := fmt.Sprintf("dns/%s", existing.Name)
+	resource := "dns/" + existing.Name
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
-		return errors.New("permission denied: " + resource)
+		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	message := fmt.Sprintf("Deleted domain %s (enabled: %v, comments: '%s') and all its records", existing.Name, existing.Enabled, existing.Comments)
-
-	// Delete associated records first
-	if err := dnsrepo.DeleteRecordsByDomain(ctx, id); err != nil {
-		return fmt.Errorf("failed to delete records: %w", err)
-	}
-
-	if err := dnsrepo.DeleteDomain(ctx, id); err != nil {
-		commonaudit.FromContext(ctx).Log("DeleteDomain", existing.Name, message, false)
-		return err
-	}
-	commonaudit.FromContext(ctx).Log("DeleteDomain", existing.Name, message, true)
-	return nil
+	_ = dnsrepo.DeleteRecordsByDomain(ctx, id)
+	err = dnsrepo.DeleteDomain(ctx, id)
+	commonaudit.FromContext(ctx).Log("DeleteDomain", existing.Name, "Deleted", err == nil)
+	return err
 }
 
 // Record Service
@@ -391,30 +272,22 @@ func ListRecords(ctx context.Context, domainID string, page, pageSize int, searc
 	if err != nil {
 		return nil, err
 	}
-
 	perms := commonauth.PermissionsFromContext(ctx)
 	domainCache := make(map[string]*models.Domain)
 
-	var filteredRecords []models.Record
+	var filtered []models.Record
 	for _, r := range records {
-		domain, ok := domainCache[r.DomainID]
+		dom, ok := domainCache[r.DomainID]
 		if !ok {
-			domain, _ = dnsrepo.GetDomain(ctx, r.DomainID)
-			domainCache[r.DomainID] = domain
+			dom, _ = dnsrepo.GetDomain(ctx, r.DomainID)
+			domainCache[r.DomainID] = dom
 		}
-		if domain == nil {
-			continue
-		}
-
-		// Check if user has permission for this specific record or its domain
-		resourceDomain := fmt.Sprintf("dns/%s", domain.Name)
-		resourceRecord := fmt.Sprintf("dns/%s/%s/%s", domain.Name, r.Name, r.Type)
-		if perms.IsAllowed(resourceDomain) || perms.IsAllowed(resourceRecord) {
-			filteredRecords = append(filteredRecords, r)
+		if dom != nil && (perms.IsAllowed("dns/"+dom.Name) || perms.IsAllowed("dns/"+dom.Name+"/"+r.Name+"/"+r.Type)) {
+			filtered = append(filtered, r)
 		}
 	}
 
-	total := len(filteredRecords)
+	total := len(filtered)
 	start := (page - 1) * pageSize
 	if start >= total {
 		return &common.PaginatedResponse{Items: []interface{}{}, Total: total, Page: page}, nil
@@ -423,57 +296,39 @@ func ListRecords(ctx context.Context, domainID string, page, pageSize int, searc
 	if end > total {
 		end = total
 	}
-
 	var items []interface{}
 	for i := start; i < end; i++ {
-		items = append(items, filteredRecords[i])
+		items = append(items, filtered[i])
 	}
-
-	return &common.PaginatedResponse{
-		Items: items,
-		Total: total,
-		Page:  page,
-	}, nil
+	return &common.PaginatedResponse{Items: items, Total: total, Page: page}, nil
 }
 
 func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, error) {
 	if err := record.Bind(nil); err != nil {
 		return nil, err
 	}
-	domain, err := dnsrepo.GetDomain(ctx, record.DomainID)
+	dom, err := dnsrepo.GetDomain(ctx, record.DomainID)
 	if err != nil {
 		return nil, errors.New("domain not found")
 	}
-
-	// Permission check: dns/<domain>/<host>/<type>
-	resource := fmt.Sprintf("dns/%s/%s/%s", domain.Name, record.Name, record.Type)
+	resource := fmt.Sprintf("dns/%s/%s/%s", dom.Name, record.Name, record.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
-		return nil, errors.New("permission denied: " + resource)
+		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
-
-	// Prevent manual SOA creation (handled by system)
 	if record.Type == "SOA" {
-		return nil, errors.New("SOA records are managed by the system and cannot be created manually")
+		return nil, errors.New("SOA managed by system")
 	}
-
 	if err := validateRecord(ctx, record); err != nil {
 		return nil, err
 	}
 
 	record.ID = uuid.New().String()
-
-	message := fmt.Sprintf("Created record %s in %s: %s -> %s (TTL: %d, enabled: %v, priority: %d)",
-		record.Type, domain.Name, record.Name, record.Value, record.TTL, record.Enabled, record.Priority)
-
 	if err := dnsrepo.SaveRecord(ctx, record); err != nil {
-		commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+domain.Name, message, false)
+		commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+dom.Name, "Failed", false)
 		return nil, err
 	}
-
-	// Update SOA serial
-	updateSOASerial(ctx, domain.ID)
-
-	commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+domain.Name, message, true)
+	updateSOASerial(ctx, dom.ID)
+	commonaudit.FromContext(ctx).Log("CreateRecord", record.Name+"."+dom.Name, "Created", true)
 	return record, nil
 }
 
@@ -483,336 +338,141 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 	}
 	existing, err := dnsrepo.GetRecord(ctx, id)
 	if err != nil {
-		return nil, errors.New("record not found")
+		return nil, errors.New("not found")
 	}
-
-	domain, err := dnsrepo.GetDomain(ctx, existing.DomainID)
-	if err != nil {
+	dom, _ := dnsrepo.GetDomain(ctx, existing.DomainID)
+	if dom == nil {
 		return nil, errors.New("domain not found")
 	}
 
-	// Permission check: dns/<domain>/<host>/<type> (Check both existing and new if changed)
-	resourceOld := fmt.Sprintf("dns/%s/%s/%s", domain.Name, existing.Name, existing.Type)
-	resourceNew := fmt.Sprintf("dns/%s/%s/%s", domain.Name, record.Name, record.Type)
+	resOld := fmt.Sprintf("dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
+	resNew := fmt.Sprintf("dns/%s/%s/%s", dom.Name, record.Name, record.Type)
 	perms := commonauth.PermissionsFromContext(ctx)
-	if !perms.IsAllowed(resourceOld) || !perms.IsAllowed(resourceNew) {
-		return nil, errors.New("permission denied for this record operation")
+	if !perms.IsAllowed(resOld) || !perms.IsAllowed(resNew) {
+		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resNew)
 	}
 
 	record.ID = id
-	record.DomainID = existing.DomainID // Cannot change domain of a record
-
-	// Special handling for SOA
-	isSOAUpdate := false
+	record.DomainID = existing.DomainID
 	if existing.Type == "SOA" {
-		isSOAUpdate = true
-		if record.Type != "SOA" {
-			return nil, errors.New("cannot change type of SOA record")
+		if record.Type != "SOA" || record.Name != "@" {
+			return nil, errors.New("invalid SOA update")
 		}
-		if record.Name != "@" {
-			return nil, errors.New("SOA record name must be '@'")
-		}
-
-		mname, rname, _, err := parseSOA(record.Value)
+		m, r, _, err := parseSOA(record.Value)
 		if err != nil {
-			return nil, fmt.Errorf("invalid SOA format: %w", err)
+			return nil, err
 		}
-
-		// Keep current serial but increment it
-		record.Value = fmt.Sprintf("%s %s %s %d %d %d %d",
-			mname, rname, incrementSerial(existing.Value),
-			defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
-
-		// SOA must always be enabled
+		record.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, r, incrementSerial(existing.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
 		record.Enabled = true
 	}
-
 	if err := validateRecord(ctx, record); err != nil {
 		return nil, err
 	}
-
-	changes := []string{}
-	if existing.Name != record.Name {
-		changes = append(changes, fmt.Sprintf("host: %s -> %s", existing.Name, record.Name))
-	}
-	if existing.Type != record.Type {
-		changes = append(changes, fmt.Sprintf("type: %s -> %s", existing.Type, record.Type))
-	}
-	if existing.Value != record.Value {
-		changes = append(changes, fmt.Sprintf("value: %s -> %s", existing.Value, record.Value))
-	}
-	if existing.TTL != record.TTL {
-		changes = append(changes, fmt.Sprintf("ttl: %d -> %d", existing.TTL, record.TTL))
-	}
-	if existing.Enabled != record.Enabled {
-		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, record.Enabled))
-	}
-	if existing.Priority != record.Priority {
-		changes = append(changes, fmt.Sprintf("priority: %d -> %d", existing.Priority, record.Priority))
-	}
-	message := fmt.Sprintf("Updated record %s in %s", existing.Name, domain.Name)
-	if len(changes) > 0 {
-		message += ": " + strings.Join(changes, ", ")
-	} else {
-		message += " (no changes)"
-	}
-
 	if err := dnsrepo.SaveRecord(ctx, record); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateRecord", existing.Name+"."+domain.Name, message, false)
+		commonaudit.FromContext(ctx).Log("UpdateRecord", record.Name+"."+dom.Name, "Failed", false)
 		return nil, err
 	}
-
-	// Update SOA serial if NOT an SOA update (to avoid double update or recursion if we had any)
-	if !isSOAUpdate {
-		updateSOASerial(ctx, domain.ID)
+	if existing.Type != "SOA" {
+		updateSOASerial(ctx, dom.ID)
 	}
-
-	commonaudit.FromContext(ctx).Log("UpdateRecord", existing.Name+"."+domain.Name, message, true)
+	commonaudit.FromContext(ctx).Log("UpdateRecord", record.Name+"."+dom.Name, "Updated", true)
 	return record, nil
 }
 
 func DeleteRecord(ctx context.Context, id string) error {
 	existing, err := dnsrepo.GetRecord(ctx, id)
 	if err != nil {
-		return errors.New("record not found")
+		return errors.New("not found")
 	}
-
-	domain, err := dnsrepo.GetDomain(ctx, existing.DomainID)
-	if err != nil {
+	dom, _ := dnsrepo.GetDomain(ctx, existing.DomainID)
+	if dom == nil {
 		return errors.New("domain not found")
 	}
-
-	// Permission check: dns/<domain>/<host>/<type>
-	resource := fmt.Sprintf("dns/%s/%s/%s", domain.Name, existing.Name, existing.Type)
+	resource := fmt.Sprintf("dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
-		return errors.New("permission denied: " + resource)
+		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
-
-	// Prevent SOA deletion
 	if existing.Type == "SOA" {
-		return errors.New("SOA records cannot be deleted")
+		return errors.New("cannot delete SOA")
 	}
-
-	message := fmt.Sprintf("Deleted record: %s/%s -> %s (TTL: %d, enabled: %v, priority: %d) in %s",
-		existing.Name, existing.Type, existing.Value, existing.TTL, existing.Enabled, existing.Priority, domain.Name)
-
-	if err := dnsrepo.DeleteRecord(ctx, id); err != nil {
-		commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Name+"."+domain.Name, message, false)
-		return err
+	err = dnsrepo.DeleteRecord(ctx, id)
+	if err == nil {
+		updateSOASerial(ctx, dom.ID)
+		commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Name+"."+dom.Name, "Deleted", true)
 	}
-
-	// Update SOA serial
-	updateSOASerial(ctx, domain.ID)
-
-	commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Name+"."+domain.Name, message, true)
-	return nil
+	return err
 }
 
-func updateSOASerial(ctx context.Context, domainID string) {
-	records, _, err := dnsrepo.ListRecords(ctx, domainID, 0, 100, "")
-	if err != nil {
-		return
+func ClearCache() {
+	exportCache.Purge()
+}
+
+func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
+	perms := commonauth.PermissionsFromContext(ctx)
+	// Entry check: Allow if user has global 'dns' permission OR has specific instance permissions
+	if !perms.AllowedAll && !perms.IsAllowed("dns") && len(perms.AllowedInstances) == 0 {
+		return nil, fmt.Errorf("%w: dns", commonauth.ErrPermissionDenied)
 	}
+
+	domains, _, _ := dnsrepo.ListDomains(ctx, 0, 10000, "")
+	all, _, _ := dnsrepo.ListRecords(ctx, "", 0, 100000, "")
+	domainMap := make(map[string]map[string]map[string]interface{})
+	for _, r := range all {
+		if !r.Enabled {
+			continue
+		}
+		if domainMap[r.DomainID] == nil {
+			domainMap[r.DomainID] = make(map[string]map[string]interface{})
+		}
+		if domainMap[r.DomainID][r.Name] == nil {
+			domainMap[r.DomainID][r.Name] = make(map[string]interface{})
+		}
+		domainMap[r.DomainID][r.Name][r.Type] = r.Value
+	}
+	resp := &models.DnsExportResponse{Domains: make([]models.ExportDomain, 0)}
+	for _, d := range domains {
+		if d.Enabled && perms.IsAllowed("dns/"+d.Name) {
+			resp.Domains = append(resp.Domains, models.ExportDomain{Name: d.Name, Records: domainMap[d.ID]})
+		}
+	}
+	return resp, nil
+}
+
+func generateSOASerial() string { return time.Now().Format("20060102") + "01" }
+func updateSOASerial(ctx context.Context, domainID string) {
+	records, _, _ := dnsrepo.ListRecords(ctx, domainID, 0, 100, "")
 	for _, r := range records {
 		if r.Type == "SOA" {
-			r.Value = fmt.Sprintf("%s %s %s %d %d %d %d",
-				getPart(r.Value, 0), getPart(r.Value, 1), incrementSerial(r.Value),
-				defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+			m, rn, _, _ := parseSOA(r.Value)
+			r.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(r.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
 			_ = dnsrepo.SaveRecord(ctx, &r)
 			break
 		}
 	}
 }
-
-func getPart(value string, index int) string {
-	parts := strings.Fields(value)
-	if index < len(parts) {
-		return parts[index]
+func parseSOA(val string) (m, r, s string, err error) {
+	p := strings.Fields(val)
+	if len(p) < 3 {
+		return "", "", "", errors.New("invalid SOA")
 	}
-	return ""
+	return p[0], p[1], p[2], nil
 }
-
-func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
-	perms := commonauth.PermissionsFromContext(ctx)
-	// Use JSON marshaled permissions as a stable cache key
-	permsData, _ := json.Marshal(perms)
-	cacheKey := string(permsData)
-	lastMod := dnsrepo.GetLastModified()
-
-	if entry, ok := exportCache.Get(cacheKey); ok {
-		if !entry.LastModified.Before(lastMod) {
-			return entry.Response, nil
-		}
+func incrementSerial(old string) string {
+	_, _, s, err := parseSOA(old)
+	today := time.Now().Format("20060102")
+	if err != nil || !strings.HasPrefix(s, today) {
+		return today + "01"
 	}
-
-	// Fetch all domains
-	domains, _, err := dnsrepo.ListDomains(ctx, 0, 1000, "")
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch all records
-	allRecords, _, err := dnsrepo.ListRecords(ctx, "", 0, 10000, "")
-	if err != nil {
-		return nil, err
-	}
-
-	// Map enabled records to domain IDs: map[domainID]map[name]map[type]interface{}
-	domainMap := make(map[string]map[string]map[string]interface{})
-	for _, r := range allRecords {
-		if !r.Enabled {
-			continue
-		}
-
-		if _, ok := domainMap[r.DomainID]; !ok {
-			domainMap[r.DomainID] = make(map[string]map[string]interface{})
-		}
-		if _, ok := domainMap[r.DomainID][r.Name]; !ok {
-			domainMap[r.DomainID][r.Name] = make(map[string]interface{})
-		}
-
-		var exportRec interface{}
-		switch r.Type {
-		case "A":
-			exportRec = models.ExportRecordA{Address: r.Value, TTL: r.TTL}
-		case "AAAA":
-			exportRec = models.ExportRecordAAAA{Address: r.Value, TTL: r.TTL}
-		case "CNAME":
-			exportRec = models.ExportRecordCNAME{Target: r.Value, TTL: r.TTL}
-		case "NS":
-			exportRec = models.ExportRecordNS{Target: r.Value, TTL: r.TTL}
-		case "MX":
-			exportRec = models.ExportRecordMX{Host: r.Value, Priority: r.Priority, TTL: r.TTL}
-		case "TXT":
-			exportRec = models.ExportRecordTXT{Text: r.Value, TTL: r.TTL}
-		case "SRV":
-			parts := strings.Fields(r.Value)
-			weight := 0
-			port := 0
-			target := ""
-			if len(parts) >= 3 {
-				fmt.Sscanf(parts[0], "%d", &weight)
-				fmt.Sscanf(parts[1], "%d", &port)
-				target = strings.Join(parts[2:], " ")
-			}
-			exportRec = models.ExportRecordSRV{Priority: r.Priority, Weight: weight, Port: port, Target: target, TTL: r.TTL}
-		case "CAA":
-			parts := strings.Fields(r.Value)
-			flags := 0
-			tag := ""
-			value := ""
-			if len(parts) >= 3 {
-				fmt.Sscanf(parts[0], "%d", &flags)
-				tag = parts[1]
-				value = strings.Join(parts[2:], " ")
-				if strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"") {
-					value = value[1 : len(value)-1]
-				}
-			}
-			exportRec = models.ExportRecordCAA{Flags: flags, Tag: tag, Value: value, TTL: r.TTL}
-		case "SOA":
-			parts := strings.Fields(r.Value)
-			var serial int64
-			refresh, retry, expire, minimum := 0, 0, 0, 0
-			mname, rname := "", ""
-			if len(parts) >= 7 {
-				mname = parts[0]
-				rname = parts[1]
-				fmt.Sscanf(parts[2], "%d", &serial)
-				fmt.Sscanf(parts[3], "%d", &refresh)
-				fmt.Sscanf(parts[4], "%d", &retry)
-				fmt.Sscanf(parts[5], "%d", &expire)
-				fmt.Sscanf(parts[6], "%d", &minimum)
-			}
-			exportRec = models.ExportRecordSOA{
-				Mname: mname, Rname: rname, Serial: serial,
-				Refresh: refresh, Retry: retry, Expire: expire, Minimum: minimum,
-				TTL: r.TTL,
-			}
-		}
-
-		if r.Type == "SOA" {
-			// SOA is single
-			domainMap[r.DomainID][r.Name][r.Type] = exportRec
-		} else {
-			// Others are arrays
-			if _, ok := domainMap[r.DomainID][r.Name][r.Type]; !ok {
-				domainMap[r.DomainID][r.Name][r.Type] = []interface{}{}
-			}
-			domainMap[r.DomainID][r.Name][r.Type] = append(domainMap[r.DomainID][r.Name][r.Type].([]interface{}), exportRec)
-		}
-	}
-
-	// Construct response with only enabled domains and those allowed by permissions
-	resp := &models.DnsExportResponse{
-		Domains: make([]models.ExportDomain, 0),
-	}
-
-	for _, d := range domains {
-		if !d.Enabled {
-			continue
-		}
-		// Permission check: dns/<domain-name>
-		resource := fmt.Sprintf("dns/%s", d.Name)
-		if !perms.IsAllowed(resource) {
-			continue
-		}
-
-		recordsForDomain := domainMap[d.ID]
-		if recordsForDomain == nil {
-			recordsForDomain = make(map[string]map[string]interface{})
-		}
-
-		exportDom := models.ExportDomain{
-			Name:    d.Name,
-			Records: recordsForDomain,
-		}
-		resp.Domains = append(resp.Domains, exportDom)
-	}
-
-	// Cache the result
-	exportCache.Add(cacheKey, exportCacheEntry{
-		Response:     resp,
-		LastModified: lastMod,
-	})
-
-	return resp, nil
+	seq := 1
+	fmt.Sscanf(s[8:], "%d", &seq)
+	return today + fmt.Sprintf("%02d", seq+1)
 }
-
 func validateRecord(ctx context.Context, record *models.Record) error {
-	// Basic non-empty checks moved to models.Record.Bind
-
-	// Validate Value based on Type
-	switch record.Type {
-	case "A":
-		if net.ParseIP(record.Value) == nil || strings.Contains(record.Value, ":") {
-			return errors.New("invalid IPv4 address")
-		}
-	case "AAAA":
-		if net.ParseIP(record.Value) == nil || !strings.Contains(record.Value, ":") {
-			return errors.New("invalid IPv6 address")
-		}
+	if record.Type == "A" && (net.ParseIP(record.Value) == nil || strings.Contains(record.Value, ":")) {
+		return errors.New("invalid IPv4")
 	}
-
-	// RFC 1034 CNAME mutual exclusion
-	records, _, err := dnsrepo.ListRecords(ctx, record.DomainID, 0, 1000, "")
-	if err != nil {
-		return err
+	if record.Type == "AAAA" && (net.ParseIP(record.Value) == nil || !strings.Contains(record.Value, ":")) {
+		return errors.New("invalid IPv6")
 	}
-
-	for _, r := range records {
-		if r.ID == record.ID {
-			continue
-		}
-		if r.Name == record.Name {
-			if record.Type == "CNAME" {
-				return errors.New("CNAME record cannot coexist with other records of the same name")
-			}
-			if r.Type == "CNAME" {
-				return errors.New("cannot create record because a CNAME already exists for this name")
-			}
-		}
-	}
-
 	return nil
 }

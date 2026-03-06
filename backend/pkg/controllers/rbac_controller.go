@@ -26,7 +26,7 @@ func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.ListServiceAccounts(r.Context(), page, pageSize, search)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -93,7 +93,7 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := rbacservice.DeleteServiceAccount(r.Context(), id); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")
@@ -115,7 +115,7 @@ func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.ListRoles(r.Context(), page, pageSize, search)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -182,7 +182,7 @@ func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := rbacservice.DeleteRole(r.Context(), id); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")
@@ -204,7 +204,7 @@ func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.ListRoleBindings(r.Context(), page, pageSize, search)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -271,7 +271,7 @@ func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := rbacservice.DeleteRoleBinding(r.Context(), id); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")
@@ -313,7 +313,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := rbacservice.SimulatePermissions(r.Context(), req.ServiceAccountID, req.Verb, req.Resource)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -331,7 +331,7 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 	prefix := r.URL.Query().Get("prefix")
 	suggestions, err := rbacservice.SuggestResources(r.Context(), prefix)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, suggestions)
@@ -349,7 +349,7 @@ func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
 	resource := r.URL.Query().Get("resource")
 	verbs, err := rbacservice.SuggestVerbs(r.Context(), resource)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, verbs)

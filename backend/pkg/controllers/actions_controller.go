@@ -26,7 +26,7 @@ import (
 func ListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := actions.ListWorkflows(r.Context())
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -102,7 +102,7 @@ func UpdateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := actions.DeleteWorkflow(r.Context(), id); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")
@@ -119,7 +119,7 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := actions.ListTaskInstances(r.Context())
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -148,7 +148,7 @@ func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 
 	instanceID, err := actions.RunWorkflow(r.Context(), workflowID, req.Inputs, req.Trigger)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, instanceID)
@@ -191,7 +191,7 @@ func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 
 	count, err := actions.CleanupTaskInstances(r.Context(), days)
 	if err != nil {
-		common.InternalServerError(w, r, 0, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, map[string]interface{}{"deleted": count})
@@ -221,7 +221,7 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 
 		logs, nextOffset, err := actions.GetStepLogs(r.Context(), id, stepIndex, offset)
 		if err != nil {
-			common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+			HandleError(w, r, err)
 			return
 		}
 		common.Success(w, r, map[string]interface{}{
@@ -234,7 +234,7 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 	// Default to all logs if no stepIndex provided
 	logs, err := actions.GetTaskLogs(r.Context(), id)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, logs)
@@ -253,7 +253,7 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 func CancelInstanceHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := actions.CancelTaskInstance(r.Context(), id); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")
@@ -304,7 +304,7 @@ func ProbeHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := actions.Probe(r.Context(), &req)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -349,7 +349,7 @@ func ResetWebhookTokenHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	token, err := actions.ResetWebhookToken(r.Context(), id)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, token)
@@ -377,7 +377,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	// Find workflow by token
 	workflows, err := actions.ListWorkflows(r.Context())
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 
@@ -414,7 +414,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 			common.Error(w, r, http.StatusConflict, http.StatusConflict, errStr)
 			return
 		}
-		common.InternalServerError(w, r, http.StatusInternalServerError, errStr)
+		HandleError(w, r, err)
 		return
 	}
 

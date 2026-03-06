@@ -26,7 +26,7 @@ func ListAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := auditservice.ListLogs(r.Context(), page, pageSize, search)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 
@@ -51,7 +51,7 @@ func CleanupAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 
 	count, err := auditservice.CleanupLogs(r.Context(), days)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 

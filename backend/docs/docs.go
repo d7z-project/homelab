@@ -2695,6 +2695,10 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "serviceAccountId": {
+                    "description": "执行该工作流时使用的身份 (Impersonation)",
+                    "type": "string"
+                },
                 "startedAt": {
                     "type": "string"
                 },

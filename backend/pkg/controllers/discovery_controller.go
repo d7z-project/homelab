@@ -52,7 +52,7 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 			common.Error(w, r, http.StatusNotFound, http.StatusNotFound, err.Error())
 			return
 		}
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 

@@ -1,7 +1,6 @@
 package unit
 
 import (
-	"context"
 	"homelab/pkg/models"
 	"homelab/pkg/services/actions"
 	_ "homelab/pkg/services/actions/processors"
@@ -81,7 +80,7 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "test-user", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "test-user", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -89,7 +88,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
 			if instance != nil && instance.Status != "Running" {
 				break
 			}
@@ -138,14 +137,14 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
 		// Wait for completion
 		for i := 0; i < 10; i++ {
-			inst, _ := actions.GetTaskInstance(context.Background(), instanceID)
+			inst, _ := actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
@@ -177,14 +176,14 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		// Start first instance
-		id1, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		id1, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("First execution failed: %v", err)
 		}
 		defer actions.GlobalExecutor.Cancel(id1)
 
 		// Try to start second instance immediately
-		_, err = actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		_, err = actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
 		if err == nil {
 			t.Error("Expected second execution to fail due to concurrency control")
 		}
@@ -211,7 +210,7 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -219,7 +218,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for timeout
 		var instance *models.TaskInstance
 		for i := 0; i < 30; i++ {
-			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
 			if instance != nil && (instance.Status == "Failed" || instance.Status == "Cancelled") {
 				break
 			}
@@ -256,7 +255,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		inputs := map[string]string{"target": "PROD", "opt": "yes"}
-		instanceID, err := actions.TriggerWorkflow(context.Background(), workflow, "root", "Manual", inputs)
+		instanceID, err := actions.TriggerWorkflow(tests.SetupMockRootContext(), workflow, "root", "Manual", inputs)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -264,7 +263,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
 			if instance != nil && instance.Status == "Success" {
 				break
 			}
@@ -297,14 +296,14 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.TriggerWorkflow(context.Background(), workflow, "root", "Manual", nil)
+		instanceID, err := actions.TriggerWorkflow(tests.SetupMockRootContext(), workflow, "root", "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
-			inst, _ := actions.GetTaskInstance(context.Background(), instanceID)
+			inst, _ := actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
 			if inst != nil && inst.Status == "Success" {
 				break
 			}
@@ -332,7 +331,7 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(context.Background(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -340,7 +339,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for completion
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
-			instance, _ = actions.GetTaskInstance(context.Background(), instanceID)
+			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
 			if instance != nil && instance.Status == "Failed" {
 				break
 			}
@@ -365,7 +364,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		// 1. TriggerWorkflow (simulating Cron/Webhook) should fail
-		_, err := actions.TriggerWorkflow(context.Background(), workflow, "cron", "Cron", nil)
+		_, err := actions.TriggerWorkflow(tests.SetupMockRootContext(), workflow, "cron", "Cron", nil)
 		if err == nil {
 			t.Error("Expected TriggerWorkflow to fail for disabled workflow")
 		}

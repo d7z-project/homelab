@@ -355,8 +355,13 @@ export class ActionsComponent implements OnInit, OnDestroy {
           await firstValueFrom(this.orchService.actionsWorkflowsIdDelete(wf.id));
           this.snackBar.open('工作流已删除', '关闭', { duration: 2000 });
           await this.loadWorkflows();
-        } catch (err) {
-          this.snackBar.open('删除失败', '关闭', { duration: 2000 });
+        } catch (err: any) {
+          const msg = err.error?.message || err.message || '';
+          if (msg.includes('permission denied') && msg.includes('write access required')) {
+            this.snackBar.open('删除失败: 您没有该工作流的修改/删除权限', '了解', { duration: 5000 });
+          } else {
+            this.snackBar.open('删除失败', '关闭', { duration: 2000 });
+          }
         } finally {
           this.loading.set(false);
         }
@@ -405,8 +410,13 @@ export class ActionsComponent implements OnInit, OnDestroy {
       this.snackBar.open('工作流已启动', '关闭', { duration: 3000 });
       this.filterByWorkflow(wf.id!);
       await this.loadInstances();
-    } catch (err) {
-      this.snackBar.open('启动失败', '关闭', { duration: 2000 });
+    } catch (err: any) {
+      const msg = err.error?.message || err.message || '';
+      if (msg.includes('permission denied') && msg.includes('execution access required')) {
+        this.snackBar.open('启动失败: 您没有该工作流的执行权限', '了解', { duration: 5000 });
+      } else {
+        this.snackBar.open('启动失败', '关闭', { duration: 2000 });
+      }
     } finally {
       this.loading.set(false);
     }

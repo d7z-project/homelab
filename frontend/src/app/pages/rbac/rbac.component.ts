@@ -104,7 +104,7 @@ export class RbacComponent implements OnInit, OnDestroy {
   displayedSaColumns = computed(() =>
     this.isHandset()
       ? ['enabled', 'name', 'id', 'actions']
-      : ['enabled', 'name', 'id', 'comments', 'token', 'lastUsedAt', 'actions'],
+      : ['enabled', 'name', 'id', 'comments', 'lastUsedAt', 'actions'],
   );
 
   async toggleSa(sa: ModelsServiceAccount) {

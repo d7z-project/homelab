@@ -386,6 +386,9 @@ definitions:
           type: string
         description: 任务最终输出
         type: object
+      serviceAccountId:
+        description: 执行该工作流时使用的身份 (Impersonation)
+        type: string
       startedAt:
         type: string
       status:

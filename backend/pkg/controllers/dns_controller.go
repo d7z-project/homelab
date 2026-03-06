@@ -26,7 +26,7 @@ func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := dnsservice.ListDomains(r.Context(), page, pageSize, search)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -93,7 +93,7 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := dnsservice.DeleteDomain(r.Context(), id); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")
@@ -117,7 +117,7 @@ func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := dnsservice.ListRecords(r.Context(), domainID, page, pageSize, search)
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)
@@ -184,7 +184,7 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := dnsservice.DeleteRecord(r.Context(), id); err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")
@@ -201,7 +201,7 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 func ExportHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := dnsservice.ExportAll(r.Context())
 	if err != nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, err.Error())
+		HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, res)

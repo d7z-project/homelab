@@ -19,7 +19,7 @@ import (
 
 func ListServiceAccounts(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 	sas, total, err := rbacrepo.ListServiceAccounts(ctx, uint64(page-1), uint(pageSize), search)
 	if err != nil {
@@ -43,7 +43,7 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 		return nil, err
 	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
 	existing, _ := rbacrepo.GetServiceAccount(ctx, sa.ID)
@@ -81,7 +81,7 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 		return nil, err
 	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 	if sa.ID != id {
 		return nil, errors.New("id in body does not match path")
@@ -119,7 +119,7 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 
 func DeleteServiceAccount(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return errors.New("permission denied: rbac")
+		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
 	existing, err := rbacrepo.GetServiceAccount(ctx, id)
@@ -158,7 +158,7 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 
 func ResetServiceAccountToken(ctx context.Context, id string) (*models.ServiceAccount, error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 	sa, err := rbacrepo.GetServiceAccount(ctx, id)
 	if err != nil {
@@ -188,7 +188,7 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*models.ServiceAc
 
 func ListRoles(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 	roles, total, err := rbacrepo.ListRoles(ctx, uint64(page-1), uint(pageSize), search)
 	if err != nil {
@@ -215,7 +215,7 @@ func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 		return nil, err
 	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
 	existing, _ := rbacrepo.GetRole(ctx, role.ID)
@@ -237,7 +237,7 @@ func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role
 		return nil, err
 	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 	if role.ID != id {
 		return nil, errors.New("id in body does not match path")
@@ -268,7 +268,7 @@ func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role
 
 func DeleteRole(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return errors.New("permission denied: rbac")
+		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
 	existing, err := rbacrepo.GetRole(ctx, id)
@@ -313,7 +313,7 @@ func DeleteRole(ctx context.Context, id string) error {
 
 func ListRoleBindings(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 	rbs, total, err := rbacrepo.ListRoleBindings(ctx, uint64(page-1), uint(pageSize), search)
 	if err != nil {
@@ -337,7 +337,7 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 		return nil, err
 	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
 	// Verify ServiceAccount exists
@@ -376,7 +376,7 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 		return nil, err
 	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, errors.New("permission denied: rbac")
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 	if rb.ID != id {
 		return nil, errors.New("id in body does not match path")
@@ -425,7 +425,7 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 
 func DeleteRoleBinding(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return errors.New("permission denied: rbac")
+		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
 	existing, err := rbacrepo.GetRoleBinding(ctx, id)
@@ -454,7 +454,10 @@ func SimulatePermissions(ctx context.Context, saID, verb, resource string) (*mod
 func init() {
 	discovery.Register("rbac/serviceaccounts", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-			return nil, 0, errors.New("permission denied")
+			return nil, 0, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+		}
+		if limit <= 0 {
+			limit = 20
 		}
 		sas, total, err := rbacrepo.ListServiceAccounts(ctx, uint64(offset/limit), uint(limit), search)
 		if err != nil {
@@ -473,7 +476,10 @@ func init() {
 
 	discovery.Register("rbac/roles", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-			return nil, 0, errors.New("permission denied")
+			return nil, 0, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+		}
+		if limit <= 0 {
+			limit = 20
 		}
 		roles, total, err := rbacrepo.ListRoles(ctx, uint64(offset/limit), uint(limit), search)
 		if err != nil {
