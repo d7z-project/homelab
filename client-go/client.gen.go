@@ -322,6 +322,9 @@ type ModelsSimulatePermissionsRequest struct {
 
 // ModelsStep defines model for models.Step.
 type ModelsStep struct {
+	// Fail 执行出错时是否继续执行后续步骤
+	Fail *bool `json:"fail,omitempty"`
+
 	// Id 步骤 ID，用于 ${{ steps.ID.outputs.key }}
 	Id *string `json:"id,omitempty"`
 
@@ -385,6 +388,9 @@ type ModelsTaskInstance struct {
 
 	// StepTimings 步骤执行耗时追踪
 	StepTimings *map[string]ModelsStepTiming `json:"stepTimings,omitempty"`
+
+	// Steps 运行时的步骤快照 (防篡改)
+	Steps *[]ModelsStep `json:"steps,omitempty"`
 
 	// Trigger Manual, Cron, Webhook
 	Trigger *string `json:"trigger,omitempty"`
@@ -740,6 +746,9 @@ type ClientInterface interface {
 
 	PostActionsWorkflows(ctx context.Context, body PostActionsWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetActionsWorkflowsSchema request
+	GetActionsWorkflowsSchema(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostActionsWorkflowsValidateWithBody request with any body
 	PostActionsWorkflowsValidateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1046,6 +1055,18 @@ func (c *Client) PostActionsWorkflowsWithBody(ctx context.Context, contentType s
 
 func (c *Client) PostActionsWorkflows(ctx context.Context, body PostActionsWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostActionsWorkflowsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetActionsWorkflowsSchema(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetActionsWorkflowsSchemaRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -2159,6 +2180,33 @@ func NewPostActionsWorkflowsRequestWithBody(server string, contentType string, b
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetActionsWorkflowsSchemaRequest generates requests for GetActionsWorkflowsSchema
+func NewGetActionsWorkflowsSchemaRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/actions/workflows/schema")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -4074,6 +4122,9 @@ type ClientWithResponsesInterface interface {
 
 	PostActionsWorkflowsWithResponse(ctx context.Context, body PostActionsWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostActionsWorkflowsResponse, error)
 
+	// GetActionsWorkflowsSchemaWithResponse request
+	GetActionsWorkflowsSchemaWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetActionsWorkflowsSchemaResponse, error)
+
 	// PostActionsWorkflowsValidateWithBodyWithResponse request with any body
 	PostActionsWorkflowsValidateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostActionsWorkflowsValidateResponse, error)
 
@@ -4491,6 +4542,28 @@ func (r PostActionsWorkflowsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostActionsWorkflowsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetActionsWorkflowsSchemaResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetActionsWorkflowsSchemaResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetActionsWorkflowsSchemaResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5487,6 +5560,15 @@ func (c *ClientWithResponses) PostActionsWorkflowsWithResponse(ctx context.Conte
 	return ParsePostActionsWorkflowsResponse(rsp)
 }
 
+// GetActionsWorkflowsSchemaWithResponse request returning *GetActionsWorkflowsSchemaResponse
+func (c *ClientWithResponses) GetActionsWorkflowsSchemaWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetActionsWorkflowsSchemaResponse, error) {
+	rsp, err := c.GetActionsWorkflowsSchema(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetActionsWorkflowsSchemaResponse(rsp)
+}
+
 // PostActionsWorkflowsValidateWithBodyWithResponse request with arbitrary body returning *PostActionsWorkflowsValidateResponse
 func (c *ClientWithResponses) PostActionsWorkflowsValidateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostActionsWorkflowsValidateResponse, error) {
 	rsp, err := c.PostActionsWorkflowsValidateWithBody(ctx, contentType, body, reqEditors...)
@@ -6332,6 +6414,32 @@ func ParsePostActionsWorkflowsResponse(rsp *http.Response) (*PostActionsWorkflow
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetActionsWorkflowsSchemaResponse parses an HTTP response from a GetActionsWorkflowsSchemaWithResponse call
+func ParseGetActionsWorkflowsSchemaResponse(rsp *http.Response) (*GetActionsWorkflowsSchemaResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetActionsWorkflowsSchemaResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
@@ -7446,6 +7554,9 @@ type ServerInterface interface {
 	// Create a workflow
 	// (POST /actions/workflows)
 	PostActionsWorkflows(w http.ResponseWriter, r *http.Request)
+	// Get workflow JSON schema
+	// (GET /actions/workflows/schema)
+	GetActionsWorkflowsSchema(w http.ResponseWriter, r *http.Request)
 	// Validate a workflow configuration
 	// (POST /actions/workflows/validate)
 	PostActionsWorkflowsValidate(w http.ResponseWriter, r *http.Request)
@@ -7901,6 +8012,26 @@ func (siw *ServerInterfaceWrapper) PostActionsWorkflows(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostActionsWorkflows(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetActionsWorkflowsSchema operation middleware
+func (siw *ServerInterfaceWrapper) GetActionsWorkflowsSchema(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetActionsWorkflowsSchema(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -9264,6 +9395,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/actions/webhooks/{token}", wrapper.PostActionsWebhooksToken)
 	m.HandleFunc("GET "+options.BaseURL+"/actions/workflows", wrapper.GetActionsWorkflows)
 	m.HandleFunc("POST "+options.BaseURL+"/actions/workflows", wrapper.PostActionsWorkflows)
+	m.HandleFunc("GET "+options.BaseURL+"/actions/workflows/schema", wrapper.GetActionsWorkflowsSchema)
 	m.HandleFunc("POST "+options.BaseURL+"/actions/workflows/validate", wrapper.PostActionsWorkflowsValidate)
 	m.HandleFunc("DELETE "+options.BaseURL+"/actions/workflows/{id}", wrapper.DeleteActionsWorkflowsId)
 	m.HandleFunc("PUT "+options.BaseURL+"/actions/workflows/{id}", wrapper.PutActionsWorkflowsId)

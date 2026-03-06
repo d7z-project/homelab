@@ -119,6 +119,7 @@ type TaskInstance struct {
 	Error       string              `json:"error,omitempty"`
 	Outputs     map[string]string   `json:"outputs"`     // 任务最终输出
 	Logs        []LogEntry          `json:"logs"`        // 任务日志
+	Steps       []Step              `json:"steps"`       // 运行时的步骤快照 (防篡改)
 	StepTimings map[int]*StepTiming `json:"stepTimings"` // 步骤执行耗时追踪
 }
 

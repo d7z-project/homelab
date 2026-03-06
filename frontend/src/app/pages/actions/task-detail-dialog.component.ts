@@ -234,22 +234,15 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   private async initStepStates() {
-    let steps: { id: string; name: string }[] = [];
-    try {
-      const workflows = await firstValueFrom(this.orchService.actionsWorkflowsGet());
-      const wf = workflows.find(w => w.id === this.instance().workflowId);
-      if (wf) {
-        this.workflowName.set(wf.name || wf.id || '');
-        steps = (wf.steps || []).map(s => ({ id: s.id || '', name: s.name || '' }));
-      }
-    } catch (e) {}
+    const inst = this.instance() as any;
+    const steps = (inst.steps || []).map((s: any) => ({ id: s.id || '', name: s.name || s.id || '' }));
 
     const states: StepState[] = [];
     states.push({ index: 0, id: 'init', name: '任务初始化', logs: [], offset: 0, expanded: false, loading: false });
-    steps.forEach((s, i) => states.push({ index: i + 1, id: s.id, name: s.name || s.id, logs: [], offset: 0, expanded: false, loading: false }));
+    steps.forEach((s: any, i: number) => states.push({ index: i + 1, id: s.id, name: s.name, logs: [], offset: 0, expanded: false, loading: false }));
     states.push({ index: steps.length + 1, id: 'cleanup', name: '清理与结束', logs: [], offset: 0, expanded: false, loading: false });
 
-    const status = this.instance().status;
+    const status = inst.status;
     const current = this.currentRunningStep();
 
     if (status === 'Failed' || status === 'Cancelled') {
@@ -261,6 +254,13 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
     this.stepStates.set(states);
     states.filter(s => s.expanded).forEach(s => this.loadLogsForStep(s.index));
+
+    // Async fetch workflow name for display if available, but don't block
+    try {
+      const workflows = await firstValueFrom(this.orchService.actionsWorkflowsGet());
+      const wf = workflows.find(w => w.id === inst.workflowId);
+      if (wf) this.workflowName.set(wf.name || wf.id || '');
+    } catch (e) {}
   }
 
   private expandStepOnly(index: number) {

@@ -40,6 +40,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -86,6 +87,7 @@ import * as yaml from 'js-yaml';
     MatCheckboxModule,
     MatSlideToggleModule,
     MatMenuModule,
+    MatProgressSpinnerModule,
     DragDropModule,
     DiscoverySelectComponent,
     DiscoverySuggestInputComponent,
@@ -327,8 +329,19 @@ import * as yaml from 'js-yaml';
             </mat-stepper>
           </div>
         } @else {
-          <div class="flex-1 overflow-hidden animate-in fade-in duration-300 bg-[#1e1e1e]">
-            <ngx-monaco-editor class="h-full w-full" style="height: 100%; width: 100%" [options]="monacoOptions" [(ngModel)]="yamlCode" (onInit)="onEditorInit($event)"></ngx-monaco-editor>
+          <div class="flex-1 flex flex-col relative overflow-hidden animate-in fade-in duration-300 bg-[#1e1e1e]">
+            @if (isEditorLoading()) {
+              <div class="absolute inset-0 z-10 flex items-center justify-center bg-[#1e1e1e]">
+                <mat-spinner diameter="48" strokeWidth="4"></mat-spinner>
+              </div>
+            }
+            <ngx-monaco-editor 
+              class="h-full w-full" 
+              style="height: 100%; width: 100%" 
+              [options]="monacoOptions" 
+              [(ngModel)]="yamlCode" 
+              (onInit)="onEditorInit($event)"
+            ></ngx-monaco-editor>
           </div>
         }
       </div>
@@ -355,6 +368,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   editMode = signal<'visual' | 'yaml'>('visual');
   yamlCode = '';
+  isEditorLoading = signal(true);
   monacoOptions = {
     theme: 'vs-dark',
     language: 'yaml',
@@ -438,6 +452,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   onEditorInit(editor: any) {
     this.applySchemaToMonaco(this.schema());
+    this.isEditorLoading.set(false);
   }
 
   private applySchemaToMonaco(schema: any) {
@@ -524,7 +539,8 @@ export class CreateWorkflowDialogComponent implements OnInit {
   switchMode(newMode: 'visual' | 'yaml') {
     if (this.editMode() === newMode) return;
     if (newMode === 'yaml') {
-      this.yamlCode = yaml.dump(this.getCurrentWorkflow(), { indent: 2, noArrayIndent: true });
+      const cleaned = this.getCurrentWorkflow();
+      this.yamlCode = yaml.dump(cleaned, { indent: 2, noArrayIndent: true });
     } else {
       try {
         const parsed = yaml.load(this.yamlCode) as ModelsWorkflow;
@@ -575,15 +591,29 @@ export class CreateWorkflowDialogComponent implements OnInit {
   }
 
   private cleanObject(obj: any): any {
-    if (Array.isArray(obj)) {
-      const arr = obj.map(v => this.cleanObject(v)).filter(v => v !== null && v !== undefined);
-      return arr.length > 0 ? arr : undefined;
-    } else if (obj !== null && typeof obj === 'object') {
-      const entries = Object.entries(obj)
-        .map(([k, v]) => [k, this.cleanObject(v)])
-        .filter(([_, v]) => v !== null && v !== undefined && v !== '');
-      return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+    if (obj === null || obj === undefined || obj === '' || obj === false || obj === 0) {
+      return undefined;
     }
+
+    if (Array.isArray(obj)) {
+      const result = obj.map(item => this.cleanObject(item)).filter(v => v !== undefined);
+      return result.length > 0 ? result : undefined;
+    }
+
+    if (typeof obj === 'object') {
+      const cleanedObj: any = {};
+      let hasVisibleData = false;
+
+      for (const [key, value] of Object.entries(obj)) {
+        const cleanedValue = this.cleanObject(value);
+        if (cleanedValue === undefined) continue;
+
+        cleanedObj[key] = cleanedValue;
+        hasVisibleData = true;
+      }
+      return hasVisibleData ? cleanedObj : undefined;
+    }
+
     return obj;
   }
 

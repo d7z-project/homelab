@@ -40,6 +40,7 @@ func GenerateWorkflowSchema() map[string]interface{} {
 				"fail": map[string]interface{}{
 					"type":        "boolean",
 					"description": "执行出错时是否继续执行后续步骤",
+					"default":     false,
 				},
 			},
 			"required": []string{"id", "type"},
@@ -57,12 +58,12 @@ func GenerateWorkflowSchema() map[string]interface{} {
 			"id":               map[string]interface{}{"type": "string", "description": "工作流唯一标识"},
 			"name":             map[string]interface{}{"type": "string", "description": "工作流名称"},
 			"description":      map[string]interface{}{"type": "string", "description": "工作流描述"},
-			"enabled":          map[string]interface{}{"type": "boolean", "description": "是否启用"},
-			"timeout":          map[string]interface{}{"type": "integer", "description": "超时时间(秒)"},
+			"enabled":          map[string]interface{}{"type": "boolean", "description": "是否启用", "default": true},
+			"timeout":          map[string]interface{}{"type": "integer", "description": "超时时间(秒)", "default": 7200},
 			"serviceAccountId": map[string]interface{}{"type": "string", "description": "执行身份"},
-			"cronEnabled":      map[string]interface{}{"type": "boolean", "description": "是否开启定时任务"},
+			"cronEnabled":      map[string]interface{}{"type": "boolean", "description": "是否开启定时任务", "default": false},
 			"cronExpr":         map[string]interface{}{"type": "string", "description": "Cron 表达式"},
-			"webhookEnabled":   map[string]interface{}{"type": "boolean", "description": "是否开启 Webhook"},
+			"webhookEnabled":   map[string]interface{}{"type": "boolean", "description": "是否开启 Webhook", "default": false},
 			"vars": map[string]interface{}{
 				"type": "object",
 				"additionalProperties": map[string]interface{}{
@@ -70,7 +71,7 @@ func GenerateWorkflowSchema() map[string]interface{} {
 					"properties": map[string]interface{}{
 						"description":   map[string]interface{}{"type": "string"},
 						"default":       map[string]interface{}{"type": "string"},
-						"required":      map[string]interface{}{"type": "boolean"},
+						"required":      map[string]interface{}{"type": "boolean", "default": false},
 						"regexFrontend": map[string]interface{}{"type": "string"},
 						"regexBackend":  map[string]interface{}{"type": "string"},
 					},

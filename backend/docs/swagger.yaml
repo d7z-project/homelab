@@ -396,6 +396,11 @@ definitions:
           $ref: '#/definitions/models.StepTiming'
         description: 步骤执行耗时追踪
         type: object
+      steps:
+        description: 运行时的步骤快照 (防篡改)
+        items:
+          $ref: '#/definitions/models.Step'
+        type: array
       trigger:
         description: Manual, Cron, Webhook
         type: string

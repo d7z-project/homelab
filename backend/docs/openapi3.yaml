@@ -374,6 +374,23 @@ paths:
       tags:
       - actions
       x-codegen-request-body-name: workflow
+  /actions/workflows/schema:
+    get:
+      description: "Returns the JSON schema for workflow templates, dynamically generated\
+        \ based on available processors."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Get workflow JSON schema
+      tags:
+      - actions
   /actions/workflows/validate:
     post:
       description: "Checks if a workflow configuration is valid, including variable\
@@ -1796,6 +1813,7 @@ components:
       type: object
     models.Step:
       example:
+        fail: true
         name: name
         id: id
         params:
@@ -1803,6 +1821,9 @@ components:
         type: type
         if: if
       properties:
+        fail:
+          description: 执行出错时是否继续执行后续步骤
+          type: boolean
         id:
           description: "步骤 ID，用于 ${{ steps.ID.outputs.key }}"
           type: string
@@ -1897,6 +1918,21 @@ components:
           key:
             startedAt: startedAt
             finishedAt: finishedAt
+        steps:
+        - fail: true
+          name: name
+          id: id
+          params:
+            key: params
+          type: type
+          if: if
+        - fail: true
+          name: name
+          id: id
+          params:
+            key: params
+          type: type
+          if: if
         userId: userId
         finishedAt: finishedAt
         currentStep: 0
@@ -1945,6 +1981,11 @@ components:
             $ref: "#/components/schemas/models.StepTiming"
           description: 步骤执行耗时追踪
           type: object
+        steps:
+          description: 运行时的步骤快照 (防篡改)
+          items:
+            $ref: "#/components/schemas/models.Step"
+          type: array
         trigger:
           description: "Manual, Cron, Webhook"
           type: string
@@ -1986,13 +2027,15 @@ components:
         cronEnabled: true
         description: description
         steps:
-        - name: name
+        - fail: true
+          name: name
           id: id
           params:
             key: params
           type: type
           if: if
-        - name: name
+        - fail: true
+          name: name
           id: id
           params:
             key: params

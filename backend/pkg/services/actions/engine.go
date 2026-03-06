@@ -64,8 +64,10 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 		Inputs:      inputs,
 		StartedAt:   time.Now(),
 		Outputs:     make(map[string]string),
+		Steps:       make([]models.Step, len(workflow.Steps)),
 		StepTimings: make(map[int]*models.StepTiming),
 	}
+	copy(instance.Steps, workflow.Steps)
 
 	// Update activeWorkflows with the real instance ID
 	e.activeWorkflows.Store(workflow.ID, instance.ID)
@@ -120,7 +122,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 
 func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workflow *models.Workflow, logger *TaskLogger, cancel context.CancelFunc) {
 	defer func() {
-		finalStepIdx := len(workflow.Steps) + 1
+		finalStepIdx := len(instance.Steps) + 1
 		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
 			if t.FinishedAt == nil {
 				now := time.Now()
@@ -163,7 +165,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 	stepOutputs := make(map[string]map[string]string)
 	stepStatuses := make(map[string]bool)
 
-	for i, step := range workflow.Steps {
+	for i, step := range instance.Steps {
 		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
 			if t.FinishedAt == nil {
 				now := time.Now()

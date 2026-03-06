@@ -2709,6 +2709,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.StepTiming"
                     }
                 },
+                "steps": {
+                    "description": "运行时的步骤快照 (防篡改)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Step"
+                    }
+                },
                 "trigger": {
                     "description": "Manual, Cron, Webhook",
                     "type": "string"

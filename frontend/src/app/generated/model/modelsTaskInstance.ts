@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsStep } from './modelsStep';
 import { ModelsLogEntry } from './modelsLogEntry';
 import { ModelsStepTiming } from './modelsStepTiming';
 
@@ -40,6 +41,10 @@ export interface ModelsTaskInstance {
      * 步骤执行耗时追踪
      */
     stepTimings?: { [key: string]: ModelsStepTiming; };
+    /**
+     * 运行时的步骤快照 (防篡改)
+     */
+    steps?: Array<ModelsStep>;
     /**
      * Manual, Cron, Webhook
      */
