@@ -62,6 +62,14 @@ type UnderscoreNetworkIpPoolsGet200Response struct {
 	Total    *int             `json:"total,omitempty"`
 }
 
+// UnderscoreNetworkIpSyncGet200Response defines model for _network_ip_sync_get_200_response.
+type UnderscoreNetworkIpSyncGet200Response struct {
+	Items    *[]ModelsIPSyncPolicy `json:"items,omitempty"`
+	Page     *int                  `json:"page,omitempty"`
+	PageSize *int                  `json:"pageSize,omitempty"`
+	Total    *int                  `json:"total,omitempty"`
+}
+
 // UnderscoreNetworkSiteExportsGet200Response defines model for _network_site_exports_get_200_response.
 type UnderscoreNetworkSiteExportsGet200Response struct {
 	Items    *[]ModelsSiteExport `json:"items,omitempty"`
@@ -299,6 +307,24 @@ type ModelsIPPoolPreviewResponse struct {
 
 	// Total 总条数
 	Total *int `json:"total,omitempty"`
+}
+
+// ModelsIPSyncPolicy defines model for models.IPSyncPolicy.
+type ModelsIPSyncPolicy struct {
+	CreatedAt    *string `json:"createdAt,omitempty"`
+	Cron         *string `json:"cron,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	Enabled      *bool   `json:"enabled,omitempty"`
+	ErrorMessage *string `json:"errorMessage,omitempty"`
+	Id           *string `json:"id,omitempty"`
+	LastRunAt    *string `json:"lastRunAt,omitempty"`
+
+	// LastStatus "success", "failed"
+	LastStatus    *string `json:"lastStatus,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	SourceUrl     *string `json:"sourceUrl,omitempty"`
+	TargetGroupId *string `json:"targetGroupId,omitempty"`
+	UpdatedAt     *string `json:"updatedAt,omitempty"`
 }
 
 // ModelsIntelligenceSource defines model for models.IntelligenceSource.
@@ -829,6 +855,18 @@ type GetNetworkIpPoolsIdPreviewParams struct {
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
 
+// GetNetworkIpSyncParams defines parameters for GetNetworkIpSync.
+type GetNetworkIpSyncParams struct {
+	// Page Page number
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
+
+	// PageSize Items per page
+	PageSize *int `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// Search Search by name
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+}
+
 // PostNetworkSiteAnalysisHitTestJSONBody defines parameters for PostNetworkSiteAnalysisHitTest.
 type PostNetworkSiteAnalysisHitTestJSONBody = map[string]interface{}
 
@@ -978,6 +1016,12 @@ type PostNetworkIpPoolsJSONRequestBody = ModelsIPGroup
 
 // PostNetworkIpPoolsIdEntriesJSONRequestBody defines body for PostNetworkIpPoolsIdEntries for application/json ContentType.
 type PostNetworkIpPoolsIdEntriesJSONRequestBody = ModelsIPPoolEntryRequest
+
+// PostNetworkIpSyncJSONRequestBody defines body for PostNetworkIpSync for application/json ContentType.
+type PostNetworkIpSyncJSONRequestBody = ModelsIPSyncPolicy
+
+// PutNetworkIpSyncIdJSONRequestBody defines body for PutNetworkIpSyncId for application/json ContentType.
+type PutNetworkIpSyncIdJSONRequestBody = ModelsIPSyncPolicy
 
 // PostNetworkSiteAnalysisHitTestJSONRequestBody defines body for PostNetworkSiteAnalysisHitTest for application/json ContentType.
 type PostNetworkSiteAnalysisHitTestJSONRequestBody = PostNetworkSiteAnalysisHitTestJSONBody
@@ -1281,6 +1325,25 @@ type ClientInterface interface {
 
 	// GetNetworkIpPoolsIdPreview request
 	GetNetworkIpPoolsIdPreview(ctx context.Context, id string, params *GetNetworkIpPoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkIpSync request
+	GetNetworkIpSync(ctx context.Context, params *GetNetworkIpSyncParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkIpSyncWithBody request with any body
+	PostNetworkIpSyncWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostNetworkIpSync(ctx context.Context, body PostNetworkIpSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNetworkIpSyncId request
+	DeleteNetworkIpSyncId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutNetworkIpSyncIdWithBody request with any body
+	PutNetworkIpSyncIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutNetworkIpSyncId(ctx context.Context, id string, body PutNetworkIpSyncIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostNetworkIpSyncIdTrigger request
+	PostNetworkIpSyncIdTrigger(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PostNetworkSiteAnalysisHitTestWithBody request with any body
 	PostNetworkSiteAnalysisHitTestWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2234,6 +2297,90 @@ func (c *Client) PostNetworkIpPoolsIdEntries(ctx context.Context, id string, bod
 
 func (c *Client) GetNetworkIpPoolsIdPreview(ctx context.Context, id string, params *GetNetworkIpPoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetNetworkIpPoolsIdPreviewRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkIpSync(ctx context.Context, params *GetNetworkIpSyncParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkIpSyncRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkIpSyncWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkIpSyncRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkIpSync(ctx context.Context, body PostNetworkIpSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkIpSyncRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNetworkIpSyncId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNetworkIpSyncIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkIpSyncIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkIpSyncIdRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkIpSyncId(ctx context.Context, id string, body PutNetworkIpSyncIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkIpSyncIdRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostNetworkIpSyncIdTrigger(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostNetworkIpSyncIdTriggerRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -5148,6 +5295,242 @@ func NewGetNetworkIpPoolsIdPreviewRequest(server string, id string, params *GetN
 	return req, nil
 }
 
+// NewGetNetworkIpSyncRequest generates requests for GetNetworkIpSync
+func NewGetNetworkIpSyncRequest(server string, params *GetNetworkIpSyncParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/ip/sync")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PageSize != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "pageSize", *params.PageSize, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Search != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostNetworkIpSyncRequest calls the generic PostNetworkIpSync builder with application/json body
+func NewPostNetworkIpSyncRequest(server string, body PostNetworkIpSyncJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostNetworkIpSyncRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostNetworkIpSyncRequestWithBody generates requests for PostNetworkIpSync with any type of body
+func NewPostNetworkIpSyncRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/ip/sync")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteNetworkIpSyncIdRequest generates requests for DeleteNetworkIpSyncId
+func NewDeleteNetworkIpSyncIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/ip/sync/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutNetworkIpSyncIdRequest calls the generic PutNetworkIpSyncId builder with application/json body
+func NewPutNetworkIpSyncIdRequest(server string, id string, body PutNetworkIpSyncIdJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutNetworkIpSyncIdRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPutNetworkIpSyncIdRequestWithBody generates requests for PutNetworkIpSyncId with any type of body
+func NewPutNetworkIpSyncIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/ip/sync/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostNetworkIpSyncIdTriggerRequest generates requests for PostNetworkIpSyncIdTrigger
+func NewPostNetworkIpSyncIdTriggerRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/ip/sync/%s/trigger", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPostNetworkSiteAnalysisHitTestRequest calls the generic PostNetworkSiteAnalysisHitTest builder with application/json body
 func NewPostNetworkSiteAnalysisHitTestRequest(server string, body PostNetworkSiteAnalysisHitTestJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -6839,6 +7222,25 @@ type ClientWithResponsesInterface interface {
 	// GetNetworkIpPoolsIdPreviewWithResponse request
 	GetNetworkIpPoolsIdPreviewWithResponse(ctx context.Context, id string, params *GetNetworkIpPoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*GetNetworkIpPoolsIdPreviewResponse, error)
 
+	// GetNetworkIpSyncWithResponse request
+	GetNetworkIpSyncWithResponse(ctx context.Context, params *GetNetworkIpSyncParams, reqEditors ...RequestEditorFn) (*GetNetworkIpSyncResponse, error)
+
+	// PostNetworkIpSyncWithBodyWithResponse request with any body
+	PostNetworkIpSyncWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkIpSyncResponse, error)
+
+	PostNetworkIpSyncWithResponse(ctx context.Context, body PostNetworkIpSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkIpSyncResponse, error)
+
+	// DeleteNetworkIpSyncIdWithResponse request
+	DeleteNetworkIpSyncIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkIpSyncIdResponse, error)
+
+	// PutNetworkIpSyncIdWithBodyWithResponse request with any body
+	PutNetworkIpSyncIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkIpSyncIdResponse, error)
+
+	PutNetworkIpSyncIdWithResponse(ctx context.Context, id string, body PutNetworkIpSyncIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkIpSyncIdResponse, error)
+
+	// PostNetworkIpSyncIdTriggerWithResponse request
+	PostNetworkIpSyncIdTriggerWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*PostNetworkIpSyncIdTriggerResponse, error)
+
 	// PostNetworkSiteAnalysisHitTestWithBodyWithResponse request with any body
 	PostNetworkSiteAnalysisHitTestWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkSiteAnalysisHitTestResponse, error)
 
@@ -8281,6 +8683,128 @@ func (r GetNetworkIpPoolsIdPreviewResponse) StatusCode() int {
 	return 0
 }
 
+type GetNetworkIpSyncResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnderscoreNetworkIpSyncGet200Response
+	JSON401      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkIpSyncResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkIpSyncResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkIpSyncResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsIPSyncPolicy
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkIpSyncResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkIpSyncResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNetworkIpSyncIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNetworkIpSyncIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNetworkIpSyncIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutNetworkIpSyncIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsIPSyncPolicy
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PutNetworkIpSyncIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutNetworkIpSyncIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostNetworkIpSyncIdTriggerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON401      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostNetworkIpSyncIdTriggerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostNetworkIpSyncIdTriggerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PostNetworkSiteAnalysisHitTestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -9583,6 +10107,67 @@ func (c *ClientWithResponses) GetNetworkIpPoolsIdPreviewWithResponse(ctx context
 		return nil, err
 	}
 	return ParseGetNetworkIpPoolsIdPreviewResponse(rsp)
+}
+
+// GetNetworkIpSyncWithResponse request returning *GetNetworkIpSyncResponse
+func (c *ClientWithResponses) GetNetworkIpSyncWithResponse(ctx context.Context, params *GetNetworkIpSyncParams, reqEditors ...RequestEditorFn) (*GetNetworkIpSyncResponse, error) {
+	rsp, err := c.GetNetworkIpSync(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkIpSyncResponse(rsp)
+}
+
+// PostNetworkIpSyncWithBodyWithResponse request with arbitrary body returning *PostNetworkIpSyncResponse
+func (c *ClientWithResponses) PostNetworkIpSyncWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkIpSyncResponse, error) {
+	rsp, err := c.PostNetworkIpSyncWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkIpSyncResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostNetworkIpSyncWithResponse(ctx context.Context, body PostNetworkIpSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*PostNetworkIpSyncResponse, error) {
+	rsp, err := c.PostNetworkIpSync(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkIpSyncResponse(rsp)
+}
+
+// DeleteNetworkIpSyncIdWithResponse request returning *DeleteNetworkIpSyncIdResponse
+func (c *ClientWithResponses) DeleteNetworkIpSyncIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkIpSyncIdResponse, error) {
+	rsp, err := c.DeleteNetworkIpSyncId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNetworkIpSyncIdResponse(rsp)
+}
+
+// PutNetworkIpSyncIdWithBodyWithResponse request with arbitrary body returning *PutNetworkIpSyncIdResponse
+func (c *ClientWithResponses) PutNetworkIpSyncIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkIpSyncIdResponse, error) {
+	rsp, err := c.PutNetworkIpSyncIdWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkIpSyncIdResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutNetworkIpSyncIdWithResponse(ctx context.Context, id string, body PutNetworkIpSyncIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkIpSyncIdResponse, error) {
+	rsp, err := c.PutNetworkIpSyncId(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkIpSyncIdResponse(rsp)
+}
+
+// PostNetworkIpSyncIdTriggerWithResponse request returning *PostNetworkIpSyncIdTriggerResponse
+func (c *ClientWithResponses) PostNetworkIpSyncIdTriggerWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*PostNetworkIpSyncIdTriggerResponse, error) {
+	rsp, err := c.PostNetworkIpSyncIdTrigger(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostNetworkIpSyncIdTriggerResponse(rsp)
 }
 
 // PostNetworkSiteAnalysisHitTestWithBodyWithResponse request with arbitrary body returning *PostNetworkSiteAnalysisHitTestResponse
@@ -12206,6 +12791,220 @@ func ParseGetNetworkIpPoolsIdPreviewResponse(rsp *http.Response) (*GetNetworkIpP
 	return response, nil
 }
 
+// ParseGetNetworkIpSyncResponse parses an HTTP response from a GetNetworkIpSyncWithResponse call
+func ParseGetNetworkIpSyncResponse(rsp *http.Response) (*GetNetworkIpSyncResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkIpSyncResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnderscoreNetworkIpSyncGet200Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkIpSyncResponse parses an HTTP response from a PostNetworkIpSyncWithResponse call
+func ParsePostNetworkIpSyncResponse(rsp *http.Response) (*PostNetworkIpSyncResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkIpSyncResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsIPSyncPolicy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNetworkIpSyncIdResponse parses an HTTP response from a DeleteNetworkIpSyncIdWithResponse call
+func ParseDeleteNetworkIpSyncIdResponse(rsp *http.Response) (*DeleteNetworkIpSyncIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNetworkIpSyncIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutNetworkIpSyncIdResponse parses an HTTP response from a PutNetworkIpSyncIdWithResponse call
+func ParsePutNetworkIpSyncIdResponse(rsp *http.Response) (*PutNetworkIpSyncIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutNetworkIpSyncIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsIPSyncPolicy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostNetworkIpSyncIdTriggerResponse parses an HTTP response from a PostNetworkIpSyncIdTriggerWithResponse call
+func ParsePostNetworkIpSyncIdTriggerResponse(rsp *http.Response) (*PostNetworkIpSyncIdTriggerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostNetworkIpSyncIdTriggerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParsePostNetworkSiteAnalysisHitTestResponse parses an HTTP response from a PostNetworkSiteAnalysisHitTestWithResponse call
 func ParsePostNetworkSiteAnalysisHitTestResponse(rsp *http.Response) (*PostNetworkSiteAnalysisHitTestResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -13425,6 +14224,21 @@ type ServerInterface interface {
 	// Preview IP pool data (cursor-based)
 	// (GET /network/ip/pools/{id}/preview)
 	GetNetworkIpPoolsIdPreview(w http.ResponseWriter, r *http.Request, id string, params GetNetworkIpPoolsIdPreviewParams)
+	// List all IP sync policies
+	// (GET /network/ip/sync)
+	GetNetworkIpSync(w http.ResponseWriter, r *http.Request, params GetNetworkIpSyncParams)
+	// Create an IP sync policy
+	// (POST /network/ip/sync)
+	PostNetworkIpSync(w http.ResponseWriter, r *http.Request)
+	// Delete an IP sync policy
+	// (DELETE /network/ip/sync/{id})
+	DeleteNetworkIpSyncId(w http.ResponseWriter, r *http.Request, id string)
+	// Update an IP sync policy
+	// (PUT /network/ip/sync/{id})
+	PutNetworkIpSyncId(w http.ResponseWriter, r *http.Request, id string)
+	// Trigger manual sync
+	// (POST /network/ip/sync/{id}/trigger)
+	PostNetworkIpSyncIdTrigger(w http.ResponseWriter, r *http.Request, id string)
 	// Perform site hit test
 	// (POST /network/site/analysis/hit-test)
 	PostNetworkSiteAnalysisHitTest(w http.ResponseWriter, r *http.Request)
@@ -15232,6 +16046,168 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpPoolsIdPreview(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// GetNetworkIpSync operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkIpSync(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetworkIpSyncParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkIpSync(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkIpSync operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkIpSync(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkIpSync(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNetworkIpSyncId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNetworkIpSyncId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNetworkIpSyncId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutNetworkIpSyncId operation middleware
+func (siw *ServerInterfaceWrapper) PutNetworkIpSyncId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutNetworkIpSyncId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostNetworkIpSyncIdTrigger operation middleware
+func (siw *ServerInterfaceWrapper) PostNetworkIpSyncIdTrigger(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostNetworkIpSyncIdTrigger(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // PostNetworkSiteAnalysisHitTest operation middleware
 func (siw *ServerInterfaceWrapper) PostNetworkSiteAnalysisHitTest(w http.ResponseWriter, r *http.Request) {
 
@@ -16316,6 +17292,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/network/ip/pools/{id}/entries", wrapper.DeleteNetworkIpPoolsIdEntries)
 	m.HandleFunc("POST "+options.BaseURL+"/network/ip/pools/{id}/entries", wrapper.PostNetworkIpPoolsIdEntries)
 	m.HandleFunc("GET "+options.BaseURL+"/network/ip/pools/{id}/preview", wrapper.GetNetworkIpPoolsIdPreview)
+	m.HandleFunc("GET "+options.BaseURL+"/network/ip/sync", wrapper.GetNetworkIpSync)
+	m.HandleFunc("POST "+options.BaseURL+"/network/ip/sync", wrapper.PostNetworkIpSync)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/ip/sync/{id}", wrapper.DeleteNetworkIpSyncId)
+	m.HandleFunc("PUT "+options.BaseURL+"/network/ip/sync/{id}", wrapper.PutNetworkIpSyncId)
+	m.HandleFunc("POST "+options.BaseURL+"/network/ip/sync/{id}/trigger", wrapper.PostNetworkIpSyncIdTrigger)
 	m.HandleFunc("POST "+options.BaseURL+"/network/site/analysis/hit-test", wrapper.PostNetworkSiteAnalysisHitTest)
 	m.HandleFunc("GET "+options.BaseURL+"/network/site/exports", wrapper.GetNetworkSiteExports)
 	m.HandleFunc("POST "+options.BaseURL+"/network/site/exports", wrapper.PostNetworkSiteExports)

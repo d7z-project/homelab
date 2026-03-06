@@ -10,9 +10,9 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/controllers"
 	"homelab/pkg/services/actions/processors"
+	"homelab/pkg/services/intelligence"
 	"homelab/pkg/services/ip"
 	"homelab/pkg/services/site"
-	"homelab/pkg/services/intelligence"
 	"io/fs"
 	"log"
 	"net/http"
@@ -118,7 +118,7 @@ func main() {
 	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
 	exportManager := ip.NewExportManager(analysisEngine)
 	controllers.InitIPControllers(ipPoolService, analysisEngine, exportManager)
-	processors.RegisterIPProcessors(ipPoolService, mmdbManager)
+	ipPoolService.StartSyncRunner(context.Background())
 
 	// Initialize Site Services
 	siteAnalysisEngine := site.NewAnalysisEngine(mmdbManager)

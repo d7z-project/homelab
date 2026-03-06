@@ -7,9 +7,53 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 var idRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+// IPSyncPolicy 代表一个 IP 数据同步策略
+type IPSyncPolicy struct {
+	ID            string    `json:"id"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	SourceURL     string    `json:"sourceUrl"`
+	TargetGroupID string    `json:"targetGroupId"`
+	Cron          string    `json:"cron"`
+	Enabled       bool      `json:"enabled"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+	LastRunAt     time.Time `json:"lastRunAt"`
+	LastStatus    string    `json:"lastStatus"` // "success", "failed"
+	ErrorMessage  string    `json:"errorMessage"`
+}
+
+func (p *IPSyncPolicy) Bind(r *http.Request) error {
+	p.Name = strings.TrimSpace(p.Name)
+	if p.Name == "" {
+		return errors.New("name is required")
+	}
+	if p.ID != "" && !idRegex.MatchString(p.ID) {
+		return fmt.Errorf("invalid id format: %s", p.ID)
+	}
+	p.SourceURL = strings.TrimSpace(p.SourceURL)
+	if p.SourceURL == "" {
+		return errors.New("sourceUrl is required")
+	}
+	if p.TargetGroupID == "" {
+		return errors.New("targetGroupId is required")
+	}
+	p.Cron = strings.TrimSpace(p.Cron)
+	if p.Cron != "" {
+		if _, err := cron.ParseStandard(p.Cron); err != nil {
+			return fmt.Errorf("invalid cron expression: %w", err)
+		}
+	} else {
+		return errors.New("cron expression is required")
+	}
+	return nil
+}
 
 // IPGroup 代表一个 IP 池的元数据
 type IPGroup struct {

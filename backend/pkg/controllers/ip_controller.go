@@ -372,6 +372,120 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "success")
 }
 
+// ListSyncPoliciesHandler godoc
+// @Summary List all IP sync policies
+// @Tags network/ip
+// @Produce json
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Items per page"
+// @Param search query string false "Search by name"
+// @Success 200 {object} common.PaginatedResponse{items=[]models.IPSyncPolicy}
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Security ApiKeyAuth
+// @Router /network/ip/sync [get]
+func ListSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
+	page, pageSize := getPaginationParams(r)
+	search := r.URL.Query().Get("search")
+
+	items, total, err := ipPoolService.ListSyncPolicies(r.Context(), page, pageSize, search)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+}
+
+// CreateSyncPolicyHandler godoc
+// @Summary Create an IP sync policy
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param policy body models.IPSyncPolicy true "IP Sync Policy"
+// @Success 200 {object} models.IPSyncPolicy
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Security ApiKeyAuth
+// @Router /network/ip/sync [post]
+func CreateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
+	var policy models.IPSyncPolicy
+	if err := render.Bind(r, &policy); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := ipPoolService.CreateSyncPolicy(r.Context(), &policy); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, policy)
+}
+
+// UpdateSyncPolicyHandler godoc
+// @Summary Update an IP sync policy
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param id path string true "Policy ID"
+// @Param policy body models.IPSyncPolicy true "IP Sync Policy"
+// @Success 200 {object} models.IPSyncPolicy
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Security ApiKeyAuth
+// @Router /network/ip/sync/{id} [put]
+func UpdateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
+	var policy models.IPSyncPolicy
+	if err := render.Bind(r, &policy); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	policy.ID = chi.URLParam(r, "id")
+	if err := ipPoolService.UpdateSyncPolicy(r.Context(), &policy); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, policy)
+}
+
+// DeleteSyncPolicyHandler godoc
+// @Summary Delete an IP sync policy
+// @Tags network/ip
+// @Produce json
+// @Param id path string true "Policy ID"
+// @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Policy Not Found"
+// @Security ApiKeyAuth
+// @Router /network/ip/sync/{id} [delete]
+func DeleteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := ipPoolService.DeleteSyncPolicy(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "success")
+}
+
+// TriggerSyncHandler godoc
+// @Summary Trigger manual sync
+// @Tags network/ip
+// @Produce json
+// @Param id path string true "Policy ID"
+// @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Policy Not Found"
+// @Security ApiKeyAuth
+// @Router /network/ip/sync/{id}/trigger [post]
+func TriggerSyncHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := ipPoolService.Sync(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "success")
+}
+
 // IPRouter registers the IP routes
 func IPRouter(r chi.Router) {
 	r.Route("/network/ip", func(r chi.Router) {
@@ -394,6 +508,13 @@ func IPRouter(r chi.Router) {
 			r.Post("/{id}/trigger", TriggerExportHandler)
 			r.Get("/task/{taskId}", ExportTaskStatusHandler)
 			r.Get("/download/{taskId}", DownloadExportHandler)
+		})
+		r.Route("/sync", func(r chi.Router) {
+			r.Get("/", ListSyncPoliciesHandler)
+			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateSyncPolicyHandler)
+			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateSyncPolicyHandler)
+			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteSyncPolicyHandler)
+			r.Post("/{id}/trigger", TriggerSyncHandler)
 		})
 	})
 }

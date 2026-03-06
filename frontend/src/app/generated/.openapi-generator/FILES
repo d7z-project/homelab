@@ -35,6 +35,7 @@ model/modelsIPInfoResponse.ts
 model/modelsIPPoolEntry.ts
 model/modelsIPPoolEntryRequest.ts
 model/modelsIPPoolPreviewResponse.ts
+model/modelsIPSyncPolicy.ts
 model/modelsIntelligenceSource.ts
 model/modelsLogEntry.ts
 model/modelsLoginRequest.ts
@@ -70,6 +71,7 @@ model/networkDnsDomainsGet200Response.ts
 model/networkDnsRecordsGet200Response.ts
 model/networkIpExportsGet200Response.ts
 model/networkIpPoolsGet200Response.ts
+model/networkIpSyncGet200Response.ts
 model/networkSiteExportsGet200Response.ts
 model/networkSitePoolsGet200Response.ts
 model/rbacRolebindingsGet200Response.ts

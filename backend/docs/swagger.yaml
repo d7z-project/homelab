@@ -251,6 +251,34 @@ definitions:
         description: 总条数
         type: integer
     type: object
+  models.IPSyncPolicy:
+    properties:
+      createdAt:
+        type: string
+      cron:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      errorMessage:
+        type: string
+      id:
+        type: string
+      lastRunAt:
+        type: string
+      lastStatus:
+        description: '"success", "failed"'
+        type: string
+      name:
+        type: string
+      sourceUrl:
+        type: string
+      targetGroupId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   models.IntelligenceSource:
     properties:
       autoUpdate:
@@ -2582,6 +2610,177 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Preview IP pool data (cursor-based)
+      tags:
+      - network/ip
+  /network/ip/sync:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.IPSyncPolicy'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List all IP sync policies
+      tags:
+      - network/ip
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: IP Sync Policy
+        in: body
+        name: policy
+        required: true
+        schema:
+          $ref: '#/definitions/models.IPSyncPolicy'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPSyncPolicy'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Create an IP sync policy
+      tags:
+      - network/ip
+  /network/ip/sync/{id}:
+    delete:
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Policy Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete an IP sync policy
+      tags:
+      - network/ip
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: IP Sync Policy
+        in: body
+        name: policy
+        required: true
+        schema:
+          $ref: '#/definitions/models.IPSyncPolicy'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPSyncPolicy'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Update an IP sync policy
+      tags:
+      - network/ip
+  /network/ip/sync/{id}/trigger:
+    post:
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Policy Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Trigger manual sync
       tags:
       - network/ip
   /network/site/analysis/hit-test:

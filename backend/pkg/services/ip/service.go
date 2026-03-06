@@ -13,6 +13,7 @@ import (
 	"homelab/pkg/services/discovery"
 	"homelab/pkg/services/rbac"
 	"io"
+	"net/http"
 	"net/netip"
 	"path/filepath"
 	"slices"
@@ -21,6 +22,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/afero"
 )
 
@@ -73,12 +75,68 @@ const (
 )
 
 type IPPoolService struct {
-	mmdb *MMDBManager
+	mmdb     *MMDBManager
+	cron     *cron.Cron
+	cronIDs  map[string]cron.EntryID
+	cronLock sync.Mutex
 }
 
 func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 	return &IPPoolService{
-		mmdb: mmdb,
+		mmdb:    mmdb,
+		cron:    cron.New(),
+		cronIDs: make(map[string]cron.EntryID),
+	}
+}
+
+func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
+	s.cron.Start()
+	// 加载所有启用的策略
+	// 注入一个系统权限的 context
+	sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
+		Type: "sa",
+		ID:   "system",
+	})
+	sysCtx = commonauth.WithPermissions(sysCtx, &models.ResourcePermissions{AllowedAll: true})
+	policies, _, _ := repo.ListSyncPolicies(sysCtx, 1, 10000, "")
+	for _, p := range policies {
+		if p.Enabled {
+			s.addCronJob(p)
+		}
+	}
+}
+
+func (s *IPPoolService) addCronJob(p models.IPSyncPolicy) {
+	s.cronLock.Lock()
+	defer s.cronLock.Unlock()
+
+	// 如果已存在，先删除
+	if id, ok := s.cronIDs[p.ID]; ok {
+		s.cron.Remove(id)
+	}
+
+	id, err := s.cron.AddFunc(p.Cron, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		// 注入一个系统权限的 context
+		ctx = commonauth.WithAuth(ctx, &commonauth.AuthContext{
+			Type: "sa",
+			ID:   "system",
+		})
+		ctx = commonauth.WithPermissions(ctx, &models.ResourcePermissions{AllowedAll: true})
+		_ = s.Sync(ctx, p.ID)
+	})
+	if err == nil {
+		s.cronIDs[p.ID] = id
+	}
+}
+
+func (s *IPPoolService) removeCronJob(id string) {
+	s.cronLock.Lock()
+	defer s.cronLock.Unlock()
+	if entryID, ok := s.cronIDs[id]; ok {
+		s.cron.Remove(entryID)
+		delete(s.cronIDs, id)
 	}
 }
 
@@ -423,4 +481,168 @@ func (s *IPPoolService) LookupGroup(ctx context.Context, id string) (interface{}
 
 func (s *IPPoolService) LookupExport(ctx context.Context, id string) (interface{}, error) {
 	return repo.GetExport(ctx, id)
+}
+
+// Sync Methods
+
+func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPSyncPolicy) error {
+	if policy.ID == "" {
+		policy.ID = uuid.NewString()
+	}
+	policy.CreatedAt = time.Now()
+	policy.UpdatedAt = time.Now()
+	err := repo.SaveSyncPolicy(ctx, policy)
+	if err == nil && policy.Enabled {
+		s.addCronJob(*policy)
+	}
+	commonaudit.FromContext(ctx).Log("CreateIPSyncPolicy", policy.Name, "Created", err == nil)
+	return err
+}
+
+func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *models.IPSyncPolicy) error {
+	old, err := repo.GetSyncPolicy(ctx, policy.ID)
+	if err != nil {
+		return err
+	}
+	policy.CreatedAt = old.CreatedAt
+	policy.UpdatedAt = time.Now()
+	err = repo.SaveSyncPolicy(ctx, policy)
+	if err == nil {
+		if policy.Enabled {
+			s.addCronJob(*policy)
+		} else {
+			s.removeCronJob(policy.ID)
+		}
+	}
+	commonaudit.FromContext(ctx).Log("UpdateIPSyncPolicy", policy.Name, "Updated", err == nil)
+	return err
+}
+
+func (s *IPPoolService) DeleteSyncPolicy(ctx context.Context, id string) error {
+	old, err := repo.GetSyncPolicy(ctx, id)
+	if err != nil {
+		return err
+	}
+	err = repo.DeleteSyncPolicy(ctx, id)
+	if err == nil {
+		s.removeCronJob(id)
+	}
+	commonaudit.FromContext(ctx).Log("DeleteIPSyncPolicy", old.Name, "Deleted", err == nil)
+	return err
+}
+
+func (s *IPPoolService) GetSyncPolicy(ctx context.Context, id string) (*models.IPSyncPolicy, error) {
+	return repo.GetSyncPolicy(ctx, id)
+}
+
+func (s *IPPoolService) ListSyncPolicies(ctx context.Context, page, pageSize int, search string) ([]models.IPSyncPolicy, int, error) {
+	return repo.ListSyncPolicies(ctx, page, pageSize, search)
+}
+
+func (s *IPPoolService) Sync(ctx context.Context, id string) error {
+	policy, err := repo.GetSyncPolicy(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	policy.LastRunAt = time.Now()
+	
+	err = s.doSync(ctx, policy)
+	if err != nil {
+		policy.LastStatus = "failed"
+		policy.ErrorMessage = err.Error()
+	} else {
+		policy.LastStatus = "success"
+		policy.ErrorMessage = ""
+	}
+	
+	_ = repo.SaveSyncPolicy(ctx, policy)
+	return err
+}
+
+func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy) error {
+	resp, err := http.Get(policy.SourceURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(body), "\n")
+	var entries []Entry
+	var allTags []string
+	tagSet := make(map[string]struct{})
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		
+		// 简单的解析逻辑：可能是 CIDR 或 IP
+		prefix, err := netip.ParsePrefix(line)
+		if err != nil {
+			addr, err := netip.ParseAddr(line)
+			if err != nil {
+				continue // 忽略无效行
+			}
+			prefix = netip.PrefixFrom(addr, addr.BitLen())
+		}
+
+		// 默认同步进来的记录带有 "sync" 标签
+		tag := "sync"
+		if _, ok := tagSet[tag]; !ok {
+			tagSet[tag] = struct{}{}
+			allTags = append(allTags, tag)
+		}
+		idx := slices.Index(allTags, tag)
+		entries = append(entries, Entry{Prefix: prefix, TagIndices: []uint32{uint32(idx)}})
+	}
+
+	if len(entries) == 0 {
+		return fmt.Errorf("no valid IP/CIDR found in source")
+	}
+
+	// 写入目标池
+	poolWriteMutex.Lock()
+	defer poolWriteMutex.Unlock()
+
+	group, err := repo.GetGroup(ctx, policy.TargetGroupID)
+	if err != nil {
+		return err
+	}
+
+	_ = common.FS.MkdirAll(PoolsDir, 0755)
+	poolPath := filepath.Join(PoolsDir, policy.TargetGroupID+".bin")
+	tempFile := filepath.Join(PoolsDir, policy.TargetGroupID+".bin.tmp")
+	tf, err := common.FS.Create(tempFile)
+	if err != nil {
+		return err
+	}
+	codec := NewCodec()
+	err = codec.WritePool(tf, allTags, entries)
+	tf.Close()
+	if err != nil {
+		return err
+	}
+	_ = common.FS.Rename(tempFile, poolPath)
+
+	// 更新元数据
+	group.EntryCount = int64(len(entries))
+	group.UpdatedAt = time.Now()
+	
+	hf := sha256.New()
+	content, _ := afero.ReadFile(common.FS, poolPath)
+	hf.Write(content)
+	group.Checksum = hex.EncodeToString(hf.Sum(nil))
+	
+	return repo.SaveGroup(ctx, group)
 }

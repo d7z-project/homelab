@@ -222,6 +222,7 @@ export class MainComponent {
             children: [
               { link: '/network/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
               { link: '/network/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+              { link: '/network/ip/sync', icon: 'sync', label: '同步策略' },
             ],
           },
           {

@@ -15,16 +15,20 @@ import (
 var (
 	groupCache      *lru.Cache[string, *models.IPGroup]
 	exportCache     *lru.Cache[string, *models.IPExport]
+	policyCache     *lru.Cache[string, *models.IPSyncPolicy]
 	groupListCache  *lru.Cache[string, []models.IPGroup]
 	exportListCache *lru.Cache[string, []models.IPExport]
+	policyListCache *lru.Cache[string, []models.IPSyncPolicy]
 	ipLastModified  time.Time
 )
 
 func init() {
 	groupCache, _ = lru.New[string, *models.IPGroup](512)
 	exportCache, _ = lru.New[string, *models.IPExport](512)
+	policyCache, _ = lru.New[string, *models.IPSyncPolicy](512)
 	groupListCache, _ = lru.New[string, []models.IPGroup](16)
 	exportListCache, _ = lru.New[string, []models.IPExport](16)
+	policyListCache, _ = lru.New[string, []models.IPSyncPolicy](16)
 	ipLastModified = time.Now()
 }
 
@@ -202,6 +206,93 @@ func ListExports(ctx context.Context, page int, pageSize int, search string) ([]
 	}
 	if start >= total {
 		return []models.IPExport{}, total, nil
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+	return res[start:end], total, nil
+}
+
+// SyncPolicy Repo
+
+func GetSyncPolicy(ctx context.Context, id string) (*models.IPSyncPolicy, error) {
+	if val, ok := policyCache.Get(id); ok {
+		return val, nil
+	}
+	db := common.DB.Child("network", "ip", "policies")
+	data, err := db.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	var policy models.IPSyncPolicy
+	if err := json.Unmarshal([]byte(data), &policy); err != nil {
+		return nil, err
+	}
+	policyCache.Add(id, &policy)
+	return &policy, nil
+}
+
+func SaveSyncPolicy(ctx context.Context, policy *models.IPSyncPolicy) error {
+	db := common.DB.Child("network", "ip", "policies")
+	data, err := json.Marshal(policy)
+	if err != nil {
+		return err
+	}
+	err = db.Put(ctx, policy.ID, string(data), kv.TTLKeep)
+	if err == nil {
+		policyCache.Add(policy.ID, policy)
+		policyListCache.Purge()
+		updateLastModified()
+	}
+	return err
+}
+
+func DeleteSyncPolicy(ctx context.Context, id string) error {
+	_, err := common.DB.Child("network", "ip", "policies").Delete(ctx, id)
+	if err == nil {
+		policyCache.Remove(id)
+		policyListCache.Purge()
+		updateLastModified()
+	}
+	return err
+}
+
+func ListSyncPolicies(ctx context.Context, page int, pageSize int, search string) ([]models.IPSyncPolicy, int, error) {
+	var all []models.IPSyncPolicy
+	if val, ok := policyListCache.Get("all"); ok {
+		all = val
+	} else {
+		db := common.DB.Child("network", "ip", "policies")
+		items, err := db.List(ctx, "")
+		if err != nil {
+			return nil, 0, err
+		}
+		for _, v := range items {
+			var policy models.IPSyncPolicy
+			if err := json.Unmarshal([]byte(v.Value), &policy); err == nil {
+				all = append(all, policy)
+				policyCache.Add(policy.ID, &policy)
+			}
+		}
+		policyListCache.Add("all", all)
+	}
+
+	res := make([]models.IPSyncPolicy, 0)
+	search = strings.ToLower(search)
+	for _, p := range all {
+		if search == "" || strings.Contains(strings.ToLower(p.Name), search) || strings.Contains(strings.ToLower(p.ID), search) {
+			res = append(res, p)
+		}
+	}
+
+	total := len(res)
+	start := (page - 1) * pageSize
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []models.IPSyncPolicy{}, total, nil
 	}
 	end := start + pageSize
 	if end > total {

@@ -47,6 +47,11 @@ export const routes: Routes = [
         data: { toolbar: { shadow: false, sticky: false } },
       },
       {
+        path: 'network/ip/sync',
+        loadComponent: () => import('./pages/ip/sync.component').then((m) => m.IpSyncComponent),
+        data: { toolbar: { shadow: false, sticky: false } },
+      },
+      {
         path: 'network/site',
         loadComponent: () => import('./pages/site/site.component').then((m) => m.SiteComponent),
         data: { toolbar: { shadow: false, sticky: false } },
