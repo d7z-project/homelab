@@ -1,0 +1,354 @@
+package controllers
+
+import (
+	"fmt"
+	"io"
+	"homelab/pkg/common"
+	"homelab/pkg/controllers/middlewares"
+	"homelab/pkg/models"
+	ipservice "homelab/pkg/services/ip"
+	"net/http"
+	"path/filepath"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
+)
+
+var ipPoolService *ipservice.IPPoolService
+var analysisEngine *ipservice.AnalysisEngine
+var exportManager *ipservice.ExportManager
+
+func InitIPControllers(service *ipservice.IPPoolService, engine *ipservice.AnalysisEngine, em *ipservice.ExportManager) {
+	ipPoolService = service
+	analysisEngine = engine
+	exportManager = em
+}
+
+// ListGroupsHandler godoc
+// @Summary List all IP groups
+// @Tags network/ip
+// @Produce json
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Items per page"
+// @Param search query string false "Search by name"
+// @Success 200 {object} common.PaginatedResponse{items=[]models.IPGroup}
+// @Router /network/ip/pools [get]
+func ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	page, pageSize := getPaginationParams(r)
+	search := r.URL.Query().Get("search")
+
+	items, total, err := ipPoolService.ListGroups(r.Context(), page, pageSize, search)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+}
+
+// CreateGroupHandler godoc
+// @Summary Create an IP group
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param group body models.IPGroup true "IP Group"
+// @Success 200 {object} models.IPGroup
+// @Router /network/ip/pools [post]
+func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
+	var group models.IPGroup
+	if err := render.Bind(r, &group); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := ipPoolService.CreateGroup(r.Context(), &group); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, group)
+}
+
+// PreviewPoolHandler godoc
+// @Summary Preview IP pool data (cursor-based)
+// @Tags network/ip
+// @Produce json
+// @Param id path string true "Group ID"
+// @Param cursor query int false "Byte offset cursor"
+// @Param limit query int false "Number of entries to return"
+// @Param search query string false "Search prefix or tag"
+// @Success 200 {object} models.IPPoolPreviewResponse
+// @Router /network/ip/pools/{id}/preview [get]
+func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	cursorStr := r.URL.Query().Get("cursor")
+	cursor, _ := strconv.ParseInt(cursorStr, 10, 64)
+	limitStr := r.URL.Query().Get("limit")
+	limit, _ := strconv.Atoi(limitStr)
+	if limit <= 0 {
+		limit = 100
+	}
+	search := r.URL.Query().Get("search")
+
+	res, err := ipPoolService.PreviewPool(r.Context(), id, cursor, limit, search)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, res)
+}
+
+// DeleteGroupHandler godoc
+// @Summary Delete an IP group
+// @Tags network/ip
+// @Produce json
+// @Param id path string true "Group ID"
+// @Success 200 {string} string "success"
+// @Router /network/ip/pools/{id} [delete]
+func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := ipPoolService.DeleteGroup(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "success")
+}
+
+// ListExportsHandler godoc
+// @Summary List all IP exports
+// @Tags network/ip
+// @Produce json
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Items per page"
+// @Param search query string false "Search by name"
+// @Success 200 {object} common.PaginatedResponse{items=[]models.IPExport}
+// @Router /network/ip/exports [get]
+func ListExportsHandler(w http.ResponseWriter, r *http.Request) {
+	page, pageSize := getPaginationParams(r)
+	search := r.URL.Query().Get("search")
+
+	items, total, err := ipPoolService.ListExports(r.Context(), page, pageSize, search)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+}
+
+// CreateExportHandler godoc
+// @Summary Create an IP export
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param export body models.IPExport true "IP Export"
+// @Success 200 {object} models.IPExport
+// @Router /network/ip/exports [post]
+func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
+	var export models.IPExport
+	if err := render.Bind(r, &export); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := ipPoolService.CreateExport(r.Context(), &export); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, export)
+}
+
+// DeleteExportHandler godoc
+// @Summary Delete an IP export
+// @Tags network/ip
+// @Produce json
+// @Param id path string true "Export ID"
+// @Success 200 {string} string "success"
+// @Router /network/ip/exports/{id} [delete]
+func DeleteExportHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := ipPoolService.DeleteExport(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "success")
+}
+
+// HitTestHandler godoc
+// @Summary Perform IP hit test
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param request body object true "Hit test request"
+// @Success 200 {object} models.IPAnalysisResult
+// @Router /network/ip/analysis/hit-test [post]
+func HitTestHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IP       string   `json:"ip"`
+		GroupIDs []string `json:"groupIds"`
+	}
+	if err := render.DecodeJSON(r.Body, &req); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	res, err := analysisEngine.HitTest(r.Context(), req.IP, req.GroupIDs)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, res)
+}
+
+// IPInfoHandler godoc
+// @Summary Get IP intelligence info
+// @Tags network/ip
+// @Produce json
+// @Param ip query string true "IP address"
+// @Success 200 {object} models.IPInfoResponse
+// @Router /network/ip/analysis/info [get]
+func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
+	ipStr := r.URL.Query().Get("ip")
+	res, err := analysisEngine.Info(r.Context(), ipStr)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, res)
+}
+
+// TriggerExportHandler godoc
+// @Summary Trigger dynamic export
+// @Tags network/ip
+// @Produce json
+// @Param id path string true "Export ID"
+// @Param format query string false "Format: text, json, yaml"
+// @Success 200 {object} map[string]string
+// @Router /network/ip/exports/{id}/trigger [post]
+func TriggerExportHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		format = "text"
+	}
+	taskID, err := exportManager.TriggerExport(r.Context(), id, format)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, map[string]string{"taskId": taskID})
+}
+
+// ExportTaskStatusHandler godoc
+// @Summary Get export task status
+// @Tags network/ip
+// @Produce json
+// @Param taskId path string true "Task ID"
+// @Success 200 {object} ipservice.ExportTask
+// @Router /network/ip/exports/task/{taskId} [get]
+func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
+	taskId := chi.URLParam(r, "taskId")
+	task := exportManager.GetTask(taskId)
+	if task == nil {
+		common.BadRequestError(w, r, http.StatusNotFound, "task not found")
+		return
+	}
+	common.Success(w, r, task)
+}
+
+// DownloadExportHandler godoc
+// @Summary Download export result
+// @Tags network/ip
+// @Produce octet-stream
+// @Param taskId path string true "Task ID"
+// @Success 200 {file} file
+// @Router /network/ip/exports/download/{taskId} [get]
+func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
+	taskId := chi.URLParam(r, "taskId")
+	task := exportManager.GetTask(taskId)
+	if task == nil || task.Status != "Success" {
+		http.Error(w, "file not ready or not found", http.StatusNotFound)
+		return
+	}
+
+	tempFileName := fmt.Sprintf("export_%s.%s", task.ID, task.Format)
+	tempPath := filepath.Join("temp", tempFileName)
+
+	f, err := common.TempDir.Open(tempPath)
+	if err != nil {
+		http.Error(w, "file not found", http.StatusNotFound)
+		return
+	}
+	defer f.Close()
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tempFileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	io.Copy(w, f)
+}
+
+// ManagePoolEntryHandler godoc
+// @Summary Add or update an entry in IP pool
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param id path string true "Group ID"
+// @Param entry body models.IPPoolEntryRequest true "IP/CIDR Entry"
+// @Success 200 {string} string "success"
+// @Router /network/ip/pools/{id}/entries [post]
+func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var req models.IPPoolEntryRequest
+	if err := render.Bind(r, &req); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := ipPoolService.ManagePoolEntry(r.Context(), id, &req, "add"); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "success")
+}
+
+// DeletePoolEntryHandler godoc
+// @Summary Delete an entry from IP pool
+// @Tags network/ip
+// @Produce json
+// @Param id path string true "Group ID"
+// @Param cidr query string true "CIDR or IP to delete"
+// @Success 200 {string} string "success"
+// @Router /network/ip/pools/{id}/entries [delete]
+func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	cidr := r.URL.Query().Get("cidr")
+	if cidr == "" {
+		common.BadRequestError(w, r, http.StatusBadRequest, "cidr is required")
+		return
+	}
+	req := models.IPPoolEntryRequest{CIDR: cidr}
+	if err := ipPoolService.ManagePoolEntry(r.Context(), id, &req, "delete"); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "success")
+}
+
+// IPRouter registers the IP routes
+func IPRouter(r chi.Router) {
+	r.Route("/network/ip", func(r chi.Router) {
+		r.Route("/pools", func(r chi.Router) {
+			r.Get("/", ListGroupsHandler)
+			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateGroupHandler)
+			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteGroupHandler)
+			r.Get("/{id}/preview", PreviewPoolHandler)
+			r.Post("/{id}/entries", ManagePoolEntryHandler)
+			r.Delete("/{id}/entries", DeletePoolEntryHandler)
+		})
+		r.Route("/analysis", func(r chi.Router) {
+			r.Post("/hit-test", HitTestHandler)
+			r.Get("/info", IPInfoHandler)
+		})
+		r.Route("/exports", func(r chi.Router) {
+			r.Get("/", ListExportsHandler)
+			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateExportHandler)
+			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteExportHandler)
+			r.Post("/{id}/trigger", TriggerExportHandler)
+			r.Get("/task/{taskId}", ExportTaskStatusHandler)
+			r.Get("/download/{taskId}", DownloadExportHandler)
+		})
+	})
+}

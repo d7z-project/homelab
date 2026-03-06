@@ -1,0 +1,397 @@
+<div class="animate-in fade-in duration-500 pb-20">
+  @if (loading() && pools().length === 0 && exports().length === 0) {
+    <div class="fixed inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  <mat-tab-group
+    animationDuration="250ms"
+    class="ip-tabs-integrated"
+    [selectedIndex]="selectedTabIndex()"
+    (selectedIndexChange)="onTabChange($event)"
+  >
+    <!-- IP 地址池 Tab -->
+    <mat-tab label="地址池">
+      <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
+        <div class="max-w-7xl mx-auto space-y-4">
+          <app-page-header
+            title="IP 地址池"
+            subtitle="管理自定义 IP 网络资产与标签数据"
+            icon="view_list"
+            [total]="poolTotal()"
+            unit="个地址池"
+            [loading]="loading()"
+            (refresh)="loadPools(true)"
+          >
+            <div chips>
+              @if (poolSearch()) {
+                <div class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm">
+                  <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
+                  <span>正在搜索: "{{ poolSearch() }}"</span>
+                  <button
+                    class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
+                    (click)="onPoolSearch('')"
+                    title="清除搜索"
+                  >
+                    <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </app-page-header>
+
+          <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+            <table mat-table [dataSource]="pools()" class="w-full bg-transparent">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">池名称</th>
+                <td mat-cell *matCellDef="let element" class="py-4">
+                  <div class="font-medium text-primary">{{ element.name }}</div>
+                  <div class="text-[10px] text-outline font-mono opacity-60">{{ element.id }}</div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">描述</th>
+                <td mat-cell *matCellDef="let element" class="text-sm text-outline">{{ element.description || '-' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="entryCount">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">条目数</th>
+                <td mat-cell *matCellDef="let element">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                    {{ element.entryCount }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="updatedAt">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">更新时间</th>
+                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono">{{ element.updatedAt | date:'short' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 bg-surface-container-low font-bold" style="width: 1px">操作</th>
+                <td mat-cell *matCellDef="let element" class="text-right !pr-6">
+                  <div class="flex justify-end gap-1">
+                    <button mat-icon-button (click)="manageEntries(element)" matTooltip="管理数据">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">list_alt</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deletePool(element)" matTooltip="删除池">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedPoolColumns()"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedPoolColumns();" class="hover:bg-surface-container-low/50 transition-colors"></tr>
+              
+              <tr class="mat-mdc-row" *matNoDataRow>
+                <td class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic" [attr.colspan]="displayedPoolColumns().length">
+                  没有找到地址池数据
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- 动态导出 Tab -->
+    <mat-tab label="动态导出">
+      <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
+        <div class="max-w-7xl mx-auto space-y-4">
+          <app-page-header
+            title="动态导出"
+            subtitle="基于表达式引擎实时过滤并生成地址列表"
+            icon="import_export"
+            [total]="exportTotal()"
+            unit="个导出配置"
+            [loading]="loading()"
+            (refresh)="loadExports(true)"
+          >
+            <div chips>
+              @if (exportSearch()) {
+                <div class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm">
+                  <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
+                  <span>正在搜索: "{{ exportSearch() }}"</span>
+                  <button
+                    class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
+                    (click)="onExportSearch('')"
+                    title="清除搜索"
+                  >
+                    <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </app-page-header>
+
+          <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+            <table mat-table [dataSource]="exports()" class="w-full bg-transparent">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">配置名称</th>
+                <td mat-cell *matCellDef="let element" class="py-4">
+                  <div class="font-medium text-primary">{{ element.name }}</div>
+                  <div class="text-[10px] text-outline opacity-60">{{ element.description }}</div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="rule">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">过滤规则 (go-expr)</th>
+                <td mat-cell *matCellDef="let element">
+                  <code class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-primary font-mono border border-outline-variant">{{ element.rule }}</code>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="updatedAt">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">状态 / 时间</th>
+                <td mat-cell *matCellDef="let element">
+                  @if (activeTasks()[element.id]) {
+                    <div class="flex items-center gap-2 mb-1">
+                      <div class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border" 
+                           [class.bg-primary/5]="activeTasks()[element.id].status === 'Running'"
+                           [class.text-primary]="activeTasks()[element.id].status === 'Running'"
+                           [class.border-primary/20]="activeTasks()[element.id].status === 'Running'"
+                           [class.bg-green-50]="activeTasks()[element.id].status === 'Success'"
+                           [class.text-green-700]="activeTasks()[element.id].status === 'Success'"
+                           [class.border-green-200]="activeTasks()[element.id].status === 'Success'"
+                           [class.bg-red-50]="activeTasks()[element.id].status === 'Failed'"
+                           [class.text-red-700]="activeTasks()[element.id].status === 'Failed'"
+                           [class.border-red-200]="activeTasks()[element.id].status === 'Failed'">
+                        {{ activeTasks()[element.id].status }}
+                      </div>
+                      @if (activeTasks()[element.id].status === 'Running') {
+                        <div class="text-[10px] font-mono text-primary animate-pulse">
+                          {{ ((activeTasks()[element.id].progress || 0) * 100) | number:'1.0-0' }}%
+                        </div>
+                      }
+                    </div>
+                  }
+                  <div class="text-[10px] text-outline font-mono">{{ element.updatedAt | date:'short' }}</div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 bg-surface-container-low font-bold" style="width: 1px">操作</th>
+                <td mat-cell *matCellDef="let element" class="text-right !pr-6">
+                  <div class="flex justify-end gap-1">
+                    <button mat-icon-button (click)="triggerExport(element)" matTooltip="立即导出" [disabled]="activeTasks()[element.id]?.status === 'Running'">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">play_circle_outline</mat-icon>
+                    </button>
+                    @if (activeTasks()[element.id]?.status === 'Success') {
+                      <a mat-icon-button color="primary" [href]="activeTasks()[element.id].resultURL" matTooltip="下载结果" target="_blank">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">download</mat-icon>
+                      </a>
+                    }
+                    <button mat-icon-button color="warn" (click)="deleteExport(element)" matTooltip="删除配置">
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedExportColumns()"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedExportColumns();" class="hover:bg-surface-container-low/50 transition-colors"></tr>
+              
+              <tr class="mat-mdc-row" *matNoDataRow>
+                <td class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic" [attr.colspan]="displayedExportColumns().length">
+                  没有找到导出配置
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- 研判实验室 Tab -->
+    <mat-tab label="研判实验室">
+      <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <app-page-header
+            title="研判实验室"
+            subtitle="实时追踪 IP 地址在全球威胁情报与私有资产池中的分布轨迹"
+            icon="science"
+          ></app-page-header>
+
+          <!-- Search Section -->
+          <div class="flex flex-col md:flex-row gap-4 items-stretch animate-in slide-in-from-top-4 duration-500">
+            <mat-card class="flex-1 !rounded-full border border-outline-variant shadow-sm bg-surface p-1">
+              <div class="flex items-center gap-2 pl-4 pr-1">
+                <mat-form-field appearance="fill" class="flex-1 search-field-m3">
+                  <mat-icon matPrefix class="mr-2 text-primary opacity-70">location_searching</mat-icon>
+                  <input matInput [ngModel]="analysisIp()" (ngModelChange)="analysisIp.set($event)" 
+                         placeholder="输入待分析的 IP 地址 (IPv4/v6)" (keyup.enter)="runAnalysis()"
+                         class="text-base font-medium">
+                </mat-form-field>
+                <button mat-flat-button color="primary" class="!rounded-full h-[48px] px-8 font-bold" 
+                        [disabled]="!analysisIp() || loading()" (click)="runAnalysis()">
+                  探测
+                </button>
+              </div>
+            </mat-card>
+          </div>
+
+          @if (loading() && analysisIp()) {
+            <div class="py-20 flex flex-col items-center gap-4 animate-in fade-in">
+              <mat-spinner diameter="48"></mat-spinner>
+              <div class="text-outline text-sm tracking-widest font-medium uppercase">全网特征匹配中...</div>
+            </div>
+          }
+
+          @if (analysisResult() || analysisInfo()) {
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in zoom-in-95 duration-500">
+              <!-- Result Status Column -->
+              <div class="lg:col-span-1 space-y-6">
+                <!-- Matching Result Card -->
+                <mat-card class="!rounded-[32px] border overflow-hidden shadow-md" 
+                          [class.border-green-500]="analysisResult()?.matched" 
+                          [class.border-red-200]="!analysisResult()?.matched">
+                  <div class="p-8 flex flex-col items-center text-center">
+                    <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6" 
+                         [class.bg-green-100]="analysisResult()?.matched" 
+                         [class.bg-red-50]="!analysisResult()?.matched">
+                      <mat-icon [class.text-green-600]="analysisResult()?.matched" [class.text-red-600]="!analysisResult()?.matched" class="!text-5xl !w-12 !h-12">
+                        {{ analysisResult()?.matched ? 'verified_user' : 'gpp_bad' }}
+                      </mat-icon>
+                    </div>
+                    <h3 class="text-2xl font-black m-0 mb-2 tracking-tight" [class.text-green-700]="analysisResult()?.matched" [class.text-red-700]="!analysisResult()?.matched">
+                      {{ analysisResult()?.matched ? '探测成功：命中' : '探测结果：未匹配' }}
+                    </h3>
+                    <p class="text-outline text-xs uppercase tracking-widest font-bold opacity-60">池匹配状态</p>
+                  </div>
+                  
+                  @if (analysisResult()?.matched) {
+                    <div class="bg-green-600 text-on-primary p-4 text-center">
+                      <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80">最长前缀匹配 (LPM)</div>
+                      <div class="text-xl font-mono font-medium">{{ analysisResult()?.cidr }}</div>
+                    </div>
+                  }
+                </mat-card>
+
+                <!-- Tags Card -->
+                @if (analysisResult()?.matched) {
+                  <mat-card class="!rounded-[32px] bg-surface-container-high border-none shadow-sm overflow-hidden">
+                    <div class="p-6">
+                      <div class="flex items-center gap-2 mb-4 text-primary">
+                        <mat-icon class="!w-5 !h-5 !text-[20px]">local_offer</mat-icon>
+                        <span class="text-sm font-bold uppercase tracking-widest">属性标签</span>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        @for (tag of analysisResult()?.tags; track tag) {
+                          <span class="px-3 py-1 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm transition-transform hover:scale-105 cursor-default">{{ tag }}</span>
+                        }
+                        @if (!analysisResult()?.tags || analysisResult()?.tags?.length === 0) {
+                          <span class="text-outline italic text-sm">无关联标签</span>
+                        }
+                      </div>
+                    </div>
+                  </mat-card>
+                }
+              </div>
+
+              <!-- Intelligence Column -->
+              <div class="lg:col-span-2 space-y-6">
+                <mat-card class="!rounded-[32px] bg-surface border border-outline-variant shadow-sm overflow-hidden">
+                  <div class="bg-surface-container-low px-8 py-4 border-b border-outline-variant flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <mat-icon class="text-primary">public</mat-icon>
+                      <span class="font-bold tracking-tight text-lg">全球威胁情报与归属地</span>
+                    </div>
+                    <div class="text-[10px] font-mono text-outline opacity-60">Source: MaxMind GeoIP2</div>
+                  </div>
+                  
+                  <div class="p-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                      <!-- ASN Info -->
+                      <div class="space-y-1">
+                        <div class="text-[10px] font-bold text-outline uppercase tracking-widest">自治系统 (ASN)</div>
+                        @if (analysisInfo()?.asn) {
+                          <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-mono font-black text-primary">AS{{ analysisInfo()?.asn }}</span>
+                            <span class="text-sm text-outline truncate">{{ analysisInfo()?.org }}</span>
+                          </div>
+                        } @else {
+                          <div class="text-outline italic opacity-40 py-2">暂无 ASN 信息</div>
+                        }
+                      </div>
+
+                      <!-- Location Info -->
+                      <div class="space-y-1">
+                        <div class="text-[10px] font-bold text-outline uppercase tracking-widest">地理归属</div>
+                        <div class="flex items-center gap-2 py-1">
+                          @if (analysisInfo()?.country) {
+                            <span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container text-xs font-bold">{{ analysisInfo()?.country }}</span>
+                            <span class="text-lg font-medium">{{ analysisInfo()?.city }}</span>
+                          } @else {
+                            <span class="text-outline italic opacity-40">归属地未知</span>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Lat/Lon Map Placeholder -->
+                      <div class="sm:col-span-2 pt-4">
+                        <div class="text-[10px] font-bold text-outline uppercase tracking-widest mb-3">坐标定位 (Lat, Lon)</div>
+                        <div class="h-32 bg-surface-container-highest rounded-2xl border border-outline-variant flex items-center justify-center relative overflow-hidden group">
+                          @if (analysisInfo()?.location) {
+                            <div class="text-primary font-mono font-bold text-xl z-10 tracking-tighter">{{ analysisInfo()?.location }}</div>
+                            <mat-icon class="absolute !text-9xl opacity-[0.03] scale-150 group-hover:scale-[1.7] transition-transform duration-700">map</mat-icon>
+                          } @else {
+                            <mat-icon class="text-outline opacity-20 !text-4xl">location_off</mat-icon>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </mat-card>
+              </div>
+            </div>
+          } @else if (!loading() && analysisIp()) {
+             <div class="py-20 flex flex-col items-center text-outline opacity-30 gap-2">
+                <mat-icon class="!text-6xl">travel_explore</mat-icon>
+                <p class="font-medium tracking-widest">就绪：等待探测指令</p>
+             </div>
+          }
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <!-- FABs Container -->
+  <div class="fixed bottom-8 right-8 z-50 flex flex-col gap-4 items-end">
+    <!-- Search FAB -->
+    <button
+      mat-fab
+      [extended]="!isHandset()"
+      [color]="hasSearchContent() ? 'tertiary' : 'secondary'"
+      (click)="uiService.searchConfig() ? uiService.closeSearch() : openSearch()"
+      class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-2"
+      [matTooltip]="hasSearchContent() ? (uiService.searchConfig() ? '清除搜索' : '正在筛选') : (uiService.searchConfig() ? '关闭' : '搜索')"
+    >
+      <mat-icon>{{ uiService.searchConfig() ? (hasSearchContent() ? 'filter_alt_off' : 'close') : (hasSearchContent() ? 'filter_alt' : 'search') }}</mat-icon>
+      @if (!isHandset()) {
+        <span class="ml-2 font-medium">{{ hasSearchContent() ? (uiService.searchConfig() ? '清除搜索' : '正在筛选') : (uiService.searchConfig() ? '收起搜索' : '搜索内容') }}</span>
+      }
+    </button>
+
+    <!-- Main Action/ScrollTop FAB -->
+    @if (fabConfig()) {
+      <button
+        mat-fab
+        [extended]="!isHandset()"
+        [color]="showScrollTop() ? 'tertiary' : 'primary'"
+        (click)="showScrollTop() ? scrollToTop() : fabConfig()?.action()"
+        [disabled]="loading()"
+        class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
+        [matTooltip]="showScrollTop() ? '回到顶部' : ''"
+      >
+        <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig()?.icon }}</mat-icon>
+        @if (!isHandset()) {
+          <span class="ml-2 font-medium">{{ showScrollTop() ? '回到顶部' : fabConfig()?.label }}</span>
+        }
+      </button>
+    }
+  </div>
+</div>

@@ -1,0 +1,211 @@
+package ip
+
+import (
+	"context"
+	"encoding/json"
+	"homelab/pkg/common"
+	"homelab/pkg/models"
+	"strings"
+	"time"
+
+	lru "github.com/hashicorp/golang-lru/v2"
+	"gopkg.d7z.net/middleware/kv"
+)
+
+var (
+	groupCache      *lru.Cache[string, *models.IPGroup]
+	exportCache     *lru.Cache[string, *models.IPExport]
+	groupListCache  *lru.Cache[string, []models.IPGroup]
+	exportListCache *lru.Cache[string, []models.IPExport]
+	ipLastModified  time.Time
+)
+
+func init() {
+	groupCache, _ = lru.New[string, *models.IPGroup](512)
+	exportCache, _ = lru.New[string, *models.IPExport](512)
+	groupListCache, _ = lru.New[string, []models.IPGroup](16)
+	exportListCache, _ = lru.New[string, []models.IPExport](16)
+	ipLastModified = time.Now()
+}
+
+func updateLastModified() {
+	ipLastModified = time.Now()
+}
+
+func GetLastModified() time.Time {
+	return ipLastModified
+}
+
+// Group Repo
+
+func GetGroup(ctx context.Context, id string) (*models.IPGroup, error) {
+	if val, ok := groupCache.Get(id); ok {
+		return val, nil
+	}
+	db := common.DB.Child("network", "ip", "groups")
+	data, err := db.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	var group models.IPGroup
+	if err := json.Unmarshal([]byte(data), &group); err != nil {
+		return nil, err
+	}
+	groupCache.Add(id, &group)
+	return &group, nil
+}
+
+func SaveGroup(ctx context.Context, group *models.IPGroup) error {
+	db := common.DB.Child("network", "ip", "groups")
+	data, err := json.Marshal(group)
+	if err != nil {
+		return err
+	}
+	err = db.Put(ctx, group.ID, string(data), kv.TTLKeep)
+	if err == nil {
+		groupCache.Add(group.ID, group)
+		groupListCache.Purge()
+		updateLastModified()
+	}
+	return err
+}
+
+func DeleteGroup(ctx context.Context, id string) error {
+	_, err := common.DB.Child("network", "ip", "groups").Delete(ctx, id)
+	if err == nil {
+		groupCache.Remove(id)
+		groupListCache.Purge()
+		updateLastModified()
+	}
+	return err
+}
+
+func ListGroups(ctx context.Context, page int, pageSize int, search string) ([]models.IPGroup, int, error) {
+	var all []models.IPGroup
+	if val, ok := groupListCache.Get("all"); ok {
+		all = val
+	} else {
+		db := common.DB.Child("network", "ip", "groups")
+		items, err := db.List(ctx, "")
+		if err != nil {
+			return nil, 0, err
+		}
+		for _, v := range items {
+			var group models.IPGroup
+			if err := json.Unmarshal([]byte(v.Value), &group); err == nil {
+				all = append(all, group)
+				groupCache.Add(group.ID, &group)
+			}
+		}
+		groupListCache.Add("all", all)
+	}
+
+	var res []models.IPGroup
+	search = strings.ToLower(search)
+	for _, g := range all {
+		if search == "" || strings.Contains(strings.ToLower(g.Name), search) || strings.Contains(strings.ToLower(g.ID), search) {
+			res = append(res, g)
+		}
+	}
+
+	total := len(res)
+	start := (page - 1) * pageSize
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []models.IPGroup{}, total, nil
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+	return res[start:end], total, nil
+}
+
+// Export Repo
+
+func GetExport(ctx context.Context, id string) (*models.IPExport, error) {
+	if val, ok := exportCache.Get(id); ok {
+		return val, nil
+	}
+	db := common.DB.Child("network", "ip", "exports")
+	data, err := db.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	var export models.IPExport
+	if err := json.Unmarshal([]byte(data), &export); err != nil {
+		return nil, err
+	}
+	exportCache.Add(id, &export)
+	return &export, nil
+}
+
+func SaveExport(ctx context.Context, export *models.IPExport) error {
+	db := common.DB.Child("network", "ip", "exports")
+	data, err := json.Marshal(export)
+	if err != nil {
+		return err
+	}
+	err = db.Put(ctx, export.ID, string(data), kv.TTLKeep)
+	if err == nil {
+		exportCache.Add(export.ID, export)
+		exportListCache.Purge()
+		updateLastModified()
+	}
+	return err
+}
+
+func DeleteExport(ctx context.Context, id string) error {
+	_, err := common.DB.Child("network", "ip", "exports").Delete(ctx, id)
+	if err == nil {
+		exportCache.Remove(id)
+		exportListCache.Purge()
+		updateLastModified()
+	}
+	return err
+}
+
+func ListExports(ctx context.Context, page int, pageSize int, search string) ([]models.IPExport, int, error) {
+	var all []models.IPExport
+	if val, ok := exportListCache.Get("all"); ok {
+		all = val
+	} else {
+		db := common.DB.Child("network", "ip", "exports")
+		items, err := db.List(ctx, "")
+		if err != nil {
+			return nil, 0, err
+		}
+		for _, v := range items {
+			var export models.IPExport
+			if err := json.Unmarshal([]byte(v.Value), &export); err == nil {
+				all = append(all, export)
+				exportCache.Add(export.ID, &export)
+			}
+		}
+		exportListCache.Add("all", all)
+	}
+
+	var res []models.IPExport
+	search = strings.ToLower(search)
+	for _, e := range all {
+		if search == "" || strings.Contains(strings.ToLower(e.Name), search) || strings.Contains(strings.ToLower(e.ID), search) {
+			res = append(res, e)
+		}
+	}
+
+	total := len(res)
+	start := (page - 1) * pageSize
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []models.IPExport{}, total, nil
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+	return res[start:end], total, nil
+}

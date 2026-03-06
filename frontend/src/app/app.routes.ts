@@ -39,6 +39,11 @@ export const routes: Routes = [
       },
       { path: 'dns', component: DnsComponent, data: { toolbar: { shadow: false, sticky: false } } },
       {
+        path: 'ip',
+        loadComponent: () => import('./pages/ip/ip.component').then((m) => m.IpComponent),
+        data: { toolbar: { shadow: false, sticky: false } },
+      },
+      {
         path: 'actions',
         component: ActionsComponent,
         data: { toolbar: { shadow: false, sticky: false } },

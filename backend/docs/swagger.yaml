@@ -36,6 +36,23 @@ definitions:
       type:
         type: string
     type: object
+  ip.ExportTask:
+    properties:
+      error:
+        type: string
+      format:
+        type: string
+      id:
+        type: string
+      progress:
+        format: float64
+        type: number
+      resultURL:
+        type: string
+      status:
+        description: Pending, Running, Success, Failed
+        type: string
+    type: object
   models.AuditCleanupResponse:
     properties:
       deleted:
@@ -119,6 +136,106 @@ definitions:
           additionalProperties: true
           type: object
         type: object
+    type: object
+  models.IPAnalysisResult:
+    properties:
+      cidr:
+        description: 命中的具体网段
+        type: string
+      matched:
+        type: boolean
+      tags:
+        description: 命中的 Tags
+        items:
+          type: string
+        type: array
+    type: object
+  models.IPExport:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      groupIds:
+        description: 依赖的 IP 池 ID 列表
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      rule:
+        description: go-expr 表达式
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.IPGroup:
+    properties:
+      checksum:
+        description: 数据指纹，用于缓存失效
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      entryCount:
+        description: 池中条目总数
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.IPInfoResponse:
+    properties:
+      asn:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      ip:
+        type: string
+      location:
+        description: '"lat,lon"'
+        type: string
+      org:
+        type: string
+    type: object
+  models.IPPoolEntry:
+    properties:
+      cidr:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  models.IPPoolEntryRequest:
+    properties:
+      cidr:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  models.IPPoolPreviewResponse:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/models.IPPoolEntry'
+        type: array
+      nextCursor:
+        description: 下一个 Byte Offset
+        type: integer
+      total:
+        description: 总条数
+        type: integer
     type: object
   models.LogEntry:
     properties:
@@ -1396,6 +1513,323 @@ paths:
       summary: Logout
       tags:
       - auth
+  /network/ip/analysis/hit-test:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Hit test request
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPAnalysisResult'
+      summary: Perform IP hit test
+      tags:
+      - network/ip
+  /network/ip/analysis/info:
+    get:
+      parameters:
+      - description: IP address
+        in: query
+        name: ip
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPInfoResponse'
+      summary: Get IP intelligence info
+      tags:
+      - network/ip
+  /network/ip/exports:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.IPExport'
+                  type: array
+              type: object
+      summary: List all IP exports
+      tags:
+      - network/ip
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: IP Export
+        in: body
+        name: export
+        required: true
+        schema:
+          $ref: '#/definitions/models.IPExport'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPExport'
+      summary: Create an IP export
+      tags:
+      - network/ip
+  /network/ip/exports/{id}:
+    delete:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete an IP export
+      tags:
+      - network/ip
+  /network/ip/exports/{id}/trigger:
+    post:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 'Format: text, json, yaml'
+        in: query
+        name: format
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Trigger dynamic export
+      tags:
+      - network/ip
+  /network/ip/exports/download/{taskId}:
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Download export result
+      tags:
+      - network/ip
+  /network/ip/exports/task/{taskId}:
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ip.ExportTask'
+      summary: Get export task status
+      tags:
+      - network/ip
+  /network/ip/pools:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.IPGroup'
+                  type: array
+              type: object
+      summary: List all IP groups
+      tags:
+      - network/ip
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: IP Group
+        in: body
+        name: group
+        required: true
+        schema:
+          $ref: '#/definitions/models.IPGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPGroup'
+      summary: Create an IP group
+      tags:
+      - network/ip
+  /network/ip/pools/{id}:
+    delete:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete an IP group
+      tags:
+      - network/ip
+  /network/ip/pools/{id}/entries:
+    delete:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: CIDR or IP to delete
+        in: query
+        name: cidr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete an entry from IP pool
+      tags:
+      - network/ip
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: IP/CIDR Entry
+        in: body
+        name: entry
+        required: true
+        schema:
+          $ref: '#/definitions/models.IPPoolEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Add or update an entry in IP pool
+      tags:
+      - network/ip
+  /network/ip/pools/{id}/preview:
+    get:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Byte offset cursor
+        in: query
+        name: cursor
+        type: integer
+      - description: Number of entries to return
+        in: query
+        name: limit
+        type: integer
+      - description: Search prefix or tag
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPPoolPreviewResponse'
+      summary: Preview IP pool data (cursor-based)
+      tags:
+      - network/ip
   /rbac/resources/suggest:
     get:
       parameters:

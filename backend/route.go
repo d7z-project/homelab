@@ -53,6 +53,12 @@ func Router(r chi.Router) {
 				r.Use(middlewares.AuditMiddleware("actions"))
 				controllers.ActionsRouter(r)
 			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(middlewares.RequirePermission("admin", "network/ip"))
+				r.Use(middlewares.AuditMiddleware("network/ip"))
+				controllers.IPRouter(r)
+			})
 		})
 	})
 }

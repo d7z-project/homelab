@@ -10,16 +10,16 @@
 严格遵循 `GEMINI.md` 规定的四层分层架构与基础设施规范。
 
 ### 2.1 IP 池管理 (IP Pool Management)
-- **元数据 (DB)**: 存储 `IPGroup` 的基本信息（UUID、名称、描述、来源类型、数据指纹 Checksum 等）。
+- **元数据 (DB)**: 存储 `IPGroup` 的基本信息（UUID、名称、描述、数据指纹 Checksum 等）。
+    - **ID 生成**: 标识 ID (UUID) 必须由后端在创建时自动生成，不允许用户自定义。
     - **隔离规范**: Repository 层必须使用 `common.DB.Child("network", "ip")` 进行命名空间隔离。
 - **实体数据 (VFS)**: 实际的 IPv4/v6 地址与 CIDR 列表存储于 `vfs://network/ip/pools/{uuid}.bin`（基于 `common.FS`，默认 memory:// 并使用 `BasePathFs` 封装）。
     - **安全删除**: 删除 `IPGroup` 记录前，必须校验是否有 `IPExport` 规则依赖该池。如果存在引用则**拒绝删除**。允许删除时，必须**级联删除**对应的 VFS `.bin` 实体数据文件。
 - **多维度标签 (Tags)**: 允许导入的每一条记录附加 `Tag`。不同来源导入的相同 IP/CIDR 可以共存并通过 Tag 进行区分。
-- **Tag 规整化 (Normalization)**: 导入时强制执行 Tag 清洗（转小写、去空格），确保查询命中率。
-- **容量与雪崩防护 (Capacity & Anti-Avalanche)**:
-    - 定义单池最大条目数上限（如 200 万条）。
-    - **分段流式载入**: 拦截引擎和查询树在加载巨大 `.bin` 文件时，必须使用流式分块读取 (`io.Reader` 结合 Buffer)，严禁一次性将整个文件 `ReadAll` 到内存，防止 GC 毛刺与 OOM 内存雪崩。
-- **数据预览 (Preview)**: 采用 **游标分页 (Cursor-based)** 替代 Offset/Limit，服务端返回下一条记录的 Byte Offset，实现 O(1) 性能的流式数据展示。
+- **条目级管理 (Entry Management)**: 支持在特定地址池内直接新增、修改、删除独立的 IP/CIDR 记录及其关联的 Tag，支持细粒度的资源管理。
+    - **禁止重复**: 新增条目时，必须校验该 IP/CIDR 是否已存在于当前地址池中，防止重复添加。
+    - **修改限制**: 已存在的条目仅允许修改其关联的 Tag，禁止修改 IP/CIDR 本身。
+- **数据预览与检索 (Preview & Search)**: 采用 **游标分页 (Cursor-based)** 替代 Offset/Limit，服务端返回下一条记录的 Byte Offset，实现 O(1) 性能的流式数据展示。支持基于前缀或 Tag 的文本搜索过滤。客户端需基于此实现全屏管理窗口下的滚动加载 (Infinite Scroll)。
 
 ### 2.2 动态过滤与多格式导出 (Dynamic Export)
 - **无状态持久化**: 导出配置 (`IPExport`) 仅在 DB 中存储过滤规则，**不实际在 VFS 中生成永久物理导出文件**。

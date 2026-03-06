@@ -292,14 +292,14 @@ import * as yaml from 'js-yaml';
                         
                         <div formGroupName="params" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
                           @for (p of getProcessorParams(getStepGroup(sIndex).get('type')?.value); track p.name) {
-                            <mat-form-field appearance="outline" class="w-full">
-                              <mat-label>{{ p.description || p.name }}</mat-label>
-                              @if (p.lookupCode) { 
-                                <app-discovery-suggest-input [code]="p.lookupCode" [formControlName]="p.name!" /> 
-                              } @else { 
+                            @if (p.lookupCode) { 
+                              <app-discovery-suggest-input [code]="p.lookupCode" [formControlName]="p.name!" [label]="p.description || p.name || ''" appearance="outline" class="w-full block" /> 
+                            } @else { 
+                              <mat-form-field appearance="outline" class="w-full">
+                                <mat-label>{{ p.description || p.name }}</mat-label>
                                 <input matInput [formControlName]="p.name!" [matAutocomplete]="refAuto" /> 
-                              }
-                            </mat-form-field>
+                              </mat-form-field>
+                            }
                           } @empty {
                             <div class="col-span-1 sm:col-span-2 py-4 flex flex-col items-center justify-center opacity-30">
                               <mat-icon class="!text-lg">auto_awesome</mat-icon>
@@ -452,7 +452,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   onEditorInit(editor: any) {
     this.applySchemaToMonaco(this.schema());
-    this.isEditorLoading.set(false);
+    setTimeout(() => this.isEditorLoading.set(false));
   }
 
   private applySchemaToMonaco(schema: any) {
@@ -707,7 +707,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
       fail: [false],
       params: this.fb.group({})
     }));
-    this.openProcessorSelector(idx);
+    setTimeout(() => this.openProcessorSelector(idx));
   }
   removeStep(index: number) { this.steps.removeAt(index); }
   onStepDropped(e: CdkDragDrop<any[]>) {

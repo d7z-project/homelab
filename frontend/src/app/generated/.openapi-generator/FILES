@@ -6,6 +6,7 @@ api/audit.service.ts
 api/auth.service.ts
 api/discovery.service.ts
 api/dns.service.ts
+api/networkIp.service.ts
 api/rbac.service.ts
 configuration.ts
 encoder.ts
@@ -17,6 +18,7 @@ model/commonResponse.ts
 model/controllersAuthInfo.ts
 model/dnsDomainsGet200Response.ts
 model/dnsRecordsGet200Response.ts
+model/ipExportTask.ts
 model/models.ts
 model/modelsAuditCleanupResponse.ts
 model/modelsAuditLog.ts
@@ -24,6 +26,13 @@ model/modelsDiscoverResult.ts
 model/modelsDnsExportResponse.ts
 model/modelsDomain.ts
 model/modelsExportDomain.ts
+model/modelsIPAnalysisResult.ts
+model/modelsIPExport.ts
+model/modelsIPGroup.ts
+model/modelsIPInfoResponse.ts
+model/modelsIPPoolEntry.ts
+model/modelsIPPoolEntryRequest.ts
+model/modelsIPPoolPreviewResponse.ts
 model/modelsLogEntry.ts
 model/modelsLoginRequest.ts
 model/modelsLoginResponse.ts
@@ -45,6 +54,8 @@ model/modelsStepTiming.ts
 model/modelsTaskInstance.ts
 model/modelsVarDefinition.ts
 model/modelsWorkflow.ts
+model/networkIpExportsGet200Response.ts
+model/networkIpPoolsGet200Response.ts
 model/rbacRolebindingsGet200Response.ts
 model/rbacRolesGet200Response.ts
 model/rbacServiceaccountsGet200Response.ts

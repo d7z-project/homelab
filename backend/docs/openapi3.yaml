@@ -980,6 +980,327 @@ paths:
       summary: Logout
       tags:
       - auth
+  /network/ip/analysis/hit-test:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        description: Hit test request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IPAnalysisResult"
+          description: OK
+      summary: Perform IP hit test
+      tags:
+      - network/ip
+      x-codegen-request-body-name: request
+  /network/ip/analysis/info:
+    get:
+      parameters:
+      - description: IP address
+        in: query
+        name: ip
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IPInfoResponse"
+          description: OK
+      summary: Get IP intelligence info
+      tags:
+      - network/ip
+  /network/ip/exports:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_ip_exports_get_200_response"
+          description: OK
+      summary: List all IP exports
+      tags:
+      - network/ip
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.IPExport"
+        description: IP Export
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IPExport"
+          description: OK
+      summary: Create an IP export
+      tags:
+      - network/ip
+      x-codegen-request-body-name: export
+  /network/ip/exports/download/{taskId}:
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/octet-stream:
+              schema:
+                format: binary
+                type: string
+          description: OK
+      summary: Download export result
+      tags:
+      - network/ip
+  /network/ip/exports/task/{taskId}:
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ip.ExportTask"
+          description: OK
+      summary: Get export task status
+      tags:
+      - network/ip
+  /network/ip/exports/{id}:
+    delete:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Delete an IP export
+      tags:
+      - network/ip
+  /network/ip/exports/{id}/trigger:
+    post:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: "Format: text, json, yaml"
+        in: query
+        name: format
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+      summary: Trigger dynamic export
+      tags:
+      - network/ip
+  /network/ip/pools:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_ip_pools_get_200_response"
+          description: OK
+      summary: List all IP groups
+      tags:
+      - network/ip
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.IPGroup"
+        description: IP Group
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IPGroup"
+          description: OK
+      summary: Create an IP group
+      tags:
+      - network/ip
+      x-codegen-request-body-name: group
+  /network/ip/pools/{id}:
+    delete:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Delete an IP group
+      tags:
+      - network/ip
+  /network/ip/pools/{id}/entries:
+    delete:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: CIDR or IP to delete
+        in: query
+        name: cidr
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Delete an entry from IP pool
+      tags:
+      - network/ip
+    post:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.IPPoolEntryRequest"
+        description: IP/CIDR Entry
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Add or update an entry in IP pool
+      tags:
+      - network/ip
+      x-codegen-request-body-name: entry
+  /network/ip/pools/{id}/preview:
+    get:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Byte offset cursor
+        in: query
+        name: cursor
+        schema:
+          type: integer
+      - description: Number of entries to return
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search prefix or tag
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IPPoolPreviewResponse"
+          description: OK
+      summary: Preview IP pool data (cursor-based)
+      tags:
+      - network/ip
   /rbac/resources/suggest:
     get:
       parameters:
@@ -1415,6 +1736,30 @@ components:
         type:
           type: string
       type: object
+    ip.ExportTask:
+      example:
+        format: format
+        progress: 0.8008281904610115
+        resultURL: resultURL
+        id: id
+        error: error
+        status: status
+      properties:
+        error:
+          type: string
+        format:
+          type: string
+        id:
+          type: string
+        progress:
+          format: float64
+          type: number
+        resultURL:
+          type: string
+        status:
+          description: "Pending, Running, Success, Failed"
+          type: string
+      type: object
     models.AuditCleanupResponse:
       example:
         deleted: 0
@@ -1537,6 +1882,154 @@ components:
             additionalProperties: true
             type: object
           type: object
+      type: object
+    models.IPAnalysisResult:
+      example:
+        cidr: cidr
+        matched: true
+        tags:
+        - tags
+        - tags
+      properties:
+        cidr:
+          description: 命中的具体网段
+          type: string
+        matched:
+          type: boolean
+        tags:
+          description: 命中的 Tags
+          items:
+            type: string
+          type: array
+      type: object
+    models.IPExport:
+      example:
+        createdAt: createdAt
+        groupIds:
+        - groupIds
+        - groupIds
+        name: name
+        description: description
+        rule: rule
+        id: id
+        updatedAt: updatedAt
+      properties:
+        createdAt:
+          type: string
+        description:
+          type: string
+        groupIds:
+          description: 依赖的 IP 池 ID 列表
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        name:
+          type: string
+        rule:
+          description: go-expr 表达式
+          type: string
+        updatedAt:
+          type: string
+      type: object
+    models.IPGroup:
+      example:
+        createdAt: createdAt
+        entryCount: 5
+        checksum: checksum
+        name: name
+        description: description
+        id: id
+        updatedAt: updatedAt
+      properties:
+        checksum:
+          description: 数据指纹，用于缓存失效
+          type: string
+        createdAt:
+          type: string
+        description:
+          type: string
+        entryCount:
+          description: 池中条目总数
+          type: integer
+        id:
+          type: string
+        name:
+          type: string
+        updatedAt:
+          type: string
+      type: object
+    models.IPInfoResponse:
+      example:
+        country: country
+        city: city
+        org: org
+        ip: ip
+        location: location
+        asn: 0
+      properties:
+        asn:
+          type: integer
+        city:
+          type: string
+        country:
+          type: string
+        ip:
+          type: string
+        location:
+          description: "\"lat,lon\""
+          type: string
+        org:
+          type: string
+      type: object
+    models.IPPoolEntry:
+      example:
+        cidr: cidr
+        tags:
+        - tags
+        - tags
+      properties:
+        cidr:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
+    models.IPPoolEntryRequest:
+      properties:
+        cidr:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
+    models.IPPoolPreviewResponse:
+      example:
+        nextCursor: 0
+        entries:
+        - cidr: cidr
+          tags:
+          - tags
+          - tags
+        - cidr: cidr
+          tags:
+          - tags
+          - tags
+        total: 6
+      properties:
+        entries:
+          items:
+            $ref: "#/components/schemas/models.IPPoolEntry"
+          type: array
+        nextCursor:
+          description: 下一个 Byte Offset
+          type: integer
+        total:
+          description: 总条数
+          type: integer
       type: object
     models.LogEntry:
       example:
@@ -1908,6 +2401,7 @@ components:
       example:
         outputs:
           key: outputs
+        serviceAccountId: serviceAccountId
         workspace: workspace
         inputs:
           key: inputs
@@ -1971,6 +2465,9 @@ components:
             type: string
           description: 任务最终输出
           type: object
+        serviceAccountId:
+          description: 执行该工作流时使用的身份 (Impersonation)
+          type: string
         startedAt:
           type: string
         status:
@@ -2191,6 +2688,66 @@ components:
           value: value
           domainId: domainId
           enabled: true
+    _network_ip_exports_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.IPExport"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - createdAt: createdAt
+          groupIds:
+          - groupIds
+          - groupIds
+          name: name
+          description: description
+          rule: rule
+          id: id
+          updatedAt: updatedAt
+        - createdAt: createdAt
+          groupIds:
+          - groupIds
+          - groupIds
+          name: name
+          description: description
+          rule: rule
+          id: id
+          updatedAt: updatedAt
+    _network_ip_pools_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.IPGroup"
+            type: array
+        type: object
+      example:
+        total: 1
+        pageSize: 6
+        page: 0
+        items:
+        - createdAt: createdAt
+          entryCount: 5
+          checksum: checksum
+          name: name
+          description: description
+          id: id
+          updatedAt: updatedAt
+        - createdAt: createdAt
+          entryCount: 5
+          checksum: checksum
+          name: name
+          description: description
+          id: id
+          updatedAt: updatedAt
     _rbac_rolebindings_get_200_response:
       allOf:
       - $ref: "#/components/schemas/common.PaginatedResponse"

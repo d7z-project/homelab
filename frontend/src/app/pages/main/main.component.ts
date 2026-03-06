@@ -192,6 +192,16 @@ export class MainComponent {
         ],
       },
       {
+        link: '/ip',
+        icon: 'router',
+        label: 'IP 管理',
+        children: [
+          { link: '/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
+          { link: '/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+          { link: '/ip', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
+        ],
+      },
+      {
         link: '/actions',
         icon: 'bolt',
         label: '自动化',

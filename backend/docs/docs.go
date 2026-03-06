@@ -1468,6 +1468,505 @@ const docTemplate = `{
                 }
             }
         },
+        "/network/ip/analysis/hit-test": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Perform IP hit test",
+                "parameters": [
+                    {
+                        "description": "Hit test request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IPAnalysisResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/analysis/info": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Get IP intelligence info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "IP address",
+                        "name": "ip",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IPInfoResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/exports": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "List all IP exports",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.IPExport"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Create an IP export",
+                "parameters": [
+                    {
+                        "description": "IP Export",
+                        "name": "export",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IPExport"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IPExport"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/exports/download/{taskId}": {
+            "get": {
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Download export result",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/exports/task/{taskId}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Get export task status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ip.ExportTask"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/exports/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Delete an IP export",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Export ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/exports/{id}/trigger": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Trigger dynamic export",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Export ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Format: text, json, yaml",
+                        "name": "format",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/pools": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "List all IP groups",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.IPGroup"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Create an IP group",
+                "parameters": [
+                    {
+                        "description": "IP Group",
+                        "name": "group",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IPGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IPGroup"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/pools/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Delete an IP group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/pools/{id}/entries": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Add or update an entry in IP pool",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "IP/CIDR Entry",
+                        "name": "entry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IPPoolEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Delete an entry from IP pool",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CIDR or IP to delete",
+                        "name": "cidr",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/pools/{id}/preview": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Preview IP pool data (cursor-based)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Byte offset cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of entries to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search prefix or tag",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IPPoolPreviewResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/rbac/resources/suggest": {
             "get": {
                 "security": [
@@ -2179,6 +2678,31 @@ const docTemplate = `{
                 }
             }
         },
+        "ip.ExportTask": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "progress": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "resultURL": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Pending, Running, Success, Failed",
+                    "type": "string"
+                }
+            }
+        },
         "models.AuditCleanupResponse": {
             "type": "object",
             "properties": {
@@ -2297,6 +2821,155 @@ const docTemplate = `{
                         "type": "object",
                         "additionalProperties": true
                     }
+                }
+            }
+        },
+        "models.IPAnalysisResult": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "description": "命中的具体网段",
+                    "type": "string"
+                },
+                "matched": {
+                    "type": "boolean"
+                },
+                "tags": {
+                    "description": "命中的 Tags",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.IPExport": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "groupIds": {
+                    "description": "依赖的 IP 池 ID 列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "description": "go-expr 表达式",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPGroup": {
+            "type": "object",
+            "properties": {
+                "checksum": {
+                    "description": "数据指纹，用于缓存失效",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entryCount": {
+                    "description": "池中条目总数",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPInfoResponse": {
+            "type": "object",
+            "properties": {
+                "asn": {
+                    "type": "integer"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "location": {
+                    "description": "\"lat,lon\"",
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPPoolEntry": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.IPPoolEntryRequest": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.IPPoolPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.IPPoolEntry"
+                    }
+                },
+                "nextCursor": {
+                    "description": "下一个 Byte Offset",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "总条数",
+                    "type": "integer"
                 }
             }
         },
