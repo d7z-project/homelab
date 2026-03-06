@@ -33,7 +33,7 @@
     - **进度与缓存复用**: 查询接口需返回包含浮点数进度的任务状态。若源数据和过滤规则未变，直接返回缓存（进度为 1.0）。
     - **抢占与最新保留 (Cancel & Replace)**: 与 IP 池导入强制串行不同，每次对同一个导出配置调用“触发生成”接口时，系统必须**自动 Cancel 取消其上一次仍在进行中的生成任务**，仅保留并执行最新触发的任务，以防止无意义的 CPU 资源浪费。
 - **AST 预分析与降级 (Optimization)**: 针对海量数据，静态分析 `go-expr` 语法树。如果表达式仅为 `Tag in [...]`，直接降级为原生的字典匹配，绕过运行时求值开销。
-- **带有 TTL 的依赖感知缓存**: 
+- **带有 TTL 的依赖感知缓存**:
     - 结合 `common.TempDir` 下的临时目录与 LRU 策略存储生成的计算结果，并配置 TTL (如 24 小时)。
     - **缓存一致性**: 缓存的 Key 由“导出规则哈希 + 依赖的源 IP 池 Checksum + 导出格式”共同决定。
     - **垃圾回收 (GC)**: 预留 `TriggerGC()` 接口。具体基于 TTL 和废弃缓存文件的后台清理调度逻辑作为后续独立模块设计 (TODO)。
@@ -46,7 +46,6 @@
 
 ### 2.4 全局审计与监控 (Audit & Observability)
 - **全局审计日志**: 所有的关键行为必须接入 `commonaudit.Log`，包括但不限于：创建/修改 `IPGroup` 规则、触发导出缓存生成、手动进行命中推演等。
-- **监控指标**: 导出缓存命中率、解析器耗时、以及 Radix Tree 内存占用的预估必须接入系统的 Prometheus Metrics 体系。
 
 ---
 
@@ -61,7 +60,7 @@
 
 ### 3.2 内存基数树 (Tagged Radix Tree)
 由于 `go4.org/netipx` 库中的 `IPSet` 仅支持单纯的 IP 集合判断，无法在节点中存储额外的值 (Value/Tags)，因此系统在内存索引层面采取**双轨设计**：
-- **研判与查询树 (Analysis Trie)**: 
+- **研判与查询树 (Analysis Trie)**:
     - 内存中维护高性能的 Radix Tree，其叶子节点必须能够存储该网段关联的 **Tag 集合**。
     - **实现方案**: 必须基于 Go 1.18 的 `netip.Prefix` 手写实现，或引入支持关联泛型 Payload 的开源前缀树库 (如基于 `Trie` 的路由库)。必须暴露 `Insert(prefix netip.Prefix, tags []string)` 和 `Lookup(ip netip.Addr) []string` 接口。
 - **导出合并引擎 (Export IPSet)**:
