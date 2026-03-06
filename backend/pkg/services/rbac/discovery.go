@@ -25,9 +25,7 @@ type DiscoverFunc func(ctx context.Context, prefix string) ([]models.DiscoverRes
 func init() {
 	discoveredResources = make(map[string]resourceInfo)
 
-	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
-
-	// Register default internal resources
+	// Register rbac resources with specific verbs
 	RegisterResourceWithVerbs("rbac", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		subs := []string{"serviceaccounts", "roles", "rolebindings", "simulate"}
 		res := make([]models.DiscoverResult, 0)
@@ -41,7 +39,7 @@ func init() {
 			}
 		}
 		return res, nil
-	}, standardVerbs)
+	}, []string{"get", "list", "create", "update", "delete", "simulate", "*"})
 }
 
 // RegisterResource allows modules to register their resource types

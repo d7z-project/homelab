@@ -471,8 +471,9 @@ func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]strin
 		return "", err
 	}
 
-	// Explicit permission check
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + workflowID) {
+	// Explicit permission check for execution
+	perms := commonauth.PermissionsFromContext(ctx)
+	if !perms.IsAllowed("actions/" + workflowID) {
 		return "", fmt.Errorf("%w: actions/%s (execution access required)", commonauth.ErrPermissionDenied, workflowID)
 	}
 
@@ -726,10 +727,9 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 
 	return processor.Execute(taskCtx, req.Params)
 }
-
 func init() {
-	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
 	rbac.RegisterResourceWithVerbs("actions", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+
 		// prefix is everything after "actions/"
 		subs := []string{"workflows", "instances", "manifests", "probe"}
 		res := make([]models.DiscoverResult, 0)
@@ -771,7 +771,7 @@ func init() {
 		}
 
 		return res, nil
-	}, standardVerbs)
+	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
 	discovery.Register("actions/workflows", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions") {

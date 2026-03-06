@@ -38,8 +38,6 @@ type exportCacheEntry struct {
 func init() {
 	exportCache, _ = lru.New[string, exportCacheEntry](128)
 
-	standardVerbs := []string{"get", "list", "create", "update", "delete", "*"}
-
 	rbac.RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
 		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, "")
@@ -79,7 +77,7 @@ func init() {
 			}
 		}
 		return res, nil
-	}, standardVerbs)
+	}, []string{"get", "list", "create", "update", "delete", "*"})
 
 	discovery.Register("dns/domains", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, search)

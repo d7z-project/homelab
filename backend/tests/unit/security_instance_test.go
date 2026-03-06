@@ -96,6 +96,7 @@ func TestSecurityInstanceLevel(t *testing.T) {
 	})
 
 	t.Run("Deny run unauthorized instance", func(t *testing.T) {
+		// Even if the user has DELETE permission on wf-1, they need EXECUTE on wf-2
 		perms2, _ := authservice.GetPermissions(context.Background(), sa.ID, "execute", "actions/"+wf2.ID)
 		ctxSA2 := auth.WithPermissions(ctxSA, perms2)
 
