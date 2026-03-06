@@ -1,4 +1,4 @@
-<div class="animate-in fade-in duration-500 pb-20">
+<div class="animate-in fade-in duration-500 pb-20 bg-surface-container-lowest min-h-screen">
   @if (loading() && policies().length === 0) {
     <div
       class="fixed inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]"
@@ -7,230 +7,245 @@
     </div>
   }
 
-  <div class="dns-tabs-integrated">
-    <div class="min-h-[calc(100vh-64px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
-      <div class="max-w-7xl mx-auto space-y-4">
-        <!-- Data Info Bar -->
-        <app-page-header
-          title="同步策略"
-          subtitle="管理 IP 地址池的自动同步任务"
-          icon="sync"
-          [total]="total()"
-          unit="个策略"
-          [loading]="loading()"
-          (refresh)="loadPolicies(true)"
-        >
-          <div chips>
-            @if (search()) {
-              <div
-                class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
+  <div class="py-6 px-4 sm:px-8">
+    <div class="max-w-7xl mx-auto space-y-4">
+      <!-- Data Info Bar -->
+      <app-page-header
+        title="同步策略"
+        subtitle="管理 IP 地址池的自动同步任务"
+        icon="sync"
+        [total]="total()"
+        unit="个策略"
+        [loading]="loading()"
+        (refresh)="loadPolicies(true)"
+      >
+        <div chips>
+          @if (search()) {
+            <div
+              class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
+            >
+              <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
+              <span class="text-[11px] font-bold">正在搜索: "{{ search() }}"</span>
+              <button
+                class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
+                (click)="search.set(''); loadPolicies(true)"
+                title="清除搜索"
               >
-                <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
-                <span class="text-[11px] font-bold">正在搜索: "{{ search() }}"</span>
-                <button
-                  class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
-                  (click)="search.set(''); loadPolicies(true)"
-                  title="清除搜索"
-                >
-                  <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
-                </button>
+                <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      </app-page-header>
+
+      <!-- Table Card -->
+      <div
+        class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
+      >
+        <table mat-table [dataSource]="policies()" class="w-full bg-transparent">
+          <!-- Enabled Column (FIRST) -->
+          <ng-container matColumnDef="enabled">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="!pl-6 bg-surface-container-low font-bold text-center"
+              style="width: 1px"
+            >
+              状态
+            </th>
+            <td mat-cell *matCellDef="let element" class="!pl-6 text-center">
+              <mat-slide-toggle
+                [checked]="element.enabled"
+                (click)="$event.stopPropagation(); togglePolicy(element)"
+                color="primary"
+                class="scale-75"
+              >
+              </mat-slide-toggle>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+              策略名称
+            </th>
+            <td mat-cell *matCellDef="let element" class="py-4">
+              <div class="flex flex-col">
+                <span class="font-medium text-primary">{{ element.name }}</span>
+                <span class="text-[10px] text-outline font-mono opacity-60">{{ element.id }}</span>
               </div>
-            }
-          </div>
-        </app-page-header>
+            </td>
+          </ng-container>
 
-        <!-- Table Card -->
-        <div
-          class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
-        >
-          <table mat-table [dataSource]="policies()" class="w-full bg-transparent">
-            <!-- Enabled Column (FIRST) -->
-            <ng-container matColumnDef="enabled">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!pl-6 bg-surface-container-low font-bold text-center"
-                style="width: 1px"
+          <ng-container matColumnDef="target">
+            <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">
+              目标池
+            </th>
+            <td mat-cell *matCellDef="let element" class="py-4 text-center">
+              <a
+                class="inline-flex items-center justify-center gap-1 text-primary hover:text-primary/80 hover:underline cursor-pointer transition-all font-medium"
+                (click)="goToPool(element.targetGroupId)"
+                [matTooltip]="'点击查看地址池: ' + element.targetGroupId"
               >
-                状态
-              </th>
-              <td mat-cell *matCellDef="let element" class="!pl-6 text-center">
-                <mat-slide-toggle
-                  [checked]="element.enabled"
-                  (click)="$event.stopPropagation(); togglePolicy(element)"
-                  color="primary"
-                  class="scale-75"
-                >
-                </mat-slide-toggle>
-              </td>
-            </ng-container>
+                <mat-icon class="!w-4 !h-4 !text-[14px]">storage</mat-icon>
+                <span class="text-sm">{{ getGroupName(element.targetGroupId) }}</span>
+              </a>
+            </td>
+          </ng-container>
 
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                策略名称
-              </th>
-              <td mat-cell *matCellDef="let element" class="py-4">
-                <div class="flex flex-col">
-                  <span class="font-medium text-primary">{{ element.name }}</span>
-                  <span class="text-[10px] text-outline font-mono opacity-60">{{ element.id }}</span>
-                </div>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="target">
-              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                目标池
-              </th>
-              <td mat-cell *matCellDef="let element" class="py-4 text-sm font-medium">
-                {{ element.targetGroupId }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="format">
-              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                格式
-              </th>
-              <td mat-cell *matCellDef="let element" class="py-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
-                  [class.bg-primary-container]="element.format === 'geoip'"
-                  [class.text-on-primary-container]="element.format === 'geoip'"
-                  [class.border-outline-variant]="element.format === 'text'">
-                  {{ element.format === 'geoip' ? 'GeoIP' : '文本' }}
+          <ng-container matColumnDef="format">
+            <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">
+              格式
+            </th>
+            <td mat-cell *matCellDef="let element" class="py-4 text-center">
+              @if (element.format === 'geoip') {
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold border bg-primary-container text-on-primary-container">
+                  GeoIP (MMDB)
                 </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="mode">
-              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                模式
-              </th>
-              <td mat-cell *matCellDef="let element" class="py-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
-                  [class.bg-secondary-container]="element.mode === 'append'"
-                  [class.text-on-secondary-container]="element.mode === 'append'"
-                  [class.border-outline-variant]="element.mode === 'overwrite'">
-                  {{ element.mode === 'append' ? '追加' : '覆盖' }}
+              } @else if (element.format === 'geoip-dat') {
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold border bg-tertiary-container text-on-tertiary-container">
+                  GeoIP (Dat)
                 </span>
-              </td>
-            </ng-container>
+              } @else {
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold border border-outline-variant text-outline">
+                  文本
+                </span>
+              }
+            </td>
+          </ng-container>
 
-            <ng-container matColumnDef="cron">
-              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                调度 (Cron)
-              </th>
-              <td mat-cell *matCellDef="let element" class="py-4 font-mono text-xs opacity-80">
-                {{ element.cron }}
-              </td>
-            </ng-container>
+          <ng-container matColumnDef="mode">
+            <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">
+              模式
+            </th>
+            <td mat-cell *matCellDef="let element" class="py-4 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                [class.bg-secondary-container]="element.mode === 'append'"
+                [class.text-on-secondary-container]="element.mode === 'append'"
+                [class.border-outline-variant]="element.mode === 'overwrite'"
+                [class.text-outline]="element.mode === 'overwrite'">
+                {{ element.mode === 'append' ? '追加' : '覆盖' }}
+              </span>
+            </td>
+          </ng-container>
 
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                最后运行
-              </th>
-              <td mat-cell *matCellDef="let element" class="py-4">
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-[10px] text-outline font-mono" *ngIf="element.lastRunAt && element.lastRunAt !== '0001-01-01T00:00:00Z'">
-                    {{ element.lastRunAt | date: 'yyyy-MM-dd HH:mm:ss' }}
-                  </span>
-                  <div class="flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full" 
-                      [class.bg-green-500]="element.lastStatus === 'success'"
-                      [class.bg-red-500]="element.lastStatus === 'failed'"
-                      [class.bg-outline/20]="!element.lastStatus"></span>
-                    <span class="text-[11px] font-bold uppercase tracking-wider"
-                      [class.text-green-600]="element.lastStatus === 'success'"
-                      [class.text-red-600]="element.lastStatus === 'failed'"
-                      [class.text-outline]="!element.lastStatus">
-                      {{ element.lastStatus === 'success' ? '成功' : (element.lastStatus === 'failed' ? '失败' : '从不') }}
-                    </span>
+          <ng-container matColumnDef="cron">
+            <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+              调度 (Cron)
+            </th>
+            <td mat-cell *matCellDef="let element" class="py-4 font-mono text-xs opacity-80">
+              {{ element.cron }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+              最后运行状态
+            </th>
+            <td mat-cell *matCellDef="let element" class="py-4">
+              <div class="flex flex-col">
+                @if (element.lastRunAt && element.lastRunAt !== '0001-01-01T00:00:00Z') {
+                  <div class="flex items-center gap-1.5 font-mono text-[11px] font-bold"
+                       [class.text-green-600]="element.lastStatus === 'success'"
+                       [class.text-red-600]="element.lastStatus === 'failed'">
+                    <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">{{ element.lastStatus === 'success' ? 'done' : 'error_outline' }}</mat-icon>
+                    <span>{{ element.lastRunAt | date: 'MM-dd HH:mm:ss' }}</span>
                   </div>
-                  <span class="text-[10px] text-red-400 max-w-[150px] truncate" *ngIf="element.errorMessage" [matTooltip]="element.errorMessage">
+                } @else {
+                  <span class="text-[10px] text-outline opacity-40 italic">从未运行</span>
+                }
+                @if (element.errorMessage) {
+                  <span class="text-[10px] text-red-400 max-w-[150px] truncate" [matTooltip]="element.errorMessage">
                     {{ element.errorMessage }}
                   </span>
-                </div>
-              </td>
-            </ng-container>
+                }
+              </div>
+            </td>
+          </ng-container>
 
-            <ng-container matColumnDef="actions">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="text-right !pr-6 bg-surface-container-low font-bold"
-                style="width: 1px; white-space: nowrap"
-              >
-                操作
-              </th>
-              <td
-                mat-cell
-                *matCellDef="let element"
-                class="text-right !pr-6"
-                style="white-space: nowrap"
-              >
-                <div class="flex justify-center gap-1">
-                  @if (!isHandset()) {
-                    <button mat-icon-button (click)="triggerSync(element)" matTooltip="立即同步">
+          <ng-container matColumnDef="actions">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="text-right !pr-6 bg-surface-container-low font-bold"
+              style="width: 1px; white-space: nowrap"
+            >
+              操作
+            </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              class="text-right !pr-6"
+              style="white-space: nowrap"
+            >
+              <div class="flex justify-end gap-1">
+                @if (!isHandset()) {
+                  <button mat-icon-button (click)="triggerSync(element)" matTooltip="立即同步" [disabled]="syncingRows()[element.id]">
+                    @if (syncingRows()[element.id]) {
+                      <mat-spinner diameter="18" class="m-auto"></mat-spinner>
+                    } @else {
                       <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">sync</mat-icon>
-                    </button>
-                    <button mat-icon-button (click)="editPolicy(element)" matTooltip="编辑">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      color="warn"
-                      (click)="deletePolicy(element)"
-                      matTooltip="删除"
-                    >
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
-                    </button>
-                  } @else {
-                    <button mat-icon-button [matMenuTriggerFor]="policyMenu">
-                      <mat-icon>more_vert</mat-icon>
-                    </button>
-                    <mat-menu #policyMenu="matMenu">
-                      <ng-template matMenuContent>
-                        <button mat-menu-item (click)="triggerSync(element)">
-                          <mat-icon>sync</mat-icon>
-                          <span>立即同步</span>
-                        </button>
-                        <button mat-menu-item (click)="editPolicy(element)">
-                          <mat-icon>edit</mat-icon>
-                          <span>编辑</span>
-                        </button>
-                        <button mat-menu-item (click)="deletePolicy(element)">
-                          <mat-icon color="warn">delete_outline</mat-icon>
-                          <span class="text-error">删除</span>
-                        </button>
-                      </ng-template>
-                    </mat-menu>
-                  }
-                </div>
-              </td>
-            </ng-container>
+                    }
+                  </button>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
-            <tr
-              mat-row
-              *matRowDef="let row; columns: displayedColumns()"
-              class="hover:bg-surface-container-low/50 transition-colors"
-            ></tr>
+                  <button mat-icon-button (click)="editPolicy(element)" matTooltip="编辑">
+                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="deletePolicy(element)"
+                    matTooltip="删除"
+                  >
+                    <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
+                  </button>
+                } @else {
+                  <button mat-icon-button [matMenuTriggerFor]="policyMenu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #policyMenu="matMenu">
+                    <ng-template matMenuContent>
+                      <button mat-menu-item (click)="triggerSync(element)">
+                        <mat-icon>sync</mat-icon>
+                        <span>立即同步</span>
+                      </button>
+                      <button mat-menu-item (click)="editPolicy(element)">
+                        <mat-icon>edit</mat-icon>
+                        <span>编辑</span>
+                      </button>
+                      <button mat-menu-item (click)="deletePolicy(element)">
+                        <mat-icon color="warn">delete_outline</mat-icon>
+                        <span class="text-error">删除</span>
+                      </button>
+                    </ng-template>
+                  </mat-menu>
+                }
+              </div>
+            </td>
+          </ng-container>
 
-            <tr class="mat-mdc-row" *matNoDataRow>
-              <td
-                class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
-                [attr.colspan]="displayedColumns().length"
-              >
-                没有找到匹配的同步策略
-              </td>
-            </tr>
-          </table>
-        </div>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns()"
+            class="hover:bg-surface-container-low/50 transition-colors"
+          ></tr>
 
-        @if (loadingMore()) {
-          <div class="py-10 flex justify-center">
-            <mat-spinner diameter="24"></mat-spinner>
-          </div>
-        }
+          <tr class="mat-mdc-row" *matNoDataRow>
+            <td
+              class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
+              [attr.colspan]="displayedColumns().length"
+            >
+              没有找到匹配的同步策略
+            </td>
+          </tr>
+        </table>
       </div>
+
+      @if (loadingMore()) {
+        <div class="py-10 flex justify-center">
+          <mat-spinner diameter="24"></mat-spinner>
+        </div>
+      }
     </div>
   </div>
 

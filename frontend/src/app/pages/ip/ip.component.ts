@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
@@ -12,21 +12,21 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDividerModule } from '@angular/material/divider';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
+import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreatePoolDialogComponent } from './create-pool-dialog.component';
-import { CreateExportDialogComponent } from './create-export-dialog.component';
 import { ManageEntriesDialogComponent } from './manage-entries-dialog.component';
+import { CreateExportDialogComponent } from './create-export-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkIpService, ModelsIPGroup, ModelsIPExport, IpExportTask, ModelsIPAnalysisResult } from '../../generated';
-import { FormsModule } from '@angular/forms';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { NetworkIpService, ModelsIPGroup, ModelsIPExport } from '../../generated';
 
 @Component({
   selector: 'app-ip',
@@ -44,36 +44,20 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     MatTooltipModule,
     MatMenuModule,
     MatSlideToggleModule,
+    MatDividerModule,
     PageHeaderComponent,
     FormsModule,
-    MatInputModule,
-    MatFormFieldModule,
   ],
   templateUrl: './ip.component.html',
   styles: [`
     :host { display: block; }
-    .ip-tabs-integrated {
-      ::ng-deep .mat-mdc-tab-header {
+    ::ng-deep .ip-tabs-integrated {
+      .mat-mdc-tab-header {
         background: var(--mat-sys-surface);
         border-bottom: 1px solid var(--mat-sys-outline-variant);
-        position: sticky;
-        top: 0;
-        z-index: 10;
       }
-      ::ng-deep .mat-mdc-tab-body-wrapper { background: var(--mat-sys-surface-container-lowest); }
-    }
-    .search-field-m3 {
-      ::ng-deep .mdc-text-field--filled {
-        background-color: transparent !important;
-      }
-      ::ng-deep .mdc-line-ripple {
-        display: none;
-      }
-      ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-        display: none;
-      }
-      ::ng-deep .mat-mdc-text-field-wrapper {
-        padding-bottom: 0;
+      .mat-mdc-tab-body-wrapper {
+        background: var(--mat-sys-surface-container-lowest);
       }
     }
   `]
@@ -87,35 +71,34 @@ export class IpComponent implements OnInit, OnDestroy {
   private breakpointObserver = inject(BreakpointObserver);
   public uiService = inject(UiService);
 
+  private scrollListener?: () => void;
+
   isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
     { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
-  selectedTabIndex = signal(0);
   loading = signal(false);
+  loadingMore = signal(false);
+  selectedTabIndex = signal(0);
   showScrollTop = signal(false);
 
-  // Pools state
+  // Address Pools
   pools = signal<ModelsIPGroup[]>([]);
-  poolTotal = signal(0);
-  poolPage = signal(1);
   poolSearch = signal('');
+  poolPage = signal(1);
+  poolTotal = signal(0);
 
-  // Exports state
+  // Dynamic Exports
   exports = signal<ModelsIPExport[]>([]);
-  exportTotal = signal(0);
-  exportPage = signal(1);
   exportSearch = signal('');
-  activeTasks = signal<Record<string, IpExportTask>>({});
+  exportPage = signal(1);
+  exportTotal = signal(0);
 
-  // Analysis state
-  analysisIp = signal('');
-  analysisResult = signal<ModelsIPAnalysisResult | null>(null);
-  analysisInfo = signal<any | null>(null);
+  activeTasks = signal<Record<string, any>>({});
 
   displayedPoolColumns = computed(() =>
-    this.isHandset() ? ['name', 'actions'] : ['name', 'description', 'entryCount', 'updatedAt', 'actions']
+    this.isHandset() ? ['name', 'entryCount', 'actions'] : ['name', 'description', 'entryCount', 'updatedAt', 'actions']
   );
 
   displayedExportColumns = computed(() =>
@@ -123,229 +106,277 @@ export class IpComponent implements OnInit, OnDestroy {
   );
 
   hasSearchContent = computed(() => {
-    const tab = this.selectedTabIndex();
-    if (tab === 0) return !!this.poolSearch();
-    if (tab === 1) return !!this.exportSearch();
-    return false;
+    return this.selectedTabIndex() === 0 ? this.poolSearch().length > 0 : this.exportSearch().length > 0;
   });
 
   fabConfig = computed(() => {
-    const tab = this.selectedTabIndex();
-    if (tab === 0) return { icon: 'add', label: '新建地址池', action: () => this.createPool() };
-    if (tab === 1) return { icon: 'add', label: '新建导出', action: () => this.createExport() };
-    return null;
+    if (this.selectedTabIndex() === 0) {
+      return { icon: 'add', label: '新建地址池', action: () => this.createPool() };
+    } else {
+      return { icon: 'add', label: '新建导出配置', action: () => this.createExport() };
+    }
   });
 
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    this.showScrollTop.set(window.scrollY > 300);
-  }
-
   ngOnInit() {
+    this.uiService.configureToolbar({ shadow: false });
     this.route.queryParams.subscribe((params) => {
       if (params['tab'] === 'pool') this.selectedTabIndex.set(0);
       else if (params['tab'] === 'export') this.selectedTabIndex.set(1);
-      else if (params['tab'] === 'analysis') this.selectedTabIndex.set(2);
-      this.loadData();
+
+      if (params['search']) {
+        if (this.selectedTabIndex() === 0) {
+          this.poolSearch.set(params['search']);
+        } else {
+          this.exportSearch.set(params['search']);
+        }
+      }
+      this.loadData(true);
     });
+    this.setupScrollListener();
   }
 
   ngOnDestroy() {
+    this.uiService.resetToolbar();
     this.uiService.closeSearch();
+    if (this.scrollListener) {
+      const scrollElement = document.querySelector('mat-sidenav-content');
+      scrollElement?.removeEventListener('scroll', this.scrollListener);
+    }
+  }
+
+  private setupScrollListener() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (!scrollElement) return;
+
+    this.scrollListener = () => {
+      this.showScrollTop.set(scrollElement.scrollTop > 300);
+      const atBottom =
+        scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
+
+      if (atBottom && !this.loadingMore() && !this.loading()) {
+        if (this.selectedTabIndex() === 0 && this.pools().length < this.poolTotal()) {
+          this.poolPage.update((p) => p + 1);
+          this.loadPools(false);
+        } else if (this.selectedTabIndex() === 1 && this.exports().length < this.exportTotal()) {
+          this.exportPage.update((p) => p + 1);
+          this.loadExports(false);
+        }
+      }
+    };
+    scrollElement.addEventListener('scroll', this.scrollListener);
   }
 
   scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (scrollElement) {
+      scrollElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
-    let tab = 'pool';
-    if (index === 1) tab = 'export';
-    else if (index === 2) tab = 'analysis';
-    this.router.navigate([], { queryParams: { tab }, queryParamsHandling: 'merge' });
-    this.uiService.closeSearch();
-  }
-
-  openSearch() {
-    const tab = this.selectedTabIndex();
-    this.uiService.openSearch({
-      placeholder: tab === 0 ? '搜索地址池名称...' : '搜索导出配置名称...',
-      value: tab === 0 ? this.poolSearch() : this.exportSearch(),
-      onSearch: (val) => {
-        if (tab === 0) this.onPoolSearch(val);
-        else if (tab === 1) this.onExportSearch(val);
-      },
+    const tab = index === 0 ? 'pool' : 'export';
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge',
     });
+    this.loadData(true);
   }
 
-  onPoolSearch(val: string) {
-    this.poolSearch.set(val);
-    this.poolPage.set(1);
-    this.loadPools();
+  loadData(reset = false) {
+    if (this.selectedTabIndex() === 0) this.loadPools(reset);
+    else this.loadExports(reset);
   }
 
-  onExportSearch(val: string) {
-    this.exportSearch.set(val);
-    this.exportPage.set(1);
-    this.loadExports();
-  }
+  async loadPools(reset = false) {
+    if (reset) {
+      this.loading.set(true);
+      this.poolPage.set(1);
+    } else {
+      this.loadingMore.set(true);
+    }
 
-  loadData() {
-    if (this.selectedTabIndex() === 0) {
-      this.loadPools();
-    } else if (this.selectedTabIndex() === 1) {
-      this.loadExports();
+    try {
+      const res = await firstValueFrom(this.ipService.networkIpPoolsGet(this.poolPage(), 20, this.poolSearch()));
+      if (reset) {
+        this.pools.set(res.items || []);
+      } else {
+        const current = this.pools();
+        const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+        this.pools.update((prev) => [...prev, ...newItems]);
+      }
+      this.poolTotal.set(res.total || 0);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.loading.set(false);
+      this.loadingMore.set(false);
     }
   }
 
-  loadPools(reset = false) {
-    if (reset) this.poolPage.set(1);
-    this.loading.set(true);
-    this.ipService.networkIpPoolsGet(this.poolPage(), 20, this.poolSearch()).subscribe({
-      next: (res) => {
-        this.pools.set(res.items || []);
-        this.poolTotal.set(res.total || 0);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+  async loadExports(reset = false) {
+    if (reset) {
+      this.loading.set(true);
+      this.exportPage.set(1);
+    } else {
+      this.loadingMore.set(true);
+    }
+
+    try {
+      const res = await firstValueFrom(this.ipService.networkIpExportsGet(this.exportPage(), 20, this.exportSearch()));
+      if (reset) {
+        this.exports.set(res.items || []);
+      } else {
+        const current = this.exports();
+        const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+        this.exports.update((prev) => [...prev, ...newItems]);
+      }
+      this.exportTotal.set(res.total || 0);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.loading.set(false);
+      this.loadingMore.set(false);
+    }
   }
 
-  loadExports(reset = false) {
-    if (reset) this.exportPage.set(1);
-    this.loading.set(true);
-    this.ipService.networkIpExportsGet(this.exportPage(), 20, this.exportSearch()).subscribe({
-      next: (res) => {
-        this.exports.set(res.items || []);
-        this.exportTotal.set(res.total || 0);
-        this.loading.set(false);
+  openSearch() {
+    const isPool = this.selectedTabIndex() === 0;
+    this.uiService.openSearch({
+      placeholder: isPool ? '搜索地址池名称...' : '搜索导出配置名称...',
+      value: isPool ? this.poolSearch() : this.exportSearch(),
+      onSearch: (val) => {
+        const queryParams: any = { search: val || null };
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams,
+          queryParamsHandling: 'merge',
+        });
+        
+        if (isPool) {
+          this.poolSearch.set(val);
+        } else {
+          this.exportSearch.set(val);
+        }
+        this.loadData(true);
       },
-      error: () => this.loading.set(false),
     });
   }
 
   createPool() {
-    const dialogRef = this.dialog.open(CreatePoolDialogComponent, { width: '400px' });
-    dialogRef.afterClosed().subscribe((res) => {
-      if (res) this.loadPools(true);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreatePoolDialogComponent, { width: '400px', data: {} });
+      dialogRef.afterClosed().subscribe((res) => {
+        if (res) this.loadPools(true);
+      });
     });
   }
 
-  manageEntries(pool: ModelsIPGroup) {
-    const dialogRef = this.dialog.open(ManageEntriesDialogComponent, {
-      width: '100vw',
-      height: '100vh',
-      maxWidth: '100vw',
-      panelClass: 'full-screen-dialog',
-      data: { pool }
-    });
-    dialogRef.afterClosed().subscribe(() => {
-      this.loadPools();
+  editPool(pool: ModelsIPGroup) {
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreatePoolDialogComponent, { width: '400px', data: { pool } });
+      dialogRef.afterClosed().subscribe((res) => {
+        if (res) this.loadPools(true);
+      });
     });
   }
 
   deletePool(pool: ModelsIPGroup) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: { title: '删除确认', message: `确定要删除池 [${pool.name}] 吗？` },
-    });
-    dialogRef.afterClosed().subscribe((res) => {
-      if (res && pool.id) {
-        this.ipService.networkIpPoolsIdDelete(pool.id).subscribe({
-          next: () => {
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: { title: '删除地址池', message: `确定要删除地址池 [${pool.name}] 吗？此操作将永久删除所有数据文件。`, color: 'warn' },
+      });
+      dialogRef.afterClosed().subscribe(async (res) => {
+        if (res && pool.id) {
+          try {
+            await firstValueFrom(this.ipService.networkIpPoolsIdDelete(pool.id));
             this.snackBar.open('删除成功', '关闭', { duration: 3000 });
-            this.loadPools();
-          },
-          error: (err) => {
+            this.loadPools(true);
+          } catch (err: any) {
             this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-          },
-        });
-      }
+          }
+        }
+      });
+    });
+  }
+
+  manageEntries(pool: ModelsIPGroup) {
+    requestAnimationFrame(() => {
+      this.dialog.open(ManageEntriesDialogComponent, {
+        width: '100vw',
+        height: '100vh',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        panelClass: 'full-screen-dialog',
+        data: { pool },
+      });
     });
   }
 
   createExport() {
-    const dialogRef = this.dialog.open(CreateExportDialogComponent, { width: '600px' });
-    dialogRef.afterClosed().subscribe((res) => {
-      if (res) this.loadExports(true);
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateExportDialogComponent, { width: '500px' });
+      dialogRef.afterClosed().subscribe((res) => {
+        if (res) this.loadExports(true);
+      });
     });
   }
 
   deleteExport(exp: ModelsIPExport) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: { title: '删除确认', message: `确定要删除导出配置 [${exp.name}] 吗？` },
-    });
-    dialogRef.afterClosed().subscribe((res) => {
-      if (res && exp.id) {
-        this.ipService.networkIpExportsIdDelete(exp.id).subscribe({
-          next: () => {
-            this.snackBar.open('删除成功', '关闭', { duration: 3000 });
-            this.loadExports();
-          },
-          error: (err) => {
-            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-          },
-        });
-      }
-    });
-  }
-
-  triggerExport(exp: ModelsIPExport) {
-    if (!exp.id) return;
-    this.ipService.networkIpExportsIdTriggerPost(exp.id, 'text').subscribe({
-      next: (res: any) => {
-        const taskId = res.taskId;
-        this.snackBar.open(`导出任务已触发`, '关闭', { duration: 2000 });
-        this.pollTaskStatus(taskId, exp.id as string);
-      },
-      error: (err) => {
-        this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-      }
-    });
-  }
-
-  pollTaskStatus(taskId: string, exportId: string) {
-    const interval = setInterval(() => {
-      this.ipService.networkIpExportsTaskTaskIdGet(taskId).subscribe({
-        next: (task) => {
-          this.activeTasks.update(v => ({...v, [exportId]: task}));
-          if (task.status === 'Success' || task.status === 'Failed' || task.status === 'Cancelled') {
-            clearInterval(interval);
-          }
-        },
-        error: () => clearInterval(interval)
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: { title: '删除配置', message: `确定要删除导出配置 [${exp.name}] 吗？`, color: 'warn' },
       });
-    }, 1000);
+      dialogRef.afterClosed().subscribe(async (res) => {
+        if (res && exp.id) {
+          try {
+            await firstValueFrom(this.ipService.networkIpExportsIdDelete(exp.id));
+            this.snackBar.open('删除成功', '关闭', { duration: 3000 });
+            this.loadExports(true);
+          } catch (err: any) {
+            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+          }
+        }
+      });
+    });
   }
 
-  runAnalysis() {
-    if (!this.analysisIp()) return;
-    this.loading.set(true);
-    this.analysisResult.set(null);
-    this.analysisInfo.set(null);
+  async triggerExport(exp: ModelsIPExport) {
+    if (!exp.id) return;
+    try {
+      const res = await firstValueFrom(this.ipService.networkIpExportsIdTriggerPost(exp.id));
+      const taskId = res.taskId!;
+      this.activeTasks.update(tasks => ({
+        ...tasks,
+        [exp.id!]: { status: 'Running', progress: 0, taskId }
+      }));
+      this.pollTaskStatus(exp.id!, taskId);
+    } catch (err: any) {
+      this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+    }
+  }
 
-    // Call HitTest
-    this.ipService.networkIpAnalysisHitTestPost({ ip: this.analysisIp(), groupIds: [] }).subscribe({
-      next: (res) => {
-        this.analysisResult.set(res);
-        if (!this.analysisInfo()) this.loading.set(false);
-      },
-      error: (err) => {
-        this.snackBar.open(`分析失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-        this.loading.set(false);
-      }
-    });
+  private pollTaskStatus(exportId: string, taskId: string) {
+    const interval = setInterval(async () => {
+      try {
+        const task = await firstValueFrom(this.ipService.networkIpExportsTaskTaskIdGet(taskId));
+        this.activeTasks.update(tasks => ({
+          ...tasks,
+          [exportId]: { 
+            status: task.status, 
+            progress: task.progress, 
+            taskId,
+            resultURL: task.status === 'Success' ? `/api/v1/network/ip/exports/download/${taskId}` : null
+          }
+        }));
 
-    // Call Intelligence Info
-    this.ipService.networkIpAnalysisInfoGet(this.analysisIp()).subscribe({
-      next: (res) => {
-        this.analysisInfo.set(res);
-        if (this.analysisResult()) this.loading.set(false);
-      },
-      error: () => {
-        // Silently fail or handle MMDB error
-        if (this.analysisResult()) this.loading.set(false);
+        if (task.status === 'Success' || task.status === 'Failed') {
+          clearInterval(interval);
+        }
+      } catch (err) {
+        clearInterval(interval);
       }
-    });
+    }, 1500);
   }
 }

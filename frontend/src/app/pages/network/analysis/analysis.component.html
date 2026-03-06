@@ -58,14 +58,14 @@
               </div>
               
               @if (ipResult()?.matched) {
-                <div class="bg-green-600 text-on-primary p-4 text-center">
-                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80">IP 前缀匹配 (LPM)</div>
+                <div class="bg-green-600 text-white p-4 text-center">
+                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">IP 前缀匹配 (LPM)</div>
                   <div class="text-xl font-mono font-medium">{{ ipResult()?.cidr }}</div>
                 </div>
               }
               @if (siteResult()?.matched) {
-                <div class="bg-green-600 text-on-primary p-4 text-center border-t border-white/10">
-                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80">
+                <div class="bg-green-600 text-white p-4 text-center border-t border-white/10">
+                  <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">
                     命中规则: 
                     @switch (siteResult()?.ruleType) {
                       @case (0) { keyword }
@@ -89,7 +89,7 @@
                   </div>
                   <div class="flex flex-wrap gap-2">
                     @for (tag of (ipResult()?.tags || siteResult()?.tags); track tag) {
-                      <span class="px-3 py-1 rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm">{{ tag }}</span>
+                      <span class="px-3 py-1 rounded-full bg-primary text-white text-xs font-bold shadow-sm">{{ tag }}</span>
                     }
                   </div>
                 </div>
@@ -116,12 +116,24 @@
                     </div>
                     <div class="flex flex-col min-w-0">
                       <div class="text-xs font-bold text-outline uppercase tracking-widest mb-1 opacity-70">地理归属</div>
-                      <div class="flex flex-col gap-2">
-                        <div class="flex items-center gap-3 overflow-hidden">
-                          <span class="px-3 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold border border-secondary/20 shadow-sm shrink-0">{{ ipInfo()?.country }}</span>
-                          <span class="text-2xl md:text-3xl font-bold tracking-tight truncate">{{ ipInfo()?.city }}</span>
-                        </div>
-                        <div class="text-xs text-outline opacity-60 flex items-center gap-1 uppercase tracking-tighter">
+                      <div class="flex flex-col gap-1">
+                        @if (ipInfo()?.country || ipInfo()?.city) {
+                          <div class="flex flex-col gap-1.5">
+                            @if (ipInfo()?.country) {
+                              <div>
+                                <span class="px-3 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold border border-secondary/20 shadow-sm shrink-0">
+                                  {{ ipInfo()?.country }}
+                                </span>
+                              </div>
+                            }
+                            @if (ipInfo()?.city) {
+                              <div class="text-2xl md:text-3xl font-bold tracking-tight truncate">{{ ipInfo()?.city }}</div>
+                            }
+                          </div>
+                        } @else {
+                          <div class="text-sm text-outline opacity-40 italic">暂无地理位置数据</div>
+                        }
+                        <div class="text-xs text-outline opacity-60 flex items-center gap-1 uppercase tracking-tighter mt-1">
                           <mat-icon class="!w-4 !h-4 !text-[14px]">verified</mat-icon>
                           MaxMind Verified Data
                         </div>
@@ -165,12 +177,19 @@
                             <div class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group">
                               <div class="flex-1 flex items-center gap-4 min-w-0">
                                 <span class="text-lg font-mono font-black text-primary clickable-link" (click)="pivotSearch(a.ip)">{{ a.ip }}</span>
-                                <span class="px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase shrink-0">AS{{ a.asn }}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0">AS{{ a.asn }}</span>
                                 <span class="text-sm text-outline truncate opacity-80">{{ a.org }}</span>
                               </div>
-                              <div class="flex items-center gap-2 shrink-0">
-                                <span class="text-xs px-2 py-0.5 rounded bg-outline/10 text-outline font-bold">{{ a.country }}</span>
-                                <span class="text-xs font-bold">{{ a.city }}</span>
+                              <div class="flex flex-col items-end gap-1 shrink-0">
+                                @if (a.country) {
+                                  <span class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30">{{ a.country }}</span>
+                                }
+                                @if (a.city) {
+                                  <span class="text-xs font-bold">{{ a.city }}</span>
+                                }
+                                @if (!a.country && !a.city) {
+                                  <span class="text-[10px] text-outline opacity-40 italic">未知地理位置</span>
+                                }
                               </div>
                             </div>
                           }
@@ -178,13 +197,20 @@
                             <div class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
                               <div class="flex-1 flex items-center gap-4 min-w-0">
                                 <span class="text-base font-mono font-black text-secondary clickable-link truncate" (click)="pivotSearch(aaaa.ip)" [matTooltip]="aaaa.ip">{{ aaaa.ip }}</span>
-                                <span class="px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase shrink-0">AS{{ aaaa.asn }}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0">AS{{ aaaa.asn }}</span>
                                 <span class="text-sm text-outline truncate opacity-80">{{ aaaa.org }}</span>
                               </div>
-                              <div class="flex items-center gap-2 shrink-0">
-                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-outline/10 text-outline font-black border border-outline/20">IPv6</span>
-                                <span class="text-xs px-2 py-0.5 rounded bg-outline/10 text-outline font-bold">{{ aaaa.country }}</span>
-                                <span class="text-xs font-bold">{{ aaaa.city }}</span>
+                              <div class="flex flex-col items-end gap-1 shrink-0">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-black border border-outline-variant/30">IPv6</span>
+                                @if (aaaa.country) {
+                                  <span class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30">{{ aaaa.country }}</span>
+                                }
+                                @if (aaaa.city) {
+                                  <span class="text-xs font-bold">{{ aaaa.city }}</span>
+                                }
+                                @if (!aaaa.country && !aaaa.city) {
+                                  <span class="text-[10px] text-outline opacity-40 italic">未知地理位置</span>
+                                }
                               </div>
                             </div>
                           }

@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import { MatDialogRef, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,6 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../generated';
 
 @Component({
@@ -22,6 +24,8 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
     MatInputModule,
     MatSelectModule,
     MatSlideToggleModule,
+    MatIconModule,
+    MatTooltipModule,
   ],
   template: `
     <h2 mat-dialog-title>{{ data.policy ? '编辑同步策略' : '新建同步策略' }}</h2>
@@ -40,7 +44,7 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
         <mat-form-field appearance="outline">
           <mat-label>源 URL</mat-label>
           <input matInput formControlName="sourceUrl" required placeholder="https://..." />
-          <mat-hint>支持文本 (IP/CIDR) 或 GeoIP (.mmdb) 文件</mat-hint>
+          <mat-hint>支持文本 (IP/CIDR) 或 GeoIP (.mmdb, .dat) 文件</mat-hint>
         </mat-form-field>
 
         <div class="flex gap-4 mt-2">
@@ -49,6 +53,7 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
             <mat-select formControlName="format" required>
               <mat-option value="text">文本 (Text/CIDR)</mat-option>
               <mat-option value="geoip">GeoIP (MMDB)</mat-option>
+              <mat-option value="geoip-dat">GeoIP (V2Ray Dat)</mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -62,8 +67,8 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
         </div>
 
         <!-- Format Specific Config -->
-        <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant space-y-2 animate-in fade-in slide-in-from-top-2">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">配置参数</div>
+        <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant space-y-4 animate-in fade-in slide-in-from-top-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">同步配置</div>
           
           @if (form.get('format')?.value === 'text') {
             <mat-form-field appearance="outline" class="w-full">
@@ -86,6 +91,57 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
               <mat-hint>MMDB 记录中提取城市名称时的首选语言</mat-hint>
             </mat-form-field>
           }
+
+          @if (form.get('format')?.value === 'geoip-dat') {
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-sm">导入全部分类</span>
+                <mat-slide-toggle formControlName="importAll"></mat-slide-toggle>
+              </div>
+              
+              @if (!form.get('importAll')?.value) {
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>国家/分类代码</mat-label>
+                  <input matInput formControlName="code" placeholder="CN" />
+                  <mat-hint>例如: CN, US, private, ads</mat-hint>
+                </mat-form-field>
+              }
+            </div>
+          }
+
+          <!-- Tag Mapping -->
+          <div class="pt-2 border-t border-outline-variant/50">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-outline">标签映射 (Tag Mapping)</div>
+              <button mat-icon-button (click)="addMapping()" type="button" matTooltip="添加映射">
+                <mat-icon class="!w-4 !h-4 !text-sm">add</mat-icon>
+              </button>
+            </div>
+            
+            <div formArrayName="tagMappings" class="space-y-2">
+              @for (m of tagMappings.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="flex gap-2 items-center">
+                  <mat-form-field appearance="outline" class="flex-1 !pb-0" subscriptSizing="dynamic">
+                    <mat-label>原始值</mat-label>
+                    <input matInput formControlName="source" placeholder="CN" />
+                  </mat-form-field>
+                  <mat-icon class="text-outline opacity-40">arrow_forward</mat-icon>
+                  <mat-form-field appearance="outline" class="flex-1 !pb-0" subscriptSizing="dynamic">
+                    <mat-label>目标标签</mat-label>
+                    <input matInput formControlName="target" placeholder="China" />
+                  </mat-form-field>
+                  <button mat-icon-button color="warn" (click)="removeMapping(i)" type="button">
+                    <mat-icon class="!w-4 !h-4 !text-sm">remove_circle_outline</mat-icon>
+                  </button>
+                </div>
+              }
+              @if (tagMappings.length === 0) {
+                <div class="text-center py-2 text-xs text-outline opacity-60 italic">
+                  未配置映射，将使用原始值作为标签
+                </div>
+              }
+            </div>
+          </div>
         </div>
 
         <mat-form-field appearance="outline">
@@ -113,6 +169,9 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
       </button>
     </mat-dialog-actions>
   `,
+  styles: [`
+    mat-form-field { font-size: 13px; }
+  `]
 })
 export class CreateSyncPolicyDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -136,10 +195,46 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
     // Specific configs
     tag: [this.data.policy?.config?.['tag'] || 'sync'],
     language: [this.data.policy?.config?.['language'] || 'zh-CN'],
+    code: [this.data.policy?.config?.['code'] === '*' ? '' : (this.data.policy?.config?.['code'] || 'CN')],
+    importAll: [this.data.policy?.config?.['code'] === '*' || this.data.policy?.config?.['code'] === 'all'],
+    tagMappings: this.fb.array([]),
   });
+
+  get tagMappings() {
+    return this.form.get('tagMappings') as FormArray;
+  }
 
   ngOnInit() {
     this.loadPools();
+    this.initMappings();
+  }
+
+  initMappings() {
+    const mappingStr = this.data.policy?.config?.['tagMapping'];
+    if (mappingStr) {
+      try {
+        const mapping = JSON.parse(mappingStr);
+        Object.entries(mapping).forEach(([source, target]) => {
+          this.tagMappings.push(this.fb.group({
+            source: [source, Validators.required],
+            target: [target, Validators.required]
+          }));
+        });
+      } catch (e) {
+        console.error('Failed to parse tag mapping', e);
+      }
+    }
+  }
+
+  addMapping() {
+    this.tagMappings.push(this.fb.group({
+      source: ['', Validators.required],
+      target: ['', Validators.required]
+    }));
+  }
+
+  removeMapping(index: number) {
+    this.tagMappings.removeAt(index);
   }
 
   loadPools() {
@@ -158,6 +253,19 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
       config['tag'] = val.tag || 'sync';
     } else if (val.format === 'geoip') {
       config['language'] = val.language || 'zh-CN';
+    } else if (val.format === 'geoip-dat') {
+      config['code'] = val.importAll ? '*' : (val.code || 'CN');
+    }
+
+    // Process Tag Mapping
+    const mapping: Record<string, string> = {};
+    (val.tagMappings as any[] || []).forEach((m: any) => {
+      if (m.source && m.target) {
+        mapping[m.source.trim().toUpperCase()] = m.target.trim();
+      }
+    });
+    if (Object.keys(mapping).length > 0) {
+      config['tagMapping'] = JSON.stringify(mapping);
     }
 
     const policy: ModelsIPSyncPolicy = {

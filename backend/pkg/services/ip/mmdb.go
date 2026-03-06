@@ -107,7 +107,9 @@ func (m *MMDBManager) Lookup(ipStr string) (*models.IPInfoResponse, error) {
 			if res.Country == "" {
 				res.Country = city.Country.Names.English
 			}
-			res.Location = fmt.Sprintf("%f,%f", city.Location.Latitude, city.Location.Longitude)
+			if city.Location.Latitude != nil && city.Location.Longitude != nil {
+				res.Location = fmt.Sprintf("%f,%f", *city.Location.Latitude, *city.Location.Longitude)
+			}
 		}
 	} else if m.country != nil {
 		if country, err := m.country.Country(ip); err == nil {

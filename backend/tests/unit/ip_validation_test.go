@@ -26,7 +26,7 @@ func TestIPModelValidation(t *testing.T) {
 			},
 			{
 				name:    "Invalid ID - Special Chars",
-				group:   models.IPGroup{ID: "id-123", Name: "Name"}, // regex is ^[a-z0-9_]+$
+				group:   models.IPGroup{ID: "id@123", Name: "Name"},
 				wantErr: true,
 			},
 			{
@@ -97,13 +97,14 @@ func TestIPModelValidation(t *testing.T) {
 	})
 
 	t.Run("IPPoolEntryRequest Validation", func(t *testing.T) {
-		req := &models.IPPoolEntryRequest{CIDR: "  ", Tags: []string{"  Upper  "}}
+		req := &models.IPPoolEntryRequest{CIDR: "  ", NewTags: []string{"  Upper  "}}
 		err := req.Bind(nil)
 		assert.Error(t, err, "Should fail on empty CIDR")
 
-		req = &models.IPPoolEntryRequest{CIDR: "1.1.1.1", Tags: []string{"  Upper  "}}
+		req = &models.IPPoolEntryRequest{CIDR: "1.1.1.1", OldTags: []string{" OLD "}, NewTags: []string{" NEW "}}
 		err = req.Bind(nil)
 		assert.NoError(t, err)
-		assert.Equal(t, "upper", req.Tags[0], "Should normalize tags to lowercase")
+		assert.Equal(t, "old", req.OldTags[0])
+		assert.Equal(t, "new", req.NewTags[0])
 	})
 }

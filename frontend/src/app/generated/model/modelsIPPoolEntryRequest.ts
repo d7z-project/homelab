@@ -11,6 +11,7 @@
 
 export interface ModelsIPPoolEntryRequest { 
     cidr?: string;
-    tags?: Array<string>;
+    newTags?: Array<string>;
+    oldTags?: Array<string>;
 }
 

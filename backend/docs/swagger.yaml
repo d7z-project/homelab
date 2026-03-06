@@ -233,7 +233,11 @@ definitions:
     properties:
       cidr:
         type: string
-      tags:
+      newTags:
+        items:
+          type: string
+        type: array
+      oldTags:
         items:
           type: string
         type: array
@@ -2499,6 +2503,49 @@ paths:
       summary: Delete an IP group
       tags:
       - network/ip
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: IP Group
+        in: body
+        name: group
+        required: true
+        schema:
+          $ref: '#/definitions/models.IPGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IPGroup'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Group Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Update an IP group
+      tags:
+      - network/ip
   /network/ip/pools/{id}/entries:
     delete:
       parameters:
@@ -2511,6 +2558,11 @@ paths:
         in: query
         name: cidr
         required: true
+        type: string
+      - description: Specific tag to delete (if omitted, deletes entire CIDR if no
+          internal tags present)
+        in: query
+        name: tag
         type: string
       produces:
       - application/json
@@ -2537,19 +2589,21 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: Delete an entry from IP pool
+      summary: Delete an entry or a specific tag from IP pool
       tags:
       - network/ip
     post:
       consumes:
       - application/json
+      description: If oldTag is empty, adds newTag. If both provided, renames oldTag
+        to newTag.
       parameters:
       - description: Group ID
         in: path
         name: id
         required: true
         type: string
-      - description: IP/CIDR Entry
+      - description: IP/CIDR Tag Entry
         in: body
         name: entry
         required: true
@@ -2580,7 +2634,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: Add or update an entry in IP pool
+      summary: Add or update a tag for a CIDR in IP pool
       tags:
       - network/ip
   /network/ip/pools/{id}/preview:

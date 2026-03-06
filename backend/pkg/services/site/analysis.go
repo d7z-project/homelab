@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -93,6 +94,9 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []
 		}
 
 		if ok, ruleType, pattern, tags := matcher.Match(domain); ok {
+			// 去重
+			slices.Sort(tags)
+			tags = slices.Compact(tags)
 			res.Matched = true
 			res.RuleType = ruleType
 			res.Pattern = pattern

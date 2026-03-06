@@ -1949,6 +1949,58 @@ paths:
       summary: Delete an IP group
       tags:
       - network/ip
+    put:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.IPGroup"
+        description: IP Group
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IPGroup"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Group Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Update an IP group
+      tags:
+      - network/ip
+      x-codegen-request-body-name: group
   /network/ip/pools/{id}/entries:
     delete:
       parameters:
@@ -1964,6 +2016,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: "Specific tag to delete (if omitted, deletes entire CIDR if no\
+          \ internal tags present)"
+        in: query
+        name: tag
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -1997,10 +2055,12 @@ paths:
           description: Group Not Found
       security:
       - ApiKeyAuth: []
-      summary: Delete an entry from IP pool
+      summary: Delete an entry or a specific tag from IP pool
       tags:
       - network/ip
     post:
+      description: "If oldTag is empty, adds newTag. If both provided, renames oldTag\
+        \ to newTag."
       parameters:
       - description: Group ID
         in: path
@@ -2013,7 +2073,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/models.IPPoolEntryRequest"
-        description: IP/CIDR Entry
+        description: IP/CIDR Tag Entry
         required: true
       responses:
         "200":
@@ -2048,7 +2108,7 @@ paths:
           description: Group Not Found
       security:
       - ApiKeyAuth: []
-      summary: Add or update an entry in IP pool
+      summary: Add or update a tag for a CIDR in IP pool
       tags:
       - network/ip
       x-codegen-request-body-name: entry
@@ -3581,7 +3641,11 @@ components:
       properties:
         cidr:
           type: string
-        tags:
+        newTags:
+          items:
+            type: string
+          type: array
+        oldTags:
           items:
             type: string
           type: array

@@ -2,8 +2,10 @@ package ip
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
@@ -23,7 +25,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/oschwald/geoip2-golang/v2"
 	"github.com/oschwald/maxminddb-golang/v2"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/afero"
@@ -64,16 +65,22 @@ func init() {
 			})
 		}
 		total := len(items)
-		if limit <= 0 { limit = 20 }
-		if offset >= total { return []models.LookupItem{}, total, nil }
+		if limit <= 0 {
+			limit = 20
+		}
+		if offset >= total {
+			return []models.LookupItem{}, total, nil
+		}
 		end := offset + limit
-		if end > total { end = total }
+		if end > total {
+			end = total
+		}
 		return items[offset:end], total, nil
 	})
 }
 
 const (
-	PoolsDir      = "network/ip/pools"
+	PoolsDir       = "network/ip/pools"
 	MaxPoolEntries = 2000000
 )
 
@@ -199,10 +206,20 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 		targetPrefix = netip.PrefixFrom(targetAddr, targetAddr.BitLen())
 	}
 
-	// 1. 读取现有数据
+	// 保护策略：不允许删除或修改下划线开头的内部标签
+	if mode == "update" || mode == "delete" {
+		for _, t := range req.OldTags {
+			if strings.HasPrefix(t, "_") {
+				return fmt.Errorf("internal tag '%s' (starting with '_') cannot be modified or deleted via this interface", t)
+			}
+		}
+	}
+
+	// 1. 读取现有数据并根据 mode 处理
 	var entries []Entry
 	var allTags []string
 	tagSet := make(map[string]struct{})
+	found := false
 
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
 	if exists, _ := afero.Exists(common.FS, poolPath); exists {
@@ -214,22 +231,75 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 				if err == io.EOF {
 					break
 				}
-				
-				// mode 逻辑：过滤掉要删除/修改的目标，保留其它
+
 				if prefix == targetPrefix {
-					if mode == "add" {
-						pf.Close()
-						return fmt.Errorf("ip/cidr already exists: %s", targetPrefix.String())
-					}
+					found = true
 					if mode == "delete" {
-						continue // 跳过即删除
-					}
-					if mode == "update" {
-						continue // 跳过旧的，后面统一添加新的
+						// 仅允许删除没有内部标签的条目，或者仅删除特定非内部标签
+						if len(req.OldTags) == 0 {
+							hasInternal := false
+							for _, t := range tags {
+								if strings.HasPrefix(t, "_") {
+									hasInternal = true
+									break
+								}
+							}
+							if hasInternal {
+								pf.Close()
+								return fmt.Errorf("entry has internal tags and cannot be deleted entirely via this interface")
+							}
+							continue // 无内部标签，彻底删除
+						} else {
+							// 过滤掉指定的旧标签 (不处理内部标签，由 Bind 保证)
+							newTagsList := make([]string, 0)
+							for _, t := range tags {
+								shouldDelete := false
+								for _, old := range req.OldTags {
+									if t == old {
+										shouldDelete = true
+										break
+									}
+								}
+								if !shouldDelete || strings.HasPrefix(t, "_") {
+									newTagsList = append(newTagsList, t)
+								}
+							}
+							if len(newTagsList) == 0 {
+								continue // 标签删完了，删除条目
+							}
+							tags = newTagsList
+						}
+					} else if mode == "update" || mode == "add" {
+						// 1. 提取当前所有标签
+						currentTags := tags
+						// 2. 如果是 update 模式，先移除指定的 oldTags
+						if mode == "update" {
+							filtered := make([]string, 0)
+							for _, ct := range currentTags {
+								shouldRemove := false
+								for _, ot := range req.OldTags {
+									if ct == ot {
+										shouldRemove = true
+										break
+									}
+								}
+								// 即使在 oldTags 中，内部标签也不能被移除 (虽然上层已校验，这里做二次防护)
+								if shouldRemove && !strings.HasPrefix(ct, "_") {
+									continue
+								}
+								filtered = append(filtered, ct)
+							}
+							currentTags = filtered
+						}
+						// 3. 加入新标签
+						currentTags = append(currentTags, req.NewTags...)
+						// 4. 去重与排序
+						slices.Sort(currentTags)
+						tags = slices.Compact(currentTags)
 					}
 				}
 
-				// 重建索引：为了简单，直接收集所有标签
+				// 收集并转换索引
 				var tagIndices []uint32
 				for _, t := range tags {
 					if _, ok := tagSet[t]; !ok {
@@ -245,9 +315,11 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 		}
 	}
 
-	if mode == "add" || mode == "update" {
+	if !found && mode == "add" {
+		// 新条目：仅能带入非内部标签 (由 Bind 保证)
+		tags := req.NewTags
 		var tagIndices []uint32
-		for _, t := range req.Tags {
+		for _, t := range tags {
 			if _, ok := tagSet[t]; !ok {
 				tagSet[t] = struct{}{}
 				allTags = append(allTags, t)
@@ -256,6 +328,8 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 			tagIndices = append(tagIndices, uint32(idx))
 		}
 		entries = append(entries, Entry{Prefix: targetPrefix, TagIndices: tagIndices})
+	} else if !found && (mode == "update" || mode == "delete") {
+		return fmt.Errorf("ip/cidr not found: %s", targetPrefix.String())
 	}
 
 	// 2. 写回
@@ -276,19 +350,17 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	// 3. 更新元数据
 	group.EntryCount = int64(len(entries))
 	group.UpdatedAt = time.Now()
-	
+
 	hf := sha256.New()
 	content, _ := afero.ReadFile(common.FS, poolPath)
 	hf.Write(content)
 	group.Checksum = hex.EncodeToString(hf.Sum(nil))
-	
+
 	err = repo.SaveGroup(ctx, group)
-	
-	actionName := "AddPoolEntry"
-	if mode == "update" { actionName = "UpdatePoolEntry" }
-	if mode == "delete" { actionName = "DeletePoolEntry" }
-	commonaudit.FromContext(ctx).Log(actionName, targetPrefix.String(), "Success", err == nil)
-	
+
+	actionName := "ManagePoolEntry"
+	commonaudit.FromContext(ctx).Log(actionName, targetPrefix.String(), mode, err == nil)
+
 	return err
 }
 
@@ -338,22 +410,28 @@ func (s *IPPoolService) ListGroups(ctx context.Context, page, pageSize int, sear
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	var filtered []models.IPGroup
 	perms := commonauth.PermissionsFromContext(ctx)
 	for _, g := range groups {
-		if perms.IsAllowed("network/ip") || perms.IsAllowed("network/ip/" + g.ID) {
+		if perms.IsAllowed("network/ip") || perms.IsAllowed("network/ip/"+g.ID) {
 			filtered = append(filtered, g)
 		}
 	}
-	
+
 	total := len(filtered)
 	start := (page - 1) * pageSize
-	if start < 0 { start = 0 }
-	if start >= total { return []models.IPGroup{}, total, nil }
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []models.IPGroup{}, total, nil
+	}
 	end := start + pageSize
-	if end > total { end = total }
-	
+	if end > total {
+		end = total
+	}
+
 	return filtered[start:end], total, nil
 }
 
@@ -398,7 +476,7 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursor 
 		if matched >= limit {
 			break
 		}
-		
+
 		prefix, tags, err := reader.Next()
 		if err == io.EOF {
 			break
@@ -406,7 +484,7 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursor 
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if search != "" {
 			prefixStr := prefix.String()
 			matchFound := strings.Contains(strings.ToLower(prefixStr), search)
@@ -490,7 +568,16 @@ func (s *IPPoolService) LookupExport(ctx context.Context, id string) (interface{
 
 func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPSyncPolicy) error {
 	if policy.ID == "" {
-		policy.ID = uuid.NewString()
+		for i := 0; i < 10; i++ { // 最多重试 10 次
+			newID := generatePolicyID()
+			if _, err := repo.GetSyncPolicy(ctx, newID); err != nil {
+				policy.ID = newID
+				break
+			}
+		}
+		if policy.ID == "" {
+			return fmt.Errorf("failed to generate unique policy ID")
+		}
 	}
 	policy.CreatedAt = time.Now()
 	policy.UpdatedAt = time.Now()
@@ -549,7 +636,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 	}
 
 	policy.LastRunAt = time.Now()
-	
+
 	err = s.doSync(ctx, policy)
 	if err != nil {
 		policy.LastStatus = "failed"
@@ -558,12 +645,22 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 		policy.LastStatus = "success"
 		policy.ErrorMessage = ""
 	}
-	
+
 	_ = repo.SaveSyncPolicy(ctx, policy)
 	return err
 }
 
 func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy) error {
+	if policy == nil {
+		return fmt.Errorf("policy is nil")
+	}
+	if policy.ID == "" {
+		policy.ID = generatePolicyID()
+	}
+	if policy.Config == nil {
+		policy.Config = make(map[string]string)
+	}
+
 	// 1. 下载原始数据到临时文件
 	tempSrc, err := os.CreateTemp("", "sync_src_*.tmp")
 	if err != nil {
@@ -588,11 +685,20 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	_ = tempSrc.Close()
 
 	// 2. 解析数据
-	var newEntries []Entry
-	var newTags []string
+	newTags := make([]string, 0)
 	tagMap := make(map[string]uint32)
 
+	// 解析标签映射配置
+	tagMapping := make(map[string]string)
+	if mStr := policy.Config["tagMapping"]; mStr != "" {
+		_ = json.Unmarshal([]byte(mStr), &tagMapping)
+	}
+
 	getTagIdx := func(t string) uint32 {
+		t = strings.ToUpper(strings.TrimSpace(t))
+		if mapped, ok := tagMapping[t]; ok {
+			t = mapped
+		}
 		if idx, ok := tagMap[t]; ok {
 			return idx
 		}
@@ -602,23 +708,21 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		return idx
 	}
 
-	if policy.Format == "geoip" {
-		db, err := geoip2.Open(tempSrc.Name())
-		if err != nil {
-			return fmt.Errorf("failed to open geoip db: %w", err)
-		}
-		defer db.Close()
+	internalTagIdx := getTagIdx(policy.ID)
 
-		// 遍历 MMDB 所有的网络 (使用底层的 maxminddb Reader)
-		networks := db.Metadata().BinaryFormatMajorVersion
-		_ = networks
-		
-		// geoip2.Reader 没有直接暴露 Networks 迭代器，我们需要使用底层的 maxminddb
-		// 这里简化逻辑，因为直接从 MMDB 提取所有 CIDR 是一个比较重的操作
-		// 实际上由于项目已经有了 MMDBManager，我们可以考虑不同的实现，
-		// 但为了满足用户需求，我们这里采用一种兼容方案。
-		
-		// 重新打开为 maxminddb 以便迭代
+	// 使用 Map 聚合 CIDR 和 Tags 以实现去重合并
+	aggregate := make(map[netip.Prefix]map[uint32]struct{})
+
+	addEntryToAggregate := func(prefix netip.Prefix, tagIdxs []uint32) {
+		if _, ok := aggregate[prefix]; !ok {
+			aggregate[prefix] = make(map[uint32]struct{})
+		}
+		for _, idx := range tagIdxs {
+			aggregate[prefix][idx] = struct{}{}
+		}
+	}
+
+	if policy.Format == "geoip" {
 		mdb, err := maxminddb.Open(tempSrc.Name())
 		if err != nil {
 			return fmt.Errorf("failed to open as maxminddb: %w", err)
@@ -637,110 +741,146 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 			if err := result.Decode(record); err != nil {
 				continue
 			}
-			
 			prefix := result.Prefix()
-
-			var indices []uint32
+			idxs := []uint32{internalTagIdx}
 			if record.Country.IsoCode != "" {
-				indices = append(indices, getTagIdx(record.Country.IsoCode))
+				idxs = append(idxs, getTagIdx(record.Country.IsoCode))
 			}
 			if record.City.Names != nil {
 				lang := policy.Config["language"]
-				if lang == "" {
-					lang = "en"
-				}
+				if lang == "" { lang = "zh-CN" }
 				if cityName, ok := record.City.Names[lang]; ok && cityName != "" {
-					indices = append(indices, getTagIdx(cityName))
+					idxs = append(idxs, getTagIdx(cityName))
 				} else if cityName, ok := record.City.Names["en"]; ok && cityName != "" {
-					indices = append(indices, getTagIdx(cityName))
+					idxs = append(idxs, getTagIdx(cityName))
 				}
 			}
-			if len(indices) == 0 {
-				indices = append(indices, getTagIdx("unknown"))
+			if len(idxs) == 1 {
+				idxs = append(idxs, getTagIdx("unknown"))
 			}
-			newEntries = append(newEntries, Entry{Prefix: prefix, TagIndices: indices})
+			addEntryToAggregate(prefix, idxs)
+		}
+	} else if policy.Format == "geoip-dat" {
+		targetCode := policy.Config["code"]
+		importAll := targetCode == "" || targetCode == "*" || targetCode == "all"
+
+		data, err := os.ReadFile(tempSrc.Name())
+		if err != nil { return err }
+
+		v2Entries, err := ParseV2RayGeoIP(data, targetCode, importAll)
+		if err != nil { return err }
+
+		for _, e := range v2Entries {
+			addEntryToAggregate(e.Prefix, []uint32{internalTagIdx, getTagIdx(e.CountryCode)})
 		}
 	} else {
-		// 默认 Text 格式
 		data, err := os.ReadFile(tempSrc.Name())
-		if err != nil {
-			return err
-		}
-		
+		if err != nil { return err }
+
 		defaultTag := policy.Config["tag"]
-		if defaultTag == "" {
-			defaultTag = "sync"
-		}
+		if defaultTag == "" { defaultTag = "sync" }
+		extTagIdx := getTagIdx(defaultTag)
 
 		lines := strings.Split(string(data), "\n")
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
-			if line == "" || strings.HasPrefix(line, "#") {
-				continue
-			}
+			if line == "" || strings.HasPrefix(line, "#") { continue }
 			prefix, err := netip.ParsePrefix(line)
 			if err != nil {
 				addr, err := netip.ParseAddr(line)
-				if err != nil {
-					continue
-				}
+				if err != nil { continue }
 				prefix = netip.PrefixFrom(addr, addr.BitLen())
 			}
-			newEntries = append(newEntries, Entry{Prefix: prefix, TagIndices: []uint32{getTagIdx(defaultTag)}})
+			addEntryToAggregate(prefix, []uint32{internalTagIdx, extTagIdx})
 		}
 	}
 
-	if len(newEntries) == 0 {
+	if len(aggregate) == 0 {
 		return fmt.Errorf("no valid IP/CIDR found in source")
 	}
 
-	// 3. 写入目标池 (处理 Overwrite 或 Append)
+	// 3. 写入目标池
 	poolWriteMutex.Lock()
 	defer poolWriteMutex.Unlock()
 
 	group, err := repo.GetGroup(ctx, policy.TargetGroupID)
-	if err != nil {
-		return err
-	}
+	if err != nil { return err }
 
 	_ = common.FS.MkdirAll(PoolsDir, 0755)
 	poolPath := filepath.Join(PoolsDir, policy.TargetGroupID+".bin")
 	tempFile := filepath.Join(PoolsDir, policy.TargetGroupID+".bin.tmp")
 
-	finalEntries := newEntries
-	finalTags := newTags
+	// 处理旧数据合并
+	if exists, _ := afero.Exists(common.FS, poolPath); exists {
+		pf, err := common.FS.Open(poolPath)
+		if err == nil {
+			reader, _ := NewReader(pf)
+			oldTags := reader.Tags()
+			targetInternalTag := strings.ToUpper(policy.ID)
 
-	if policy.Mode == "append" {
-		// 加载旧数据并合并
-		if exists, _ := afero.Exists(common.FS, poolPath); exists {
-			pf, err := common.FS.Open(poolPath)
-			if err == nil {
-				reader, _ := NewReader(pf)
-				// 解析旧 Tags 并建立映射
-				oldTags := reader.Tags()
-				oldToNewIdx := make(map[uint32]uint32)
-				for i, t := range oldTags {
-					oldToNewIdx[uint32(i)] = getTagIdx(t)
+			for {
+				prefix, tagIdxs, err := reader.NextIndices()
+				if err == io.EOF {
+					break
 				}
 
-				for {
-					prefix, tagIdxs, err := reader.NextIndices()
-					if err == io.EOF {
-						break
+				// 检查该条目是否属于当前策略
+				isFromThisPolicy := false
+				var otherTags []string
+				hasOtherPolicy := false
+
+				for _, idx := range tagIdxs {
+					tagName := oldTags[idx]
+					if strings.ToUpper(tagName) == targetInternalTag {
+						isFromThisPolicy = true
+					} else {
+						if strings.HasPrefix(tagName, "_") {
+							hasOtherPolicy = true
+						}
+						otherTags = append(otherTags, tagName)
 					}
-					// 转换为新索引
-					newIdxs := make([]uint32, len(tagIdxs))
-					for i, oldIdx := range tagIdxs {
-						newIdxs[i] = oldToNewIdx[oldIdx]
-					}
-					finalEntries = append(finalEntries, Entry{Prefix: prefix, TagIndices: newIdxs})
 				}
-				pf.Close()
-				finalTags = newTags // 已经更新过的 Tags 列表
+
+				if isFromThisPolicy && policy.Mode == "overwrite" {
+					// 覆盖模式逻辑：
+					if !hasOtherPolicy {
+						// 1. 如果该 CIDR 仅由当前策略维护，则直接跳过（不加入聚合器）
+						// 这样该 CIDR 的旧标签（包括被删除的标签）都会消失
+						continue
+					} else {
+						// 2. 如果该 CIDR 还有其他策略在引用，则仅移除当前策略的 ID
+						// 并将剩余部分加入聚合器，以保护其他策略的数据
+						var remainingIdxs []uint32
+						for _, ot := range otherTags {
+							remainingIdxs = append(remainingIdxs, getTagIdx(ot))
+						}
+						addEntryToAggregate(prefix, remainingIdxs)
+						continue
+					}
+				}
+
+				// 追加模式或非本策略数据：正常转换并加入聚合
+				var convertedIdxs []uint32
+				for _, idx := range tagIdxs {
+					convertedIdxs = append(convertedIdxs, getTagIdx(oldTags[idx]))
+				}
+				addEntryToAggregate(prefix, convertedIdxs)
 			}
+			pf.Close()
 		}
 	}
 
+	// 转换为最终 Entry 列表
+	var finalEntries []Entry
+	for prefix, tagSet := range aggregate {
+		var idxs []uint32
+		for idx := range tagSet {
+			idxs = append(idxs, idx)
+		}
+		finalEntries = append(finalEntries, Entry{Prefix: prefix, TagIndices: idxs})
+	}
+
+	finalTags := newTags
 	// 写入最终文件
 	tf, err := common.FS.Create(tempFile)
 	if err != nil {
@@ -763,4 +903,16 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	group.Checksum = hex.EncodeToString(hf.Sum(nil))
 
 	return repo.SaveGroup(ctx, group)
+}
+
+func generatePolicyID() string {
+	const letters = "abcdefghijklmnopqrstuvwxyz"
+	b := make([]byte, 10)
+	b[0] = '_'
+	rb := make([]byte, 9)
+	_, _ = rand.Read(rb)
+	for i := 0; i < 9; i++ {
+		b[i+1] = letters[rb[i]%uint8(len(letters))]
+	}
+	return string(b)
 }

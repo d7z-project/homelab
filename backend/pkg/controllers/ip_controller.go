@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -67,6 +68,35 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := ipPoolService.CreateGroup(r.Context(), &group); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, group)
+}
+
+// UpdateGroupHandler godoc
+// @Summary Update an IP group
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param id path string true "Group ID"
+// @Param group body models.IPGroup true "IP Group"
+// @Success 200 {object} models.IPGroup
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Group Not Found"
+// @Security ApiKeyAuth
+// @Router /network/ip/pools/{id} [put]
+func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var group models.IPGroup
+	if err := render.Bind(r, &group); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	group.ID = id
+	if err := ipPoolService.UpdateGroup(r.Context(), &group); err != nil {
 		HandleError(w, r, err)
 		return
 	}
@@ -317,12 +347,13 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ManagePoolEntryHandler godoc
-// @Summary Add or update an entry in IP pool
+// @Summary Add or update a tag for a CIDR in IP pool
+// @Description If oldTag is empty, adds newTag. If both provided, renames oldTag to newTag.
 // @Tags network/ip
 // @Accept json
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param entry body models.IPPoolEntryRequest true "IP/CIDR Entry"
+// @Param entry body models.IPPoolEntryRequest true "IP/CIDR Tag Entry"
 // @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
@@ -337,7 +368,12 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := ipPoolService.ManagePoolEntry(r.Context(), id, &req, "add"); err != nil {
+	mode := "add"
+	if len(req.OldTags) > 0 || len(req.NewTags) > 0 {
+		mode = "update"
+	}
+	// 如果是全新添加 CIDR (Old为空，只有New)，ManagePoolEntry 内部已处理为合并模式
+	if err := ipPoolService.ManagePoolEntry(r.Context(), id, &req, mode); err != nil {
 		HandleError(w, r, err)
 		return
 	}
@@ -345,11 +381,12 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeletePoolEntryHandler godoc
-// @Summary Delete an entry from IP pool
+// @Summary Delete an entry or a specific tag from IP pool
 // @Tags network/ip
 // @Produce json
 // @Param id path string true "Group ID"
 // @Param cidr query string true "CIDR or IP to delete"
+// @Param tag query string false "Specific tag to delete (if omitted, deletes entire CIDR if no internal tags present)"
 // @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
@@ -360,11 +397,16 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	cidr := r.URL.Query().Get("cidr")
+	tagsStr := r.URL.Query().Get("tags")
+	var tags []string
+	if tagsStr != "" {
+		tags = strings.Split(tagsStr, ",")
+	}
 	if cidr == "" {
 		common.BadRequestError(w, r, http.StatusBadRequest, "cidr is required")
 		return
 	}
-	req := models.IPPoolEntryRequest{CIDR: cidr}
+	req := models.IPPoolEntryRequest{CIDR: cidr, OldTags: tags}
 	if err := ipPoolService.ManagePoolEntry(r.Context(), id, &req, "delete"); err != nil {
 		HandleError(w, r, err)
 		return
@@ -492,6 +534,7 @@ func IPRouter(r chi.Router) {
 		r.Route("/pools", func(r chi.Router) {
 			r.Get("/", ListGroupsHandler)
 			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateGroupHandler)
+			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateGroupHandler)
 			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteGroupHandler)
 			r.Get("/{id}/preview", PreviewPoolHandler)
 			r.Post("/{id}/entries", ManagePoolEntryHandler)

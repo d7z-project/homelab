@@ -5,12 +5,9 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/ip"
-	"homelab/pkg/services/actions"
-	"homelab/pkg/services/actions/processors"
 	"testing"
 	"time"
 	"net/netip"
-	"os"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/spf13/afero"
@@ -260,24 +257,25 @@ func TestManagePoolEntry(t *testing.T) {
 	_ = service.CreateGroup(ctx, group)
 	common.FS = afero.NewMemMapFs()
 
-	// 1. Add Entry
+	// 1. Add Tag
 	err := service.ManagePoolEntry(ctx, "pool_entries", &models.IPPoolEntryRequest{
-		CIDR: "192.168.1.0/24",
-		Tags: []string{"tag1"},
+		CIDR:    "192.168.1.0/24",
+		NewTags: []string{"tag1"},
 	}, "add")
 	assert.NoError(t, err)
 
-	// 2. Prevent Duplicate
+	// 2. Add another tag to same CIDR
 	err = service.ManagePoolEntry(ctx, "pool_entries", &models.IPPoolEntryRequest{
-		CIDR: "192.168.1.0/24",
-		Tags: []string{"tag2"},
+		CIDR:    "192.168.1.0/24",
+		NewTags: []string{"tag2"},
 	}, "add")
-	assert.ErrorContains(t, err, "already exists")
+	assert.NoError(t, err)
 
-	// 3. Update Entry (Tags)
+	// 3. Update Tag (Rename tag1 to tag3)
 	err = service.ManagePoolEntry(ctx, "pool_entries", &models.IPPoolEntryRequest{
-		CIDR: "192.168.1.0/24",
-		Tags: []string{"tag1", "tag3"},
+		CIDR:    "192.168.1.0/24",
+		OldTags: []string{"tag1"},
+		NewTags: []string{"tag3"},
 	}, "update")
 	assert.NoError(t, err)
 
@@ -285,7 +283,7 @@ func TestManagePoolEntry(t *testing.T) {
 	preview, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "")
 	assert.NoError(t, err)
 	assert.Len(t, preview.Entries, 1)
-	assert.ElementsMatch(t, []string{"tag1", "tag3"}, preview.Entries[0].Tags)
+	assert.ElementsMatch(t, []string{"tag2", "tag3"}, preview.Entries[0].Tags)
 
 	// Verify Search
 	searchPreview, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "tag3")
@@ -296,14 +294,26 @@ func TestManagePoolEntry(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, searchPreviewMiss.Entries, 0)
 
-	// 4. Delete Entry
+	// 4. Delete Tag
 	err = service.ManagePoolEntry(ctx, "pool_entries", &models.IPPoolEntryRequest{
-		CIDR: "192.168.1.0/24",
+		CIDR:    "192.168.1.0/24",
+		OldTags: []string{"tag2"},
 	}, "delete")
 	assert.NoError(t, err)
 
 	preview2, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "")
 	assert.NoError(t, err)
-	assert.Len(t, preview2.Entries, 0)
+	assert.Len(t, preview2.Entries, 1)
+	assert.ElementsMatch(t, []string{"tag3"}, preview2.Entries[0].Tags)
+
+	// 5. Delete Entry Entirely
+	err = service.ManagePoolEntry(ctx, "pool_entries", &models.IPPoolEntryRequest{
+		CIDR: "192.168.1.0/24",
+	}, "delete")
+	assert.NoError(t, err)
+
+	preview3, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "")
+	assert.NoError(t, err)
+	assert.Len(t, preview3.Entries, 0)
 }
 

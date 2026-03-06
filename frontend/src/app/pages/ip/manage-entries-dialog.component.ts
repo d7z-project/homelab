@@ -11,9 +11,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDividerModule } from '@angular/material/divider';
 import { NetworkIpService, ModelsIPGroup, ModelsIPPoolEntry } from '../../generated';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-manage-entries-dialog',
@@ -31,125 +33,200 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     MatToolbarModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatDividerModule,
   ],
   template: `
-    <div class="flex flex-col h-full bg-surface">
-      <mat-toolbar color="primary" class="shrink-0 flex justify-between px-4">
-        <div class="flex items-center gap-4">
-          <button mat-icon-button mat-dialog-close>
+    <div class="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
+      <!-- Header -->
+      <div class="bg-surface px-4 py-2 border-b border-outline-variant flex items-center justify-between shrink-0 h-16">
+        <div class="flex items-center gap-3">
+          <button mat-icon-button mat-dialog-close matTooltip="关闭">
             <mat-icon>arrow_back</mat-icon>
           </button>
-          <span class="text-lg font-medium">管理池数据 - {{ data.pool.name }}</span>
+          <div class="flex flex-col">
+            <span class="text-base font-bold text-primary leading-tight">管理池数据</span>
+            <span class="text-[11px] text-outline opacity-70">{{ data.pool.name }}</span>
+          </div>
         </div>
-      </mat-toolbar>
-
-      <div class="flex-1 flex flex-col overflow-hidden relative p-4 sm:p-6 max-w-7xl mx-auto w-full">
-        <!-- Top Form for adding/updating -->
-        <div class="p-6 bg-surface-container-low border border-outline-variant/30 rounded-2xl shrink-0 mb-6 shadow-sm">
-          <h3 class="text-sm font-bold uppercase tracking-widest text-primary mb-4">{{ isEditMode() ? '修改记录标签' : '添加新记录' }}</h3>
-          <form [formGroup]="form" class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <mat-form-field appearance="outline" class="w-full sm:w-64">
-              <mat-label>IP 或 CIDR</mat-label>
-              <input matInput formControlName="cidr" placeholder="如 192.168.1.1/32" [readonly]="isEditMode()" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="flex-1 w-full">
-              <mat-label>标签 (Tags)</mat-label>
-              <input matInput formControlName="tags" placeholder="逗号分隔，例如：cn, malicious" />
-            </mat-form-field>
-
-            <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-              @if (isEditMode()) {
-                <button mat-button type="button" (click)="cancelEdit()">取消</button>
-              }
-              <button mat-flat-button color="primary" class="flex-1 sm:flex-none h-[56px]" [disabled]="form.invalid || submitting()" (click)="submit()">
-                {{ isEditMode() ? '保存修改' : '添加' }}
-              </button>
-            </div>
-          </form>
+        <div class="flex items-center gap-2">
+           @if (loading()) {
+             <mat-spinner diameter="20"></mat-spinner>
+           }
+           <button mat-button color="primary" (click)="loadEntries(true)">
+             <mat-icon class="mr-1">refresh</mat-icon>刷新
+           </button>
         </div>
+      </div>
 
-        <!-- Search Bar -->
-        <div class="mb-4">
-          <mat-form-field appearance="outline" class="w-full sm:w-96">
-            <mat-label>搜索 IP/CIDR 或 标签</mat-label>
-            <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)" placeholder="输入关键字..." />
-            <mat-icon matPrefix>search</mat-icon>
-          </mat-form-field>
-        </div>
-
-        <!-- List -->
-        <div class="flex-1 overflow-auto border border-outline-variant/30 rounded-xl relative bg-surface" #scrollContainer (scroll)="onScroll($event)">
-          @if (loading() && entries().length === 0) {
-            <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-surface/80 gap-4">
-              <mat-spinner diameter="40"></mat-spinner>
-              <span class="text-outline text-sm">正在加载数据...</span>
-            </div>
-          }
-          <table mat-table [dataSource]="entries()" class="w-full">
-            <ng-container matColumnDef="cidr">
-              <th mat-header-cell *matHeaderCellDef class="font-bold">IP/CIDR</th>
-              <td mat-cell *matCellDef="let element" class="font-mono text-sm">{{ element.cidr }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="tags">
-              <th mat-header-cell *matHeaderCellDef class="font-bold">标签</th>
-              <td mat-cell *matCellDef="let element">
-                <div class="flex flex-wrap gap-1.5 py-2">
-                  @for (t of element.tags; track t) {
-                    <span class="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-xs font-medium">{{ t }}</span>
-                  }
-                  @if (!element.tags || element.tags.length === 0) {
-                    <span class="text-outline/50 text-xs italic">无标签</span>
-                  }
-                </div>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="w-[120px] font-bold">操作</th>
-              <td mat-cell *matCellDef="let element">
-                <button mat-icon-button color="primary" (click)="editEntry(element)" matTooltip="修改标签">
-                  <mat-icon class="!text-sm">edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="deleteEntry(element)" matTooltip="删除记录">
-                  <mat-icon class="!text-sm">delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="['cidr', 'tags', 'actions']; sticky: true" class="bg-surface-container-low"></tr>
-            <tr mat-row *matRowDef="let row; columns: ['cidr', 'tags', 'actions'];" class="hover:bg-on-surface/5 transition-colors"></tr>
-            
-            <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell p-12 text-center text-outline" colspan="3">
-                <div class="flex flex-col items-center gap-3">
-                  <mat-icon class="!text-4xl opacity-20">find_in_page</mat-icon>
-                  <span>暂无匹配的数据</span>
-                </div>
-              </td>
-            </tr>
-          </table>
+      <div class="flex-1 overflow-y-auto">
+        <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
           
-          @if (loadingMore()) {
-            <div class="py-4 flex justify-center">
-              <mat-spinner diameter="30"></mat-spinner>
+          <!-- Add/Edit Form Card -->
+          <div class="p-6 bg-surface border border-outline-variant rounded-3xl shadow-sm animate-in slide-in-from-top-4 duration-300">
+            <div class="flex items-center gap-2 mb-6 text-primary">
+              <mat-icon class="!w-5 !h-5 !text-[20px]">{{ isEditMode() ? 'edit' : 'add_circle_outline' }}</mat-icon>
+              <h3 class="text-sm font-bold uppercase tracking-widest">{{ isEditMode() ? '修改标签' : '添加记录 / 标签' }}</h3>
             </div>
-          }
-          @if (!hasMore() && entries().length > 0) {
-            <div class="py-4 text-center text-xs text-outline/50">
-              已加载全部数据
+            
+            <form [formGroup]="form" class="grid grid-cols-1 md:grid-cols-[280px_1fr_auto] gap-4 items-start">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>IP 或 CIDR</mat-label>
+                <input matInput formControlName="cidr" placeholder="如 192.168.1.1/32" [readonly]="isEditMode()" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>标签 (用逗号分隔多个标签)</mat-label>
+                <input matInput formControlName="tags" placeholder="例如：cn, web, office" />
+                <mat-hint>下划线开头的标签为系统保留，不可在此添加或修改</mat-hint>
+                <mat-error *ngIf="form.get('tags')?.hasError('internalTag')">
+                  标签不能以下划线 '_' 开头
+                </mat-error>
+              </mat-form-field>
+
+              <div class="flex gap-2">
+                @if (isEditMode()) {
+                  <button mat-button type="button" (click)="cancelEdit()" class="h-14 px-6 !rounded-2xl">取消</button>
+                }
+                <button mat-flat-button color="primary" class="h-14 px-8 !rounded-2xl shadow-sm" [disabled]="form.invalid || submitting()" (click)="submit()">
+                  <div class="flex items-center gap-2">
+                    <mat-spinner *ngIf="submitting()" diameter="20" color="accent"></mat-spinner>
+                    <span>{{ isEditMode() ? '保存修改' : '确认添加' }}</span>
+                  </div>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Data List Card -->
+          <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm flex flex-col">
+            <!-- Table Toolbar -->
+            <div class="p-4 bg-surface-container-low border-b border-outline-variant flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-4 flex-1">
+                <mat-form-field appearance="outline" class="w-full sm:w-80 search-field-m3" subscriptSizing="dynamic">
+                  <mat-label>搜索 IP 或 标签</mat-label>
+                  <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)" placeholder="输入关键字..." />
+                  <mat-icon matPrefix class="mr-2 opacity-60">search</mat-icon>
+                </mat-form-field>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider">
+                  共 {{ data.pool.entryCount }} 条
+                </span>
+              </div>
             </div>
-          }
+
+            <!-- Table Container -->
+            <div class="overflow-auto max-h-[50vh] border-t border-outline-variant/10" #scrollContainer (scroll)="onScroll($event)">
+              <table mat-table [dataSource]="entries()" class="w-full">
+                <ng-container matColumnDef="cidr">
+                  <th mat-header-cell *matHeaderCellDef class="!pl-6 bg-surface-container-low font-bold text-primary">IP/CIDR 地址</th>
+                  <td mat-cell *matCellDef="let element" class="!pl-6 py-4">
+                    <a class="font-mono text-sm tracking-tight text-primary hover:underline cursor-pointer flex items-center gap-1"
+                       (click)="goToAnalysis(element.cidr)"
+                       matTooltip="点击在统一研判实验室中分析此地址">
+                      <mat-icon class="!w-3 !h-3 !text-[12px]">biotech</mat-icon>
+                      {{ element.cidr }}
+                    </a>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="tags">
+                  <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-primary">关联标签</th>
+                  <td mat-cell *matCellDef="let element" class="py-4">
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (t of element.tags; track t) {
+                        <span class="px-2.5 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tighter"
+                              [class.bg-primary/10]="!t.startsWith('_')"
+                              [class.border-primary/20]="!t.startsWith('_')"
+                              [class.text-primary]="!t.startsWith('_')"
+                              [class.bg-surface-container-high]="t.startsWith('_')"
+                              [class.text-outline]="t.startsWith('_')"
+                              [class.border-outline-variant]="t.startsWith('_')"
+                              [matTooltip]="t.startsWith('_') ? '系统保留标签' : ''">
+                          {{ t }}
+                        </span>
+                      }
+                      @if (!element.tags || element.tags.length === 0) {
+                        <span class="text-outline/30 text-[10px] italic">未设置标签</span>
+                      }
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef class="!pr-6 bg-surface-container-low font-bold text-primary text-right">管理</th>
+                  <td mat-cell *matCellDef="let element" class="!pr-6 text-right py-4">
+                    <div class="flex justify-end gap-1">
+                      <button mat-icon-button (click)="editEntry(element)" matTooltip="修改标签内容">
+                        <mat-icon class="!text-[18px]">edit_note</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="deleteEntry(element)" matTooltip="永久删除 (含内部标签记录不可删除)"
+                              [disabled]="hasInternalTags(element)">
+                        <mat-icon class="!text-[18px]">delete_sweep</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="['cidr', 'tags', 'actions']; sticky: true" class="bg-surface-container-low"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['cidr', 'tags', 'actions'];" class="hover:bg-surface-container-low/50 transition-colors"></tr>
+                
+                <tr class="mat-mdc-row" *matNoDataRow>
+                  <td class="mat-mdc-cell p-16 text-center text-outline opacity-40 italic" colspan="3">
+                    <div class="flex flex-col items-center gap-2">
+                      <mat-icon class="!text-6xl mb-2">inventory_2</mat-icon>
+                      <span>暂无匹配的 IP 记录数据</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              
+              @if (loadingMore()) {
+                <div class="p-8 flex justify-center border-t border-outline-variant/20">
+                  <mat-spinner diameter="24"></mat-spinner>
+                </div>
+              }
+              @if (!hasMore() && entries().length > 0) {
+                <div class="p-8 text-center bg-surface-container-lowest/30 border-t border-outline-variant/20">
+                  <div class="flex items-center justify-center gap-2 text-[11px] text-outline font-bold uppercase tracking-widest">
+                    <mat-icon class="!w-4 !h-4 !text-[14px]">done_all</mat-icon>
+                    已加载全部 {{ entries().length }} 条数据
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    :host { display: block; height: 100%; }
+    .search-field-m3 {
+      ::ng-deep .mdc-text-field--filled {
+        background-color: transparent !important;
+      }
+      ::ng-deep .mdc-line-ripple {
+        display: none;
+      }
+      ::ng-deep .mat-mdc-text-field-wrapper {
+        padding-bottom: 0;
+      }
+    }
+    ::ng-deep .mat-mdc-header-row {
+      background-color: var(--mat-sys-surface-container-low) !important;
+      z-index: 10;
+    }
+    ::ng-deep .mat-mdc-header-cell {
+      background-color: inherit !important;
+    }
+  `]
 })
 export class ManageEntriesDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private ipService = inject(NetworkIpService);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
   entries = signal<ModelsIPPoolEntry[]>([]);
   loading = signal(false);
@@ -165,8 +242,17 @@ export class ManageEntriesDialogComponent implements OnInit {
 
   form = this.fb.group({
     cidr: ['', Validators.required],
-    tags: ['']
+    tags: ['', [Validators.required, (control: any) => {
+      const val = control.value || '';
+      const tags = val.split(',').map((t: string) => t.trim().toLowerCase());
+      if (tags.some((t: string) => t.startsWith('_'))) {
+        return { internalTag: true };
+      }
+      return null;
+    }]]
   });
+
+  private originalUserTags: string[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<ManageEntriesDialogComponent>,
@@ -226,18 +312,33 @@ export class ManageEntriesDialogComponent implements OnInit {
     if (target.scrollHeight - target.scrollTop - target.clientHeight < 100) {
       this.loadEntries();
     }
-  }
+    }
 
-  editEntry(entry: ModelsIPPoolEntry) {
-    this.isEditMode.set(true);
-    this.form.patchValue({
-      cidr: entry.cidr,
-      tags: (entry.tags || []).join(', ')
-    });
-  }
+    goToAnalysis(cidr: string) {
+    // 提取 IP 部分，如果有掩码则去掉
+    const ip = cidr.includes('/') ? cidr.split('/')[0] : cidr;
+    this.dialogRef.close();
+    this.router.navigate(['/network/analysis'], { queryParams: { q: ip } });
+    }
+
+    editEntry(entry: ModelsIPPoolEntry) {
+      this.isEditMode.set(true);
+      this.originalUserTags = (entry.tags || []).filter(t => !t.startsWith('_'));
+      this.form.patchValue({
+        cidr: entry.cidr,
+        tags: this.originalUserTags.join(', ')
+      });
+    }
+
+    editTag(entry: ModelsIPPoolEntry, tag: string) {
+      // 这种模式下，编辑单个标签实际上也是编辑该行所有非内部标签
+      this.editEntry(entry);
+    }
+
 
   cancelEdit() {
     this.isEditMode.set(false);
+    this.originalUserTags = [];
     this.form.reset();
   }
 
@@ -246,9 +347,13 @@ export class ManageEntriesDialogComponent implements OnInit {
     this.submitting.set(true);
 
     const val = this.form.value;
-    const tags = val.tags ? val.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+    const newTags = val.tags ? val.tags.split(',').map(t => t.trim().toLowerCase()).filter(t => t) : [];
 
-    this.ipService.networkIpPoolsIdEntriesPost(this.data.pool.id!, { cidr: val.cidr!, tags }).subscribe({
+    this.ipService.networkIpPoolsIdEntriesPost(this.data.pool.id!, { 
+      cidr: val.cidr!, 
+      oldTags: this.isEditMode() ? this.originalUserTags : undefined,
+      newTags: newTags 
+    }).subscribe({
       next: () => {
         this.snackBar.open(this.isEditMode() ? '修改成功' : '添加成功', '关闭', { duration: 2000 });
         this.cancelEdit();
@@ -263,7 +368,7 @@ export class ManageEntriesDialogComponent implements OnInit {
   }
 
   deleteEntry(entry: ModelsIPPoolEntry) {
-    if (!confirm(`确定要删除 ${entry.cidr} 吗？`)) return;
+    if (!confirm(`确定要彻底删除 ${entry.cidr} 吗？`)) return;
     
     this.submitting.set(true);
     this.ipService.networkIpPoolsIdEntriesDelete(this.data.pool.id!, entry.cidr!).subscribe({
@@ -277,5 +382,9 @@ export class ManageEntriesDialogComponent implements OnInit {
         this.submitting.set(false);
       }
     });
+  }
+
+  hasInternalTags(entry: ModelsIPPoolEntry): boolean {
+    return (entry.tags || []).some(t => t.startsWith('_'));
   }
 }

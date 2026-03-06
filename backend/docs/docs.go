@@ -2631,6 +2631,73 @@ const docTemplate = `{
             }
         },
         "/network/ip/pools/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Update an IP group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "IP Group",
+                        "name": "group",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IPGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IPGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Group Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -2688,6 +2755,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "If oldTag is empty, adds newTag. If both provided, renames oldTag to newTag.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2697,7 +2765,7 @@ const docTemplate = `{
                 "tags": [
                     "network/ip"
                 ],
-                "summary": "Add or update an entry in IP pool",
+                "summary": "Add or update a tag for a CIDR in IP pool",
                 "parameters": [
                     {
                         "type": "string",
@@ -2707,7 +2775,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "IP/CIDR Entry",
+                        "description": "IP/CIDR Tag Entry",
                         "name": "entry",
                         "in": "body",
                         "required": true,
@@ -2761,7 +2829,7 @@ const docTemplate = `{
                 "tags": [
                     "network/ip"
                 ],
-                "summary": "Delete an entry from IP pool",
+                "summary": "Delete an entry or a specific tag from IP pool",
                 "parameters": [
                     {
                         "type": "string",
@@ -2776,6 +2844,12 @@ const docTemplate = `{
                         "name": "cidr",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specific tag to delete (if omitted, deletes entire CIDR if no internal tags present)",
+                        "name": "tag",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4894,7 +4968,13 @@ const docTemplate = `{
                 "cidr": {
                     "type": "string"
                 },
-                "tags": {
+                "newTags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "oldTags": {
                     "type": "array",
                     "items": {
                         "type": "string"

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/netip"
 	"path/filepath"
+	"slices"
 	"sync"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -98,6 +99,9 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 		}
 		prefix, tags, ok := trie.Lookup(ip)
 		if ok {
+			// 去重
+			slices.Sort(tags)
+			tags = slices.Compact(tags)
 			return &models.IPAnalysisResult{
 				Matched: true,
 				CIDR:    prefix.String(),

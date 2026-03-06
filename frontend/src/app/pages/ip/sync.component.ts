@@ -18,12 +18,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateSyncPolicyDialogComponent } from './create-sync-policy-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkIpService, ModelsIPSyncPolicy } from '../../generated';
+import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../generated';
 
 @Component({
   selector: 'app-ip-sync',
@@ -64,6 +65,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private breakpointObserver = inject(BreakpointObserver);
+  private router = inject(Router);
   public uiService = inject(UiService);
 
   private scrollListener?: () => void;
@@ -75,7 +77,9 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   loading = signal(false);
   loadingMore = signal(false);
+  syncingRows = signal<Record<string, boolean>>({}); // Track per-row syncing
   policies = signal<ModelsIPSyncPolicy[]>([]);
+  groups = signal<Map<string, string>>(new Map()); // ID -> Name
   search = signal('');
   page = signal(1);
   pageSize = signal(20);
@@ -89,11 +93,11 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   );
 
   hasSearchContent = computed(() => this.search().length > 0);
-
   hasMore = computed(() => this.policies().length < this.total());
 
   ngOnInit() {
     this.uiService.configureToolbar({ shadow: false });
+    this.loadGroups();
     this.loadPolicies(true);
     this.setupScrollListener();
   }
@@ -131,6 +135,32 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     }
   }
 
+  loadGroups() {
+    this.ipService.networkIpPoolsGet(1, 1000).subscribe({
+      next: (res) => {
+        const m = new Map<string, string>();
+        (res.items || []).forEach(g => m.set(g.id || '', g.name || ''));
+        this.groups.set(m);
+      }
+    });
+  }
+
+  getGroupName(id?: string) {
+    if (!id) return '未知池';
+    return this.groups().get(id) || id;
+  }
+
+  goToPool(id?: string) {
+    if (!id) return;
+    const name = this.groups().get(id);
+    this.router.navigate(['/network/ip'], {
+      queryParams: {
+        tab: 'pool',
+        search: name || id
+      }
+    });
+  }
+
   openSearch() {
     this.uiService.openSearch({
       placeholder: '搜索策略名称或 ID...',
@@ -146,6 +176,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   async loadPolicies(reset = false) {
     if (reset) {
       this.loading.set(true);
+      this.page.set(1);
     } else {
       this.loadingMore.set(true);
     }
@@ -230,7 +261,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   async triggerSync(policy: ModelsIPSyncPolicy) {
     if (!policy.id) return;
-    this.loading.set(true);
+    this.syncingRows.update(s => ({ ...s, [policy.id!]: true }));
     try {
       await firstValueFrom(this.ipService.networkIpSyncIdTriggerPost(policy.id));
       this.snackBar.open('同步任务已触发', '关闭', { duration: 2000 });
@@ -238,7 +269,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     } catch (err: any) {
       this.snackBar.open(`同步失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
     } finally {
-      this.loading.set(false);
+      this.syncingRows.update(s => ({ ...s, [policy.id!]: false }));
     }
   }
 }

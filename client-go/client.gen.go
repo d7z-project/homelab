@@ -294,8 +294,9 @@ type ModelsIPPoolEntry struct {
 
 // ModelsIPPoolEntryRequest defines model for models.IPPoolEntryRequest.
 type ModelsIPPoolEntryRequest struct {
-	Cidr *string   `json:"cidr,omitempty"`
-	Tags *[]string `json:"tags,omitempty"`
+	Cidr    *string   `json:"cidr,omitempty"`
+	NewTags *[]string `json:"newTags,omitempty"`
+	OldTags *[]string `json:"oldTags,omitempty"`
 }
 
 // ModelsIPPoolPreviewResponse defines model for models.IPPoolPreviewResponse.
@@ -849,6 +850,9 @@ type GetNetworkIpPoolsParams struct {
 type DeleteNetworkIpPoolsIdEntriesParams struct {
 	// Cidr CIDR or IP to delete
 	Cidr string `form:"cidr" json:"cidr"`
+
+	// Tag Specific tag to delete (if omitted, deletes entire CIDR if no internal tags present)
+	Tag *string `form:"tag,omitempty" json:"tag,omitempty"`
 }
 
 // GetNetworkIpPoolsIdPreviewParams defines parameters for GetNetworkIpPoolsIdPreview.
@@ -1021,6 +1025,9 @@ type PostNetworkIpExportsJSONRequestBody = ModelsIPExport
 
 // PostNetworkIpPoolsJSONRequestBody defines body for PostNetworkIpPools for application/json ContentType.
 type PostNetworkIpPoolsJSONRequestBody = ModelsIPGroup
+
+// PutNetworkIpPoolsIdJSONRequestBody defines body for PutNetworkIpPoolsId for application/json ContentType.
+type PutNetworkIpPoolsIdJSONRequestBody = ModelsIPGroup
 
 // PostNetworkIpPoolsIdEntriesJSONRequestBody defines body for PostNetworkIpPoolsIdEntries for application/json ContentType.
 type PostNetworkIpPoolsIdEntriesJSONRequestBody = ModelsIPPoolEntryRequest
@@ -1322,6 +1329,11 @@ type ClientInterface interface {
 
 	// DeleteNetworkIpPoolsId request
 	DeleteNetworkIpPoolsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutNetworkIpPoolsIdWithBody request with any body
+	PutNetworkIpPoolsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutNetworkIpPoolsId(ctx context.Context, id string, body PutNetworkIpPoolsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteNetworkIpPoolsIdEntries request
 	DeleteNetworkIpPoolsIdEntries(ctx context.Context, id string, params *DeleteNetworkIpPoolsIdEntriesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2257,6 +2269,30 @@ func (c *Client) PostNetworkIpPools(ctx context.Context, body PostNetworkIpPools
 
 func (c *Client) DeleteNetworkIpPoolsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteNetworkIpPoolsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkIpPoolsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkIpPoolsIdRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutNetworkIpPoolsId(ctx context.Context, id string, body PutNetworkIpPoolsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutNetworkIpPoolsIdRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5116,6 +5152,53 @@ func NewDeleteNetworkIpPoolsIdRequest(server string, id string) (*http.Request, 
 	return req, nil
 }
 
+// NewPutNetworkIpPoolsIdRequest calls the generic PutNetworkIpPoolsId builder with application/json body
+func NewPutNetworkIpPoolsIdRequest(server string, id string, body PutNetworkIpPoolsIdJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutNetworkIpPoolsIdRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPutNetworkIpPoolsIdRequestWithBody generates requests for PutNetworkIpPoolsId with any type of body
+func NewPutNetworkIpPoolsIdRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/ip/pools/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewDeleteNetworkIpPoolsIdEntriesRequest generates requests for DeleteNetworkIpPoolsIdEntries
 func NewDeleteNetworkIpPoolsIdEntriesRequest(server string, id string, params *DeleteNetworkIpPoolsIdEntriesParams) (*http.Request, error) {
 	var err error
@@ -5155,6 +5238,22 @@ func NewDeleteNetworkIpPoolsIdEntriesRequest(server string, id string, params *D
 					queryValues.Add(k, v2)
 				}
 			}
+		}
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "tag", *params.Tag, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
 		}
 
 		queryURL.RawQuery = queryValues.Encode()
@@ -7219,6 +7318,11 @@ type ClientWithResponsesInterface interface {
 	// DeleteNetworkIpPoolsIdWithResponse request
 	DeleteNetworkIpPoolsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteNetworkIpPoolsIdResponse, error)
 
+	// PutNetworkIpPoolsIdWithBodyWithResponse request with any body
+	PutNetworkIpPoolsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkIpPoolsIdResponse, error)
+
+	PutNetworkIpPoolsIdWithResponse(ctx context.Context, id string, body PutNetworkIpPoolsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkIpPoolsIdResponse, error)
+
 	// DeleteNetworkIpPoolsIdEntriesWithResponse request
 	DeleteNetworkIpPoolsIdEntriesWithResponse(ctx context.Context, id string, params *DeleteNetworkIpPoolsIdEntriesParams, reqEditors ...RequestEditorFn) (*DeleteNetworkIpPoolsIdEntriesResponse, error)
 
@@ -8609,6 +8713,32 @@ func (r DeleteNetworkIpPoolsIdResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteNetworkIpPoolsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutNetworkIpPoolsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsIPGroup
+	JSON400      *CommonResponse
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PutNetworkIpPoolsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutNetworkIpPoolsIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10080,6 +10210,23 @@ func (c *ClientWithResponses) DeleteNetworkIpPoolsIdWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseDeleteNetworkIpPoolsIdResponse(rsp)
+}
+
+// PutNetworkIpPoolsIdWithBodyWithResponse request with arbitrary body returning *PutNetworkIpPoolsIdResponse
+func (c *ClientWithResponses) PutNetworkIpPoolsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutNetworkIpPoolsIdResponse, error) {
+	rsp, err := c.PutNetworkIpPoolsIdWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkIpPoolsIdResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutNetworkIpPoolsIdWithResponse(ctx context.Context, id string, body PutNetworkIpPoolsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutNetworkIpPoolsIdResponse, error) {
+	rsp, err := c.PutNetworkIpPoolsId(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutNetworkIpPoolsIdResponse(rsp)
 }
 
 // DeleteNetworkIpPoolsIdEntriesWithResponse request returning *DeleteNetworkIpPoolsIdEntriesResponse
@@ -12651,6 +12798,60 @@ func ParseDeleteNetworkIpPoolsIdResponse(rsp *http.Response) (*DeleteNetworkIpPo
 	return response, nil
 }
 
+// ParsePutNetworkIpPoolsIdResponse parses an HTTP response from a PutNetworkIpPoolsIdWithResponse call
+func ParsePutNetworkIpPoolsIdResponse(rsp *http.Response) (*PutNetworkIpPoolsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutNetworkIpPoolsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsIPGroup
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDeleteNetworkIpPoolsIdEntriesResponse parses an HTTP response from a DeleteNetworkIpPoolsIdEntriesWithResponse call
 func ParseDeleteNetworkIpPoolsIdEntriesResponse(rsp *http.Response) (*DeleteNetworkIpPoolsIdEntriesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -14223,10 +14424,13 @@ type ServerInterface interface {
 	// Delete an IP group
 	// (DELETE /network/ip/pools/{id})
 	DeleteNetworkIpPoolsId(w http.ResponseWriter, r *http.Request, id string)
-	// Delete an entry from IP pool
+	// Update an IP group
+	// (PUT /network/ip/pools/{id})
+	PutNetworkIpPoolsId(w http.ResponseWriter, r *http.Request, id string)
+	// Delete an entry or a specific tag from IP pool
 	// (DELETE /network/ip/pools/{id}/entries)
 	DeleteNetworkIpPoolsIdEntries(w http.ResponseWriter, r *http.Request, id string, params DeleteNetworkIpPoolsIdEntriesParams)
-	// Add or update an entry in IP pool
+	// Add or update a tag for a CIDR in IP pool
 	// (POST /network/ip/pools/{id}/entries)
 	PostNetworkIpPoolsIdEntries(w http.ResponseWriter, r *http.Request, id string)
 	// Preview IP pool data (cursor-based)
@@ -15916,6 +16120,37 @@ func (siw *ServerInterfaceWrapper) DeleteNetworkIpPoolsId(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// PutNetworkIpPoolsId operation middleware
+func (siw *ServerInterfaceWrapper) PutNetworkIpPoolsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutNetworkIpPoolsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteNetworkIpPoolsIdEntries operation middleware
 func (siw *ServerInterfaceWrapper) DeleteNetworkIpPoolsIdEntries(w http.ResponseWriter, r *http.Request) {
 
@@ -15951,6 +16186,14 @@ func (siw *ServerInterfaceWrapper) DeleteNetworkIpPoolsIdEntries(w http.Response
 	err = runtime.BindQueryParameterWithOptions("form", true, true, "cidr", r.URL.Query(), &params.Cidr, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cidr", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "tag" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tag", r.URL.Query(), &params.Tag, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tag", Err: err})
 		return
 	}
 
@@ -17297,6 +17540,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/network/ip/pools", wrapper.GetNetworkIpPools)
 	m.HandleFunc("POST "+options.BaseURL+"/network/ip/pools", wrapper.PostNetworkIpPools)
 	m.HandleFunc("DELETE "+options.BaseURL+"/network/ip/pools/{id}", wrapper.DeleteNetworkIpPoolsId)
+	m.HandleFunc("PUT "+options.BaseURL+"/network/ip/pools/{id}", wrapper.PutNetworkIpPoolsId)
 	m.HandleFunc("DELETE "+options.BaseURL+"/network/ip/pools/{id}/entries", wrapper.DeleteNetworkIpPoolsIdEntries)
 	m.HandleFunc("POST "+options.BaseURL+"/network/ip/pools/{id}/entries", wrapper.PostNetworkIpPoolsIdEntries)
 	m.HandleFunc("GET "+options.BaseURL+"/network/ip/pools/{id}/preview", wrapper.GetNetworkIpPoolsIdPreview)

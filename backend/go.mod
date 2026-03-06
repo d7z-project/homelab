@@ -1,6 +1,6 @@
 module homelab
 
-go 1.25.0
+go 1.25.5
 
 require (
 	github.com/expr-lang/expr v1.17.8
@@ -18,6 +18,7 @@ require (
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	golang.org/x/net v0.51.0
+	google.golang.org/protobuf v1.36.11
 	gopkg.d7z.net/middleware v0.0.0-20260301154024-86fede29c31d
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -65,7 +66,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/grpc v1.79.1 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 

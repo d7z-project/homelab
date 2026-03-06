@@ -11,7 +11,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-var idRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+var idRegex = regexp.MustCompile(`^[a-z0-9_\-]+$`)
 
 // IPSyncPolicy 代表一个 IP 数据同步策略
 type IPSyncPolicy struct {
@@ -89,10 +89,11 @@ func (g *IPGroup) Bind(r *http.Request) error {
 	return nil
 }
 
-// IPPoolEntryRequest 用于新增、修改、删除 IP/CIDR 条目的请求体
+// IPPoolEntryRequest 用于新增、修改、删除 IP/CIDR 标签的请求体
 type IPPoolEntryRequest struct {
-	CIDR string   `json:"cidr"`
-	Tags []string `json:"tags"`
+	CIDR    string   `json:"cidr"`
+	OldTags []string `json:"oldTags,omitempty"`
+	NewTags []string `json:"newTags,omitempty"`
 }
 
 func (req *IPPoolEntryRequest) Bind(r *http.Request) error {
@@ -100,9 +101,15 @@ func (req *IPPoolEntryRequest) Bind(r *http.Request) error {
 	if req.CIDR == "" {
 		return errors.New("cidr is required")
 	}
-	// 简单的清理
-	for i, t := range req.Tags {
-		req.Tags[i] = strings.ToLower(strings.TrimSpace(t))
+	for i, t := range req.NewTags {
+		t = strings.ToLower(strings.TrimSpace(t))
+		if strings.HasPrefix(t, "_") {
+			return fmt.Errorf("tag '%s' is invalid: tags starting with '_' are reserved for internal use", t)
+		}
+		req.NewTags[i] = t
+	}
+	for i, t := range req.OldTags {
+		req.OldTags[i] = strings.ToLower(strings.TrimSpace(t))
 	}
 	return nil
 }
