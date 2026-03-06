@@ -425,7 +425,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   isValid() {
     if (this.editMode() === 'visual') {
-      return this.infoForm.valid && this.steps.length > 0;
+      return this.infoForm.valid && this.vars.valid && this.steps.valid && this.steps.length > 0;
     }
     if (!this.yamlCode.trim()) return false;
     try {
@@ -539,8 +539,11 @@ export class CreateWorkflowDialogComponent implements OnInit {
   }
 
   getCurrentWorkflow(): ModelsWorkflow {
+    const workflowValue = { ...this.infoForm.value };
     const varsMap: { [key: string]: ModelsVarDefinition } = {};
-    this.vars.value.forEach((v: any) => {
+    
+    this.vars.controls.forEach((control) => {
+      const v = control.value;
       if (v.key) {
         varsMap[v.key] = {
           description: v.description,
@@ -551,12 +554,41 @@ export class CreateWorkflowDialogComponent implements OnInit {
         };
       }
     });
-    return {
-      ...this.infoForm.value,
-      vars: varsMap,
-      steps: this.steps.value,
+
+    const steps = this.steps.controls.map((control) => {
+      const s = { ...control.value };
+      if (!s.id || !s.id.trim()) {
+        s.id = this.generateRandomId();
+        control.get('id')?.setValue(s.id);
+      }
+      return s;
+    });
+
+    const workflow: ModelsWorkflow = {
+      ...workflowValue,
+      vars: Object.keys(varsMap).length > 0 ? varsMap : undefined,
+      steps: steps,
       id: this.data.workflow?.id
     };
+
+    return this.cleanObject(workflow);
+  }
+
+  private cleanObject(obj: any): any {
+    if (Array.isArray(obj)) {
+      const arr = obj.map(v => this.cleanObject(v)).filter(v => v !== null && v !== undefined);
+      return arr.length > 0 ? arr : undefined;
+    } else if (obj !== null && typeof obj === 'object') {
+      const entries = Object.entries(obj)
+        .map(([k, v]) => [k, this.cleanObject(v)])
+        .filter(([_, v]) => v !== null && v !== undefined && v !== '');
+      return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+    }
+    return obj;
+  }
+
+  private generateRandomId(prefix = 'step_'): string {
+    return prefix + Math.random().toString(36).substring(2, 8);
   }
 
   applyWorkflowToForms(wf: ModelsWorkflow) {
@@ -589,7 +621,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
     if (wf.steps) {
       wf.steps.forEach((s, idx) => {
         this.steps.push(this.fb.group({
-          id: [s.id, [Validators.required, Validators.pattern(/^[a-z0-9_]+$/)]],
+          id: [s.id || this.generateRandomId(), [Validators.required, Validators.pattern(/^[a-z0-9_]+$/)]],
           type: [s.type, Validators.required],
           name: [s.name || ''],
           if: [s.if || ''],
@@ -638,7 +670,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
   addStep() {
     const idx = this.steps.length;
     this.steps.push(this.fb.group({
-      id: ['', [Validators.required, Validators.pattern(/^[a-z0-9_]+$/)]],
+      id: [this.generateRandomId(), [Validators.required, Validators.pattern(/^[a-z0-9_]+$/)]],
       type: ['', Validators.required],
       name: [''],
       if: [''],
@@ -702,21 +734,25 @@ export class CreateWorkflowDialogComponent implements OnInit {
   }
 
   getOutputReferences(currentIndex: number) {
-    const refs: string[] = [];
-    this.vars.value.forEach((v: any) => { if (v.key) refs.push(`\${{ vars.${v.key} }}`); });
-    for (let i = 0; i < currentIndex; i++) {
+    const varRefs = this.vars.value
+      .filter((v: any) => v.key)
+      .map((v: any) => `\${{ vars.${v.key} }}`);
+
+    const stepRefs = Array.from({ length: currentIndex }).flatMap((_, i) => {
       const g = this.getStepGroup(i);
-      const manifest = this.manifestMap().get(g?.get('type')?.value);
-      if (g?.get('id')?.value) {
-        refs.push(`\${{ steps.${g.get('id')?.value}.status }}`);
-        if (manifest?.outputParams) {
-          manifest.outputParams.forEach(op => {
-            if (op.name) refs.push(`\${{ steps.${g.get('id')?.value}.outputs.${op.name} }}`);
-          });
-        }
-      }
-    }
-    return refs;
+      const id = g?.get('id')?.value;
+      if (!id) return [];
+      
+      const refs = [`\${{ steps.${id}.status }}`];
+      const manifest = this.manifestMap().get(g.get('type')?.value);
+      
+      manifest?.outputParams?.forEach(op => {
+        if (op.name) refs.push(`\${{ steps.${id}.outputs.${op.name} }}`);
+      });
+      return refs;
+    });
+
+    return [...varRefs, ...stepRefs];
   }
 
   async submit() {
