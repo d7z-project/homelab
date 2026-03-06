@@ -391,4 +391,24 @@ func TestActionsRegexValidation(t *testing.T) {
 			t.Errorf("Expected recursion error, got: %v", err)
 		}
 	})
+
+	t.Run("Duplicate Step ID Validation", func(t *testing.T) {
+		teardown := tests.SetupTestDB()
+		defer teardown()
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+
+		workflow := &models.Workflow{
+			Name: "Duplicate ID", ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{ID: "task_1", Type: "core/logger", Params: map[string]string{"message": "a"}},
+				{ID: "task_1", Type: "core/logger", Params: map[string]string{"message": "b"}},
+			},
+		}
+
+		err := actions.ValidateWorkflow(ctx, workflow)
+		if err == nil || !strings.Contains(err.Error(), "duplicate ID 'task_1'") {
+			t.Errorf("Expected duplicate ID error, got: %v", err)
+		}
+	})
 }

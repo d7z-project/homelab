@@ -5,25 +5,24 @@
 - **参数映射 (GitHub Actions 风格)**: 
   - 支持引用前置步骤输出：`${{ steps.<step_id>.outputs.<key> }}`。
   - 支持引用工作流运行变量：`${{ vars.<var_key> }}`。
-  - **可选语法**: `${{ ... ? }}` 标记，当变量不存在时解析为空字符串而非保留原样。
+  - **内置状态引用**: 支持 `${{ steps.<step_id>.status }}` 获取前置步骤执行结果（布尔值 `true`/`false`）。
+  - **可选语法**: `${{ ... ? }}` 标记。当变量不存在时，执行引擎解析为空字符串；校验引擎会跳过对键名存在性的静态检查。
+- **配置安全性 (Validation)**:
+  - **强引用校验**: 静态阶段强制核对 `ServiceAccountID`、`LookupCode` 对应的资源是否存在。
+  - **时序依赖检查**: 禁止引用尚未定义（未来）的步骤 ID。
+  - **输出键名核对**: 根据处理器 Manifest 声明，严格核查 `${{ steps.ID.outputs.KEY }}` 中的 KEY 是否合法。
+  - **表达式安全**: `if` 条件采用变量映射 (Variable Mapping) 注入环境变量，彻底杜绝字符串替换导致的表达式注入。
+- **软失败机制 (Fail-Safe)**: 支持步骤级 `fail: true` 配置。当步骤执行失败或校验不通过时，仅记录日志并标记 `status: false`，继续执行后续步骤。
 - **幂等性与并发控制**: 通过分布式锁 `common.Locker.TryLock` 实现触发阶段的幂等性拦截。同一工作流在同一时间只能有一个实例运行，冲突时新请求直接失败。
 - **执行条件 (Conditional execution)**: 每一个步骤 support 可选的 `if` 条件，使用 `go-expr` 表达式进行逻辑判断。
 - **日志分片与流式查询**: 
   - **结构化存储**: 采用 `logs/actions/{workflow_id}/{instance_id}/{step_index}.log` 层次化存储。
   - **分片设计**: 日志按步骤 (`index`) 拆分为独立 `.log` 文件（`0`: 初始化, `1..N`: 各步骤, `N+1`: 结束清理）。
-  - **持久化保障**: 存储于 `common.FS` (业务文件系统) 以确保重启不丢失。
   - **增量查询**: 支持基于偏移量 (`offset`) 的流式解析，前端实现增量拉取。
-  - **级联清理**: 删除工作流或任务实例时，物理删除对应的 VFS 目录。
-- **进度实时追踪**: 任务实例 (`TaskInstance`) 实时维护 `CurrentStep` 字段，确保前端 UI 在任务运行期间能精准显示当前激活的步骤。
-- **幂等性与并发控制**: 
-
-  - **身份绑定**: 任务执行时强制绑定 **ServiceAccount**，创建/更新时强制校验 SA 存在性。
-  - **删除保护**: 禁止删除正被工作流引用的 ServiceAccount。
 - **健壮性保障**: 
-  - **超时中止**: 支持配置工作流级超时时间（默认 2h），超时自动触发 context cancel。
+  - **超时中止**: 支持配置工作流级超时时间（默认 2h），超时自动触发 context cancel。任务状态精准识别 `Cancelled` 与 `Failed`。
   - **Panic 恢复**: 引擎捕获所有执行过程中的 panic，记录堆栈信息并安全标记任务失败。
-  - **智能自愈**: 启动时自动清理僵尸任务状态。仅当任务处于终态或记录缺失时，才物理删除其 VFS 临时目录。
-  - **冒烟自检**: 系统启动时对所有 VFS 实例执行原子读写自检，失败则禁止启动。
+  - **递归保护**: 拦截 `core/workflow_call` 对自身的循环调用。
 
 ---
 
@@ -34,8 +33,8 @@
 type TaskContext struct {
     WorkflowID     string             // 当前所属工作流 ID
     InstanceID     string             // 任务实例 ID
-    Workspace      string             // 逻辑工作目录（相对于模块 Scoped FS）
-    UserID         string             // 用于实时 RBAC 校验的触发者（SA ID 或 root）
+    Workspace      afero.Fs           // 逻辑工作目录 (Scoped FS)
+    UserID         string             // 用于实时 RBAC 校验的触发者
     Context        context.Context    // 联动系统生命周期的取消信号
     CancelFunc     context.CancelFunc // 允许手动终止任务
     Logger         *TaskLogger        // VFS 持久化日志记录器
@@ -46,39 +45,26 @@ type TaskContext struct {
 
 ## 3. 技术实施规格 (Technical Specifications)
 
+- **编辑器增强 (UX)**:
+  - **双模式编辑**: 同时支持 YAML (Monaco Editor) 与图形化 (Stepper) 切换编辑。
+  - **后端驱动提示**: 后端实时生成工作流 JSON Schema 供前端 Monaco Editor 实现字段、步骤模板及参数的 IntelliSense 自动补全。
+  - **移动端适配**: 针对 Handset 设备优化的响应式布局与触摸友好的处理器选择器。
 - **命名规范**: 变量键名 (Var Key) 和步骤 ID (Step ID) 强制遵循 `^[a-z0-9_]+$`。
 - **默认处理器**:
   - `core/logger`: 输出自定义日志信息。
   - `core/sleep`: 执行期间按需休眠等待。
   - `core/fail`: 显式触发任务失败。
-  - `core/workflow_call`: **同步调用子工作流**，支持变量传递与状态回传（具备循环调用检测）。
-- **全栈 VFS**: 业务存储 (`common.FS`) 与 临时空间 (`common.TempDir`) 均由 URL Scheme 驱动，支持 `memory://` 实现零残留运行。
-- **作用域沙箱**: 模块内部必须使用 `afero.NewBasePathFs` 进一步收窄文件操作权限。
+  - `core/workflow_call`: 同步调用子工作流，具备递归调用检测。
 
 ---
 
 ## 4. 任务清单 (Action Plan)
 
-### 第一阶段：核心引擎与模型实现
-- [x] **Task 1: [Models]** 定义增强型 `Workflow`, `TaskInstance` 及变量定义模型。
-- [x] **Task 2: [Engine]** 实现带变量解析、条件执行、超时控制、并发锁及 Panic 恢复的执行引擎。
-- [x] **Task 3: [Audit]** 为编排模块挂载全量审计逻辑（C/U/D/Trigger）。
-
-### 第二阶段：触发器与权限加固
-- [x] **Task 4: [Triggers]** 实现 `TriggerManager`：集成 Cron 调度与 Webhook Token 认证流。
-- [x] **Task 5: [RBAC]** 完成 Service 层细粒度资源过滤与显示名称/变量插值的权限隔离。
-- [x] **Task 6: [Discovery]** 注册 `actions` 资源到 RBAC 发现中心，支持 ID 级权限分配。
-
-### 第三阶段：架构虚拟化与一致性重构 (NEW)
-- [x] **Task 7: [VFS]** 集成 `afero` 并实现基于 URL 的双重沙箱初始化。
-- [x] **Task 8: [Lock]** 引入分布式锁，在 `RunWorkflow` 中实现非阻塞幂等性保护。
-- [x] **Task 9: [Consistency]** 建立跨模块引用校验（SA/Role）与级联删除保护机制。
-- [x] **Task 10: [Logging]** 实现任务日志的 VFS 持久化存储与流式解析。
-
-### 第四阶段：UI 与交付验证
-- [x] **Task 11: [UI-Run]** 开发动态变量输入弹窗，支持运行前参数注入。
-- [x] **Task 12: [Tests]** 建立 `consistency_test.go` 专项测试，通过并发压力与一致性全量验证。
-- [x] **Task 13: [Logs-Refactor]** 实现分片日志存储、增量偏移刷新及仿终端 UI 交互。
-- [x] **Task 14: [Records-Mgmt]** 支持记录搜索、工作流分类展示及按天数批量清理功能。
-- [x] **Task 15: [Validation]** 注册 `ParamDefinition` 及 `VarDefinition` 支持正则校验（分前后端参数）。
+### 第五阶段：高级交互与配置安全 (DONE)
+- [x] **Task 16: [Monaco-IntelliSense]** 实现后端驱动的 YAML 自动补全与 Schema 实时校验。
+- [x] **Task 17: [Validation-Plus]** 补全输出键名存在性、时序引用及递归调用的强校验逻辑。
+- [x] **Task 18: [Fail-Safe]** 实现 `fail: true` 配置支持与 `${{ steps.ID.status }}` 状态追踪。
+- [x] **Task 19: [Safe-Expr]** 重构表达式引擎，采用环境变量映射彻底修复注入风险。
+- [x] **Task 20: [UX-Mobile]** 完成工作流编辑器的全量移动端响应式适配。
+- [x] **Task 21: [Tests-Comprehensive]** 建立综合逻辑测试，覆盖分支跳转、取消执行及多重插值场景。
 
