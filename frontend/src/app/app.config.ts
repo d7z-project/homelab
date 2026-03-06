@@ -1,5 +1,9 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter, withHashLocation } from '@angular/router';
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+  importProvidersFrom,
+} from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideApi } from './generated';
 
@@ -8,6 +12,7 @@ import { registerLocaleData } from '@angular/common';
 import zh from '@angular/common/locales/zh';
 import { authInterceptor } from './auth.interceptor';
 import { MatPaginatorIntl } from '@angular/material/paginator';
+import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 
 registerLocaleData(zh);
 
@@ -38,5 +43,10 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideApi(`${window.location.origin}/api/v1`),
     { provide: MatPaginatorIntl, useValue: getZhPaginatorIntl() },
+    importProvidersFrom(
+      MonacoEditorModule.forRoot({
+        baseUrl: '/assets/monaco/vs',
+      }),
+    ),
   ],
 };

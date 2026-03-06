@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"homelab/pkg/models"
 	"os"
-	"strings"
+	"path"
 	"sync"
 	"time"
 
@@ -14,6 +14,7 @@ import (
 
 type TaskLogger struct {
 	mu           sync.Mutex
+	workflowID   string
 	instanceID   string
 	currentIndex int
 	currentFile  afero.File
@@ -21,8 +22,9 @@ type TaskLogger struct {
 
 // NewTaskLogger creates a new logger that writes to a file in logFS.
 // Initial file is index 0 (engine logs).
-func NewTaskLogger(instanceID string) (*TaskLogger, error) {
+func NewTaskLogger(workflowID, instanceID string) (*TaskLogger, error) {
 	l := &TaskLogger{
+		workflowID:   workflowID,
 		instanceID:   instanceID,
 		currentIndex: 0,
 	}
@@ -32,11 +34,19 @@ func NewTaskLogger(instanceID string) (*TaskLogger, error) {
 	return l, nil
 }
 
+func (l *TaskLogger) getLogDir() string {
+	return path.Join("actions", l.workflowID, l.instanceID)
+}
+
 func (l *TaskLogger) openCurrent() error {
 	if l.currentFile != nil {
 		_ = l.currentFile.Close()
 	}
-	filename := fmt.Sprintf("%s.%d.log", l.instanceID, l.currentIndex)
+
+	dir := l.getLogDir()
+	_ = logFS.MkdirAll(dir, 0755)
+
+	filename := path.Join(dir, fmt.Sprintf("%d.log", l.currentIndex))
 	// Open in append mode, create if not exists
 	f, err := logFS.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -71,9 +81,13 @@ func (l *TaskLogger) Logf(format string, a ...interface{}) {
 	l.Log(fmt.Sprintf(format, a...))
 }
 
+func getReadLogPath(workflowID, instanceID string, index int) string {
+	return path.Join("actions", workflowID, instanceID, fmt.Sprintf("%d.log", index))
+}
+
 // ReadStepLogs reads logs for a specific step index starting from a line offset.
-func ReadStepLogs(instanceID string, index int, offset int) ([]models.LogEntry, int, error) {
-	filename := fmt.Sprintf("%s.%d.log", instanceID, index)
+func ReadStepLogs(workflowID, instanceID string, index int, offset int) ([]models.LogEntry, int, error) {
+	filename := getReadLogPath(workflowID, instanceID, index)
 	f, err := logFS.Open(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -111,15 +125,15 @@ func ReadStepLogs(instanceID string, index int, offset int) ([]models.LogEntry, 
 }
 
 // ReadAllTaskLogs aggregates logs from all step files for an instance.
-func ReadAllTaskLogs(instanceID string) ([]models.LogEntry, error) {
+func ReadAllTaskLogs(workflowID, instanceID string) ([]models.LogEntry, error) {
 	var allLogs []models.LogEntry
 
 	// We scan files sequentially from index 0 until we hit a gap or error
 	for i := 0; ; i++ {
-		logs, _, err := ReadStepLogs(instanceID, i, 0)
+		logs, _, err := ReadStepLogs(workflowID, instanceID, i, 0)
 		if err != nil || len(logs) == 0 {
 			// Check if the file exists but is empty vs doesn't exist
-			filename := fmt.Sprintf("%s.%d.log", instanceID, i)
+			filename := getReadLogPath(workflowID, instanceID, i)
 			if _, statErr := logFS.Stat(filename); statErr != nil {
 				break // Stop if file doesn't exist
 			}
@@ -135,17 +149,14 @@ func ReadAllTaskLogs(instanceID string) ([]models.LogEntry, error) {
 }
 
 // RemoveTaskLogs cleans up all log files associated with an instance.
-func RemoveTaskLogs(instanceID string) error {
-	files, err := afero.ReadDir(logFS, ".")
-	if err != nil {
-		return err
-	}
-	for _, f := range files {
-		if strings.HasPrefix(f.Name(), instanceID+".") && strings.HasSuffix(f.Name(), ".log") {
-			_ = logFS.Remove(f.Name())
-		}
-	}
-	return nil
+func RemoveTaskLogs(workflowID, instanceID string) error {
+	dir := path.Join("actions", workflowID, instanceID)
+	return logFS.RemoveAll(dir)
+}
+
+// RemoveWorkflowLogs cleans up all logs associated with a workflow.
+func RemoveWorkflowLogs(workflowID string) error {
+	return logFS.RemoveAll(path.Join("actions", workflowID))
 }
 
 func (l *TaskLogger) Close() {

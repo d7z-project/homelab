@@ -272,6 +272,19 @@ func ListManifestsHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, res)
 }
 
+// GetWorkflowSchemaHandler godoc
+// @Summary Get workflow JSON schema
+// @Description Returns the JSON schema for workflow templates, dynamically generated based on available processors.
+// @Tags actions
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Security ApiKeyAuth
+// @Router /actions/workflows/schema [get]
+func GetWorkflowSchemaHandler(w http.ResponseWriter, r *http.Request) {
+	res := actions.GenerateWorkflowSchema()
+	common.Success(w, r, res)
+}
+
 // ProbeHandler godoc
 // @Summary Test a single processor
 // @Description Executes a specific processor in isolation within a temporary workspace. Useful for debugging or testing parameters.
@@ -431,6 +444,7 @@ func ActionsRouter(r chi.Router) {
 	r.Route("/actions", func(r chi.Router) {
 		r.Get("/workflows", ListWorkflowsHandler)
 		r.Post("/workflows", CreateWorkflowHandler)
+		r.Get("/workflows/schema", GetWorkflowSchemaHandler)
 		r.Post("/workflows/validate", ValidateWorkflowHandler)
 		r.Post("/validate/regex", ValidateRegexHandler)
 		r.Put("/workflows/{id}", UpdateWorkflowHandler)

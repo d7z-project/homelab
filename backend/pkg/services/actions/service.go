@@ -9,7 +9,6 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/actions"
-	rbacrepo "homelab/pkg/repositories/rbac"
 	"homelab/pkg/services/discovery"
 	"homelab/pkg/services/rbac"
 	"net/http"
@@ -28,10 +27,19 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 		return err
 	}
 
-	stepIDs := make(map[string]bool)
-	for _, step := range workflow.Steps {
-		stepIDs[step.ID] = true
+	// Verify ServiceAccount exists using discovery service
+	exists, err := discovery.Verify(ctx, "rbac/serviceaccounts", workflow.ServiceAccountID)
+	if err != nil {
+		return fmt.Errorf("failed to verify service account: %v", err)
 	}
+	if !exists {
+		return fmt.Errorf("service account '%s' not found", workflow.ServiceAccountID)
+	}
+
+	stepIDs := make(map[string]bool)
+	// Map to store output parameters for each step for cross-reference validation
+	// stepID -> map[paramName]bool
+	stepOutputsMap := make(map[string]map[string]bool)
 
 	// Validate variables
 	for k, v := range workflow.Vars {
@@ -51,54 +59,153 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 			return fmt.Errorf("step %s: processor not found: %s", step.ID, step.Type)
 		}
 
-		// Validate 'if' condition syntax
-		if step.If != "" {
-			checkIf := paramRegex.ReplaceAllStringFunc(step.If, func(match string) string {
-				return "true" // Placeholder for compilation check
-			})
-			if _, err := expr.Compile(checkIf, expr.AsBool()); err != nil {
-				return fmt.Errorf("step %s: invalid 'if' expression: %v", step.ID, err)
+		manifest := processor.Manifest()
+
+		// 0. Recursion Check (Direct)
+		if step.Type == "core/workflow_call" && workflow.ID != "" {
+			calledID := step.Params["workflow_id"]
+			if calledID == workflow.ID {
+				return fmt.Errorf("step %s: recursive workflow call detected (cannot call itself)", step.ID)
 			}
 		}
 
-		// Validate params for variable references
-		manifest := processor.Manifest()
+		manifestParams := make(map[string]models.ParamDefinition)
+		for _, p := range manifest.Params {
+			manifestParams[p.Name] = p
+		}
+
+		// Record outputs for future steps to reference
+		stepOutputsMap[step.ID] = make(map[string]bool)
+		for _, op := range manifest.OutputParams {
+			stepOutputsMap[step.ID][op.Name] = true
+		}
+
+		// 1. Check for required parameters and existence
+		for _, pDef := range manifest.Params {
+			val, ok := step.Params[pDef.Name]
+			if !pDef.Optional {
+				if !ok || strings.TrimSpace(val) == "" {
+					return fmt.Errorf("step %s: missing required parameter '%s'", step.ID, pDef.Name)
+				}
+			}
+		}
+
+		// 2. Check for undefined parameters
+		for k := range step.Params {
+			if _, ok := manifestParams[k]; !ok {
+				return fmt.Errorf("step %s: undefined parameter '%s'", step.ID, k)
+			}
+		}
+
+		// 3. Validate 'if' condition syntax and references
+		if step.If != "" {
+			// Extract all references like ${{ vars.x }} or ${{ steps.id.outputs.y }}
+			matches := paramRegex.FindAllStringSubmatch(step.If, -1)
+
+			env := make(map[string]interface{})
+			exprStr := step.If
+
+			for i, match := range matches {
+				if len(match) < 5 {
+					continue
+				}
+				fullMatch := match[0]
+				sID := match[1]
+				outputKey := match[2]
+				varKey := match[3]
+				isOptional := match[4] == "?"
+
+				// Check timing and existence
+				if sID != "" {
+					// Step ID must always exist (temporal check)
+					if !stepIDs[sID] {
+						return fmt.Errorf("step %s: 'if' condition references unknown or future step '%s'", step.ID, sID)
+					}
+					// Only strictly check output key if NOT optional
+					if !isOptional && outputKey != "" && !stepOutputsMap[sID][outputKey] {
+						return fmt.Errorf("step %s: 'if' condition references unknown output '%s' from step '%s' (use '?' for optional)", step.ID, outputKey, sID)
+					}
+				} else if varKey != "" {
+					// Only strictly check variable existence if NOT optional
+					if !isOptional {
+						if _, ok := workflow.Vars[varKey]; !ok {
+							return fmt.Errorf("step %s: 'if' condition references unknown variable '%s' (use '?' for optional)", step.ID, varKey)
+						}
+					}
+				}
+
+				placeholder := fmt.Sprintf("__v%d", i)
+				exprStr = strings.Replace(exprStr, fullMatch, placeholder, 1)
+				env[placeholder] = ""
+			}
+
+			program, err := expr.Compile(exprStr, expr.Env(env), expr.AsBool())
+			if err != nil {
+				return fmt.Errorf("step %s: invalid 'if' expression: %v", step.ID, err)
+			}
+			_ = program
+		}
+
+		// Update stepIDs for next steps to reference this one
+		stepIDs[step.ID] = true
+
+		// 4. Validate params for variable references and regex
 		for k, v := range step.Params {
-			// 1. Check for variable references
+			pDef := manifestParams[k]
+
+			// Check for variable references
 			matches := paramRegex.FindAllStringSubmatch(v, -1)
 			for _, match := range matches {
 				if len(match) < 5 {
 					continue
 				}
 				sID := match[1]
+				outputKey := match[2]
 				varKey := match[3]
+				isOptional := match[4] == "?"
 
 				if sID != "" {
 					if !stepIDs[sID] {
-						return fmt.Errorf("step %s: param %s references unknown step %s", step.ID, k, sID)
+						return fmt.Errorf("step %s: param %s references unknown or future step '%s'", step.ID, k, sID)
+					}
+					// Only strictly check output key if NOT optional
+					if !isOptional && outputKey != "" && !stepOutputsMap[sID][outputKey] {
+						return fmt.Errorf("step %s: param %s references unknown output '%s' from step '%s' (use '?' for optional)", step.ID, k, outputKey, sID)
 					}
 				} else if varKey != "" {
-					if _, ok := workflow.Vars[varKey]; !ok {
-						return fmt.Errorf("step %s: param %s references unknown variable %s", step.ID, k, varKey)
+					// Only strictly check variable existence if NOT optional
+					if !isOptional {
+						if _, ok := workflow.Vars[varKey]; !ok {
+							return fmt.Errorf("step %s: param %s references unknown variable %s (use '?' for optional)", step.ID, k, varKey)
+						}
 					}
 				}
 			}
 
-			// 2. Regex validation for static values (not containing templates)
+			// Regex validation for static values (not containing templates)
 			if !strings.Contains(v, "${{") {
-				for _, pDef := range manifest.Params {
-					if pDef.Name == k && pDef.RegexBackend != "" {
-						// Skip validation if optional and empty
-						if pDef.Optional && v == "" {
-							continue
-						}
-						matched, err := regexp.MatchString(pDef.RegexBackend, v)
-						if err != nil {
-							return fmt.Errorf("step %s: invalid regex for param %s: %v", step.ID, k, err)
-						}
-						if !matched {
-							return fmt.Errorf("step %s: parameter %s does not match required format", step.ID, k)
-						}
+				// Lookup validation
+				if pDef.LookupCode != "" && v != "" {
+					exists, err := discovery.Verify(ctx, pDef.LookupCode, v)
+					if err != nil {
+						return fmt.Errorf("step %s: failed to verify parameter %s via discovery code %s: %v", step.ID, k, pDef.LookupCode, err)
+					}
+					if !exists {
+						return fmt.Errorf("step %s: parameter %s value '%s' not found in discovery code %s", step.ID, k, v, pDef.LookupCode)
+					}
+				}
+
+				if pDef.RegexBackend != "" {
+					// Skip validation if optional and empty (already handled by required check if not optional)
+					if pDef.Optional && v == "" {
+						continue
+					}
+					matched, err := regexp.MatchString(pDef.RegexBackend, v)
+					if err != nil {
+						return fmt.Errorf("step %s: invalid regex for param %s: %v", step.ID, k, err)
+					}
+					if !matched {
+						return fmt.Errorf("step %s: parameter %s does not match required format", step.ID, k)
 					}
 				}
 			}
@@ -108,16 +215,8 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 }
 
 func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Workflow, error) {
-	if err := workflow.Bind(nil); err != nil {
-		return nil, err
-	}
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
 		return nil, err
-	}
-
-	// Verify ServiceAccount exists
-	if _, err := rbacrepo.GetServiceAccount(ctx, workflow.ServiceAccountID); err != nil {
-		return nil, fmt.Errorf("service account '%s' not found", workflow.ServiceAccountID)
 	}
 
 	workflow.ID = uuid.New().String()
@@ -139,9 +238,7 @@ func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Wor
 }
 
 func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (*models.Workflow, error) {
-	if err := workflow.Bind(nil); err != nil {
-		return nil, err
-	}
+	// 1. Basic permission and existence check
 	old, err := repo.GetWorkflow(ctx, id)
 	if err != nil {
 		return nil, err
@@ -152,13 +249,12 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 		return nil, fmt.Errorf("permission denied: actions/%s", id)
 	}
 
+	// 2. Ensure ID consistency before validation
+	workflow.ID = id
+
+	// 3. Perform unified validation
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
 		return nil, err
-	}
-
-	// Verify ServiceAccount exists
-	if _, err := rbacrepo.GetServiceAccount(ctx, workflow.ServiceAccountID); err != nil {
-		return nil, fmt.Errorf("service account '%s' not found", workflow.ServiceAccountID)
 	}
 
 	changes := []string{}
@@ -272,9 +368,9 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 		for _, inst := range instances {
 			if inst.WorkflowID == id {
 				_ = repo.DeleteTaskInstance(ctx, inst.ID)
-				_ = RemoveTaskLogs(inst.ID)
 			}
 		}
+		_ = RemoveWorkflowLogs(id)
 	}
 	GlobalTriggerManager.RemoveTriggers(id)
 
@@ -407,7 +503,7 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 	}
 
 	// Populate logs from all parts
-	logs, _ := ReadAllTaskLogs(id)
+	logs, _ := ReadAllTaskLogs(inst.WorkflowID, id)
 	if logs != nil {
 		inst.Logs = logs
 	} else {
@@ -428,7 +524,7 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	for _, inst := range all {
 		if perms.IsAllowed("actions/" + inst.WorkflowID) {
 			// Populate logs from all parts
-			logs, _ := ReadAllTaskLogs(inst.ID)
+			logs, _ := ReadAllTaskLogs(inst.WorkflowID, inst.ID)
 			if logs != nil {
 				inst.Logs = logs
 			} else {
@@ -461,7 +557,7 @@ func DeleteTaskInstance(ctx context.Context, id string) error {
 	}
 
 	// Also remove logs
-	_ = RemoveTaskLogs(id)
+	_ = RemoveTaskLogs(inst.WorkflowID, id)
 	return nil
 }
 
@@ -484,7 +580,7 @@ func CleanupTaskInstances(ctx context.Context, days int) (int, error) {
 		// Only cleanup non-running instances older than cutoff
 		if inst.Status != "Running" && inst.StartedAt.Before(cutoff) {
 			_ = repo.DeleteTaskInstance(ctx, inst.ID)
-			_ = RemoveTaskLogs(inst.ID)
+			_ = RemoveTaskLogs(inst.WorkflowID, inst.ID)
 			count++
 		}
 	}
@@ -540,7 +636,7 @@ func GetTaskLogs(ctx context.Context, id string) ([]models.LogEntry, error) {
 	}
 
 	// Read all logs from VFS
-	logs, err := ReadAllTaskLogs(id)
+	logs, err := ReadAllTaskLogs(instance.WorkflowID, id)
 	if err != nil {
 		return []models.LogEntry{}, nil
 	}
@@ -559,7 +655,7 @@ func GetStepLogs(ctx context.Context, id string, stepIndex int, offset int) ([]m
 		return nil, 0, fmt.Errorf("permission denied: actions/%s", instance.WorkflowID)
 	}
 
-	return ReadStepLogs(id, stepIndex, offset)
+	return ReadStepLogs(instance.WorkflowID, id, stepIndex, offset)
 }
 
 func ValidateRegex(regex string) error {
@@ -588,19 +684,23 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 		return nil, fmt.Errorf("processor not found: %s", req.ProcessorID)
 	}
 
-	// Create a temporary workspace for probe in its dedicated FS
-	workspace, err := afero.TempDir(probeFS, "", "probe_*")
+	// Generate a unique ID for this probe to avoid log collision
+	instanceID := fmt.Sprintf("probe_%d", time.Now().UnixNano())
+
+	// Create a temporary workspace for probe in actionsFS
+	workspace, err := afero.TempDir(actionsFS, "", instanceID)
 	if err != nil {
 		return nil, err
 	}
-	defer probeFS.RemoveAll(workspace)
+	defer actionsFS.RemoveAll(workspace)
 
-	logger, err := NewTaskLogger("probe")
+	// Use '_probe' as a reserved workflow ID for system-level tests
+	logger, err := NewTaskLogger("_probe", instanceID)
 	if err != nil {
 		return nil, err
 	}
 	defer logger.Close()
-	defer logFS.Remove("probe.log")
+	defer RemoveTaskLogs("_probe", instanceID)
 
 	authCtx := commonauth.FromContext(ctx)
 	userID := "anonymous"
@@ -613,8 +713,9 @@ func Probe(ctx context.Context, req *ProbeRequest) (map[string]string, error) {
 	}
 
 	taskCtx := &TaskContext{
-		InstanceID: "probe",
-		Workspace:  afero.NewBasePathFs(probeFS, workspace),
+		WorkflowID: "_probe",
+		InstanceID: instanceID,
+		Workspace:  afero.NewBasePathFs(actionsFS, workspace),
 		UserID:     userID,
 		Context:    ctx,
 		CancelFunc: func() {},

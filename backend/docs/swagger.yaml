@@ -921,6 +921,23 @@ paths:
       summary: Run a workflow manually
       tags:
       - actions
+  /actions/workflows/schema:
+    get:
+      description: Returns the JSON schema for workflow templates, dynamically generated
+        based on available processors.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get workflow JSON schema
+      tags:
+      - actions
   /actions/workflows/validate:
     post:
       consumes:

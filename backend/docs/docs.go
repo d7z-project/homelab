@@ -506,6 +506,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/actions/workflows/schema": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns the JSON schema for workflow templates, dynamically generated based on available processors.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "actions"
+                ],
+                "summary": "Get workflow JSON schema",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/actions/workflows/validate": {
             "post": {
                 "security": [

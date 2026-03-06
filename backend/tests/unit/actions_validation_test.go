@@ -1,9 +1,11 @@
 package unit
 
 import (
+	"context"
 	"homelab/pkg/models"
 	"homelab/pkg/services/actions"
 	_ "homelab/pkg/services/actions/processors"
+	"homelab/pkg/services/discovery"
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
 	"strings"
@@ -11,12 +13,30 @@ import (
 	"time"
 )
 
+type LookupTestProcessor struct{}
+
+func (p *LookupTestProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
+		ID:          "test/lookup",
+		Description: "A processor for testing lookup validation.",
+		Params: []models.ParamDefinition{
+			{Name: "color", Description: "Pick a color", Optional: false, LookupCode: "test/colors"},
+		},
+	}
+}
+
+func (p *LookupTestProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
+	return nil, nil
+}
+
 func TestActionsRegexValidation(t *testing.T) {
 	teardown := tests.SetupTestDB()
 	defer teardown()
 
+	ctx := tests.SetupMockRootContext()
+
 	// Create common service account for tests
-	_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{
 		ID:   "sa",
 		Name: "Test SA",
 	})
@@ -213,6 +233,20 @@ func TestActionsRegexValidation(t *testing.T) {
 
 		ctx := tests.SetupMockRootContext()
 
+		// Create a dummy workflow to satisfy lookup validation
+		dummyWf := &models.Workflow{
+			Name:             "Dummy",
+			ServiceAccountID: "sa",
+			Steps:            []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hi"}}},
+		}
+		var errWf error
+		dummyWf, errWf = actions.CreateWorkflow(ctx, dummyWf)
+		if errWf != nil {
+			t.Fatalf("Failed to create dummy workflow: %v", errWf)
+		}
+
+		workflow.Steps[0].Params["workflow_id"] = dummyWf.ID
+
 		// 1. Test ValidateWorkflow (Step Parameters)
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err != nil {
@@ -226,6 +260,135 @@ func TestActionsRegexValidation(t *testing.T) {
 			if strings.Contains(err.Error(), "match required format") {
 				t.Errorf("TriggerWorkflow failed regex for empty optional variable: %v", err)
 			}
+		}
+	})
+
+	t.Run("Lookup Validation", func(t *testing.T) {
+		teardown := tests.SetupTestDB()
+		defer teardown()
+
+		ctx = tests.SetupMockRootContext()
+
+		// Re-create common service account for this subtest since DB was reset
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{
+			ID:   "sa",
+			Name: "Test SA",
+		})
+
+		// Register a test lookup
+		discovery.Register("test/colors", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+			items := []models.LookupItem{
+				{ID: "red", Name: "Red"},
+				{ID: "blue", Name: "Blue"},
+			}
+			var filtered []models.LookupItem
+			for _, item := range items {
+				if search == "" || strings.Contains(item.ID, search) {
+					filtered = append(filtered, item)
+				}
+			}
+			return filtered, len(filtered), nil
+		})
+
+		// Define a processor that uses this lookup
+		actions.Register(&LookupTestProcessor{})
+
+		workflow := &models.Workflow{
+			Name:             "Lookup Test WF",
+			ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{
+					ID:     "s1",
+					Type:   "test/lookup",
+					Params: map[string]string{"color": "red"},
+				},
+			},
+		}
+
+		// 1. Valid lookup value
+		err := actions.ValidateWorkflow(ctx, workflow)
+		if err != nil {
+			t.Errorf("Expected success for valid lookup value, got: %v", err)
+		}
+
+		// 2. Invalid lookup value
+		workflow.Steps[0].Params["color"] = "green"
+		err = actions.ValidateWorkflow(ctx, workflow)
+		if err == nil {
+			t.Error("Expected error for invalid lookup value, got nil")
+		} else if !strings.Contains(err.Error(), "not found in discovery code test/colors") {
+			t.Errorf("Expected lookup error, got: %v", err)
+		}
+
+		// 3. Template variable should bypass lookup validation
+		workflow.Steps[0].Params["color"] = "${{ vars.fav_color }}"
+		workflow.Vars = map[string]models.VarDefinition{
+			"fav_color": {Required: true},
+		}
+		err = actions.ValidateWorkflow(ctx, workflow)
+		if err != nil {
+			t.Errorf("Expected success when bypassing lookup with template, got: %v", err)
+		}
+	})
+
+	t.Run("Output Key and Optional Syntax Validation", func(t *testing.T) {
+		teardown := tests.SetupTestDB()
+		defer teardown()
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+		actions.Register(&MockProcessor{})
+
+		workflow := &models.Workflow{
+			Name: "Output Test", ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{ID: "s1", Type: "test/mock", Params: map[string]string{"input_val": "x"}},
+				{ID: "s2", Type: "core/logger", Params: map[string]string{"message": ""}},
+			},
+		}
+
+		// 1. Strict Check: Reference unknown output key (should fail)
+		workflow.Steps[1].Params["message"] = "${{ steps.s1.outputs.invalid_key }}"
+		err := actions.ValidateWorkflow(ctx, workflow)
+		if err == nil || !strings.Contains(err.Error(), "references unknown output 'invalid_key'") {
+			t.Errorf("Expected error for unknown output key, got: %v", err)
+		}
+
+		// 2. Optional Check: Reference unknown output key with '?' (should pass)
+		workflow.Steps[1].Params["message"] = "${{ steps.s1.outputs.invalid_key ? }}"
+		err = actions.ValidateWorkflow(ctx, workflow)
+		if err != nil {
+			t.Errorf("Expected success for optional unknown output key, got: %v", err)
+		}
+
+		// 3. Temporal Check with Optional: Reference future step even with '?' (should fail)
+		workflow.Steps[0].Params["input_val"] = "${{ steps.s2.outputs.status ? }}"
+		err = actions.ValidateWorkflow(ctx, workflow)
+		if err == nil || !strings.Contains(err.Error(), "references unknown or future step 's2'") {
+			t.Errorf("Expected error for future step reference even with '?', got: %v", err)
+		}
+	})
+
+	t.Run("Workflow Recursion Detection", func(t *testing.T) {
+		teardown := tests.SetupTestDB()
+		defer teardown()
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+
+		wfID := "recursive_wf"
+		workflow := &models.Workflow{
+			ID: wfID, Name: "Recursion", ServiceAccountID: "sa",
+			Steps: []models.Step{
+				{
+					ID:     "call_self",
+					Type:   "core/workflow_call",
+					Params: map[string]string{"workflow_id": wfID},
+				},
+			},
+		}
+
+		err := actions.ValidateWorkflow(ctx, workflow)
+		if err == nil || !strings.Contains(err.Error(), "recursive workflow call detected") {
+			t.Errorf("Expected recursion error, got: %v", err)
 		}
 	})
 }

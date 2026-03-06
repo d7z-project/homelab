@@ -39,6 +39,33 @@ func Lookup(ctx context.Context, req models.LookupRequest) ([]models.LookupItem,
 	return f(ctx, req.Search, req.Offset, req.Limit)
 }
 
+// Verify checks if a specific ID exists for a given discovery code.
+// It uses the registered LookupFunc with the ID as search term and checks for an exact match.
+func Verify(ctx context.Context, code string, id string) (bool, error) {
+	mu.RLock()
+	f, ok := registry[code]
+	mu.RUnlock()
+
+	if !ok {
+		return false, ErrCodeNotFound
+	}
+
+	// We search for the ID. We assume the search term will match the ID.
+	// Since we need an exact match, we fetch a reasonable amount and check locally.
+	items, _, err := f(ctx, id, 0, 100)
+	if err != nil {
+		return false, err
+	}
+
+	for _, item := range items {
+		if item.ID == id {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // GetRegisteredCodes returns all registered discovery codes
 func GetRegisteredCodes() []string {
 	mu.RLock()

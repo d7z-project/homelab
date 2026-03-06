@@ -21,7 +21,7 @@ func (m *MockProcessor) Manifest() actions.StepManifest {
 		ID:          "test/mock",
 		Description: "A mock processor for testing.",
 		Params: []models.ParamDefinition{
-			{Name: "input_val", Description: "Test input", Optional: false},
+			{Name: "input_val", Description: "Test input", Optional: true},
 		},
 		OutputParams: []models.ParamDefinition{
 			{Name: "out_val", Description: "Test output"},
@@ -30,6 +30,9 @@ func (m *MockProcessor) Manifest() actions.StepManifest {
 }
 
 func (m *MockProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
+	if m.ExecuteFunc == nil {
+		return nil, nil
+	}
 	return m.ExecuteFunc(ctx, inputs)
 }
 

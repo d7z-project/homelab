@@ -8,6 +8,7 @@ import (
 	repo "homelab/pkg/repositories/actions"
 	"regexp"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 
 const (
 	ActionsSubDir  = "actions"
-	ProbeSubDir    = "probe"
 	LogSubDir      = "logs"
 	TaskPrefix     = "task_"
 	DefaultTimeout = 7200 * time.Second
@@ -25,19 +25,16 @@ const (
 
 var (
 	actionsFS afero.Fs
-	probeFS   afero.Fs
 	logFS     afero.Fs
 )
 
 // Init initializes the module-scoped virtual filesystems.
-// Must be called after common.TempDir is initialized.
+// Must be called after common.FS and common.TempDir are initialized.
 func Init() {
 	_ = common.TempDir.MkdirAll(ActionsSubDir, 0755)
-	_ = common.TempDir.MkdirAll(ProbeSubDir, 0755)
-	_ = common.TempDir.MkdirAll(LogSubDir, 0755)
+	_ = common.FS.MkdirAll(LogSubDir, 0755)
 	actionsFS = afero.NewBasePathFs(common.TempDir, ActionsSubDir)
-	probeFS = afero.NewBasePathFs(common.TempDir, ProbeSubDir)
-	logFS = afero.NewBasePathFs(common.TempDir, LogSubDir)
+	logFS = afero.NewBasePathFs(common.FS, LogSubDir)
 }
 
 var paramRegex = regexp.MustCompile(`\$\{\{\s*(?:steps\.([^.]+)\.outputs\.([^ \.?]+)|vars\.([^ \.?]+))\s*(\??)\s*\}\}`)
@@ -103,7 +100,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 
 	e.runningTasks.Store(instance.ID, cancel)
 
-	logger, err := NewTaskLogger(instance.ID)
+	logger, err := NewTaskLogger(workflow.ID, instance.ID)
 	if err != nil {
 		e.activeWorkflows.Delete(workflow.ID)
 		cancel()
@@ -270,7 +267,14 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 }
 
 func (e *Executor) updateInstanceState(instance *models.TaskInstance, logger *TaskLogger) {
-	_ = repo.SaveTaskInstance(context.Background(), instance)
+	if instance == nil {
+		return
+	}
+	// Use context.Background() to ensure saving even if task context is cancelled,
+	// but handle potential nil DB in tests
+	if common.DB != nil {
+		_ = repo.SaveTaskInstance(context.Background(), instance)
+	}
 }
 
 func (e *Executor) resolveVariables(input string, stepOutputs map[string]map[string]string, workflowInputs map[string]string) string {
@@ -314,29 +318,58 @@ func (e *Executor) resolveVariables(input string, stepOutputs map[string]map[str
 }
 
 func (e *Executor) evaluateIf(condition string, stepOutputs map[string]map[string]string, workflowInputs map[string]string) (bool, error) {
-	resolvedIf := paramRegex.ReplaceAllStringFunc(condition, func(match string) string {
-		val := e.resolveVariables(match, stepOutputs, workflowInputs)
-		if val == match || val == "" {
-			// If it wasn't resolved (and wasn't optionally resolved to empty string), or resolved to empty string,
-			// keep it empty or return the matched string
-			if val == "" {
-				return `""`
-			}
-			return match
-		}
-		// Heuristic to quote strings for the expression engine
-		if regexp.MustCompile(`^-?\d+(\.\d+)?$`).MatchString(val) || val == "true" || val == "false" {
-			return val
-		}
-		return fmt.Sprintf("%q", val)
-	})
+	// Extract all references
+	matches := paramRegex.FindAllStringSubmatch(condition, -1)
+	env := make(map[string]interface{})
+	exprStr := condition
 
-	program, err := expr.Compile(resolvedIf, expr.AsBool())
+	for i, match := range matches {
+		if len(match) < 5 {
+			continue
+		}
+		fullMatch := match[0]
+		stepID := match[1]
+		outputKey := match[2]
+		varKey := match[3]
+		isOptional := match[4] == "?"
+
+		var resolvedVal interface{}
+		var found bool
+
+		if stepID != "" && outputKey != "" {
+			if outputs, ok := stepOutputs[stepID]; ok {
+				if val, ok := outputs[outputKey]; ok {
+					resolvedVal = val
+					found = true
+				}
+			}
+		} else if varKey != "" {
+			if val, ok := workflowInputs[varKey]; ok {
+				resolvedVal = val
+				found = true
+			}
+		}
+
+		if !found {
+			if isOptional {
+				resolvedVal = ""
+			} else {
+				resolvedVal = nil // Or handle as error
+			}
+		}
+
+		// Use the same placeholder logic as in ValidateWorkflow
+		placeholder := fmt.Sprintf("__v%d", i)
+		exprStr = strings.Replace(exprStr, fullMatch, placeholder, 1)
+		env[placeholder] = resolvedVal
+	}
+
+	program, err := expr.Compile(exprStr, expr.Env(env), expr.AsBool())
 	if err != nil {
 		return false, err
 	}
 
-	output, err := expr.Run(program, nil)
+	output, err := expr.Run(program, env)
 	if err != nil {
 		return false, err
 	}
