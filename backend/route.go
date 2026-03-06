@@ -23,7 +23,7 @@ func Router(r chi.Router) {
 			r.Use(middlewares.AuthMiddleware)
 			r.Get("/info", controllers.InfoHandler)
 			r.Post("/logout", controllers.LogoutHandler)
-			r.Get("/dns/export", controllers.ExportHandler)
+			r.Get("/network/dns/export", controllers.ExportHandler)
 			r.Route("/discovery", controllers.DiscoveryController)
 
 			r.Group(func(r chi.Router) {
@@ -43,8 +43,8 @@ func Router(r chi.Router) {
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "dns"))
-				r.Use(middlewares.AuditMiddleware("dns"))
+				r.Use(middlewares.RequirePermission("admin", "network/dns"))
+				r.Use(middlewares.AuditMiddleware("network/dns"))
 				controllers.DNSRouter(r)
 			})
 

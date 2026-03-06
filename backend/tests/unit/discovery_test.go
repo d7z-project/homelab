@@ -78,7 +78,7 @@ func TestDiscoveryService(t *testing.T) {
 	t.Run("List Codes", func(t *testing.T) {
 		codes := discovery.GetRegisteredCodes()
 		assert.Contains(t, codes, "test/items")
-		assert.Contains(t, codes, "dns/domains")
+		assert.Contains(t, codes, "network/dns/domains")
 	})
 }
 
@@ -86,13 +86,13 @@ func TestDiscoveryPermissions(t *testing.T) {
 	cleanup := tests.SetupTestDB()
 	defer cleanup()
 
-	// Already registered dns/domains in service init
+	// Already registered network/dns/domains in service init
 	// We need a context with permissions
 
 	t.Run("DNS Domains Filtering", func(t *testing.T) {
-		// Mock permissions: only allow "dns/example.com"
+		// Mock permissions: only allow "network/dns/example.com"
 		perms := &models.ResourcePermissions{
-			AllowedInstances: []string{"dns/example.com"},
+			AllowedInstances: []string{"network/dns/example.com"},
 		}
 		ctx := auth.WithPermissions(context.Background(), perms)
 
@@ -102,7 +102,7 @@ func TestDiscoveryPermissions(t *testing.T) {
 		// For now, we just ensure it doesn't crash and returns empty if no domains match.
 
 		req := models.LookupRequest{
-			Code: "dns/domains",
+			Code: "network/dns/domains",
 		}
 		items, _, err := discovery.Lookup(ctx, req)
 		assert.NoError(t, err)

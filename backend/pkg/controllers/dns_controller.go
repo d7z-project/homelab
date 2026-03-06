@@ -13,14 +13,14 @@ import (
 
 // ListDomainsHandler godoc
 // @Summary List all domains
-// @Tags dns
+// @Tags network/dns
 // @Produce json
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Items per page"
 // @Param search query string false "Search by name"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Domain}
 // @Security ApiKeyAuth
-// @Router /dns/domains [get]
+// @Router /network/dns/domains [get]
 func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
 	search := r.URL.Query().Get("search")
@@ -35,13 +35,13 @@ func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 
 // CreateDomainHandler godoc
 // @Summary Create a domain
-// @Tags dns
+// @Tags network/dns
 // @Accept json
 // @Produce json
 // @Param domain body models.Domain true "Domain"
 // @Success 200 {object} models.Domain
 // @Security ApiKeyAuth
-// @Router /dns/domains [post]
+// @Router /network/dns/domains [post]
 func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	var domain models.Domain
 	if err := render.Bind(r, &domain); err != nil {
@@ -59,14 +59,14 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 
 // UpdateDomainHandler godoc
 // @Summary Update a domain
-// @Tags dns
+// @Tags network/dns
 // @Accept json
 // @Produce json
 // @Param id path string true "Domain ID"
 // @Param domain body models.Domain true "Domain"
 // @Success 200 {object} models.Domain
 // @Security ApiKeyAuth
-// @Router /dns/domains/{id} [put]
+// @Router /network/dns/domains/{id} [put]
 func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var domain models.Domain
@@ -85,12 +85,12 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 
 // DeleteDomainHandler godoc
 // @Summary Delete a domain
-// @Tags dns
+// @Tags network/dns
 // @Produce json
 // @Param id path string true "Domain ID"
 // @Success 200 {string} string "success"
 // @Security ApiKeyAuth
-// @Router /dns/domains/{id} [delete]
+// @Router /network/dns/domains/{id} [delete]
 func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := dnsservice.DeleteDomain(r.Context(), id); err != nil {
@@ -102,7 +102,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 
 // ListRecordsHandler godoc
 // @Summary List all records
-// @Tags dns
+// @Tags network/dns
 // @Produce json
 // @Param domainId query string false "Filter by domain ID"
 // @Param page query int false "Page number"
@@ -110,7 +110,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Param search query string false "Search by name or value"
 // @Success 200 {object} common.PaginatedResponse{items=[]models.Record}
 // @Security ApiKeyAuth
-// @Router /dns/records [get]
+// @Router /network/dns/records [get]
 func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	domainID := r.URL.Query().Get("domainId")
 	page, pageSize := getPaginationParams(r)
@@ -126,13 +126,13 @@ func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 
 // CreateRecordHandler godoc
 // @Summary Create a record
-// @Tags dns
+// @Tags network/dns
 // @Accept json
 // @Produce json
 // @Param record body models.Record true "Record"
 // @Success 200 {object} models.Record
 // @Security ApiKeyAuth
-// @Router /dns/records [post]
+// @Router /network/dns/records [post]
 func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	var record models.Record
 	if err := render.Bind(r, &record); err != nil {
@@ -150,14 +150,14 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 // UpdateRecordHandler godoc
 // @Summary Update a record
-// @Tags dns
+// @Tags network/dns
 // @Accept json
 // @Produce json
 // @Param id path string true "Record ID"
 // @Param record body models.Record true "Record"
 // @Success 200 {object} models.Record
 // @Security ApiKeyAuth
-// @Router /dns/records/{id} [put]
+// @Router /network/dns/records/{id} [put]
 func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var record models.Record
@@ -176,12 +176,12 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 // DeleteRecordHandler godoc
 // @Summary Delete a record
-// @Tags dns
+// @Tags network/dns
 // @Produce json
 // @Param id path string true "Record ID"
 // @Success 200 {string} string "success"
 // @Security ApiKeyAuth
-// @Router /dns/records/{id} [delete]
+// @Router /network/dns/records/{id} [delete]
 func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := dnsservice.DeleteRecord(r.Context(), id); err != nil {
@@ -194,11 +194,11 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 // ExportHandler godoc
 // @Summary Export all DNS configurations
 // @Description Returns all enabled DNS domains and records in a structured format.
-// @Tags dns
+// @Tags network/dns
 // @Produce json
 // @Success 200 {object} models.DnsExportResponse
 // @Security ApiKeyAuth
-// @Router /dns/export [get]
+// @Router /network/dns/export [get]
 func ExportHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := dnsservice.ExportAll(r.Context())
 	if err != nil {
@@ -210,17 +210,17 @@ func ExportHandler(w http.ResponseWriter, r *http.Request) {
 
 // DNSRouter registers the DNS routes
 func DNSRouter(r chi.Router) {
-	r.Route("/dns", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("get", "dns")).Get("/export", ExportHandler)
+	r.Route("/network/dns", func(r chi.Router) {
+		r.With(middlewares.RequirePermission("get", "network/dns")).Get("/export", ExportHandler)
 
 		r.Get("/domains", ListDomainsHandler)
-		r.With(middlewares.RequirePermission("create", "dns/*")).Post("/domains", CreateDomainHandler)
-		r.With(middlewares.RequirePermission("update", "dns/*")).Put("/domains/{id}", UpdateDomainHandler)
-		r.With(middlewares.RequirePermission("delete", "dns/*")).Delete("/domains/{id}", DeleteDomainHandler)
+		r.With(middlewares.RequirePermission("create", "network/dns/*")).Post("/domains", CreateDomainHandler)
+		r.With(middlewares.RequirePermission("update", "network/dns/*")).Put("/domains/{id}", UpdateDomainHandler)
+		r.With(middlewares.RequirePermission("delete", "network/dns/*")).Delete("/domains/{id}", DeleteDomainHandler)
 
 		r.Get("/records", ListRecordsHandler)
-		r.With(middlewares.RequirePermission("create", "dns/*")).Post("/records", CreateRecordHandler)
-		r.With(middlewares.RequirePermission("update", "dns/*")).Put("/records/{id}", UpdateRecordHandler)
-		r.With(middlewares.RequirePermission("delete", "dns/*")).Delete("/records/{id}", DeleteRecordHandler)
+		r.With(middlewares.RequirePermission("create", "network/dns/*")).Post("/records", CreateRecordHandler)
+		r.With(middlewares.RequirePermission("update", "network/dns/*")).Put("/records/{id}", UpdateRecordHandler)
+		r.With(middlewares.RequirePermission("delete", "network/dns/*")).Delete("/records/{id}", DeleteRecordHandler)
 	})
 }

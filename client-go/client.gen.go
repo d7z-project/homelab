@@ -3169,7 +3169,7 @@ func NewGetDnsDomainsRequest(server string, params *GetDnsDomainsParams) (*http.
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/domains")
+	operationPath := fmt.Sprintf("/network/dns/domains")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3261,7 +3261,7 @@ func NewPostDnsDomainsRequestWithBody(server string, contentType string, body io
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/domains")
+	operationPath := fmt.Sprintf("/network/dns/domains")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3297,7 +3297,7 @@ func NewDeleteDnsDomainsIdRequest(server string, id string) (*http.Request, erro
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/domains/%s", pathParam0)
+	operationPath := fmt.Sprintf("/network/dns/domains/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3342,7 +3342,7 @@ func NewPutDnsDomainsIdRequestWithBody(server string, id string, contentType str
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/domains/%s", pathParam0)
+	operationPath := fmt.Sprintf("/network/dns/domains/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3371,7 +3371,7 @@ func NewGetDnsExportRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/export")
+	operationPath := fmt.Sprintf("/network/dns/export")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3398,7 +3398,7 @@ func NewGetDnsRecordsRequest(server string, params *GetDnsRecordsParams) (*http.
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/records")
+	operationPath := fmt.Sprintf("/network/dns/records")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3506,7 +3506,7 @@ func NewPostDnsRecordsRequestWithBody(server string, contentType string, body io
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/records")
+	operationPath := fmt.Sprintf("/network/dns/records")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3542,7 +3542,7 @@ func NewDeleteDnsRecordsIdRequest(server string, id string) (*http.Request, erro
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/records/%s", pathParam0)
+	operationPath := fmt.Sprintf("/network/dns/records/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3587,7 +3587,7 @@ func NewPutDnsRecordsIdRequestWithBody(server string, id string, contentType str
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/dns/records/%s", pathParam0)
+	operationPath := fmt.Sprintf("/network/dns/records/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -9606,31 +9606,31 @@ type ServerInterface interface {
 	// (GET /discovery/lookup)
 	GetDiscoveryLookup(w http.ResponseWriter, r *http.Request, params GetDiscoveryLookupParams)
 	// List all domains
-	// (GET /dns/domains)
+	// (GET /network/dns/domains)
 	GetDnsDomains(w http.ResponseWriter, r *http.Request, params GetDnsDomainsParams)
 	// Create a domain
-	// (POST /dns/domains)
+	// (POST /network/dns/domains)
 	PostDnsDomains(w http.ResponseWriter, r *http.Request)
 	// Delete a domain
-	// (DELETE /dns/domains/{id})
+	// (DELETE /network/dns/domains/{id})
 	DeleteDnsDomainsId(w http.ResponseWriter, r *http.Request, id string)
 	// Update a domain
-	// (PUT /dns/domains/{id})
+	// (PUT /network/dns/domains/{id})
 	PutDnsDomainsId(w http.ResponseWriter, r *http.Request, id string)
 	// Export all DNS configurations
-	// (GET /dns/export)
+	// (GET /network/dns/export)
 	GetDnsExport(w http.ResponseWriter, r *http.Request)
 	// List all records
-	// (GET /dns/records)
+	// (GET /network/dns/records)
 	GetDnsRecords(w http.ResponseWriter, r *http.Request, params GetDnsRecordsParams)
 	// Create a record
-	// (POST /dns/records)
+	// (POST /network/dns/records)
 	PostDnsRecords(w http.ResponseWriter, r *http.Request)
 	// Delete a record
-	// (DELETE /dns/records/{id})
+	// (DELETE /network/dns/records/{id})
 	DeleteDnsRecordsId(w http.ResponseWriter, r *http.Request, id string)
 	// Update a record
-	// (PUT /dns/records/{id})
+	// (PUT /network/dns/records/{id})
 	PutDnsRecordsId(w http.ResponseWriter, r *http.Request, id string)
 	// Get current user info
 	// (GET /info)
@@ -11882,15 +11882,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/auth/sessions/{id}", wrapper.DeleteAuthSessionsId)
 	m.HandleFunc("GET "+options.BaseURL+"/discovery/codes", wrapper.GetDiscoveryCodes)
 	m.HandleFunc("GET "+options.BaseURL+"/discovery/lookup", wrapper.GetDiscoveryLookup)
-	m.HandleFunc("GET "+options.BaseURL+"/dns/domains", wrapper.GetDnsDomains)
-	m.HandleFunc("POST "+options.BaseURL+"/dns/domains", wrapper.PostDnsDomains)
-	m.HandleFunc("DELETE "+options.BaseURL+"/dns/domains/{id}", wrapper.DeleteDnsDomainsId)
-	m.HandleFunc("PUT "+options.BaseURL+"/dns/domains/{id}", wrapper.PutDnsDomainsId)
-	m.HandleFunc("GET "+options.BaseURL+"/dns/export", wrapper.GetDnsExport)
-	m.HandleFunc("GET "+options.BaseURL+"/dns/records", wrapper.GetDnsRecords)
-	m.HandleFunc("POST "+options.BaseURL+"/dns/records", wrapper.PostDnsRecords)
-	m.HandleFunc("DELETE "+options.BaseURL+"/dns/records/{id}", wrapper.DeleteDnsRecordsId)
-	m.HandleFunc("PUT "+options.BaseURL+"/dns/records/{id}", wrapper.PutDnsRecordsId)
+	m.HandleFunc("GET "+options.BaseURL+"/network/dns/domains", wrapper.GetDnsDomains)
+	m.HandleFunc("POST "+options.BaseURL+"/network/dns/domains", wrapper.PostDnsDomains)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/dns/domains/{id}", wrapper.DeleteDnsDomainsId)
+	m.HandleFunc("PUT "+options.BaseURL+"/network/dns/domains/{id}", wrapper.PutDnsDomainsId)
+	m.HandleFunc("GET "+options.BaseURL+"/network/dns/export", wrapper.GetDnsExport)
+	m.HandleFunc("GET "+options.BaseURL+"/network/dns/records", wrapper.GetDnsRecords)
+	m.HandleFunc("POST "+options.BaseURL+"/network/dns/records", wrapper.PostDnsRecords)
+	m.HandleFunc("DELETE "+options.BaseURL+"/network/dns/records/{id}", wrapper.DeleteDnsRecordsId)
+	m.HandleFunc("PUT "+options.BaseURL+"/network/dns/records/{id}", wrapper.PutDnsRecordsId)
 	m.HandleFunc("GET "+options.BaseURL+"/info", wrapper.GetInfo)
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.PostLogin)
 	m.HandleFunc("POST "+options.BaseURL+"/logout", wrapper.PostLogout)

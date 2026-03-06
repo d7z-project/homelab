@@ -37,7 +37,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 		Name: "DNS Manager",
 		Rules: []models.PolicyRule{
 			{
-				Resource: "dns/example.com",
+				Resource: "network/dns/example.com",
 				Verbs:    []string{"get", "update"},
 			},
 		},
@@ -66,7 +66,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 	rbID := rb.ID
 
 	// 4. 模拟权限 (应为空，因为 Binding 已禁用)
-	perms, _ := rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
+	perms, _ := rbacservice.SimulatePermissions(adminCtx, saID, "get", "network/dns")
 	if perms.AllowedAll || len(perms.AllowedInstances) > 0 {
 		t.Error("Expected no permissions for disabled binding")
 	}
@@ -83,7 +83,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 		t.Fatalf("UpdateRoleBinding failed: %v", err)
 	}
 
-	perms, err = rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
+	perms, err = rbacservice.SimulatePermissions(adminCtx, saID, "get", "network/dns")
 	if err != nil {
 		t.Fatalf("SimulatePermissions failed: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	// 验证禁用后权限模拟应为空
-	perms, _ = rbacservice.SimulatePermissions(adminCtx, saID, "get", "dns")
+	perms, _ = rbacservice.SimulatePermissions(adminCtx, saID, "get", "network/dns")
 	if perms.AllowedAll || len(perms.AllowedInstances) > 0 {
 		t.Error("Expected no permissions for disabled ServiceAccount")
 	}

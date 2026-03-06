@@ -5,7 +5,6 @@ import { WelcomeComponent } from './pages/welcome/welcome.component';
 import { RbacComponent } from './pages/rbac/rbac.component';
 import { RbacSimulatorComponent } from './pages/rbac/simulator.component';
 import { AuditComponent } from './pages/audit/audit.component';
-import { DnsComponent } from './pages/dns/dns.component';
 import { ActionsComponent } from './pages/actions/actions.component';
 import { SessionComponent } from './pages/session/session.component';
 
@@ -37,14 +36,18 @@ export const routes: Routes = [
         component: AuditComponent,
         data: { toolbar: { shadow: true, sticky: true } },
       },
-      { path: 'dns', component: DnsComponent, data: { toolbar: { shadow: false, sticky: false } } },
       {
-        path: 'ip',
+        path: 'network/dns',
+        loadComponent: () => import('./pages/dns/dns.component').then((m) => m.DnsComponent),
+        data: { toolbar: { shadow: false, sticky: false } },
+      },
+      {
+        path: 'network/ip',
         loadComponent: () => import('./pages/ip/ip.component').then((m) => m.IpComponent),
         data: { toolbar: { shadow: false, sticky: false } },
       },
       {
-        path: 'site',
+        path: 'network/site',
         loadComponent: () => import('./pages/site/site.component').then((m) => m.SiteComponent),
         data: { toolbar: { shadow: false, sticky: false } },
       },

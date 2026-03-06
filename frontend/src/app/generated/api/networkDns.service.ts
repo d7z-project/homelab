@@ -17,15 +17,15 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
-import { DnsDomainsGet200Response } from '../model/dnsDomainsGet200Response';
-// @ts-ignore
-import { DnsRecordsGet200Response } from '../model/dnsRecordsGet200Response';
-// @ts-ignore
 import { ModelsDnsExportResponse } from '../model/modelsDnsExportResponse';
 // @ts-ignore
 import { ModelsDomain } from '../model/modelsDomain';
 // @ts-ignore
 import { ModelsRecord } from '../model/modelsRecord';
+// @ts-ignore
+import { NetworkDnsDomainsGet200Response } from '../model/networkDnsDomainsGet200Response';
+// @ts-ignore
+import { NetworkDnsRecordsGet200Response } from '../model/networkDnsRecordsGet200Response';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -37,7 +37,7 @@ import { BaseService } from '../api.base.service';
 @Injectable({
   providedIn: 'root'
 })
-export class DnsService extends BaseService {
+export class NetworkDnsService extends BaseService {
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
@@ -45,7 +45,7 @@ export class DnsService extends BaseService {
 
     /**
      * List all domains
-     * @endpoint get /dns/domains
+     * @endpoint get /network/dns/domains
      * @param page Page number
      * @param pageSize Items per page
      * @param search Search by name
@@ -53,10 +53,10 @@ export class DnsService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsDomainsGet(page?: number, pageSize?: number, search?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<DnsDomainsGet200Response>;
-    public dnsDomainsGet(page?: number, pageSize?: number, search?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DnsDomainsGet200Response>>;
-    public dnsDomainsGet(page?: number, pageSize?: number, search?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DnsDomainsGet200Response>>;
-    public dnsDomainsGet(page?: number, pageSize?: number, search?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsDomainsGet(page?: number, pageSize?: number, search?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<NetworkDnsDomainsGet200Response>;
+    public networkDnsDomainsGet(page?: number, pageSize?: number, search?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<NetworkDnsDomainsGet200Response>>;
+    public networkDnsDomainsGet(page?: number, pageSize?: number, search?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<NetworkDnsDomainsGet200Response>>;
+    public networkDnsDomainsGet(page?: number, pageSize?: number, search?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -115,9 +115,9 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/domains`;
+        let localVarPath = `/network/dns/domains`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<DnsDomainsGet200Response>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<NetworkDnsDomainsGet200Response>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
@@ -133,18 +133,18 @@ export class DnsService extends BaseService {
 
     /**
      * Delete a domain
-     * @endpoint delete /dns/domains/{id}
+     * @endpoint delete /network/dns/domains/{id}
      * @param id Domain ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsDomainsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public dnsDomainsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public dnsDomainsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public dnsDomainsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsDomainsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public networkDnsDomainsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public networkDnsDomainsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public networkDnsDomainsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling dnsDomainsIdDelete.');
+            throw new Error('Required parameter id was null or undefined when calling networkDnsDomainsIdDelete.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -175,7 +175,7 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/domains/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/network/dns/domains/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('delete', `${basePath}${localVarPath}`,
             {
@@ -192,22 +192,22 @@ export class DnsService extends BaseService {
 
     /**
      * Update a domain
-     * @endpoint put /dns/domains/{id}
+     * @endpoint put /network/dns/domains/{id}
      * @param id Domain ID
      * @param domain Domain
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsDomainsIdPut(id: string, domain: ModelsDomain, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsDomain>;
-    public dnsDomainsIdPut(id: string, domain: ModelsDomain, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsDomain>>;
-    public dnsDomainsIdPut(id: string, domain: ModelsDomain, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsDomain>>;
-    public dnsDomainsIdPut(id: string, domain: ModelsDomain, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsDomainsIdPut(id: string, domain: ModelsDomain, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsDomain>;
+    public networkDnsDomainsIdPut(id: string, domain: ModelsDomain, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsDomain>>;
+    public networkDnsDomainsIdPut(id: string, domain: ModelsDomain, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsDomain>>;
+    public networkDnsDomainsIdPut(id: string, domain: ModelsDomain, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling dnsDomainsIdPut.');
+            throw new Error('Required parameter id was null or undefined when calling networkDnsDomainsIdPut.');
         }
         if (domain === null || domain === undefined) {
-            throw new Error('Required parameter domain was null or undefined when calling dnsDomainsIdPut.');
+            throw new Error('Required parameter domain was null or undefined when calling networkDnsDomainsIdPut.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -247,7 +247,7 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/domains/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/network/dns/domains/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsDomain>('put', `${basePath}${localVarPath}`,
             {
@@ -265,18 +265,18 @@ export class DnsService extends BaseService {
 
     /**
      * Create a domain
-     * @endpoint post /dns/domains
+     * @endpoint post /network/dns/domains
      * @param domain Domain
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsDomainsPost(domain: ModelsDomain, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsDomain>;
-    public dnsDomainsPost(domain: ModelsDomain, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsDomain>>;
-    public dnsDomainsPost(domain: ModelsDomain, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsDomain>>;
-    public dnsDomainsPost(domain: ModelsDomain, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsDomainsPost(domain: ModelsDomain, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsDomain>;
+    public networkDnsDomainsPost(domain: ModelsDomain, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsDomain>>;
+    public networkDnsDomainsPost(domain: ModelsDomain, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsDomain>>;
+    public networkDnsDomainsPost(domain: ModelsDomain, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (domain === null || domain === undefined) {
-            throw new Error('Required parameter domain was null or undefined when calling dnsDomainsPost.');
+            throw new Error('Required parameter domain was null or undefined when calling networkDnsDomainsPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -316,7 +316,7 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/domains`;
+        let localVarPath = `/network/dns/domains`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsDomain>('post', `${basePath}${localVarPath}`,
             {
@@ -335,15 +335,15 @@ export class DnsService extends BaseService {
     /**
      * Export all DNS configurations
      * Returns all enabled DNS domains and records in a structured format.
-     * @endpoint get /dns/export
+     * @endpoint get /network/dns/export
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsExportGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsDnsExportResponse>;
-    public dnsExportGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsDnsExportResponse>>;
-    public dnsExportGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsDnsExportResponse>>;
-    public dnsExportGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsExportGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsDnsExportResponse>;
+    public networkDnsExportGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsDnsExportResponse>>;
+    public networkDnsExportGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsDnsExportResponse>>;
+    public networkDnsExportGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -373,7 +373,7 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/export`;
+        let localVarPath = `/network/dns/export`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsDnsExportResponse>('get', `${basePath}${localVarPath}`,
             {
@@ -390,7 +390,7 @@ export class DnsService extends BaseService {
 
     /**
      * List all records
-     * @endpoint get /dns/records
+     * @endpoint get /network/dns/records
      * @param domainId Filter by domain ID
      * @param page Page number
      * @param pageSize Items per page
@@ -399,10 +399,10 @@ export class DnsService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<DnsRecordsGet200Response>;
-    public dnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DnsRecordsGet200Response>>;
-    public dnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DnsRecordsGet200Response>>;
-    public dnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<NetworkDnsRecordsGet200Response>;
+    public networkDnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<NetworkDnsRecordsGet200Response>>;
+    public networkDnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<NetworkDnsRecordsGet200Response>>;
+    public networkDnsRecordsGet(domainId?: string, page?: number, pageSize?: number, search?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -470,9 +470,9 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/records`;
+        let localVarPath = `/network/dns/records`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<DnsRecordsGet200Response>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<NetworkDnsRecordsGet200Response>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
@@ -488,18 +488,18 @@ export class DnsService extends BaseService {
 
     /**
      * Delete a record
-     * @endpoint delete /dns/records/{id}
+     * @endpoint delete /network/dns/records/{id}
      * @param id Record ID
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsRecordsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
-    public dnsRecordsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
-    public dnsRecordsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
-    public dnsRecordsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsRecordsIdDelete(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public networkDnsRecordsIdDelete(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public networkDnsRecordsIdDelete(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public networkDnsRecordsIdDelete(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling dnsRecordsIdDelete.');
+            throw new Error('Required parameter id was null or undefined when calling networkDnsRecordsIdDelete.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -530,7 +530,7 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/records/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/network/dns/records/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('delete', `${basePath}${localVarPath}`,
             {
@@ -547,22 +547,22 @@ export class DnsService extends BaseService {
 
     /**
      * Update a record
-     * @endpoint put /dns/records/{id}
+     * @endpoint put /network/dns/records/{id}
      * @param id Record ID
      * @param record Record
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsRecordsIdPut(id: string, record: ModelsRecord, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRecord>;
-    public dnsRecordsIdPut(id: string, record: ModelsRecord, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRecord>>;
-    public dnsRecordsIdPut(id: string, record: ModelsRecord, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRecord>>;
-    public dnsRecordsIdPut(id: string, record: ModelsRecord, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsRecordsIdPut(id: string, record: ModelsRecord, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRecord>;
+    public networkDnsRecordsIdPut(id: string, record: ModelsRecord, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRecord>>;
+    public networkDnsRecordsIdPut(id: string, record: ModelsRecord, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRecord>>;
+    public networkDnsRecordsIdPut(id: string, record: ModelsRecord, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling dnsRecordsIdPut.');
+            throw new Error('Required parameter id was null or undefined when calling networkDnsRecordsIdPut.');
         }
         if (record === null || record === undefined) {
-            throw new Error('Required parameter record was null or undefined when calling dnsRecordsIdPut.');
+            throw new Error('Required parameter record was null or undefined when calling networkDnsRecordsIdPut.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -602,7 +602,7 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/records/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        let localVarPath = `/network/dns/records/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsRecord>('put', `${basePath}${localVarPath}`,
             {
@@ -620,18 +620,18 @@ export class DnsService extends BaseService {
 
     /**
      * Create a record
-     * @endpoint post /dns/records
+     * @endpoint post /network/dns/records
      * @param record Record
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public dnsRecordsPost(record: ModelsRecord, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRecord>;
-    public dnsRecordsPost(record: ModelsRecord, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRecord>>;
-    public dnsRecordsPost(record: ModelsRecord, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRecord>>;
-    public dnsRecordsPost(record: ModelsRecord, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public networkDnsRecordsPost(record: ModelsRecord, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ModelsRecord>;
+    public networkDnsRecordsPost(record: ModelsRecord, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ModelsRecord>>;
+    public networkDnsRecordsPost(record: ModelsRecord, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ModelsRecord>>;
+    public networkDnsRecordsPost(record: ModelsRecord, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (record === null || record === undefined) {
-            throw new Error('Required parameter record was null or undefined when calling dnsRecordsPost.');
+            throw new Error('Required parameter record was null or undefined when calling networkDnsRecordsPost.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -671,7 +671,7 @@ export class DnsService extends BaseService {
             }
         }
 
-        let localVarPath = `/dns/records`;
+        let localVarPath = `/network/dns/records`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ModelsRecord>('post', `${basePath}${localVarPath}`,
             {

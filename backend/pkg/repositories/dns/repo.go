@@ -50,7 +50,7 @@ func GetDomain(ctx context.Context, id string) (*models.Domain, error) {
 	if val, ok := domainCache.Get(id); ok {
 		return val, nil
 	}
-	db := common.DB.Child("dns", "domains")
+	db := common.DB.Child("network/dns", "domains")
 	data, err := db.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func GetDomain(ctx context.Context, id string) (*models.Domain, error) {
 }
 
 func SaveDomain(ctx context.Context, domain *models.Domain) error {
-	db := common.DB.Child("dns", "domains")
+	db := common.DB.Child("network/dns", "domains")
 	data, err := json.Marshal(domain)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func SaveDomain(ctx context.Context, domain *models.Domain) error {
 }
 
 func DeleteDomain(ctx context.Context, id string) error {
-	_, err := common.DB.Child("dns", "domains").Delete(ctx, id)
+	_, err := common.DB.Child("network/dns", "domains").Delete(ctx, id)
 	if err == nil {
 		domainCache.Remove(id)
 		domainListCache.Purge() // Invalidate all lists
@@ -93,7 +93,7 @@ func ListDomains(ctx context.Context, page int, pageSize int, search string) ([]
 	if val, ok := domainListCache.Get("all"); ok {
 		all = val
 	} else {
-		db := common.DB.Child("dns", "domains")
+		db := common.DB.Child("network/dns", "domains")
 		items, err := db.List(ctx, "")
 		if err != nil {
 			return nil, 0, err
@@ -137,7 +137,7 @@ func GetRecord(ctx context.Context, id string) (*models.Record, error) {
 	if val, ok := recordCache.Get(id); ok {
 		return val, nil
 	}
-	db := common.DB.Child("dns", "records")
+	db := common.DB.Child("network/dns", "records")
 	data, err := db.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func GetRecord(ctx context.Context, id string) (*models.Record, error) {
 }
 
 func SaveRecord(ctx context.Context, record *models.Record) error {
-	db := common.DB.Child("dns", "records")
+	db := common.DB.Child("network/dns", "records")
 	data, err := json.Marshal(record)
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func SaveRecord(ctx context.Context, record *models.Record) error {
 }
 
 func DeleteRecord(ctx context.Context, id string) error {
-	_, err := common.DB.Child("dns", "records").Delete(ctx, id)
+	_, err := common.DB.Child("network/dns", "records").Delete(ctx, id)
 	if err == nil {
 		recordCache.Remove(id)
 		recordListCache.Purge() // Invalidate all record lists
@@ -185,7 +185,7 @@ func ListRecords(ctx context.Context, domainID string, page int, pageSize int, s
 	if val, ok := recordListCache.Get(cacheKey); ok {
 		all = val
 	} else {
-		db := common.DB.Child("dns", "records")
+		db := common.DB.Child("network/dns", "records")
 		items, err := db.List(ctx, "")
 		if err != nil {
 			return nil, 0, err
@@ -226,7 +226,7 @@ func ListRecords(ctx context.Context, domainID string, page int, pageSize int, s
 }
 
 func DeleteRecordsByDomain(ctx context.Context, domainID string) error {
-	db := common.DB.Child("dns", "records")
+	db := common.DB.Child("network/dns", "records")
 	items, err := db.List(ctx, "")
 	if err != nil {
 		return err

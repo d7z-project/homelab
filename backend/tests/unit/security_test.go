@@ -23,7 +23,7 @@ func TestDNSListPermissionFiltering(t *testing.T) {
 
 	// Context with permission only for public.com
 	userCtx := auth.WithPermissions(context.Background(), &models.ResourcePermissions{
-		AllowedInstances: []string{"dns/public.com"},
+		AllowedInstances: []string{"network/dns/public.com"},
 	})
 
 	// List domains
@@ -61,7 +61,7 @@ func TestDNSExportPermissionFiltering(t *testing.T) {
 	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Name: "private.com", Enabled: true})
 
 	userCtx := auth.WithPermissions(context.Background(), &models.ResourcePermissions{
-		AllowedInstances: []string{"dns/public.com"},
+		AllowedInstances: []string{"network/dns/public.com"},
 	})
 
 	export, err := dnsservice.ExportAll(userCtx)

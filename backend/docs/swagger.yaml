@@ -1311,7 +1311,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Search for items in a specific discovery code (e.g. dns/domains)
+      description: Search for items in a specific discovery code (e.g. network/dns/domains)
       parameters:
       - description: Discovery code
         in: query
@@ -1342,231 +1342,6 @@ paths:
       summary: Discovery lookup
       tags:
       - discovery
-  /dns/domains:
-    get:
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        name: pageSize
-        type: integer
-      - description: Search by name
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.PaginatedResponse'
-            - properties:
-                items:
-                  items:
-                    $ref: '#/definitions/models.Domain'
-                  type: array
-              type: object
-      security:
-      - ApiKeyAuth: []
-      summary: List all domains
-      tags:
-      - dns
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Domain
-        in: body
-        name: domain
-        required: true
-        schema:
-          $ref: '#/definitions/models.Domain'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Domain'
-      security:
-      - ApiKeyAuth: []
-      summary: Create a domain
-      tags:
-      - dns
-  /dns/domains/{id}:
-    delete:
-      parameters:
-      - description: Domain ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a domain
-      tags:
-      - dns
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Domain ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Domain
-        in: body
-        name: domain
-        required: true
-        schema:
-          $ref: '#/definitions/models.Domain'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Domain'
-      security:
-      - ApiKeyAuth: []
-      summary: Update a domain
-      tags:
-      - dns
-  /dns/export:
-    get:
-      description: Returns all enabled DNS domains and records in a structured format.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.DnsExportResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Export all DNS configurations
-      tags:
-      - dns
-  /dns/records:
-    get:
-      parameters:
-      - description: Filter by domain ID
-        in: query
-        name: domainId
-        type: string
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        name: pageSize
-        type: integer
-      - description: Search by name or value
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.PaginatedResponse'
-            - properties:
-                items:
-                  items:
-                    $ref: '#/definitions/models.Record'
-                  type: array
-              type: object
-      security:
-      - ApiKeyAuth: []
-      summary: List all records
-      tags:
-      - dns
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Record
-        in: body
-        name: record
-        required: true
-        schema:
-          $ref: '#/definitions/models.Record'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Record'
-      security:
-      - ApiKeyAuth: []
-      summary: Create a record
-      tags:
-      - dns
-  /dns/records/{id}:
-    delete:
-      parameters:
-      - description: Record ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a record
-      tags:
-      - dns
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Record ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Record
-        in: body
-        name: record
-        required: true
-        schema:
-          $ref: '#/definitions/models.Record'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Record'
-      security:
-      - ApiKeyAuth: []
-      summary: Update a record
-      tags:
-      - dns
   /info:
     get:
       produces:
@@ -1616,6 +1391,231 @@ paths:
       summary: Logout
       tags:
       - auth
+  /network/dns/domains:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.Domain'
+                  type: array
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List all domains
+      tags:
+      - network/dns
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Domain
+        in: body
+        name: domain
+        required: true
+        schema:
+          $ref: '#/definitions/models.Domain'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Domain'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a domain
+      tags:
+      - network/dns
+  /network/dns/domains/{id}:
+    delete:
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a domain
+      tags:
+      - network/dns
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Domain ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Domain
+        in: body
+        name: domain
+        required: true
+        schema:
+          $ref: '#/definitions/models.Domain'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Domain'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a domain
+      tags:
+      - network/dns
+  /network/dns/export:
+    get:
+      description: Returns all enabled DNS domains and records in a structured format.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DnsExportResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Export all DNS configurations
+      tags:
+      - network/dns
+  /network/dns/records:
+    get:
+      parameters:
+      - description: Filter by domain ID
+        in: query
+        name: domainId
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name or value
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.PaginatedResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.Record'
+                  type: array
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List all records
+      tags:
+      - network/dns
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Record
+        in: body
+        name: record
+        required: true
+        schema:
+          $ref: '#/definitions/models.Record'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Record'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a record
+      tags:
+      - network/dns
+  /network/dns/records/{id}:
+    delete:
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a record
+      tags:
+      - network/dns
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Record
+        in: body
+        name: record
+        required: true
+        schema:
+          $ref: '#/definitions/models.Record'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Record'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a record
+      tags:
+      - network/dns
   /network/ip/analysis/hit-test:
     post:
       consumes:

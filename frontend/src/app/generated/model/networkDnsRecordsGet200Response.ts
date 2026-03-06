@@ -7,11 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsDomain } from './modelsDomain';
+import { ModelsRecord } from './modelsRecord';
 
 
-export interface DnsDomainsGet200Response { 
-    items?: Array<ModelsDomain>;
+export interface NetworkDnsRecordsGet200Response { 
+    items?: Array<ModelsRecord>;
     page?: number;
     pageSize?: number;
     total?: number;

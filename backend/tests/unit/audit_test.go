@@ -22,7 +22,7 @@ func TestAuditLogsWorkflow(t *testing.T) {
 		log := &models.AuditLog{
 			Subject:   fmt.Sprintf("user-%02d", i),
 			Action:    "Create",
-			Resource:  "dns",
+			Resource:  "network/dns",
 			TargetID:  fmt.Sprintf("domain-%d.com", i),
 			Message:   "test message",
 			Timestamp: time.Now().Add(time.Duration(i) * time.Second).Format(time.RFC3339),

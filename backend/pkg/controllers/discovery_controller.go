@@ -17,7 +17,7 @@ func DiscoveryController(r chi.Router) {
 }
 
 // @Summary Discovery lookup
-// @Description Search for items in a specific discovery code (e.g. dns/domains)
+// @Description Search for items in a specific discovery code (e.g. network/dns/domains)
 // @Tags discovery
 // @Accept json
 // @Produce json

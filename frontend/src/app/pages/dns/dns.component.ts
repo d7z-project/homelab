@@ -6,7 +6,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
-import { DnsService, ModelsDomain, ModelsRecord } from '../../generated';
+import {
+  NetworkDnsService,
+  ModelsDomain,
+  ModelsRecord,
+  NetworkDnsDomainsGet200Response,
+  NetworkDnsRecordsGet200Response,
+} from '../../generated';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -56,7 +62,7 @@ import { DiscoveryDialogComponent } from '../../shared/discovery-dialog.componen
   templateUrl: './dns.component.html',
 })
 export class DnsComponent implements OnInit, OnDestroy {
-  private dnsService = inject(DnsService);
+  private networkDnsService = inject(NetworkDnsService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private route = inject(ActivatedRoute);
@@ -268,9 +274,9 @@ export class DnsComponent implements OnInit, OnDestroy {
   }
 
   async loadDomains(reset = false) {
-    const data = await firstValueFrom(
-      this.dnsService.dnsDomainsGet(this.domainPage(), this.pageSize(), this.domainSearch()),
-    );
+    const data = (await firstValueFrom(
+      this.networkDnsService.networkDnsDomainsGet(this.domainPage(), this.pageSize(), this.domainSearch()),
+    )) as NetworkDnsDomainsGet200Response;
     if (reset) this.domains.set(data.items || []);
     else {
       const current = this.domains();
@@ -281,14 +287,14 @@ export class DnsComponent implements OnInit, OnDestroy {
   }
 
   async loadRecords(reset = false) {
-    const data = await firstValueFrom(
-      this.dnsService.dnsRecordsGet(
+    const data = (await firstValueFrom(
+      this.networkDnsService.networkDnsRecordsGet(
         this.selectedDomainId(),
         this.recordPage(),
         this.pageSize(),
         this.recordSearch(),
       ),
-    );
+    )) as NetworkDnsRecordsGet200Response;
     if (reset) this.records.set(data.items || []);
     else {
       const current = this.records();
@@ -332,7 +338,7 @@ export class DnsComponent implements OnInit, OnDestroy {
       width: '500px',
       maxWidth: '95vw',
       data: {
-        code: 'dns/domains',
+        code: 'network/dns/domains',
         title: '选择域名',
         currentId: this.selectedDomainId(),
         showAllOption: true,
@@ -352,7 +358,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     try {
       const updated = { ...domain, enabled: !domain.enabled };
-      await firstValueFrom(this.dnsService.dnsDomainsIdPut(domain.id, updated));
+      await firstValueFrom(this.networkDnsService.networkDnsDomainsIdPut(domain.id, updated));
       this.snackBar.open(`域名已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
       await this.loadDomains(true);
     } catch (err) {
@@ -367,7 +373,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     try {
       const updated = { ...record, enabled: !record.enabled };
-      await firstValueFrom(this.dnsService.dnsRecordsIdPut(record.id, updated));
+      await firstValueFrom(this.networkDnsService.networkDnsRecordsIdPut(record.id, updated));
       this.snackBar.open(`记录已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
       await this.loadRecords(true);
     } catch (err) {
@@ -387,7 +393,7 @@ export class DnsComponent implements OnInit, OnDestroy {
         if (result) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.dnsService.dnsDomainsPost(result));
+            await firstValueFrom(this.networkDnsService.networkDnsDomainsPost(result));
             this.snackBar.open('域名已创建', '关闭', { duration: 2000 });
             this.refreshAll();
           } catch (err: any) {
@@ -410,7 +416,7 @@ export class DnsComponent implements OnInit, OnDestroy {
         if (result && domain.id) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.dnsService.dnsDomainsIdPut(domain.id, result));
+            await firstValueFrom(this.networkDnsService.networkDnsDomainsIdPut(domain.id, result));
             this.snackBar.open('域名配置已更新', '关闭', { duration: 2000 });
             this.refreshAll();
           } catch (err: any) {
@@ -438,7 +444,7 @@ export class DnsComponent implements OnInit, OnDestroy {
         if (result && domain.id) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.dnsService.dnsDomainsIdDelete(domain.id));
+            await firstValueFrom(this.networkDnsService.networkDnsDomainsIdDelete(domain.id));
             this.snackBar.open('域名已删除', '关闭', { duration: 2000 });
             this.refreshAll();
           } catch (err) {
@@ -461,7 +467,7 @@ export class DnsComponent implements OnInit, OnDestroy {
         if (result) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.dnsService.dnsRecordsPost(result));
+            await firstValueFrom(this.networkDnsService.networkDnsRecordsPost(result));
             this.snackBar.open('解析记录已添加', '关闭', { duration: 2000 });
             this.loadRecords(true);
           } catch (err: any) {
@@ -484,7 +490,7 @@ export class DnsComponent implements OnInit, OnDestroy {
         if (result && record.id) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.dnsService.dnsRecordsIdPut(record.id, result));
+            await firstValueFrom(this.networkDnsService.networkDnsRecordsIdPut(record.id, result));
             this.snackBar.open('解析记录已更新', '关闭', { duration: 2000 });
             this.loadRecords(true);
           } catch (err: any) {
@@ -512,7 +518,7 @@ export class DnsComponent implements OnInit, OnDestroy {
         if (result && record.id) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.dnsService.dnsRecordsIdDelete(record.id));
+            await firstValueFrom(this.networkDnsService.networkDnsRecordsIdDelete(record.id));
             this.snackBar.open('记录已删除', '关闭', { duration: 2000 });
             this.loadRecords(true);
           } catch (err) {

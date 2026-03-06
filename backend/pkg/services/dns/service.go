@@ -38,7 +38,7 @@ type exportCacheEntry struct {
 func init() {
 	exportCache, _ = lru.New[string, exportCacheEntry](128)
 
-	rbac.RegisterResourceWithVerbs("dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	rbac.RegisterResourceWithVerbs("network/dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
 		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, "")
 		if err != nil {
@@ -79,7 +79,7 @@ func init() {
 		return res, nil
 	}, []string{"get", "list", "create", "update", "delete", "*"})
 
-	discovery.Register("dns/domains", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+	discovery.Register("network/dns/domains", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, search)
 		if err != nil {
 			return nil, 0, err
@@ -87,7 +87,7 @@ func init() {
 		perms := commonauth.PermissionsFromContext(ctx)
 		var items []models.LookupItem
 		for _, d := range domains {
-			if perms.IsAllowed("dns/" + d.Name) {
+			if perms.IsAllowed("network/dns/" + d.Name) {
 				items = append(items, models.LookupItem{
 					ID:          d.ID,
 					Name:        d.Name,
@@ -109,7 +109,7 @@ func init() {
 		return items[offset:end], total, nil
 	})
 
-	discovery.Register("dns/records", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+	discovery.Register("network/dns/records", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		records, _, err := dnsrepo.ListRecords(ctx, "", 0, 10000, search)
 		if err != nil {
 			return nil, 0, err
@@ -126,8 +126,8 @@ func init() {
 			if domain == nil {
 				continue
 			}
-			resourceDomain := fmt.Sprintf("dns/%s", domain.Name)
-			resourceRecord := fmt.Sprintf("dns/%s/%s/%s", domain.Name, r.Name, r.Type)
+			resourceDomain := fmt.Sprintf("network/dns/%s", domain.Name)
+			resourceRecord := fmt.Sprintf("network/dns/%s/%s/%s", domain.Name, r.Name, r.Type)
 			if perms.IsAllowed(resourceDomain) || perms.IsAllowed(resourceRecord) {
 				items = append(items, models.LookupItem{
 					ID:          r.ID,
@@ -162,7 +162,7 @@ func ListDomains(ctx context.Context, page, pageSize int, search string) (*commo
 	perms := commonauth.PermissionsFromContext(ctx)
 	var filteredDomains []models.Domain
 	for _, d := range domains {
-		if perms.IsAllowed("dns") || perms.IsAllowed("dns/"+d.Name) {
+		if perms.IsAllowed("network/dns") || perms.IsAllowed("network/dns/"+d.Name) {
 			filteredDomains = append(filteredDomains, d)
 		}
 	}
@@ -189,7 +189,7 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 	if err := domain.Bind(nil); err != nil {
 		return nil, err
 	}
-	resource := "dns/" + domain.Name
+	resource := "network/dns/" + domain.Name
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -229,7 +229,7 @@ func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*model
 	if err != nil {
 		return nil, errors.New("not found")
 	}
-	resource := "dns/" + existing.Name
+	resource := "network/dns/" + existing.Name
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -252,7 +252,7 @@ func DeleteDomain(ctx context.Context, id string) error {
 	if err != nil {
 		return errors.New("not found")
 	}
-	resource := "dns/" + existing.Name
+	resource := "network/dns/" + existing.Name
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -280,7 +280,7 @@ func ListRecords(ctx context.Context, domainID string, page, pageSize int, searc
 			dom, _ = dnsrepo.GetDomain(ctx, r.DomainID)
 			domainCache[r.DomainID] = dom
 		}
-		if dom != nil && (perms.IsAllowed("dns/"+dom.Name) || perms.IsAllowed("dns/"+dom.Name+"/"+r.Name+"/"+r.Type)) {
+		if dom != nil && (perms.IsAllowed("network/dns/"+dom.Name) || perms.IsAllowed("network/dns/"+dom.Name+"/"+r.Name+"/"+r.Type)) {
 			filtered = append(filtered, r)
 		}
 	}
@@ -309,7 +309,7 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 	if err != nil {
 		return nil, errors.New("domain not found")
 	}
-	resource := fmt.Sprintf("dns/%s/%s/%s", dom.Name, record.Name, record.Type)
+	resource := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, record.Name, record.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -343,8 +343,8 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 		return nil, errors.New("domain not found")
 	}
 
-	resOld := fmt.Sprintf("dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
-	resNew := fmt.Sprintf("dns/%s/%s/%s", dom.Name, record.Name, record.Type)
+	resOld := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
+	resNew := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, record.Name, record.Type)
 	perms := commonauth.PermissionsFromContext(ctx)
 	if !perms.IsAllowed(resOld) || !perms.IsAllowed(resNew) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resNew)
@@ -386,7 +386,7 @@ func DeleteRecord(ctx context.Context, id string) error {
 	if dom == nil {
 		return errors.New("domain not found")
 	}
-	resource := fmt.Sprintf("dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
+	resource := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -408,7 +408,7 @@ func ClearCache() {
 func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 	perms := commonauth.PermissionsFromContext(ctx)
 	// Entry check: Allow if user has global 'dns' permission OR has specific instance permissions
-	if !perms.AllowedAll && !perms.IsAllowed("dns") && len(perms.AllowedInstances) == 0 {
+	if !perms.AllowedAll && !perms.IsAllowed("network/dns") && len(perms.AllowedInstances) == 0 {
 		return nil, fmt.Errorf("%w: dns", commonauth.ErrPermissionDenied)
 	}
 
@@ -429,7 +429,7 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 	}
 	resp := &models.DnsExportResponse{Domains: make([]models.ExportDomain, 0)}
 	for _, d := range domains {
-		if d.Enabled && perms.IsAllowed("dns/"+d.Name) {
+		if d.Enabled && perms.IsAllowed("network/dns/"+d.Name) {
 			resp.Domains = append(resp.Domains, models.ExportDomain{Name: d.Name, Records: domainMap[d.ID]})
 		}
 	}

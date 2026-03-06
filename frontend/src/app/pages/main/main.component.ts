@@ -205,32 +205,32 @@ export class MainComponent {
         label: '网络管理',
         children: [
           {
-            link: '/dns',
+            link: '/network/dns',
             icon: 'dns',
             label: 'DNS 管理',
             children: [
-              { link: '/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
-              { link: '/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
+              { link: '/network/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
+              { link: '/network/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
             ],
           },
           {
-            link: '/ip',
+            link: '/network/ip',
             icon: 'router',
             label: 'IP 管理',
             children: [
-              { link: '/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
-              { link: '/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
-              { link: '/ip', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
+              { link: '/network/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
+              { link: '/network/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+              { link: '/network/ip', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
             ],
           },
           {
-            link: '/site',
+            link: '/network/site',
             icon: 'web',
             label: '域名池管理',
             children: [
-              { link: '/site', queryParams: { tab: 'pool' }, icon: 'view_list', label: '域名池' },
-              { link: '/site', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
-              { link: '/site', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
+              { link: '/network/site', queryParams: { tab: 'pool' }, icon: 'view_list', label: '域名池' },
+              { link: '/network/site', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+              { link: '/network/site', queryParams: { tab: 'analysis' }, icon: 'science', label: '研判实验室' },
             ],
           },
         ],

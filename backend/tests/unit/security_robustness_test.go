@@ -27,7 +27,7 @@ func TestRBACWildcardRobustness(t *testing.T) {
 	role, _ := rbacservice.CreateRole(adminCtx, &models.Role{
 		Name: "DNS Manager",
 		Rules: []models.PolicyRule{
-			{Resource: "dns/example.com", Verbs: []string{"*"}},
+			{Resource: "network/dns/example.com", Verbs: []string{"*"}},
 		},
 	})
 
@@ -37,20 +37,20 @@ func TestRBACWildcardRobustness(t *testing.T) {
 	})
 
 	// Test Case: Exact match
-	perms, _ := authservice.GetPermissions(ctx, "worker", "get", "dns/example.com")
+	perms, _ := authservice.GetPermissions(ctx, "worker", "get", "network/dns/example.com")
 	if !perms.AllowedAll {
 		t.Error("Should allow exact match")
 	}
 
 	// Test Case: Sub-resource match (Prefix)
-	perms, _ = authservice.GetPermissions(ctx, "worker", "get", "dns/example.com/www/A")
+	perms, _ = authservice.GetPermissions(ctx, "worker", "get", "network/dns/example.com/www/A")
 	if !perms.AllowedAll {
 		t.Error("Should allow sub-resource match via prefix")
 	}
 
 	// Test Case: Sibling resource (False positive check)
-	// "dns/example.com" should NOT match "dns/example.com.cn"
-	perms, _ = authservice.GetPermissions(ctx, "worker", "get", "dns/example.com.cn")
+	// "network/dns/example.com" should NOT match "network/dns/example.com.cn"
+	perms, _ = authservice.GetPermissions(ctx, "worker", "get", "network/dns/example.com.cn")
 	if perms.AllowedAll {
 		t.Error("Should NOT allow sibling resource match (potential prefix vulnerability)")
 	}

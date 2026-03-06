@@ -36,7 +36,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
       <div class="pt-3 space-y-4">
         <!-- Domain Discovery Select -->
         <app-discovery-select
-          code="dns/domains"
+          code="network/dns/domains"
           label="所属域名"
           placeholder="搜索域名..."
           [(ngModel)]="record.domainId"

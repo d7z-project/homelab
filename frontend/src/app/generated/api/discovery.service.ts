@@ -93,7 +93,7 @@ export class DiscoveryService extends BaseService {
 
     /**
      * Discovery lookup
-     * Search for items in a specific discovery code (e.g. dns/domains)
+     * Search for items in a specific discovery code (e.g. network/dns/domains)
      * @endpoint get /discovery/lookup
      * @param code Discovery code
      * @param search Search string

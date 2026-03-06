@@ -19,7 +19,7 @@ func TestDNSCacheInvalidationAndAudit(t *testing.T) {
 	// Inject AuditLogger into context for testing
 	ctx := context.WithValue(context.Background(), commonaudit.LoggerContextKey, &commonaudit.AuditLogger{
 		Subject:  "admin",
-		Resource: "dns",
+		Resource: "network/dns",
 	})
 	adminCtx := auth.WithPermissions(ctx, &models.ResourcePermissions{AllowedAll: true})
 

@@ -286,14 +286,14 @@ func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.R
 							cleanedRes = strings.TrimSuffix(cleanedRes, "/*")
 						}
 
-						// Case 2: Exact Match or Prefix Match (e.g., resource "dns/a" matches rule "dns/*")
+						// Case 2: Exact Match or Prefix Match (e.g., resource "dns/a" matches rule "network/dns/*")
 						if cleanedRes == resource || strings.HasPrefix(resource, cleanedRes+"/") {
 							perms.AllowedAll = true
 							perms.MatchedRule = &rule
 							return perms, nil
 						}
 
-						// Case 3: Instance Suggestion (e.g., resource "dns" matches rule "dns/a")
+						// Case 3: Instance Suggestion (e.g., resource "network/dns" matches rule "dns/a")
 						if strings.HasPrefix(cleanedRes, resource+"/") {
 							inst := strings.TrimPrefix(cleanedRes, resource+"/")
 							if inst != "" && inst != "*" && inst != "**" {
