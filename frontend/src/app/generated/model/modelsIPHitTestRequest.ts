@@ -9,10 +9,8 @@
  */
 
 
-export interface ModelsSiteAnalysisResult { 
-    matched?: boolean;
-    pattern?: string;
-    ruleType?: number;
-    tags?: Array<string>;
+export interface ModelsIPHitTestRequest { 
+    groupIds?: Array<string>;
+    ip?: string;
 }
 

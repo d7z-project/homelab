@@ -9,10 +9,7 @@
  */
 
 
-export interface ModelsSiteAnalysisResult { 
-    matched?: boolean;
-    pattern?: string;
-    ruleType?: number;
-    tags?: Array<string>;
+export interface ModelsTaskCleanupResponse { 
+    deleted?: number;
 }
 

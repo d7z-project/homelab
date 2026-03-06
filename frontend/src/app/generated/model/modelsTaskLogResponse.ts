@@ -7,12 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsLogEntry } from './modelsLogEntry';
 
 
-export interface ModelsSiteAnalysisResult { 
-    matched?: boolean;
-    pattern?: string;
-    ruleType?: number;
-    tags?: Array<string>;
+export interface ModelsTaskLogResponse { 
+    logs?: Array<ModelsLogEntry>;
+    nextOffset?: number;
 }
 

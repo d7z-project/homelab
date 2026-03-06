@@ -28,7 +28,9 @@ model/modelsDomain.ts
 model/modelsExportDomain.ts
 model/modelsIPAnalysisResult.ts
 model/modelsIPExport.ts
+model/modelsIPExportTriggerResponse.ts
 model/modelsIPGroup.ts
+model/modelsIPHitTestRequest.ts
 model/modelsIPInfoResponse.ts
 model/modelsIPPoolEntry.ts
 model/modelsIPPoolEntryRequest.ts
@@ -58,7 +60,9 @@ model/modelsSitePoolPreviewResponse.ts
 model/modelsStep.ts
 model/modelsStepManifest.ts
 model/modelsStepTiming.ts
+model/modelsTaskCleanupResponse.ts
 model/modelsTaskInstance.ts
+model/modelsTaskLogResponse.ts
 model/modelsVarDefinition.ts
 model/modelsWorkflow.ts
 model/networkDnsDomainsGet200Response.ts
