@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
+	"log"
 	"net/netip"
 	"sync"
 
@@ -64,12 +65,15 @@ func (m *MMDBManager) Reload() error {
 func (m *MMDBManager) loadReader(path string) *geoip2.Reader {
 	data, err := afero.ReadFile(common.FS, path)
 	if err != nil {
+		log.Printf("[MMDB] failed to read file %q: %v", path, err)
 		return nil
 	}
 	reader, err := geoip2.OpenBytes(data)
 	if err != nil {
+		log.Printf("[MMDB] failed to parse %q: %v", path, err)
 		return nil
 	}
+	log.Printf("[MMDB] loaded %q successfully", path)
 	return reader
 }
 

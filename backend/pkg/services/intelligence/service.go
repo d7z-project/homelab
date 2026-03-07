@@ -112,6 +112,9 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 		}
 	}
 
+	// 启动时重新加载 MMDB，确保 VFS 中已有的文件（来自上次成功的同步）能立即生效
+	_ = s.mmdb.Reload()
+
 	for i := range sources {
 		src := &sources[i]
 		if src.AutoUpdate && src.UpdateCron != "" {
