@@ -18,6 +18,7 @@ var FS afero.Fs
 var TempDir afero.Fs
 
 var ErrNotFound = errors.New("resource not found")
+var ErrBadRequest = errors.New("bad request")
 
 type Response struct {
 	Code    int         `json:"code"`

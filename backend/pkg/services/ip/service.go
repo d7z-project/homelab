@@ -621,7 +621,7 @@ func (s *IPPoolService) PreviewExport(ctx context.Context, req *models.IPExportP
 		"ip":   "",
 	}))
 	if err != nil {
-		return nil, fmt.Errorf("compile error: %w", err)
+		return nil, fmt.Errorf("%w: compile error: %v", common.ErrBadRequest, err)
 	}
 
 	var results []models.IPPoolEntry

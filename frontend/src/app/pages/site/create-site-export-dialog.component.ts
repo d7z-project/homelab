@@ -8,7 +8,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
-import { PreviewExportDialogComponent } from '../../shared/preview-export-dialog.component';
 import { NetworkSiteService, ModelsSiteExport } from '../../generated';
 
 @Component({
@@ -38,23 +37,17 @@ import { NetworkSiteService, ModelsSiteExport } from '../../generated';
           <textarea matInput formControlName="description" rows="2"></textarea>
         </mat-form-field>
 
-        <div class="flex items-start gap-4">
-          <mat-form-field appearance="outline" class="flex-1">
-            <mat-label>过滤规则 (go-expr)</mat-label>
-            <textarea
-              matInput
-              formControlName="rule"
-              required
-              rows="3"
-              class="font-mono text-sm"
-            ></textarea>
-            <mat-hint>可用变量: tags ([]string), domain (string), type (uint8)</mat-hint>
-          </mat-form-field>
-          <button mat-flat-button color="tertiary" type="button" class="mt-2" [disabled]="!form.get('rule')?.value || !form.get('groupIds')?.value?.length" (click)="previewRule()">
-            <mat-icon>science</mat-icon>
-            计算预览
-          </button>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>过滤规则 (go-expr)</mat-label>
+          <textarea
+            matInput
+            formControlName="rule"
+            required
+            rows="3"
+            class="font-mono text-sm"
+          ></textarea>
+          <mat-hint>可用变量: tags ([]string), domain (string), type (uint8)</mat-hint>
+        </mat-form-field>
 
         <app-discovery-select
           code="network/site/pools"
@@ -98,16 +91,6 @@ export class CreateSiteExportDialogComponent {
     });
   }
 
-  previewRule() {
-    this.dialog.open(PreviewExportDialogComponent, {
-      width: '700px',
-      data: {
-        type: 'site',
-        rule: this.form.get('rule')?.value,
-        groupIds: this.form.get('groupIds')?.value
-      }
-    });
-  }
 
   submit() {
     if (this.form.invalid) return;

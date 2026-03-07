@@ -30,6 +30,7 @@ import { CreateSitePoolDialogComponent } from './create-site-pool-dialog.compone
 import { CreateSiteExportDialogComponent } from './create-site-export-dialog.component';
 import { ManageSiteEntriesDialogComponent } from './manage-site-entries-dialog.component';
 import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
+import { PreviewExportDialogComponent } from '../../shared/preview-export-dialog.component';
 import { UiService } from '../../ui.service';
 import {
   NetworkSiteService,
@@ -335,6 +336,14 @@ export class SiteComponent implements OnInit, OnDestroy {
       width: '600px',
       data: { type: 'site' },
       panelClass: 'tasks-dialog',
+    });
+  }
+
+  previewExport() {
+    this.dialog.open(PreviewExportDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      data: { type: 'site', rule: '', groupIds: [] }
     });
   }
 

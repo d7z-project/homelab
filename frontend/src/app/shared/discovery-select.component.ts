@@ -103,6 +103,8 @@ import {
         />
       }
 
+      <mat-icon matSuffix class="text-outline opacity-50">arrow_drop_down</mat-icon>
+
       <!-- Height animated loading indicator -->
       <div
         class="absolute left-0 right-0 bottom-0 overflow-hidden transition-all duration-300 pointer-events-none"
@@ -214,8 +216,8 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     }
   }
 
-  public onChange: (value: any) => void = () => {};
-  public onTouched: () => void = () => {};
+  public onChange: (value: any) => void = () => { };
+  public onTouched: () => void = () => { };
 
   ngOnInit() {
     // Register validator manually

@@ -397,7 +397,7 @@ func (s *SitePoolService) PreviewExport(ctx context.Context, req *models.SiteExp
 		"type":   uint8(0),
 	}))
 	if err != nil {
-		return nil, fmt.Errorf("compile error: %w", err)
+		return nil, fmt.Errorf("%w: compile error: %v", common.ErrBadRequest, err)
 	}
 
 	var results []models.SitePoolEntry

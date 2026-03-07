@@ -26,6 +26,7 @@ import { CreatePoolDialogComponent } from './create-pool-dialog.component';
 import { ManageEntriesDialogComponent } from './manage-entries-dialog.component';
 import { CreateExportDialogComponent } from './create-export-dialog.component';
 import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
+import { PreviewExportDialogComponent } from '../../shared/preview-export-dialog.component';
 import { UiService } from '../../ui.service';
 import { NetworkIpService, ModelsIPGroup, ModelsIPExport } from '../../generated';
 
@@ -399,6 +400,14 @@ export class IpComponent implements OnInit, OnDestroy {
       width: '600px',
       data: { type: 'ip' },
       panelClass: 'tasks-dialog',
+    });
+  }
+
+  previewExport() {
+    this.dialog.open(PreviewExportDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      data: { type: 'ip', rule: '', groupIds: [] }
     });
   }
 }

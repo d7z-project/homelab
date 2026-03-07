@@ -4,3 +4,5 @@ backend/assets/static/*
 bin/**
 frontend/temp-oas3
 /backend/homelab
+.gemini
+.vscode
