@@ -192,7 +192,7 @@ func ReadAllTaskLogs(workflowID, instanceID string) ([]models.LogEntry, error) {
 			tmpFilename := getReadLogPathTmp(workflowID, instanceID, i)
 			_, statErr := logFS.Stat(filename)
 			_, tmpStatErr := logFS.Stat(tmpFilename)
-			
+
 			if statErr != nil && tmpStatErr != nil {
 				break // Stop if both files don't exist
 			}

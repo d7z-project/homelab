@@ -50,15 +50,13 @@ definitions:
       id:
         type: string
       progress:
-        format: float64
         type: number
       recordCount:
-        format: int64
         type: integer
-      resultURL:
+      resultUrl:
         type: string
       status:
-        description: Pending, Running, Success, Failed
+        description: Pending, Running, Success, Failed, Cancelled
         type: string
     type: object
   models.AuditCleanupResponse:
@@ -315,6 +313,10 @@ definitions:
     properties:
       autoUpdate:
         type: boolean
+      config:
+        additionalProperties:
+          type: string
+        type: object
       cron:
         type: string
       enabled:
@@ -836,14 +838,13 @@ definitions:
       id:
         type: string
       progress:
-        format: float64
         type: number
       recordCount:
-        format: int64
         type: integer
-      resultURL:
+      resultUrl:
         type: string
       status:
+        description: Pending, Running, Success, Failed, Cancelled
         type: string
     type: object
 info:

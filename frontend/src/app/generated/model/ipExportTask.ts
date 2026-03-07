@@ -9,15 +9,19 @@
  */
 
 export interface IpExportTask {
+  /**
+   * Rule + GroupChecksums + Format
+   */
+  checksum?: string;
   createdAt?: string;
   error?: string;
   format?: string;
   id?: string;
   progress?: number;
   recordCount?: number;
-  resultURL?: string;
+  resultUrl?: string;
   /**
-   * Pending, Running, Success, Failed
+   * Pending, Running, Success, Failed, Cancelled
    */
   status?: string;
 }

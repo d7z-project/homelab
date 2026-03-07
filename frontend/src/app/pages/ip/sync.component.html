@@ -181,7 +181,9 @@
             <td mat-cell *matCellDef="let element" class="py-4 text-center">
               <div class="flex flex-col items-center">
                 @if (element.lastStatus === 'pending' || element.lastStatus === 'running') {
-                  <div class="flex items-center gap-2 text-primary font-bold text-[11px] animate-pulse">
+                  <div
+                    class="flex items-center gap-2 text-primary font-bold text-[11px] animate-pulse"
+                  >
                     <mat-spinner diameter="16"></mat-spinner>
                     <span>{{ element.lastStatus === 'pending' ? '等待中...' : '同步中...' }}</span>
                   </div>
@@ -227,11 +229,19 @@
                     mat-icon-button
                     (click)="triggerSync(element)"
                     matTooltip="立即同步"
-                    [disabled]="syncingRows()[element.id] || element.lastStatus === 'pending' || element.lastStatus === 'running'"
+                    [disabled]="
+                      syncingRows()[element.id] ||
+                      element.lastStatus === 'pending' ||
+                      element.lastStatus === 'running'
+                    "
                   >
                     <mat-icon
                       class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                      [class.animate-spin]="syncingRows()[element.id] || element.lastStatus === 'pending' || element.lastStatus === 'running'"
+                      [class.animate-spin]="
+                        syncingRows()[element.id] ||
+                        element.lastStatus === 'pending' ||
+                        element.lastStatus === 'running'
+                      "
                       >sync</mat-icon
                     >
                   </button>

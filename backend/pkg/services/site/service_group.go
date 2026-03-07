@@ -117,4 +117,3 @@ func (s *SitePoolService) ListGroups(ctx context.Context, page, pageSize int, se
 	}
 	return filtered[start:end], total, nil
 }
-

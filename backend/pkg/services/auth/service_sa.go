@@ -88,4 +88,3 @@ func IsSAEnabled(ctx context.Context, saID string, currentToken string) bool {
 	}
 	return sa.Enabled
 }
-

@@ -28,7 +28,7 @@ func (m *MockSubscriber) Publish(ctx context.Context, topic string, message stri
 	return nil
 }
 func (m *MockSubscriber) Child(topic ...string) subscribe.Subscriber { return m }
-func (m *MockSubscriber) Close() error                              { return nil }
+func (m *MockSubscriber) Close() error                               { return nil }
 
 func TestActionsAsyncDecoupling(t *testing.T) {
 	cleanup := tests.SetupTestDB()
@@ -78,7 +78,7 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 	t.Run("Execution_Starts_Only_After_Signal_Handled", func(t *testing.T) {
 		// 再次触发一个新实例
 		instanceID, _ := actions.TriggerWorkflow(ctx, wf, "root", "Manual", nil)
-		
+
 		// 模拟 TriggerManager 接收到信号并处理
 		handlers := common.GetEventHandlers("workflow_execute")
 		if len(handlers) == 0 {
@@ -121,10 +121,10 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		payload := msg[len("workflow_execute:"):]
 
 		handlers := common.GetEventHandlers("workflow_execute")
-		
+
 		var wg sync.WaitGroup
 		wg.Add(2)
-		
+
 		start := make(chan struct{})
 		for i := 0; i < 2; i++ {
 			go func() {
@@ -133,7 +133,7 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 				handlers[0](ctx, payload)
 			}()
 		}
-		
+
 		close(start)
 		wg.Wait()
 

@@ -27,7 +27,7 @@ func TestIntelligenceService_Base(t *testing.T) {
 		source := &models.IntelligenceSource{
 			Name: "Test Source",
 			Type: "asn",
-			URL: "http://example.com/asn.mmdb", Config: map[string]string{"allowPrivate": "true"},
+			URL:  "http://example.com/asn.mmdb", Config: map[string]string{"allowPrivate": "true"},
 		}
 		err := service.CreateSource(ctx, source)
 		assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestIntelligenceService_Base(t *testing.T) {
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		assert.Equal(t, "Ready", s.Status, "Sync failed: " + s.ErrorMessage)
+		assert.Equal(t, "Ready", s.Status, "Sync failed: "+s.ErrorMessage)
 
 		// Verify file in VFS
 		exists, _ := afero.Exists(common.FS, ip.MMDBPathASN)
@@ -70,7 +70,7 @@ func TestIntelligenceService_Base(t *testing.T) {
 			URL:  "http://localhost/secret",
 		}
 		_ = service.CreateSource(ctx, source)
-		
+
 		_ = service.SyncSource(ctx, source.ID)
 
 		var s *models.IntelligenceSource
@@ -159,7 +159,7 @@ func TestIntelligence_FrameworkIntegration(t *testing.T) {
 		}
 		assert.NotNil(t, tFinal)
 		assert.Equal(t, "Cancelled", tFinal.GetStatus())
-		
+
 		// 验证 Source 状态
 		var sFinal *models.IntelligenceSource
 		for i := 0; i < 50; i++ {

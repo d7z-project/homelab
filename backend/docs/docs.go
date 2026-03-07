@@ -4993,18 +4993,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "progress": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "recordCount": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "integer"
                 },
-                "resultURL": {
+                "resultUrl": {
                     "type": "string"
                 },
                 "status": {
-                    "description": "Pending, Running, Success, Failed",
+                    "description": "Pending, Running, Success, Failed, Cancelled",
                     "type": "string"
                 }
             }
@@ -5383,6 +5381,12 @@ const docTemplate = `{
             "properties": {
                 "autoUpdate": {
                     "type": "boolean"
+                },
+                "config": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "cron": {
                     "type": "string"
@@ -6157,17 +6161,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "progress": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "recordCount": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "integer"
                 },
-                "resultURL": {
+                "resultUrl": {
                     "type": "string"
                 },
                 "status": {
+                    "description": "Pending, Running, Success, Failed, Cancelled",
                     "type": "string"
                 }
             }

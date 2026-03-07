@@ -15,6 +15,9 @@ export interface SiteExportTask {
   id?: string;
   progress?: number;
   recordCount?: number;
-  resultURL?: string;
+  resultUrl?: string;
+  /**
+   * Pending, Running, Success, Failed, Cancelled
+   */
   status?: string;
 }

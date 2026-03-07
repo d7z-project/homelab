@@ -2,8 +2,8 @@ package intelligence
 
 import (
 	"context"
-	commonaudit "homelab/pkg/common/audit"
 	"homelab/pkg/common"
+	commonaudit "homelab/pkg/common/audit"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/intelligence"
 

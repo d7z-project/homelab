@@ -36,10 +36,10 @@ type IntelligenceService struct {
 }
 
 type SyncTask struct {
-	ID        string    `json:"ID"`
-	Status    string    `json:"Status"`
-	Error     string    `json:"Error"`
-	CreatedAt time.Time `json:"CreatedAt"`
+	ID        string    `json:"id"`
+	Status    string    `json:"status"`
+	Error     string    `json:"error"`
+	CreatedAt time.Time `json:"createdAt"`
 	mu        sync.Mutex
 }
 

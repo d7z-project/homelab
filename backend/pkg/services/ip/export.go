@@ -25,15 +25,15 @@ import (
 )
 
 type ExportTask struct {
-	ID          string    `json:"ID"`
-	Status      string    `json:"Status"` // Pending, Running, Success, Failed, Cancelled
-	Progress    float64   `json:"Progress"`
-	Format      string    `json:"Format"`
-	ResultURL   string    `json:"ResultURL"`
-	Error       string    `json:"Error"`
-	CreatedAt   time.Time `json:"CreatedAt"`
-	RecordCount int64     `json:"RecordCount"`
-	Checksum    string    `json:"Checksum"` // Rule + GroupChecksums + Format
+	ID          string    `json:"id"`
+	Status      string    `json:"status"` // Pending, Running, Success, Failed, Cancelled
+	Progress    float64   `json:"progress"`
+	Format      string    `json:"format"`
+	ResultURL   string    `json:"resultUrl"`
+	Error       string    `json:"error"`
+	CreatedAt   time.Time `json:"createdAt"`
+	RecordCount int64     `json:"recordCount"`
+	Checksum    string    `json:"checksum"` // Rule + GroupChecksums + Format
 	mu          sync.Mutex
 }
 
@@ -75,15 +75,15 @@ func (t *ExportTask) MarshalJSON() ([]byte, error) {
 var _ models.TaskInfo = (*ExportTask)(nil)
 
 type ExportTaskDTO struct {
-	ID          string    `json:"ID"`
-	Status      string    `json:"Status"`
-	Progress    float64   `json:"Progress"`
-	Format      string    `json:"Format"`
-	ResultURL   string    `json:"ResultURL"`
-	Error       string    `json:"Error"`
-	CreatedAt   time.Time `json:"CreatedAt"`
-	RecordCount int64     `json:"RecordCount"`
-	Checksum    string    `json:"Checksum"`
+	ID          string    `json:"id"`
+	Status      string    `json:"status"`
+	Progress    float64   `json:"progress"`
+	Format      string    `json:"format"`
+	ResultURL   string    `json:"resultUrl"`
+	Error       string    `json:"error"`
+	CreatedAt   time.Time `json:"createdAt"`
+	RecordCount int64     `json:"recordCount"`
+	Checksum    string    `json:"checksum"`
 }
 
 type ExportManager struct {

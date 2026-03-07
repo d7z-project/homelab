@@ -10,6 +10,7 @@
 
 export interface ModelsIntelligenceSource {
   autoUpdate?: boolean;
+  config?: { [key: string]: string };
   cron?: string;
   enabled?: boolean;
   errorMessage?: string;
