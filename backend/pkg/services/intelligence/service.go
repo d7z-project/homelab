@@ -104,7 +104,7 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 		status := t.GetStatus()
 		if status == models.TaskStatusFailed || status == models.TaskStatusCancelled {
 			src, err := repo.GetSource(ctx, t.GetID())
-			if err == nil && (src.Status == models.TaskStatusRunning) {
+			if err == nil && (src.Status == models.TaskStatusRunning || src.Status == models.TaskStatusPending) {
 				src.Status = status
 				src.ErrorMessage = t.Error
 				_ = repo.SaveSource(ctx, src)
