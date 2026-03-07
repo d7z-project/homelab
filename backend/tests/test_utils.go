@@ -8,7 +8,11 @@ import (
 	dnsrepo "homelab/pkg/repositories/dns"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	"homelab/pkg/services/actions"
+	_ "homelab/pkg/services/actions/processors"
 	dnsservice "homelab/pkg/services/dns"
+	"homelab/pkg/services/intelligence"
+	"homelab/pkg/services/ip"
+	"homelab/pkg/services/site"
 	"log"
 
 	"gopkg.d7z.net/middleware/kv"
@@ -73,4 +77,69 @@ func SetupMockContext(userID string, rules []models.PolicyRule) context.Context 
 		AllowedAll:       false,
 		AllowedInstances: allowedInstances,
 	})
+}
+
+// SetupIPService 初始化 IPPoolService 及其依赖
+func SetupIPService() (*ip.IPPoolService, func()) {
+	cleanup := SetupTestDB()
+	mmdb := ip.NewMMDBManager()
+	service := ip.NewIPPoolService(mmdb)
+	return service, cleanup
+}
+
+// SetupSiteService 初始化 SitePoolService 及其依赖
+func SetupSiteService() (*site.SitePoolService, func()) {
+	cleanup := SetupTestDB()
+	mmdb := ip.NewMMDBManager()
+	engine := site.NewAnalysisEngine(mmdb)
+	service := site.NewSitePoolService(engine)
+	return service, cleanup
+}
+
+// SetupIntelligenceService 初始化 IntelligenceService 及其依赖
+func SetupIntelligenceService() (*intelligence.IntelligenceService, func()) {
+	cleanup := SetupTestDB()
+	mmdb := ip.NewMMDBManager()
+	service := intelligence.NewIntelligenceService(mmdb)
+	return service, cleanup
+}
+
+// MockProcessor 用于测试的模拟处理器
+type MockProcessor struct {
+	ExecuteFunc func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error)
+	MockID      string
+}
+
+func (m *MockProcessor) Manifest() actions.StepManifest {
+	id := m.MockID
+	if id == "" {
+		id = "test/mock"
+	}
+	return actions.StepManifest{
+		ID:          id,
+		Name:        "Mock Processor",
+		Description: "A processor for testing purposes.",
+		Params: []models.ParamDefinition{
+			{Name: "input", Optional: true},
+			{Name: "input_val", Optional: true},
+		},
+		OutputParams: []models.ParamDefinition{
+			{Name: "output"},
+			{Name: "out_val"},
+		},
+	}
+}
+
+func (m *MockProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
+	if m.ExecuteFunc != nil {
+		return m.ExecuteFunc(ctx, inputs)
+	}
+	res := make(map[string]string)
+	if val, ok := inputs["input"]; ok {
+		res["output"] = val
+	}
+	if val, ok := inputs["input_val"]; ok {
+		res["out_val"] = val + "_processed"
+	}
+	return res, nil
 }
