@@ -35,8 +35,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-var poolWriteMutex sync.Mutex
-
 func init() {
 	rbac.RegisterResourceWithVerbs("network/ip", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
@@ -103,6 +101,21 @@ func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 		mmdb:    mmdb,
 		cron:    cron.New(),
 		cronIDs: make(map[string]cron.EntryID),
+	}
+}
+
+func (s *IPPoolService) lockPool(ctx context.Context, id string) (func(), error) {
+	lockKey := "network:ip:pool:" + id
+	for {
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
 	}
 }
 
@@ -204,8 +217,11 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	poolWriteMutex.Lock()
-	defer poolWriteMutex.Unlock()
+	release, err := s.lockPool(ctx, groupID)
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	group, err := repo.GetGroup(ctx, groupID)
 	if err != nil {
@@ -358,18 +374,26 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	err = codec.WritePool(tf, allTags, entries)
 	tf.Close()
 	if err != nil {
+		_ = common.FS.Remove(tempFile)
 		return err
 	}
-	_ = common.FS.Rename(tempFile, poolPath)
 
-	// 3. 更新元数据
+	// 计算哈希并更新元数据（在 Rename 之前，确保元数据与即将生效的文件一致）
+	content, err := afero.ReadFile(common.FS, tempFile)
+	if err != nil {
+		_ = common.FS.Remove(tempFile)
+		return err
+	}
+	hf := sha256.New()
+	hf.Write(content)
+
 	group.EntryCount = int64(len(entries))
 	group.UpdatedAt = time.Now()
-
-	hf := sha256.New()
-	content, _ := afero.ReadFile(common.FS, poolPath)
-	hf.Write(content)
 	group.Checksum = hex.EncodeToString(hf.Sum(nil))
+
+	if err := common.FS.Rename(tempFile, poolPath); err != nil {
+		return err
+	}
 
 	err = repo.SaveGroup(ctx, group)
 	if err == nil {
@@ -390,8 +414,11 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	poolWriteMutex.Lock()
-	defer poolWriteMutex.Unlock()
+	release, err := s.lockPool(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	old, _ := repo.GetGroup(ctx, id)
 	// 校验依赖：检查是否有 IPExport 引用了此池
@@ -1019,8 +1046,11 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	}
 
 	// 3. 写入目标池
-	poolWriteMutex.Lock()
-	defer poolWriteMutex.Unlock()
+	release, err := s.lockPool(ctx, policy.TargetGroupID)
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	group, err := repo.GetGroup(ctx, policy.TargetGroupID)
 	if err != nil {
@@ -1111,17 +1141,26 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	err = codec.WritePool(tf, finalTags, finalEntries)
 	tf.Close()
 	if err != nil {
+		_ = common.FS.Remove(tempFile)
 		return err
 	}
-	_ = common.FS.Rename(tempFile, poolPath)
 
-	// 更新元数据
+	// 计算哈希并更新元数据
+	content, err := afero.ReadFile(common.FS, tempFile)
+	if err != nil {
+		_ = common.FS.Remove(tempFile)
+		return err
+	}
+	hf := sha256.New()
+	hf.Write(content)
+
 	group.EntryCount = int64(len(finalEntries))
 	group.UpdatedAt = time.Now()
-	hf := sha256.New()
-	content, _ := afero.ReadFile(common.FS, poolPath)
-	hf.Write(content)
 	group.Checksum = hex.EncodeToString(hf.Sum(nil))
+
+	if err := common.FS.Rename(tempFile, poolPath); err != nil {
+		return err
+	}
 
 	return repo.SaveGroup(ctx, group)
 }

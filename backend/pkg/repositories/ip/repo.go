@@ -6,6 +6,7 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"strings"
+	"sync"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -20,6 +21,7 @@ var (
 	exportListCache *lru.Cache[string, []models.IPExport]
 	policyListCache *lru.Cache[string, []models.IPSyncPolicy]
 	ipLastModified  time.Time
+	ipMu            sync.RWMutex
 )
 
 func init() {
@@ -33,10 +35,14 @@ func init() {
 }
 
 func updateLastModified() {
+	ipMu.Lock()
+	defer ipMu.Unlock()
 	ipLastModified = time.Now()
 }
 
 func GetLastModified() time.Time {
+	ipMu.RLock()
+	defer ipMu.RUnlock()
 	return ipLastModified
 }
 

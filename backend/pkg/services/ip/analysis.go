@@ -20,6 +20,7 @@ type AnalysisEngine struct {
 	mu        sync.RWMutex
 	trieCache *lru.Cache[string, *IPPoolTrie]
 	mmdb      *MMDBManager
+	locks     sync.Map // map[string]*sync.Mutex
 }
 
 func NewAnalysisEngine(mmdb *MMDBManager) *AnalysisEngine {
@@ -30,6 +31,11 @@ func NewAnalysisEngine(mmdb *MMDBManager) *AnalysisEngine {
 	}
 }
 
+func (e *AnalysisEngine) getLock(groupID string) *sync.Mutex {
+	l, _ := e.locks.LoadOrStore(groupID, &sync.Mutex{})
+	return l.(*sync.Mutex)
+}
+
 // GetTrie 获取或构建指定池的 Trie
 func (e *AnalysisEngine) GetTrie(ctx context.Context, groupID string) (*IPPoolTrie, error) {
 	// 检查缓存
@@ -37,9 +43,10 @@ func (e *AnalysisEngine) GetTrie(ctx context.Context, groupID string) (*IPPoolTr
 		return val, nil
 	}
 
-	// 锁定构建过程 (可以使用更细粒度的锁，但这里为了简单先用全局)
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	// 锁定该特定组的构建过程，避免全局锁导致的性能抖动
+	mu := e.getLock(groupID)
+	mu.Lock()
+	defer mu.Unlock()
 
 	// Double check
 	if val, ok := e.trieCache.Get(groupID); ok {

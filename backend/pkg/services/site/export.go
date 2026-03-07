@@ -204,20 +204,28 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	}
 
 	m.mu.Lock()
+	// 收集旧任务
+	var toCancel []*ExportTask
 	for id, t := range m.tasks {
 		if strings.HasPrefix(id, exportID+"-") {
-			t.mu.Lock()
-			if t.Status == "Running" || t.Status == "Pending" {
-				t.Status = "Cancelled"
-			}
-			t.mu.Unlock()
+			toCancel = append(toCancel, t)
 		}
 	}
+
 	taskID := fmt.Sprintf("%s-%d", exportID, time.Now().UnixNano())
 	task := &ExportTask{ID: taskID, Status: "Pending", Format: format, CreatedAt: time.Now()}
 	m.tasks[taskID] = task
 	m.saveTasksLocked()
 	m.mu.Unlock()
+
+	// 锁外取消
+	for _, t := range toCancel {
+		t.mu.Lock()
+		if t.Status == "Running" || t.Status == "Pending" {
+			t.Status = "Cancelled"
+		}
+		t.mu.Unlock()
+	}
 
 	m.wg.Add(1)
 	go m.runExport(context.Background(), task, e)

@@ -22,6 +22,7 @@ type AnalysisEngine struct {
 	mu    sync.RWMutex
 	cache *lru.Cache[string, *CompositeMatcher]
 	mmdb  *ip.MMDBManager
+	locks sync.Map // map[string]*sync.Mutex
 }
 
 func NewAnalysisEngine(mmdb *ip.MMDBManager) *AnalysisEngine {
@@ -29,13 +30,19 @@ func NewAnalysisEngine(mmdb *ip.MMDBManager) *AnalysisEngine {
 	return &AnalysisEngine{cache: cache, mmdb: mmdb}
 }
 
+func (e *AnalysisEngine) getLock(groupID string) *sync.Mutex {
+	l, _ := e.locks.LoadOrStore(groupID, &sync.Mutex{})
+	return l.(*sync.Mutex)
+}
+
 func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*CompositeMatcher, error) {
 	if val, ok := e.cache.Get(groupID); ok {
 		return val, nil
 	}
 
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	mu := e.getLock(groupID)
+	mu.Lock()
+	defer mu.Unlock()
 
 	if val, ok := e.cache.Get(groupID); ok {
 		return val, nil

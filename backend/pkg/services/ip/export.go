@@ -244,14 +244,11 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 		}
 	}
 
-	// 取消该导出配置之前的任务
+	// 收集该导出配置之前的任务，稍后在锁外取消
+	var toCancel []*ExportTask
 	for id, t := range m.tasks {
 		if strings.HasPrefix(id, exportID+"-") {
-			t.mu.Lock()
-			if t.Status == "Running" || t.Status == "Pending" {
-				t.Status = "Cancelled"
-			}
-			t.mu.Unlock()
+			toCancel = append(toCancel, t)
 		}
 	}
 
@@ -266,6 +263,15 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	m.tasks[taskID] = task
 	m.saveTasksLocked()
 	m.mu.Unlock()
+
+	// 在管理器锁之外取消旧任务，避免 ABBA 死锁
+	for _, t := range toCancel {
+		t.mu.Lock()
+		if t.Status == "Running" || t.Status == "Pending" {
+			t.Status = "Cancelled"
+		}
+		t.mu.Unlock()
+	}
 
 	m.wg.Add(1)
 	go m.runExport(context.Background(), task, e)

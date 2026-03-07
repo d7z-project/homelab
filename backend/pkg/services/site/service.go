@@ -16,15 +16,12 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/expr-lang/expr"
 	"github.com/google/uuid"
 	"github.com/spf13/afero"
 )
-
-var sitePoolWriteMutex sync.Mutex
 
 func init() {
 	rbac.RegisterResourceWithVerbs("network/site", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
@@ -86,6 +83,21 @@ func NewSitePoolService(engine *AnalysisEngine) *SitePoolService {
 	return &SitePoolService{engine: engine}
 }
 
+func (s *SitePoolService) lockPool(ctx context.Context, id string) (func(), error) {
+	lockKey := "network:site:pool:" + id
+	for {
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+}
+
 func (s *SitePoolService) SetExportManager(em *ExportManager) {
 	s.exportManager = em
 }
@@ -127,8 +139,11 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	sitePoolWriteMutex.Lock()
-	defer sitePoolWriteMutex.Unlock()
+	release, err := s.lockPool(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	old, _ := repo.GetGroup(ctx, id)
 	exports, _, err := repo.ListExports(ctx, 1, 1000, "")
@@ -200,8 +215,11 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	sitePoolWriteMutex.Lock()
-	defer sitePoolWriteMutex.Unlock()
+	release, err := s.lockPool(ctx, groupID)
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	group, err := repo.GetGroup(ctx, groupID)
 	if err != nil {
@@ -269,17 +287,31 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	err = codec.WritePool(tf, allTags, entries)
 	tf.Close()
 	if err != nil {
+		_ = common.FS.Remove(tempFile)
 		return err
 	}
-	_ = common.FS.Rename(tempFile, poolPath)
+
+	// 计算哈希并更新元数据
+	content, err := afero.ReadFile(common.FS, tempFile)
+	if err != nil {
+		_ = common.FS.Remove(tempFile)
+		return err
+	}
+	hf := sha256.New()
+	hf.Write(content)
 
 	group.EntryCount = int64(len(entries))
 	group.UpdatedAt = time.Now()
-	hf := sha256.New()
-	content, _ := afero.ReadFile(common.FS, poolPath)
-	hf.Write(content)
 	group.Checksum = hex.EncodeToString(hf.Sum(nil))
+
+	if err := common.FS.Rename(tempFile, poolPath); err != nil {
+		return err
+	}
+
 	_ = repo.SaveGroup(ctx, group)
+	if s.engine != nil {
+		s.engine.RemoveCache(groupID)
+	}
 
 	commonaudit.FromContext(ctx).Log("ManageSiteEntry", req.Value, mode, true)
 	return nil
