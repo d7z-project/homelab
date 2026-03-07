@@ -33,6 +33,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 	"gopkg.d7z.net/middleware/kv"
 	"gopkg.d7z.net/middleware/lock"
+	"gopkg.d7z.net/middleware/subscribe"
 	"gopkg.in/yaml.v3"
 )
 
@@ -78,6 +79,12 @@ func main() {
 	}
 	common.Locker = locker
 
+	subscriber, err := subscribe.NewSubscriberFromURL(common.Opts.PubSub)
+	if err != nil {
+		log.Fatalf("Failed to initialize subscriber: %v", err)
+	}
+	common.Subscriber = subscriber
+
 	// Initialize VFS (User Data)
 	vfs, err := common.InitVFS(common.Opts.VFS)
 	if err != nil {
@@ -107,6 +114,8 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	common.StartEventLoop(ctx)
 
 	// Initialize Actions Scoped FS
 	actions.Init()

@@ -12,6 +12,7 @@ var Opts = &Options{
 	Lock:         "memory://",
 	VFS:          "memory://",
 	TempDir:      "memory://",
+	PubSub:       "memory://",
 	RootPassword: "admin",
 	TotpAuth:     "",
 	JWTSecret:    "change-me-please",
@@ -23,6 +24,7 @@ type Options struct {
 	Lock         string `yaml:"lock" env:"HOMELAB_LOCK"`
 	VFS          string `yaml:"vfs" env:"HOMELAB_VFS"`
 	TempDir      string `yaml:"temp_dir" env:"HOMELAB_TEMP_DIR"`
+	PubSub       string `yaml:"pub_sub" env:"HOMELAB_PUB_SUB"`
 	RootPassword string `yaml:"password" env:"HOMELAB_PASSWORD"`
 	TotpAuth     string `yaml:"totp_auth" env:"HOMELAB_TOTP_AUTH"`
 	JWTSecret    string `yaml:"jwt_secret" env:"HOMELAB_JWT_SECRET"`

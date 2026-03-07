@@ -40,10 +40,17 @@ func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error
 
 func NewAnalysisEngine(mmdb *MMDBManager) *AnalysisEngine {
 	cache, _ := lru.New[string, *IPPoolTrie](32) // 缓存 32 个池的 Trie
-	return &AnalysisEngine{
+	engine := &AnalysisEngine{
 		trieCache: cache,
 		mmdb:      mmdb,
 	}
+
+	common.RegisterEventHandler("ip_pool_update", func(ctx context.Context, payload string) {
+		groupID := payload
+		engine.RemoveCache(groupID)
+	})
+
+	return engine
 }
 
 // GetTrie 获取或构建指定池的 Trie

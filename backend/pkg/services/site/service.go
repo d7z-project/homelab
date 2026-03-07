@@ -163,7 +163,7 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 	poolPath := filepath.Join(PoolsDir, id+".bin")
 	_ = common.FS.Remove(poolPath)
 	if s.engine != nil {
-		s.engine.RemoveCache(id)
+		notifySitePoolUpdate(ctx, id)
 	}
 
 	if old != nil {
@@ -310,11 +310,16 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 
 	_ = repo.SaveGroup(ctx, group)
 	if s.engine != nil {
-		s.engine.RemoveCache(groupID)
+		notifySitePoolUpdate(ctx, groupID)
 	}
 
 	commonaudit.FromContext(ctx).Log("ManageSiteEntry", req.Value, mode, true)
 	return nil
+}
+
+func notifySitePoolUpdate(ctx context.Context, groupID string) {
+	common.UpdateGlobalVersion(ctx, "network/site/pool/"+groupID)
+	common.NotifyCluster(ctx, "site_pool_update", groupID)
 }
 
 func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, cursor int64, limit int, search string) (*models.SitePoolPreviewResponse, error) {

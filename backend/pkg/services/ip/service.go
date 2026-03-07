@@ -454,7 +454,7 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 	poolPath := filepath.Join(PoolsDir, id+".bin")
 	_ = common.FS.Remove(poolPath)
 	if s.analysisEngine != nil {
-		s.analysisEngine.RemoveCache(id)
+		notifyIPPoolUpdate(ctx, id)
 	}
 
 	if old != nil {
@@ -1163,7 +1163,16 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		return err
 	}
 
-	return repo.SaveGroup(ctx, group)
+	err = repo.SaveGroup(ctx, group)
+	if err == nil {
+		notifyIPPoolUpdate(ctx, group.ID)
+	}
+	return err
+}
+
+func notifyIPPoolUpdate(ctx context.Context, groupID string) {
+	common.UpdateGlobalVersion(ctx, "network/ip/pool/"+groupID)
+	common.NotifyCluster(ctx, "ip_pool_update", groupID)
 }
 
 func generatePolicyID() string {

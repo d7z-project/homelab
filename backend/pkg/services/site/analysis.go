@@ -42,7 +42,14 @@ func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error
 
 func NewAnalysisEngine(mmdb *ip.MMDBManager) *AnalysisEngine {
 	cache, _ := lru.New[string, *CompositeMatcher](32)
-	return &AnalysisEngine{cache: cache, mmdb: mmdb}
+	engine := &AnalysisEngine{cache: cache, mmdb: mmdb}
+
+	common.RegisterEventHandler("site_pool_update", func(ctx context.Context, payload string) {
+		groupID := payload
+		engine.RemoveCache(groupID)
+	})
+
+	return engine
 }
 
 func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*CompositeMatcher, error) {
