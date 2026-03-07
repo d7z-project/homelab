@@ -50,7 +50,7 @@ type Executor struct {
 
 var GlobalExecutor = &Executor{}
 
-func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.Workflow, trigger string, inputs map[string]string) (string, error) {
+func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.Workflow, trigger string, inputs map[string]string, instanceID string) (string, error) {
 	// 1. Concurrency Control: Only one instance per workflow (Local Check)
 	if existingInstance, loaded := e.activeWorkflows.LoadOrStore(workflow.ID, "placeholder"); loaded {
 		return "", fmt.Errorf("workflow %s is already running locally (instance: %v)", workflow.ID, existingInstance)
@@ -69,8 +69,12 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 		}
 	}
 
+	if instanceID == "" {
+		instanceID = fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano())
+	}
+
 	instance := &models.TaskInstance{
-		ID:               fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano()),
+		ID:               instanceID,
 		WorkflowID:       workflow.ID,
 		Status:           "Running",
 		Trigger:          trigger,

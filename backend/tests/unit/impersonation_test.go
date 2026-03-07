@@ -63,7 +63,7 @@ func TestImpersonation(t *testing.T) {
 
 	// 4. Trigger workflow as a different user
 	triggerUserID := "human-trigger-user"
-	instanceID, err := actions.GlobalExecutor.Execute(context.Background(), triggerUserID, workflow, "Manual", nil)
+	instanceID, err := actions.GlobalExecutor.Execute(context.Background(), triggerUserID, workflow, "Manual", nil, "")
 	if err != nil {
 		t.Fatalf("Failed to trigger workflow: %v", err)
 	}

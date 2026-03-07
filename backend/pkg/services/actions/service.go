@@ -450,12 +450,42 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 		finalInputs[k] = val
 	}
 
-	instanceID, err := GlobalExecutor.Execute(ctx, userID, workflow, triggerSource, finalInputs)
-	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Name, instanceID)
-	if err != nil {
-		commonaudit.FromContext(ctx).Log("TriggerWorkflow", workflow.ID, message+" Error: "+err.Error(), false)
-		return "", err
+	instanceID := fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano())
+	instance := &models.TaskInstance{
+		ID:               instanceID,
+		WorkflowID:       workflow.ID,
+		Status:           "Pending",
+		Trigger:          triggerSource,
+		UserID:           userID,
+		ServiceAccountID: workflow.ServiceAccountID,
+		Inputs:           finalInputs,
+		StartedAt:        time.Now(),
+		Outputs:          make(map[string]string),
+		Steps:            make([]models.Step, len(workflow.Steps)),
+		StepTimings:      make(map[int]*models.StepTiming),
 	}
+	copy(instance.Steps, workflow.Steps)
+
+	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
+		return "", fmt.Errorf("failed to save pending instance: %v", err)
+	}
+
+	if common.Subscriber != nil {
+		payload := models.WorkflowExecutePayload{
+			WorkflowID: workflow.ID,
+			InstanceID: instanceID,
+			UserID:     userID,
+			Trigger:    triggerSource,
+			Inputs:     finalInputs,
+		}
+		b, _ := json.Marshal(payload)
+		common.NotifyCluster(ctx, "workflow_execute", string(b))
+	} else {
+		// Standalone/Test mode fallback: execute locally
+		_, _ = GlobalExecutor.Execute(ctx, userID, workflow, triggerSource, finalInputs, instanceID)
+	}
+
+	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Name, instanceID)
 	commonaudit.FromContext(ctx).Log("TriggerWorkflow", workflow.ID, message, true)
 	return instanceID, nil
 }

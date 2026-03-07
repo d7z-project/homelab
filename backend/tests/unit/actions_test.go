@@ -80,7 +80,7 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "test-user", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "test-user", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -137,7 +137,7 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -176,14 +176,14 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		// Start first instance
-		id1, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
+		id1, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("First execution failed: %v", err)
 		}
 		defer actions.GlobalExecutor.Cancel(id1)
 
 		// Try to start second instance immediately
-		_, err = actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
+		_, err = actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err == nil {
 			t.Error("Expected second execution to fail due to concurrency control")
 		}
@@ -210,7 +210,7 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -331,7 +331,7 @@ func TestActionsEngine(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -510,7 +510,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -579,7 +579,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -627,7 +627,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -664,7 +664,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		id, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		id, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
@@ -687,7 +687,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		// Cleanup (0 days should cleanup everything)
-		id2, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		id2, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, id2)
 			if inst != nil && inst.Status == "Success" {

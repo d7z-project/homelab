@@ -173,3 +173,12 @@ type TaskLogResponse struct {
 	Logs       []LogEntry `json:"logs"`
 	NextOffset int        `json:"nextOffset"`
 }
+
+// WorkflowExecutePayload represents the data sent over the cluster bus to trigger a workflow.
+type WorkflowExecutePayload struct {
+	WorkflowID string            `json:"workflowId"`
+	InstanceID string            `json:"instanceId"`
+	UserID     string            `json:"userId"`
+	Trigger    string            `json:"trigger"`
+	Inputs     map[string]string `json:"inputs"`
+}

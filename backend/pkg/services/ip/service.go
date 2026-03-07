@@ -845,7 +845,7 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	defer tempSrc.Close()
 
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 300 * time.Second,
 	}
 	resp, err := client.Get(policy.SourceURL)
 	if err != nil {

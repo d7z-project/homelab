@@ -45,7 +45,7 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 			},
 		}
 
-		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", map[string]string{"prefix": "val"})
+		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", map[string]string{"prefix": "val"}, "")
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
@@ -87,7 +87,7 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 			},
 		}
 
-		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, instanceID)
@@ -121,7 +121,7 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 			},
 		}
 
-		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
@@ -157,7 +157,7 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Failed to execute: %v", err)
 		}

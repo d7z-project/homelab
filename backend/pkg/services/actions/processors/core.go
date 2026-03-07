@@ -141,7 +141,7 @@ func (p *WorkflowCallProcessor) Execute(ctx *actions.TaskContext, inputs map[str
 
 	ctx.Logger.Logf("Triggering sub-workflow: %s (%s)", wf.Name, targetID)
 	// Trigger sub-workflow using the service account identity (impersonation)
-	instanceID, err := actions.GlobalExecutor.Execute(ctx.Context, ctx.ServiceAccountID, wf, "SubWorkflow:"+ctx.InstanceID, subVars)
+	instanceID, err := actions.GlobalExecutor.Execute(ctx.Context, ctx.ServiceAccountID, wf, "SubWorkflow:"+ctx.InstanceID, subVars, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to trigger sub-workflow: %v", err)
 	}

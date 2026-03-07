@@ -37,7 +37,7 @@ func TestActionsFailAndStatus(t *testing.T) {
 			},
 		}
 
-		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -84,7 +84,7 @@ func TestActionsFailAndStatus(t *testing.T) {
 		}
 		actions.Register(mock)
 
-		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {

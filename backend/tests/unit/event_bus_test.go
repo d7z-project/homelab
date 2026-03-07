@@ -247,7 +247,7 @@ func TestDistributedExecutorConcurrencyCheck(t *testing.T) {
 		}
 
 		// First execution should succeed
-		id1, err := actions.GlobalExecutor.Execute(ctx, "root", wf, "Manual", nil)
+		id1, err := actions.GlobalExecutor.Execute(ctx, "root", wf, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("First execution failed: %v", err)
 		}
@@ -256,7 +256,7 @@ func TestDistributedExecutorConcurrencyCheck(t *testing.T) {
 		}
 
 		// Second execution of the same workflow should be rejected (local check)
-		_, err = actions.GlobalExecutor.Execute(ctx, "root", wf, "Manual", nil)
+		_, err = actions.GlobalExecutor.Execute(ctx, "root", wf, "Manual", nil, "")
 		if err == nil {
 			t.Error("Expected concurrent execution to be rejected")
 		}

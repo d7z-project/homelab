@@ -99,7 +99,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -148,7 +148,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		}
 
 		ctx := tests.SetupMockRootContext()
-		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil)
+		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
