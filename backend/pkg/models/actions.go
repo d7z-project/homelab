@@ -60,7 +60,8 @@ func (w *Workflow) Bind(r *http.Request) error {
 	}
 
 	if w.CronEnabled {
-		if _, err := cron.ParseStandard(w.CronExpr); err != nil {
+		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+		if _, err := parser.Parse(w.CronExpr); err != nil {
 			return fmt.Errorf("invalid cron expression: %v", err)
 		}
 	}

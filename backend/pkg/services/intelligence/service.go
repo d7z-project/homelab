@@ -75,7 +75,8 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 
 func (s *IntelligenceService) addCronJob(src models.IntelligenceSource) {
 	id := src.ID
-	entryID, err := s.cron.AddFunc(src.UpdateCron, func() {
+	lockKey := "intelligence_sync_" + src.ID
+	entryID, err := common.AddDistributedCronJob(s.cron, src.UpdateCron, lockKey, func() {
 		log.Printf("IntelligenceService: running scheduled update for %s (%s)", src.Name, src.ID)
 		s.runDownload(id)
 	})

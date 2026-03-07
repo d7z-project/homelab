@@ -49,7 +49,8 @@ func (p *IPSyncPolicy) Bind(r *http.Request) error {
 	}
 	p.Cron = strings.TrimSpace(p.Cron)
 	if p.Cron != "" {
-		if _, err := cron.ParseStandard(p.Cron); err != nil {
+		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+		if _, err := parser.Parse(p.Cron); err != nil {
 			return fmt.Errorf("invalid cron expression: %w", err)
 		}
 	} else {

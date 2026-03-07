@@ -1,21 +1,59 @@
 package common
 
 import (
+	"context"
 	"errors"
+	"math/rand"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/render"
 	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 	"gopkg.d7z.net/middleware/lock"
+	"gopkg.d7z.net/middleware/subscribe"
 )
 
 var DB kv.KV
 var Locker lock.Locker
+var Subscriber subscribe.Subscriber
 var FS afero.Fs
 var TempDir afero.Fs
+
+// --- 分布式协调辅助函数 ---
+
+// UpdateGlobalVersion 更新指定模块的全局版本号
+func UpdateGlobalVersion(ctx context.Context, module string) int64 {
+	version := time.Now().UnixNano()
+	_ = DB.Child("system", "sync", "version").Put(ctx, module, strconv.FormatInt(version, 10), kv.TTLKeep)
+	return version
+}
+
+// GetGlobalVersion 获取指定模块的全局版本号
+func GetGlobalVersion(ctx context.Context, module string) int64 {
+	val, err := DB.Child("system", "sync", "version").Get(ctx, module)
+	if err != nil || val == "" {
+		return 0
+	}
+	v, _ := strconv.ParseInt(val, 10, 64)
+	return v
+}
+
+// NotifyCluster 发送集群广播事件
+func NotifyCluster(ctx context.Context, event string, payload string) {
+	if Subscriber != nil {
+		_ = Subscriber.Publish(ctx, "homelab:cluster:events", event+":"+payload)
+	}
+}
+
+// WithJitter 执行带随机抖动的函数，用于平滑 I/O 惊群
+func WithJitter(fn func(), maxDelay time.Duration) {
+	delay := time.Duration(rand.Int63n(int64(maxDelay)))
+	time.AfterFunc(delay, fn)
+}
 
 var ErrNotFound = errors.New("resource not found")
 var ErrBadRequest = errors.New("bad request")

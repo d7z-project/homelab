@@ -2,7 +2,9 @@ package actions
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"os"
 	"path"
@@ -18,9 +20,10 @@ type TaskLogger struct {
 	instanceID   string
 	currentIndex int
 	currentFile  afero.File
+	lineCount    int
 }
 
-// NewTaskLogger creates a new logger that writes to a file in logFS.
+// NewTaskLogger creates a new logger that writes to a temporary file in logFS.
 // Initial file is index 0 (engine logs).
 func NewTaskLogger(workflowID, instanceID string) (*TaskLogger, error) {
 	l := &TaskLogger{
@@ -41,27 +44,51 @@ func (l *TaskLogger) getLogDir() string {
 func (l *TaskLogger) openCurrent() error {
 	if l.currentFile != nil {
 		_ = l.currentFile.Close()
+		l.currentFile = nil
+		l.promoteTmpFile(l.currentIndex)
 	}
 
 	dir := l.getLogDir()
 	_ = logFS.MkdirAll(dir, 0755)
 
-	filename := path.Join(dir, fmt.Sprintf("%d.log", l.currentIndex))
+	tmpFilename := path.Join(dir, fmt.Sprintf("%d.log.tmp", l.currentIndex))
 	// Open in append mode, create if not exists
-	f, err := logFS.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := logFS.OpenFile(tmpFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open log file %s: %w", filename, err)
+		return fmt.Errorf("failed to open log file %s: %w", tmpFilename, err)
 	}
 	l.currentFile = f
+	l.lineCount = 0
 	return nil
+}
+
+func (l *TaskLogger) promoteTmpFile(index int) {
+	oldPath := path.Join(l.getLogDir(), fmt.Sprintf("%d.log.tmp", index))
+	newPath := path.Join(l.getLogDir(), fmt.Sprintf("%d.log", index))
+	if exists, _ := afero.Exists(logFS, oldPath); exists {
+		// Acquire distributed lock for final rename
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		lockKey := fmt.Sprintf("actions:log_rename:%s:%s:%d", l.workflowID, l.instanceID, index)
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			defer release()
+			_ = logFS.Rename(oldPath, newPath)
+		}
+	}
 }
 
 // SetStep switches to a new log file for a specific step index.
 func (l *TaskLogger) SetStep(index int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.currentIndex = index
-	_ = l.openCurrent()
+	// Close current and rename if changed
+	if l.currentIndex != index {
+		prevIndex := l.currentIndex
+		l.currentIndex = index
+		_ = l.openCurrent()
+		l.promoteTmpFile(prevIndex)
+	}
 }
 
 // Log writes a raw text line with a timestamp.
@@ -74,7 +101,22 @@ func (l *TaskLogger) Log(message string) {
 	}
 
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	_, _ = fmt.Fprintf(l.currentFile, "[%s] %s\n", timestamp, message)
+	formatted := fmt.Sprintf("[%s] %s\n", timestamp, message)
+	_, _ = l.currentFile.WriteString(formatted)
+
+	// Explicitly flush to make logs visible to other nodes watching VFS
+	if syncer, ok := l.currentFile.(interface{ Sync() error }); ok {
+		_ = syncer.Sync()
+	}
+
+	// Distributed temporary storage in DB for real-time aggregation across nodes
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	key := fmt.Sprintf("%08d", l.lineCount)
+	l.lineCount++
+	if common.DB != nil {
+		_ = common.DB.Child("system", "task:logs", l.instanceID, fmt.Sprint(l.currentIndex)).Put(ctx, key, formatted, 24*time.Hour)
+	}
 }
 
 func (l *TaskLogger) Logf(format string, a ...interface{}) {
@@ -85,15 +127,28 @@ func getReadLogPath(workflowID, instanceID string, index int) string {
 	return path.Join("actions", workflowID, instanceID, fmt.Sprintf("%d.log", index))
 }
 
+func getReadLogPathTmp(workflowID, instanceID string, index int) string {
+	return path.Join("actions", workflowID, instanceID, fmt.Sprintf("%d.log.tmp", index))
+}
+
 // ReadStepLogs reads logs for a specific step index starting from a line offset.
 func ReadStepLogs(workflowID, instanceID string, index int, offset int) ([]models.LogEntry, int, error) {
 	filename := getReadLogPath(workflowID, instanceID, index)
 	f, err := logFS.Open(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []models.LogEntry{}, 0, nil
+			// Fallback to read from .tmp stream file if final log is missing
+			tmpFilename := getReadLogPathTmp(workflowID, instanceID, index)
+			f, err = logFS.Open(tmpFilename)
+			if err != nil {
+				if os.IsNotExist(err) {
+					return []models.LogEntry{}, 0, nil
+				}
+				return nil, 0, err
+			}
+		} else {
+			return nil, 0, err
 		}
-		return nil, 0, err
 	}
 	defer f.Close()
 
@@ -132,10 +187,14 @@ func ReadAllTaskLogs(workflowID, instanceID string) ([]models.LogEntry, error) {
 	for i := 0; ; i++ {
 		logs, _, err := ReadStepLogs(workflowID, instanceID, i, 0)
 		if err != nil || len(logs) == 0 {
-			// Check if the file exists but is empty vs doesn't exist
+			// Check if the file (or tmp file) exists but is empty vs doesn't exist
 			filename := getReadLogPath(workflowID, instanceID, i)
-			if _, statErr := logFS.Stat(filename); statErr != nil {
-				break // Stop if file doesn't exist
+			tmpFilename := getReadLogPathTmp(workflowID, instanceID, i)
+			_, statErr := logFS.Stat(filename)
+			_, tmpStatErr := logFS.Stat(tmpFilename)
+			
+			if statErr != nil && tmpStatErr != nil {
+				break // Stop if both files don't exist
 			}
 		}
 		allLogs = append(allLogs, logs...)
@@ -151,6 +210,7 @@ func ReadAllTaskLogs(workflowID, instanceID string) ([]models.LogEntry, error) {
 // RemoveTaskLogs cleans up all log files associated with an instance.
 func RemoveTaskLogs(workflowID, instanceID string) error {
 	dir := path.Join("actions", workflowID, instanceID)
+	_ = common.DB.Child("system", "task:logs", instanceID).DeleteAll(context.Background())
 	return logFS.RemoveAll(dir)
 }
 
@@ -164,5 +224,7 @@ func (l *TaskLogger) Close() {
 	defer l.mu.Unlock()
 	if l.currentFile != nil {
 		_ = l.currentFile.Close()
+		l.currentFile = nil
+		l.promoteTmpFile(l.currentIndex)
 	}
 }

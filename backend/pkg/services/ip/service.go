@@ -153,7 +153,8 @@ func (s *IPPoolService) addCronJob(p models.IPSyncPolicy) {
 		s.cron.Remove(id)
 	}
 
-	id, err := s.cron.AddFunc(p.Cron, func() {
+	lockKey := "ip_sync_" + p.ID
+	id, err := common.AddDistributedCronJob(s.cron, p.Cron, lockKey, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 		// 注入一个系统权限的 context

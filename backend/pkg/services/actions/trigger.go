@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"homelab/pkg/common"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/actions"
 	"log"
@@ -74,12 +75,20 @@ func (m *TriggerManager) RemoveTriggers(workflowID string) {
 }
 
 func (m *TriggerManager) addCronJob(wf models.Workflow) {
-	entryID, err := m.cron.AddFunc(wf.CronExpr, func() {
-		log.Printf("Triggering cron job for workflow: %s (%s)", wf.Name, wf.ID)
+	lockKey := "workflow_cron_" + wf.ID
+	id := wf.ID
+	entryID, err := common.AddDistributedCronJob(m.cron, wf.CronExpr, lockKey, func() {
+		// fetch latest workflow from db to avoid stale struct capture and missed updates
+		latestWf, err := repo.GetWorkflow(context.Background(), id)
+		if err != nil || !latestWf.Enabled || !latestWf.CronEnabled {
+			return
+		}
+
+		log.Printf("Triggering cron job for workflow: %s (%s)", latestWf.Name, latestWf.ID)
 		// Use the configured ServiceAccount for execution
-		_, err := TriggerWorkflow(context.Background(), &wf, wf.ServiceAccountID, "Cron", nil)
+		_, err = TriggerWorkflow(context.Background(), latestWf, latestWf.ServiceAccountID, "Cron", nil)
 		if err != nil {
-			log.Printf("Failed to trigger cron job for %s: %v", wf.ID, err)
+			log.Printf("Failed to trigger cron job for %s: %v", latestWf.ID, err)
 		}
 	})
 

@@ -51,9 +51,22 @@ type Executor struct {
 var GlobalExecutor = &Executor{}
 
 func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.Workflow, trigger string, inputs map[string]string) (string, error) {
-	// 1. Concurrency Control: Only one instance per workflow
+	// 1. Concurrency Control: Only one instance per workflow (Local Check)
 	if existingInstance, loaded := e.activeWorkflows.LoadOrStore(workflow.ID, "placeholder"); loaded {
-		return "", fmt.Errorf("workflow %s is already running (instance: %v)", workflow.ID, existingInstance)
+		return "", fmt.Errorf("workflow %s is already running locally (instance: %v)", workflow.ID, existingInstance)
+	}
+
+	// Double-check with DB to prevent distributed concurrent execution
+	instances, err := repo.ListTaskInstances(ctx)
+	if err != nil {
+		e.activeWorkflows.Delete(workflow.ID) // Delete the placeholder if DB query fails
+		return "", fmt.Errorf("failed to check for running instances: %w", err)
+	}
+	for _, inst := range instances {
+		if inst.WorkflowID == workflow.ID && inst.Status == "Running" {
+			e.activeWorkflows.Delete(workflow.ID)
+			return "", fmt.Errorf("workflow %s is already running on another node (instance: %v)", workflow.ID, inst.ID)
+		}
 	}
 
 	instance := &models.TaskInstance{
