@@ -9,17 +9,30 @@
       ></app-page-header>
 
       <!-- Unified Search Section -->
-      <div class="flex flex-col md:flex-row gap-4 items-stretch animate-in slide-in-from-top-4 duration-500">
-        <mat-card class="flex-1 !rounded-full border border-outline-variant shadow-sm bg-surface p-1">
+      <div
+        class="flex flex-col md:flex-row gap-4 items-stretch animate-in slide-in-from-top-4 duration-500"
+      >
+        <mat-card
+          class="flex-1 !rounded-full border border-outline-variant shadow-sm bg-surface p-1"
+        >
           <div class="flex items-center gap-2 pl-4 pr-1">
             <mat-form-field appearance="fill" class="flex-1 search-field-m3">
               <mat-icon matPrefix class="mr-2 text-primary opacity-70">manage_search</mat-icon>
-              <input matInput [(ngModel)]="query" 
-                     placeholder="输入待分析的 IP 地址或域名" (keyup.enter)="runAnalysis()"
-                     class="text-base font-medium">
+              <input
+                matInput
+                [(ngModel)]="query"
+                placeholder="输入待分析的 IP 地址或域名"
+                (keyup.enter)="runAnalysis()"
+                class="text-base font-medium"
+              />
             </mat-form-field>
-            <button mat-flat-button color="primary" class="!rounded-full h-[48px] px-8 font-bold" 
-                    [disabled]="!query() || loading()" (click)="runAnalysis()">
+            <button
+              mat-flat-button
+              color="primary"
+              class="!rounded-full h-[48px] px-8 font-bold"
+              [disabled]="!query() || loading()"
+              (click)="runAnalysis()"
+            >
               探测研判
             </button>
           </div>
@@ -29,7 +42,9 @@
       @if (loading() && !hasResult()) {
         <div class="py-20 flex flex-col items-center gap-4 animate-in fade-in">
           <mat-spinner diameter="48"></mat-spinner>
-          <div class="text-outline text-sm tracking-widest font-medium uppercase">探测任务启动中...</div>
+          <div class="text-outline text-sm tracking-widest font-medium uppercase">
+            探测任务启动中...
+          </div>
         </div>
       }
 
@@ -37,66 +52,117 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in zoom-in-95 duration-500">
           <!-- Matching Result (Private Pools) -->
           <div class="lg:col-span-1 space-y-6">
-            <mat-card class="!rounded-[32px] border overflow-hidden shadow-md relative min-h-[280px]" 
-                      [class.border-green-500]="(ipResult()?.matched || siteResult()?.matched) && !hitTestLoading()" 
-                      [class.border-red-200]="!(ipResult()?.matched || siteResult()?.matched) && !hitTestLoading()">
-              
+            <mat-card
+              class="!rounded-[32px] border overflow-hidden shadow-md relative min-h-[280px]"
+              [class.border-green-500]="
+                (ipResult()?.matched || siteResult()?.matched) && !hitTestLoading()
+              "
+              [class.border-red-200]="
+                !(ipResult()?.matched || siteResult()?.matched) && !hitTestLoading()
+              "
+            >
               @if (hitTestLoading()) {
-                <div class="absolute inset-0 bg-surface/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-4 animate-in fade-in">
+                <div
+                  class="absolute inset-0 bg-surface/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-4 animate-in fade-in"
+                >
                   <mat-spinner diameter="40"></mat-spinner>
-                  <div class="text-[10px] font-bold uppercase tracking-widest text-primary animate-pulse">正在扫描私有资产库...</div>
+                  <div
+                    class="text-[10px] font-bold uppercase tracking-widest text-primary animate-pulse"
+                  >
+                    正在扫描私有资产库...
+                  </div>
                 </div>
               }
 
-              <div class="p-8 flex flex-col items-center text-center" [class.opacity-20]="hitTestLoading()">
-                <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6" 
-                     [class.bg-green-100]="ipResult()?.matched || siteResult()?.matched" 
-                     [class.bg-red-50]="!(ipResult()?.matched || siteResult()?.matched)">
-                  <mat-icon [class.text-green-600]="ipResult()?.matched || siteResult()?.matched" 
-                            [class.text-red-600]="!(ipResult()?.matched || siteResult()?.matched)" class="!text-5xl !w-12 !h-12">
-                    {{ (ipResult()?.matched || siteResult()?.matched) ? 'verified_user' : 'gpp_bad' }}
+              <div
+                class="p-8 flex flex-col items-center text-center"
+                [class.opacity-20]="hitTestLoading()"
+              >
+                <div
+                  class="w-20 h-20 rounded-full flex items-center justify-center mb-6"
+                  [class.bg-green-100]="ipResult()?.matched || siteResult()?.matched"
+                  [class.bg-red-50]="!(ipResult()?.matched || siteResult()?.matched)"
+                >
+                  <mat-icon
+                    [class.text-green-600]="ipResult()?.matched || siteResult()?.matched"
+                    [class.text-red-600]="!(ipResult()?.matched || siteResult()?.matched)"
+                    class="!text-5xl !w-12 !h-12"
+                  >
+                    {{ ipResult()?.matched || siteResult()?.matched ? 'verified_user' : 'gpp_bad' }}
                   </mat-icon>
                 </div>
-                <h3 class="text-2xl font-black m-0 mb-2 tracking-tight" 
-                    [class.text-green-700]="ipResult()?.matched || siteResult()?.matched" 
-                    [class.text-red-700]="!(ipResult()?.matched || siteResult()?.matched)">
-                  {{ (ipResult()?.matched || siteResult()?.matched) ? '资产匹配：命中' : '资产匹配：未命中' }}
+                <h3
+                  class="text-2xl font-black m-0 mb-2 tracking-tight"
+                  [class.text-green-700]="ipResult()?.matched || siteResult()?.matched"
+                  [class.text-red-700]="!(ipResult()?.matched || siteResult()?.matched)"
+                >
+                  {{
+                    ipResult()?.matched || siteResult()?.matched
+                      ? '资产匹配：命中'
+                      : '资产匹配：未命中'
+                  }}
                 </h3>
-                <p class="text-outline text-xs uppercase tracking-widest font-bold opacity-60">私有池探测状态</p>
+                <p class="text-outline text-xs uppercase tracking-widest font-bold opacity-60">
+                  私有池探测状态
+                </p>
               </div>
-              
+
               <div [class.opacity-20]="hitTestLoading()">
                 @if (ipResult()?.matched) {
                   <div class="bg-green-600 text-white p-4 text-center">
-                    <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">IP 前缀匹配 (LPM)</div>
+                    <div
+                      class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80"
+                    >
+                      IP 前缀匹配 (LPM)
+                    </div>
                     <div class="text-xl font-mono font-medium">{{ ipResult()?.cidr }}</div>
                   </div>
                 }
                 @if (siteResult()?.matched) {
                   <div class="bg-green-600 text-white p-4 text-center border-t border-white/10">
-                    <div class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80">
-                      命中规则: 
+                    <div
+                      class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80"
+                    >
+                      命中规则:
                       @switch (siteResult()?.ruleType) {
-                        @case (0) { keyword }
-                        @case (1) { regex }
-                        @case (2) { domain }
-                        @case (3) { full }
+                        @case (0) {
+                          keyword
+                        }
+                        @case (1) {
+                          regex
+                        }
+                        @case (2) {
+                          domain
+                        }
+                        @case (3) {
+                          full
+                        }
                       }
                     </div>
-                    <div class="text-lg font-mono font-medium truncate px-4">{{ siteResult()?.pattern }}</div>
+                    <div class="text-lg font-mono font-medium truncate px-4">
+                      {{ siteResult()?.pattern }}
+                    </div>
                   </div>
                 }
               </div>
             </mat-card>
 
             <!-- Tags Section -->
-            @if ((ipResult()?.matched || siteResult()?.matched) || hitTestLoading()) {
-              <mat-card class="!rounded-[32px] bg-surface-container-high border-none shadow-sm overflow-hidden relative min-h-[120px]">
+            @if (ipResult()?.matched || siteResult()?.matched || hitTestLoading()) {
+              <mat-card
+                class="!rounded-[32px] bg-surface-container-high border-none shadow-sm overflow-hidden relative min-h-[120px]"
+              >
                 @if (hitTestLoading()) {
-                  <div class="absolute inset-0 bg-surface-container-high/40 flex items-center justify-center">
+                  <div
+                    class="absolute inset-0 bg-surface-container-high/40 flex items-center justify-center"
+                  >
                     <div class="flex gap-1">
-                      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]"></div>
-                      <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]"></div>
+                      <div
+                        class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]"
+                      ></div>
+                      <div
+                        class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]"
+                      ></div>
                       <div class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"></div>
                     </div>
                   </div>
@@ -107,8 +173,11 @@
                     <span class="text-sm font-bold uppercase tracking-widest">研判属性标签</span>
                   </div>
                   <div class="flex flex-wrap gap-2">
-                    @for (tag of (ipResult()?.tags || siteResult()?.tags); track tag) {
-                      <span class="px-3 py-1 rounded-full bg-primary text-white text-xs font-bold shadow-sm">{{ tag }}</span>
+                    @for (tag of ipResult()?.tags || siteResult()?.tags; track tag) {
+                      <span
+                        class="px-3 py-1 rounded-full bg-primary text-white text-xs font-bold shadow-sm"
+                        >{{ tag }}</span
+                      >
                     }
                   </div>
                 </div>
@@ -119,8 +188,12 @@
           <!-- Intelligence Section (IP only for now) -->
           <div class="lg:col-span-2 space-y-6">
             @if (ipInfo()) {
-              <mat-card class="!rounded-[32px] bg-surface border border-outline-variant shadow-sm overflow-hidden">
-                <div class="bg-surface-container-low px-8 py-4 border-b border-outline-variant flex items-center justify-between">
+              <mat-card
+                class="!rounded-[32px] bg-surface border border-outline-variant shadow-sm overflow-hidden"
+              >
+                <div
+                  class="bg-surface-container-low px-8 py-4 border-b border-outline-variant flex items-center justify-between"
+                >
                   <div class="flex items-center gap-3">
                     <mat-icon class="text-primary">public</mat-icon>
                     <span class="font-bold tracking-tight text-lg">全球情报追踪 (MaxMind)</span>
@@ -129,44 +202,74 @@
                 <div class="p-8">
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-10">
                     <div class="flex flex-col min-w-0">
-                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-1 opacity-70">自治系统 (ASN)</div>
-                      <div class="text-4xl md:text-5xl font-mono font-black text-primary leading-none truncate">AS{{ ipInfo()?.asn }}</div>
-                      <div class="text-base text-outline font-medium truncate opacity-90 mt-2">{{ ipInfo()?.org }}</div>
+                      <div
+                        class="text-xs font-bold text-outline uppercase tracking-widest mb-1 opacity-70"
+                      >
+                        自治系统 (ASN)
+                      </div>
+                      <div
+                        class="text-4xl md:text-5xl font-mono font-black text-primary leading-none truncate"
+                      >
+                        AS{{ ipInfo()?.asn }}
+                      </div>
+                      <div class="text-base text-outline font-medium truncate opacity-90 mt-2">
+                        {{ ipInfo()?.org }}
+                      </div>
                     </div>
                     <div class="flex flex-col min-w-0">
-                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-1 opacity-70">地理归属</div>
+                      <div
+                        class="text-xs font-bold text-outline uppercase tracking-widest mb-1 opacity-70"
+                      >
+                        地理归属
+                      </div>
                       <div class="flex flex-col gap-1">
                         @if (ipInfo()?.country || ipInfo()?.city) {
                           <div class="flex flex-col gap-1.5">
                             @if (ipInfo()?.country) {
                               <div>
-                                <span class="px-3 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold border border-secondary/20 shadow-sm shrink-0">
+                                <span
+                                  class="px-3 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold border border-secondary/20 shadow-sm shrink-0"
+                                >
                                   {{ ipInfo()?.country }}
                                 </span>
                               </div>
                             }
                             @if (ipInfo()?.city) {
-                              <div class="text-2xl md:text-3xl font-bold tracking-tight truncate">{{ ipInfo()?.city }}</div>
+                              <div class="text-2xl md:text-3xl font-bold tracking-tight truncate">
+                                {{ ipInfo()?.city }}
+                              </div>
                             }
                           </div>
                         } @else {
                           <div class="text-sm text-outline opacity-40 italic">暂无地理位置数据</div>
                         }
-                        <div class="text-xs text-outline opacity-60 flex items-center gap-1 uppercase tracking-tighter mt-1">
+                        <div
+                          class="text-xs text-outline opacity-60 flex items-center gap-1 uppercase tracking-tighter mt-1"
+                        >
                           <mat-icon class="!w-4 !h-4 !text-[14px]">verified</mat-icon>
                           MaxMind Verified Data
                         </div>
                       </div>
                     </div>
                     <div class="sm:col-span-2 pt-2">
-                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-3 opacity-70">坐标研判与全球定位</div>
-                      <div class="map-wrapper bg-[#0f172a] rounded-[32px] border border-outline-variant relative overflow-hidden group shadow-2xl">
+                      <div
+                        class="text-xs font-bold text-outline uppercase tracking-widest mb-3 opacity-70"
+                      >
+                        坐标研判与全球定位
+                      </div>
+                      <div
+                        class="map-wrapper bg-[#0f172a] rounded-[32px] border border-outline-variant relative overflow-hidden group shadow-2xl"
+                      >
                         <!-- ECharts Container -->
                         <div #mapContainer class="w-full h-full"></div>
-                        
+
                         <!-- Location Badge (Floating) -->
-                        <div class="absolute bottom-6 left-6 px-4 py-1.5 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl z-20 pointer-events-none animate-in fade-in slide-in-from-bottom-2">
-                          <span class="text-lg font-mono font-black text-white tracking-widest">{{ ipInfo()?.location }}</span>
+                        <div
+                          class="absolute bottom-6 left-6 px-4 py-1.5 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl z-20 pointer-events-none animate-in fade-in slide-in-from-bottom-2"
+                        >
+                          <span class="text-lg font-mono font-black text-white tracking-widest">{{
+                            ipInfo()?.location
+                          }}</span>
                         </div>
                       </div>
                     </div>
@@ -174,61 +277,111 @@
                 </div>
               </mat-card>
             } @else if (siteResult()) {
-              <mat-card class="bg-surface border border-outline-variant shadow-sm rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div class="px-8 py-6 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+              <mat-card
+                class="bg-surface border border-outline-variant shadow-sm rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700"
+              >
+                <div
+                  class="px-8 py-6 border-b border-outline-variant bg-surface-container-low flex justify-between items-center"
+                >
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <div
+                      class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center"
+                    >
                       <mat-icon class="text-primary">public</mat-icon>
                     </div>
-                    <span class="font-bold tracking-tight text-lg">域名全球情报 (DNS Intelligence)</span>
+                    <span class="font-bold tracking-tight text-lg"
+                      >域名全球情报 (DNS Intelligence)</span
+                    >
                   </div>
                 </div>
-                
+
                 <div class="p-8">
                   <div class="grid grid-cols-1 gap-10">
                     <!-- DNS Analysis List -->
                     <div class="space-y-6">
                       <!-- A / AAAA Section -->
                       <div class="space-y-3">
-                        <div class="text-xs font-bold text-outline uppercase tracking-widest opacity-70">解析地址与地理溯源</div>
-                        <div class="flex flex-col border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest">
+                        <div
+                          class="text-xs font-bold text-outline uppercase tracking-widest opacity-70"
+                        >
+                          解析地址与地理溯源
+                        </div>
+                        <div
+                          class="flex flex-col border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest"
+                        >
                           @for (a of siteResult()?.dns?.a; track a.ip) {
-                            <div class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group">
+                            <div
+                              class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group"
+                            >
                               <div class="flex-1 flex items-center gap-4 min-w-0">
-                                <span class="text-lg font-mono font-black text-primary clickable-link" (click)="pivotSearch(a.ip)">{{ a.ip }}</span>
-                                <span class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0">AS{{ a.asn }}</span>
-                                <span class="text-sm text-outline truncate opacity-80">{{ a.org }}</span>
+                                <span
+                                  class="text-lg font-mono font-black text-primary clickable-link"
+                                  (click)="pivotSearch(a.ip)"
+                                  >{{ a.ip }}</span
+                                >
+                                <span
+                                  class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0"
+                                  >AS{{ a.asn }}</span
+                                >
+                                <span class="text-sm text-outline truncate opacity-80">{{
+                                  a.org
+                                }}</span>
                               </div>
                               <div class="flex flex-col items-end gap-1 shrink-0">
                                 @if (a.country) {
-                                  <span class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30">{{ a.country }}</span>
+                                  <span
+                                    class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                    >{{ a.country }}</span
+                                  >
                                 }
                                 @if (a.city) {
                                   <span class="text-xs font-bold">{{ a.city }}</span>
                                 }
                                 @if (!a.country && !a.city) {
-                                  <span class="text-[10px] text-outline opacity-40 italic">未知地理位置</span>
+                                  <span class="text-[10px] text-outline opacity-40 italic"
+                                    >未知地理位置</span
+                                  >
                                 }
                               </div>
                             </div>
                           }
                           @for (aaaa of siteResult()?.dns?.aaaa; track aaaa.ip) {
-                            <div class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
+                            <div
+                              class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors"
+                            >
                               <div class="flex-1 flex items-center gap-4 min-w-0">
-                                <span class="text-base font-mono font-black text-secondary clickable-link truncate" (click)="pivotSearch(aaaa.ip)" [matTooltip]="aaaa.ip">{{ aaaa.ip }}</span>
-                                <span class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0">AS{{ aaaa.asn }}</span>
-                                <span class="text-sm text-outline truncate opacity-80">{{ aaaa.org }}</span>
+                                <span
+                                  class="text-base font-mono font-black text-secondary clickable-link truncate"
+                                  (click)="pivotSearch(aaaa.ip)"
+                                  [matTooltip]="aaaa.ip"
+                                  >{{ aaaa.ip }}</span
+                                >
+                                <span
+                                  class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0"
+                                  >AS{{ aaaa.asn }}</span
+                                >
+                                <span class="text-sm text-outline truncate opacity-80">{{
+                                  aaaa.org
+                                }}</span>
                               </div>
                               <div class="flex flex-col items-end gap-1 shrink-0">
-                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-black border border-outline-variant/30">IPv6</span>
+                                <span
+                                  class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-black border border-outline-variant/30"
+                                  >IPv6</span
+                                >
                                 @if (aaaa.country) {
-                                  <span class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30">{{ aaaa.country }}</span>
+                                  <span
+                                    class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                    >{{ aaaa.country }}</span
+                                  >
                                 }
                                 @if (aaaa.city) {
                                   <span class="text-xs font-bold">{{ aaaa.city }}</span>
                                 }
                                 @if (!aaaa.country && !aaaa.city) {
-                                  <span class="text-[10px] text-outline opacity-40 italic">未知地理位置</span>
+                                  <span class="text-[10px] text-outline opacity-40 italic"
+                                    >未知地理位置</span
+                                  >
                                 }
                               </div>
                             </div>
@@ -240,12 +393,24 @@
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         @if (siteResult()?.dns?.cname?.length) {
                           <div class="space-y-3">
-                            <div class="text-xs font-bold text-outline uppercase tracking-widest opacity-70">CNAME 别名</div>
+                            <div
+                              class="text-xs font-bold text-outline uppercase tracking-widest opacity-70"
+                            >
+                              CNAME 别名
+                            </div>
                             <div class="flex flex-col gap-2">
                               @for (cname of siteResult()?.dns?.cname; track cname) {
-                                <div class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3 group">
-                                  <mat-icon class="text-secondary !w-4 !h-4 !text-[16px]">link</mat-icon>
-                                  <span class="text-sm font-mono font-medium text-secondary truncate flex-1 clickable-link" (click)="pivotSearch(cname)">{{ cname }}</span>
+                                <div
+                                  class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3 group"
+                                >
+                                  <mat-icon class="text-secondary !w-4 !h-4 !text-[16px]"
+                                    >link</mat-icon
+                                  >
+                                  <span
+                                    class="text-sm font-mono font-medium text-secondary truncate flex-1 clickable-link"
+                                    (click)="pivotSearch(cname)"
+                                    >{{ cname }}</span
+                                  >
                                 </div>
                               }
                             </div>
@@ -253,12 +418,24 @@
                         }
                         @if (siteResult()?.dns?.soa?.length) {
                           <div class="space-y-3">
-                            <div class="text-xs font-bold text-outline uppercase tracking-widest opacity-70">SOA 权威</div>
+                            <div
+                              class="text-xs font-bold text-outline uppercase tracking-widest opacity-70"
+                            >
+                              SOA 权威
+                            </div>
                             <div class="flex flex-col gap-2">
                               @for (soa of siteResult()?.dns?.soa; track soa) {
-                                <div class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3">
-                                  <mat-icon class="text-primary !w-4 !h-4 !text-[16px]">verified_user</mat-icon>
-                                  <span class="text-sm font-mono font-medium text-outline truncate flex-1 clickable-link" (click)="pivotSearch(soa)">{{ soa }}</span>
+                                <div
+                                  class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3"
+                                >
+                                  <mat-icon class="text-primary !w-4 !h-4 !text-[16px]"
+                                    >verified_user</mat-icon
+                                  >
+                                  <span
+                                    class="text-sm font-mono font-medium text-outline truncate flex-1 clickable-link"
+                                    (click)="pivotSearch(soa)"
+                                    >{{ soa }}</span
+                                  >
                                 </div>
                               }
                             </div>
@@ -269,13 +446,29 @@
 
                     <!-- Map -->
                     <div class="pt-2">
-                      <div class="text-xs font-bold text-outline uppercase tracking-widest mb-3 opacity-70">全球节点分布图</div>
-                      <div class="map-wrapper bg-[#0f172a] rounded-[32px] border border-outline-variant relative overflow-hidden group shadow-2xl">
+                      <div
+                        class="text-xs font-bold text-outline uppercase tracking-widest mb-3 opacity-70"
+                      >
+                        全球节点分布图
+                      </div>
+                      <div
+                        class="map-wrapper bg-[#0f172a] rounded-[32px] border border-outline-variant relative overflow-hidden group shadow-2xl"
+                      >
                         <div #mapContainer class="w-full h-full"></div>
-                        
+
                         <!-- Floating Location Count -->
-                        <div class="absolute bottom-6 left-6 px-4 py-1.5 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl z-20 pointer-events-none animate-in fade-in slide-in-from-bottom-2">
-                          <span class="text-xs font-mono font-black text-white tracking-widest uppercase">Detected {{ (siteResult()?.dns?.a?.length || 0) + (siteResult()?.dns?.aaaa?.length || 0) }} Endpoints</span>
+                        <div
+                          class="absolute bottom-6 left-6 px-4 py-1.5 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl z-20 pointer-events-none animate-in fade-in slide-in-from-bottom-2"
+                        >
+                          <span
+                            class="text-xs font-mono font-black text-white tracking-widest uppercase"
+                            >Detected
+                            {{
+                              (siteResult()?.dns?.a?.length || 0) +
+                                (siteResult()?.dns?.aaaa?.length || 0)
+                            }}
+                            Endpoints</span
+                          >
                         </div>
                       </div>
                     </div>

@@ -47,9 +47,11 @@ import { NetworkIntelligenceService, ModelsIntelligenceSource } from '../../../g
           <mat-hint>必须是可直接下载的 .mmdb 原始文件链接</mat-hint>
         </mat-form-field>
 
-        <div class="flex flex-col gap-2 p-4 bg-surface-container-low rounded-2xl border border-outline-variant">
+        <div
+          class="flex flex-col gap-2 p-4 bg-surface-container-low rounded-2xl border border-outline-variant"
+        >
           <mat-slide-toggle formControlName="autoUpdate">启用自动更新</mat-slide-toggle>
-          
+
           @if (form.get('autoUpdate')?.value) {
             <mat-form-field appearance="outline" class="mt-2">
               <mat-label>Cron 表达式</mat-label>
@@ -62,7 +64,12 @@ import { NetworkIntelligenceService, ModelsIntelligenceSource } from '../../../g
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" [disabled]="form.invalid || loading" (click)="submit()">
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="form.invalid || loading"
+        (click)="submit()"
+      >
         保存配置
       </button>
     </mat-dialog-actions>
@@ -100,7 +107,7 @@ export class CreateSourceDialogComponent implements OnInit {
     }
 
     // Dynamic validation for cron
-    this.form.get('autoUpdate')?.valueChanges.subscribe(val => {
+    this.form.get('autoUpdate')?.valueChanges.subscribe((val) => {
       const cronControl = this.form.get('cron');
       if (val) {
         cronControl?.setValidators(Validators.required);
@@ -127,12 +134,13 @@ export class CreateSourceDialogComponent implements OnInit {
       status: this.data ? this.data.status : 'Ready',
       lastUpdatedAt: this.data ? this.data.lastUpdatedAt : '0001-01-01T00:00:00Z',
       id: this.data ? this.data.id : '',
-      errorMessage: this.data ? this.data.errorMessage : ''
+      errorMessage: this.data ? this.data.errorMessage : '',
     };
 
-    const obs = this.data && this.data.id
-      ? this.intService.networkIntelligenceSourcesIdPut(this.data.id, payload)
-      : this.intService.networkIntelligenceSourcesPost(payload);
+    const obs =
+      this.data && this.data.id
+        ? this.intService.networkIntelligenceSourcesIdPut(this.data.id, payload)
+        : this.intService.networkIntelligenceSourcesPost(payload);
 
     obs.subscribe({
       next: () => {
@@ -141,8 +149,10 @@ export class CreateSourceDialogComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.snackBar.open(`保存失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-      }
+        this.snackBar.open(`保存失败: ${err.error?.message || err.message}`, '关闭', {
+          duration: 3000,
+        });
+      },
     });
   }
 }

@@ -10,8 +10,8 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIPCodec(t *testing.T) {
@@ -157,7 +157,7 @@ func TestIPPreviewCursor(t *testing.T) {
 			TagIndices: []uint32{},
 		}
 	}
-	
+
 	codec := ip.NewCodec()
 	f, _ := common.FS.Create("network/ip/pools/cursor_pool.bin")
 	_ = codec.WritePool(f, []string{}, entries)

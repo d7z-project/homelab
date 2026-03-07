@@ -1,16 +1,16 @@
 package unit
 
 import (
-	"homelab/tests"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/ip"
+	"homelab/tests"
+	"net/netip"
 	"testing"
 	"time"
-	"net/netip"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIPExportCRUD(t *testing.T) {
@@ -138,6 +138,23 @@ func TestIPExportManager(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	assert.True(t, manager.GetTask(taskIDYaml).Status == "Success")
+
+	// Allow background saveTasks to complete before teardown
+	for i := 0; i < 50; i++ {
+		allDone := true
+		for _, task := range manager.ListTasks() {
+			if task.Status == "Running" || task.Status == "Pending" {
+				allDone = false
+				break
+			}
+		}
+		if allDone {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	// Extra buffer to let saveTasks() finish after Status updates
+	manager.WaitAll()
 }
 
 func TestIPAnalysisEngine(t *testing.T) {
@@ -177,7 +194,7 @@ func TestIPAnalysisEngine(t *testing.T) {
 func TestIPInfoLookup(t *testing.T) {
 	// Setup FS to prevent nil pointer in afero.ReadFile
 	common.FS = afero.NewMemMapFs()
-	
+
 	// Test graceful handling when MMDB files are missing
 	mmdb := ip.NewMMDBManager() // No files loaded
 	analysis := ip.NewAnalysisEngine(mmdb)
@@ -212,9 +229,11 @@ func TestIPExportCancellation(t *testing.T) {
 	// Write dummy data to prevent fast completion
 	codec := ip.NewCodec()
 	f, _ := common.FS.Create("network/ip/pools/pool1.bin")
-	_ = codec.WritePool(f, []string{"t"}, []ip.Entry{
-		{Prefix: netip.MustParsePrefix("1.1.1.1/32"), TagIndices: []uint32{0}},
-	})
+	var dummyEntries []ip.Entry
+	for i := 0; i < 100000; i++ {
+		dummyEntries = append(dummyEntries, ip.Entry{Prefix: netip.MustParsePrefix("1.1.1.1/32"), TagIndices: []uint32{0}})
+	}
+	_ = codec.WritePool(f, []string{"t"}, dummyEntries)
 	f.Close()
 
 	export := &models.IPExport{
@@ -234,14 +253,24 @@ func TestIPExportCancellation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEqual(t, taskID1, taskID2)
 
-	// 3. Wait a bit for status update
-	time.Sleep(150 * time.Millisecond)
-	
+	// 3. Wait for second task to complete
+	for i := 0; i < 50; i++ {
+		t := manager.GetTask(taskID2)
+		if t != nil && (t.Status == "Success" || t.Status == "Failed" || t.Status == "Cancelled") {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+
 	t1 := manager.GetTask(taskID1)
 	t2 := manager.GetTask(taskID2)
-	
+
 	assert.NotNil(t, t1)
 	assert.NotNil(t, t2)
+	assert.Equal(t, "Cancelled", t1.Status)
+	
+	// Allow background saveTasks to finish
+	manager.WaitAll()
 }
 
 func TestManagePoolEntry(t *testing.T) {
@@ -316,4 +345,3 @@ func TestManagePoolEntry(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, preview3.Entries, 0)
 }
-

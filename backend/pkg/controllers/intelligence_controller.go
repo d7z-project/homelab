@@ -28,7 +28,10 @@ func InitIntelligenceControllers(service *intservice.IntelligenceService) {
 // @Router /network/intelligence/sources [get]
 func ListIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
 	items, err := intelligenceService.ListSources(r.Context())
-	if err != nil { HandleError(w, r, err); return }
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, items)
 }
 
@@ -46,8 +49,14 @@ func ListIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/intelligence/sources [post]
 func CreateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	var source models.IntelligenceSource
-	if err := render.Bind(r, &source); err != nil { common.BadRequestError(w, r, http.StatusBadRequest, err.Error()); return }
-	if err := intelligenceService.CreateSource(r.Context(), &source); err != nil { HandleError(w, r, err); return }
+	if err := render.Bind(r, &source); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := intelligenceService.CreateSource(r.Context(), &source); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, source)
 }
 
@@ -68,9 +77,15 @@ func CreateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var source models.IntelligenceSource
-	if err := render.Bind(r, &source); err != nil { common.BadRequestError(w, r, http.StatusBadRequest, err.Error()); return }
+	if err := render.Bind(r, &source); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
 	source.ID = id
-	if err := intelligenceService.UpdateSource(r.Context(), &source); err != nil { HandleError(w, r, err); return }
+	if err := intelligenceService.UpdateSource(r.Context(), &source); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, source)
 }
 
@@ -87,7 +102,10 @@ func UpdateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/intelligence/sources/{id} [delete]
 func DeleteIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := intelligenceService.DeleteSource(r.Context(), id); err != nil { HandleError(w, r, err); return }
+	if err := intelligenceService.DeleteSource(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, "success")
 }
 
@@ -104,7 +122,10 @@ func DeleteIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/intelligence/sources/{id}/sync [post]
 func SyncIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := intelligenceService.SyncSource(r.Context(), id); err != nil { HandleError(w, r, err); return }
+	if err := intelligenceService.SyncSource(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, "sync started")
 }
 

@@ -2321,11 +2321,6 @@ const docTemplate = `{
         },
         "/network/ip/exports/download/{taskId}": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "produces": [
                     "application/octet-stream"
                 ],
@@ -2349,14 +2344,67 @@ const docTemplate = `{
                             "type": "file"
                         }
                     },
+                    "404": {
+                        "description": "File Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/exports/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Preview IP export expression",
+                "parameters": [
+                    {
+                        "description": "Preview Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IPExportPreviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.IPPoolEntry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
                     },
-                    "404": {
-                        "description": "File Not Found",
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
@@ -2409,7 +2457,101 @@ const docTemplate = `{
                 }
             }
         },
+        "/network/ip/exports/tasks": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "List all IP export tasks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ip.ExportTask"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/network/ip/exports/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Update an IP export",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Export ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "IP Export",
+                        "name": "export",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IPExport"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.IPExport"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Export Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -3371,6 +3513,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/network/site/exports/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/site"
+                ],
+                "summary": "Preview Site export expression",
+                "parameters": [
+                    {
+                        "description": "Preview Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SiteExportPreviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.SitePoolEntry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/network/site/exports/task/{taskId}": {
             "get": {
                 "produces": [
@@ -3399,7 +3600,101 @@ const docTemplate = `{
                 }
             }
         },
+        "/network/site/exports/tasks": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/site"
+                ],
+                "summary": "List all site export tasks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/site.ExportTask"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/network/site/exports/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/site"
+                ],
+                "summary": "Update a site export",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Export ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Site Export",
+                        "name": "export",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SiteExport"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SiteExport"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Export Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "produces": [
                     "application/json"
@@ -4681,6 +4976,9 @@ const docTemplate = `{
         "ip.ExportTask": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
                 "error": {
                     "type": "string"
                 },
@@ -4693,6 +4991,10 @@ const docTemplate = `{
                 "progress": {
                     "type": "number",
                     "format": "float64"
+                },
+                "recordCount": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "resultURL": {
                     "type": "string"
@@ -4870,6 +5172,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPExportPreviewRequest": {
+            "type": "object",
+            "properties": {
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rule": {
                     "type": "string"
                 }
             }
@@ -5467,6 +5783,20 @@ const docTemplate = `{
                 }
             }
         },
+        "models.SiteExportPreviewRequest": {
+            "type": "object",
+            "properties": {
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rule": {
+                    "type": "string"
+                }
+            }
+        },
         "models.SiteGroup": {
             "type": "object",
             "properties": {
@@ -5810,6 +6140,9 @@ const docTemplate = `{
         "site.ExportTask": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
                 "error": {
                     "type": "string"
                 },
@@ -5822,6 +6155,10 @@ const docTemplate = `{
                 "progress": {
                     "type": "number",
                     "format": "float64"
+                },
+                "recordCount": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "resultURL": {
                     "type": "string"

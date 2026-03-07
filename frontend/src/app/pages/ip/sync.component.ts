@@ -47,18 +47,22 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
     FormsModule,
   ],
   templateUrl: './sync.component.html',
-  styles: [`
-    :host { display: block; }
-    ::ng-deep .sync-tabs-integrated {
-      .mat-mdc-tab-header {
-        background: var(--mat-sys-surface);
-        border-bottom: 1px solid var(--mat-sys-outline-variant);
+  styles: [
+    `
+      :host {
+        display: block;
       }
-      .mat-mdc-tab-body-wrapper {
-        background: var(--mat-sys-surface-container-lowest);
+      ::ng-deep .sync-tabs-integrated {
+        .mat-mdc-tab-header {
+          background: var(--mat-sys-surface);
+          border-bottom: 1px solid var(--mat-sys-outline-variant);
+        }
+        .mat-mdc-tab-body-wrapper {
+          background: var(--mat-sys-surface-container-lowest);
+        }
       }
-    }
-  `]
+    `,
+  ],
 })
 export class IpSyncComponent implements OnInit, OnDestroy {
   private ipService = inject(NetworkIpService);
@@ -89,7 +93,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   displayedColumns = computed(() =>
     this.isHandset()
       ? ['enabled', 'name', 'status', 'actions']
-      : ['enabled', 'name', 'target', 'format', 'mode', 'cron', 'status', 'actions']
+      : ['enabled', 'name', 'target', 'format', 'mode', 'cron', 'status', 'actions'],
   );
 
   hasSearchContent = computed(() => this.search().length > 0);
@@ -139,9 +143,9 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     this.ipService.networkIpPoolsGet(1, 1000).subscribe({
       next: (res) => {
         const m = new Map<string, string>();
-        (res.items || []).forEach(g => m.set(g.id || '', g.name || ''));
+        (res.items || []).forEach((g) => m.set(g.id || '', g.name || ''));
         this.groups.set(m);
-      }
+      },
     });
   }
 
@@ -156,8 +160,8 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     this.router.navigate(['/network/ip'], {
       queryParams: {
         tab: 'pool',
-        search: name || id
-      }
+        search: name || id,
+      },
     });
   }
 
@@ -182,7 +186,9 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const res = await firstValueFrom(this.ipService.networkIpSyncGet(this.page(), this.pageSize(), this.search()));
+      const res = await firstValueFrom(
+        this.ipService.networkIpSyncGet(this.page(), this.pageSize(), this.search()),
+      );
       if (reset) {
         this.policies.set(res.items || []);
       } else {
@@ -201,7 +207,10 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   createPolicy() {
     requestAnimationFrame(() => {
-      const dialogRef = this.dialog.open(CreateSyncPolicyDialogComponent, { width: '500px', data: {} });
+      const dialogRef = this.dialog.open(CreateSyncPolicyDialogComponent, {
+        width: '500px',
+        data: {},
+      });
       dialogRef.afterClosed().subscribe((res) => {
         if (res) this.loadPolicies(true);
       });
@@ -210,7 +219,10 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   editPolicy(policy: ModelsIPSyncPolicy) {
     requestAnimationFrame(() => {
-      const dialogRef = this.dialog.open(CreateSyncPolicyDialogComponent, { width: '500px', data: { policy } });
+      const dialogRef = this.dialog.open(CreateSyncPolicyDialogComponent, {
+        width: '500px',
+        data: { policy },
+      });
       dialogRef.afterClosed().subscribe((res) => {
         if (res) this.loadPolicies(true);
       });
@@ -226,7 +238,9 @@ export class IpSyncComponent implements OnInit, OnDestroy {
       this.snackBar.open(updated.enabled ? '策略已启用' : '策略已禁用', '关闭', { duration: 2000 });
       await this.loadPolicies(true);
     } catch (err: any) {
-      this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+      this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', {
+        duration: 3000,
+      });
     } finally {
       this.loading.set(false);
     }
@@ -239,7 +253,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
           title: '删除确认',
           message: `确定要删除策略 [${policy.name}] 吗？`,
           confirmText: '确定删除',
-          color: 'warn'
+          color: 'warn',
         },
       });
       dialogRef.afterClosed().subscribe(async (res) => {
@@ -250,7 +264,9 @@ export class IpSyncComponent implements OnInit, OnDestroy {
             this.snackBar.open('删除成功', '关闭', { duration: 3000 });
             this.loadPolicies(true);
           } catch (err: any) {
-            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', {
+              duration: 3000,
+            });
           } finally {
             this.loading.set(false);
           }
@@ -261,15 +277,17 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   async triggerSync(policy: ModelsIPSyncPolicy) {
     if (!policy.id) return;
-    this.syncingRows.update(s => ({ ...s, [policy.id!]: true }));
+    this.syncingRows.update((s) => ({ ...s, [policy.id!]: true }));
     try {
       await firstValueFrom(this.ipService.networkIpSyncIdTriggerPost(policy.id));
       this.snackBar.open('同步任务已触发', '关闭', { duration: 2000 });
       await this.loadPolicies(true);
     } catch (err: any) {
-      this.snackBar.open(`同步失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+      this.snackBar.open(`同步失败: ${err.error?.message || err.message}`, '关闭', {
+        duration: 3000,
+      });
     } finally {
-      this.syncingRows.update(s => ({ ...s, [policy.id!]: false }));
+      this.syncingRows.update((s) => ({ ...s, [policy.id!]: false }));
     }
   }
 }

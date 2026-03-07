@@ -70,9 +70,11 @@ func TestIPSyncLogic(t *testing.T) {
 		// Final Result: 1.1.1.100 (from P1) + 2.2.2.2 (from P2) = 2 records
 		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "")
 		assert.Equal(t, int64(2), res.Total)
-		
+
 		cidrs := []string{}
-		for _, e := range res.Entries { cidrs = append(cidrs, e.CIDR) }
+		for _, e := range res.Entries {
+			cidrs = append(cidrs, e.CIDR)
+		}
 		assert.Contains(t, cidrs, "1.1.1.100/32")
 		assert.Contains(t, cidrs, "2.2.2.2/32")
 		assert.NotContains(t, cidrs, "1.1.1.1/32")
@@ -121,7 +123,7 @@ func TestIPSyncLogic(t *testing.T) {
 			ID: "_papp", Name: "PApp", SourceURL: serverApp.URL, Format: "text", Mode: "append", TargetGroupID: "test_pool",
 		}
 		_ = service.CreateSyncPolicy(ctx, policyApp)
-		
+
 		_ = service.Sync(ctx, "_papp")
 		_ = service.Sync(ctx, "_papp") // Sync again with same content
 

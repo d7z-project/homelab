@@ -10,10 +10,12 @@
 
 
 export interface SiteExportTask { 
+    createdAt?: string;
     error?: string;
     format?: string;
     id?: string;
     progress?: number;
+    recordCount?: number;
     resultURL?: string;
     status?: string;
 }

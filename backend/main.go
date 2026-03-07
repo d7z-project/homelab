@@ -110,22 +110,24 @@ func main() {
 
 	// Initialize Actions Scoped FS
 	actions.Init()
+// Initialize IP Services
+mmdbManager := ip.NewMMDBManager()
+ipPoolService := ip.NewIPPoolService(mmdbManager)
+analysisEngine := ip.NewAnalysisEngine(mmdbManager)
+exportManager := ip.NewExportManager(analysisEngine)
+exportManager.StartCleanupTimer()
+ipPoolService.SetExportManager(exportManager)
+controllers.InitIPControllers(ipPoolService, analysisEngine, exportManager)
+ipPoolService.StartSyncRunner(context.Background())
 
-	// Initialize IP Services
-	mmdbManager := ip.NewMMDBManager()
-	ipPoolService := ip.NewIPPoolService(mmdbManager)
-	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
-	exportManager := ip.NewExportManager(analysisEngine)
-	controllers.InitIPControllers(ipPoolService, analysisEngine, exportManager)
-	ipPoolService.StartSyncRunner(context.Background())
-
-	// Initialize Site Services
-	siteAnalysisEngine := site.NewAnalysisEngine(mmdbManager)
-	sitePoolService := site.NewSitePoolService(siteAnalysisEngine)
-	siteExportManager := site.NewExportManager(siteAnalysisEngine)
-	controllers.InitSiteControllers(sitePoolService, siteAnalysisEngine, siteExportManager)
-	site.RegisterSiteProcessors(sitePoolService)
-
+// Initialize Site Services
+siteAnalysisEngine := site.NewAnalysisEngine(mmdbManager)
+sitePoolService := site.NewSitePoolService(siteAnalysisEngine)
+siteExportManager := site.NewExportManager(siteAnalysisEngine)
+siteExportManager.StartCleanupTimer()
+sitePoolService.SetExportManager(siteExportManager)
+controllers.InitSiteControllers(sitePoolService, siteAnalysisEngine, siteExportManager)
+site.RegisterSiteProcessors(sitePoolService)
 	intelligenceService := intelligence.NewIntelligenceService(mmdbManager)
 	if err := intelligenceService.Init(ctx); err != nil {
 		log.Printf("Failed to initialize intelligence service: %v", err)

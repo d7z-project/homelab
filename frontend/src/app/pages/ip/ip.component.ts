@@ -25,6 +25,7 @@ import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreatePoolDialogComponent } from './create-pool-dialog.component';
 import { ManageEntriesDialogComponent } from './manage-entries-dialog.component';
 import { CreateExportDialogComponent } from './create-export-dialog.component';
+import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
 import { UiService } from '../../ui.service';
 import { NetworkIpService, ModelsIPGroup, ModelsIPExport } from '../../generated';
 
@@ -49,18 +50,22 @@ import { NetworkIpService, ModelsIPGroup, ModelsIPExport } from '../../generated
     FormsModule,
   ],
   templateUrl: './ip.component.html',
-  styles: [`
-    :host { display: block; }
-    ::ng-deep .ip-tabs-integrated {
-      .mat-mdc-tab-header {
-        background: var(--mat-sys-surface);
-        border-bottom: 1px solid var(--mat-sys-outline-variant);
+  styles: [
+    `
+      :host {
+        display: block;
       }
-      .mat-mdc-tab-body-wrapper {
-        background: var(--mat-sys-surface-container-lowest);
+      ::ng-deep .ip-tabs-integrated {
+        .mat-mdc-tab-header {
+          background: var(--mat-sys-surface);
+          border-bottom: 1px solid var(--mat-sys-outline-variant);
+        }
+        .mat-mdc-tab-body-wrapper {
+          background: var(--mat-sys-surface-container-lowest);
+        }
       }
-    }
-  `]
+    `,
+  ],
 })
 export class IpComponent implements OnInit, OnDestroy {
   private ipService = inject(NetworkIpService);
@@ -98,15 +103,19 @@ export class IpComponent implements OnInit, OnDestroy {
   activeTasks = signal<Record<string, any>>({});
 
   displayedPoolColumns = computed(() =>
-    this.isHandset() ? ['name', 'entryCount', 'actions'] : ['name', 'description', 'entryCount', 'updatedAt', 'actions']
+    this.isHandset()
+      ? ['name', 'entryCount', 'actions']
+      : ['name', 'description', 'entryCount', 'updatedAt', 'actions'],
   );
 
   displayedExportColumns = computed(() =>
-    this.isHandset() ? ['name', 'actions'] : ['name', 'rule', 'updatedAt', 'actions']
+    this.isHandset() ? ['name', 'actions'] : ['name', 'rule', 'updatedAt', 'actions'],
   );
 
   hasSearchContent = computed(() => {
-    return this.selectedTabIndex() === 0 ? this.poolSearch().length > 0 : this.exportSearch().length > 0;
+    return this.selectedTabIndex() === 0
+      ? this.poolSearch().length > 0
+      : this.exportSearch().length > 0;
   });
 
   fabConfig = computed(() => {
@@ -198,7 +207,9 @@ export class IpComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const res = await firstValueFrom(this.ipService.networkIpPoolsGet(this.poolPage(), 20, this.poolSearch()));
+      const res = await firstValueFrom(
+        this.ipService.networkIpPoolsGet(this.poolPage(), 20, this.poolSearch()),
+      );
       if (reset) {
         this.pools.set(res.items || []);
       } else {
@@ -224,7 +235,9 @@ export class IpComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const res = await firstValueFrom(this.ipService.networkIpExportsGet(this.exportPage(), 20, this.exportSearch()));
+      const res = await firstValueFrom(
+        this.ipService.networkIpExportsGet(this.exportPage(), 20, this.exportSearch()),
+      );
       if (reset) {
         this.exports.set(res.items || []);
       } else {
@@ -253,7 +266,7 @@ export class IpComponent implements OnInit, OnDestroy {
           queryParams,
           queryParamsHandling: 'merge',
         });
-        
+
         if (isPool) {
           this.poolSearch.set(val);
         } else {
@@ -275,7 +288,10 @@ export class IpComponent implements OnInit, OnDestroy {
 
   editPool(pool: ModelsIPGroup) {
     requestAnimationFrame(() => {
-      const dialogRef = this.dialog.open(CreatePoolDialogComponent, { width: '400px', data: { pool } });
+      const dialogRef = this.dialog.open(CreatePoolDialogComponent, {
+        width: '400px',
+        data: { pool },
+      });
       dialogRef.afterClosed().subscribe((res) => {
         if (res) this.loadPools(true);
       });
@@ -285,7 +301,11 @@ export class IpComponent implements OnInit, OnDestroy {
   deletePool(pool: ModelsIPGroup) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-        data: { title: '删除地址池', message: `确定要删除地址池 [${pool.name}] 吗？此操作将永久删除所有数据文件。`, color: 'warn' },
+        data: {
+          title: '删除地址池',
+          message: `确定要删除地址池 [${pool.name}] 吗？此操作将永久删除所有数据文件。`,
+          color: 'warn',
+        },
       });
       dialogRef.afterClosed().subscribe(async (res) => {
         if (res && pool.id) {
@@ -294,7 +314,9 @@ export class IpComponent implements OnInit, OnDestroy {
             this.snackBar.open('删除成功', '关闭', { duration: 3000 });
             this.loadPools(true);
           } catch (err: any) {
-            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', {
+              duration: 3000,
+            });
           }
         }
       });
@@ -316,7 +338,19 @@ export class IpComponent implements OnInit, OnDestroy {
 
   createExport() {
     requestAnimationFrame(() => {
-      const dialogRef = this.dialog.open(CreateExportDialogComponent, { width: '500px' });
+      const dialogRef = this.dialog.open(CreateExportDialogComponent, { width: '500px', data: {} });
+      dialogRef.afterClosed().subscribe((res) => {
+        if (res) this.loadExports(true);
+      });
+    });
+  }
+
+  editExport(exp: ModelsIPExport) {
+    requestAnimationFrame(() => {
+      const dialogRef = this.dialog.open(CreateExportDialogComponent, {
+        width: '500px',
+        data: { export: exp },
+      });
       dialogRef.afterClosed().subscribe((res) => {
         if (res) this.loadExports(true);
       });
@@ -326,7 +360,11 @@ export class IpComponent implements OnInit, OnDestroy {
   deleteExport(exp: ModelsIPExport) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-        data: { title: '删除配置', message: `确定要删除导出配置 [${exp.name}] 吗？`, color: 'warn' },
+        data: {
+          title: '删除配置',
+          message: `确定要删除导出配置 [${exp.name}] 吗？此操作将级联删除该配置下的所有历史导出任务。`,
+          color: 'warn',
+        },
       });
       dialogRef.afterClosed().subscribe(async (res) => {
         if (res && exp.id) {
@@ -335,48 +373,32 @@ export class IpComponent implements OnInit, OnDestroy {
             this.snackBar.open('删除成功', '关闭', { duration: 3000 });
             this.loadExports(true);
           } catch (err: any) {
-            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', {
+              duration: 3000,
+            });
           }
         }
       });
     });
   }
 
-  async triggerExport(exp: ModelsIPExport) {
+  async triggerExport(exp: ModelsIPExport, format: string = 'text') {
     if (!exp.id) return;
     try {
-      const res = await firstValueFrom(this.ipService.networkIpExportsIdTriggerPost(exp.id));
-      const taskId = res.taskId!;
-      this.activeTasks.update(tasks => ({
-        ...tasks,
-        [exp.id!]: { status: 'Running', progress: 0, taskId }
-      }));
-      this.pollTaskStatus(exp.id!, taskId);
+      await firstValueFrom(this.ipService.networkIpExportsIdTriggerPost(exp.id, format));
+      this.openTasks();
     } catch (err: any) {
-      this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+      this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', {
+        duration: 3000,
+      });
     }
   }
 
-  private pollTaskStatus(exportId: string, taskId: string) {
-    const interval = setInterval(async () => {
-      try {
-        const task = await firstValueFrom(this.ipService.networkIpExportsTaskTaskIdGet(taskId));
-        this.activeTasks.update(tasks => ({
-          ...tasks,
-          [exportId]: { 
-            status: task.status, 
-            progress: task.progress, 
-            taskId,
-            resultURL: task.status === 'Success' ? `/api/v1/network/ip/exports/download/${taskId}` : null
-          }
-        }));
-
-        if (task.status === 'Success' || task.status === 'Failed') {
-          clearInterval(interval);
-        }
-      } catch (err) {
-        clearInterval(interval);
-      }
-    }, 1500);
+  openTasks() {
+    this.dialog.open(ExportTasksDialogComponent, {
+      width: '600px',
+      data: { type: 'ip' },
+      panelClass: 'tasks-dialog',
+    });
   }
 }

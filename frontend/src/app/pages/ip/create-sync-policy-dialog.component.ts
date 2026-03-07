@@ -70,9 +70,13 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
         </div>
 
         <!-- Format Specific Config -->
-        <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant space-y-4 animate-in fade-in slide-in-from-top-2">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">同步配置</div>
-          
+        <div
+          class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant space-y-4 animate-in fade-in slide-in-from-top-2"
+        >
+          <div class="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">
+            同步配置
+          </div>
+
           @if (form.get('format')?.value === 'text' || form.get('format')?.value === 'csv') {
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>附加标签 (Tags)</mat-label>
@@ -121,7 +125,7 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
                 <span class="text-sm">导入全部分类</span>
                 <mat-slide-toggle formControlName="importAll"></mat-slide-toggle>
               </div>
-              
+
               @if (!form.get('importAll')?.value) {
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>国家/分类代码</mat-label>
@@ -135,21 +139,31 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
           <!-- Tag Mapping -->
           <div class="pt-2 border-t border-outline-variant/50">
             <div class="flex items-center justify-between mb-2">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-outline">标签映射 (Tag Mapping)</div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-outline">
+                标签映射 (Tag Mapping)
+              </div>
               <button mat-icon-button (click)="addMapping()" type="button" matTooltip="添加映射">
                 <mat-icon class="!w-4 !h-4 !text-sm">add</mat-icon>
               </button>
             </div>
-            
+
             <div formArrayName="tagMappings" class="space-y-2">
               @for (m of tagMappings.controls; track $index; let i = $index) {
                 <div [formGroupName]="i" class="flex gap-2 items-center">
-                  <mat-form-field appearance="outline" class="flex-1 !pb-0" subscriptSizing="dynamic">
+                  <mat-form-field
+                    appearance="outline"
+                    class="flex-1 !pb-0"
+                    subscriptSizing="dynamic"
+                  >
                     <mat-label>原始值</mat-label>
                     <input matInput formControlName="source" placeholder="CN" />
                   </mat-form-field>
                   <mat-icon class="text-outline opacity-40">arrow_forward</mat-icon>
-                  <mat-form-field appearance="outline" class="flex-1 !pb-0" subscriptSizing="dynamic">
+                  <mat-form-field
+                    appearance="outline"
+                    class="flex-1 !pb-0"
+                    subscriptSizing="dynamic"
+                  >
                     <mat-label>目标标签</mat-label>
                     <input matInput formControlName="target" placeholder="China" />
                   </mat-form-field>
@@ -188,14 +202,23 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" [disabled]="form.invalid || loading" (click)="submit()">
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="form.invalid || loading"
+        (click)="submit()"
+      >
         {{ data.policy ? '保存' : '创建' }}
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
-    mat-form-field { font-size: 13px; }
-  `]
+  styles: [
+    `
+      mat-form-field {
+        font-size: 13px;
+      }
+    `,
+  ],
 })
 export class CreateSyncPolicyDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -216,10 +239,14 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
     cron: [this.data.policy?.cron || '0 0 * * *', Validators.required],
     enabled: [this.data.policy?.enabled ?? true],
     // Specific configs
-    tags: [this.data.policy?.config?.['tags'] || (this.data.policy?.config?.['tag'] || 'sync')],
+    tags: [this.data.policy?.config?.['tags'] || this.data.policy?.config?.['tag'] || 'sync'],
     language: [this.data.policy?.config?.['language'] || 'zh-CN'],
-    code: [this.data.policy?.config?.['code'] === '*' ? '' : (this.data.policy?.config?.['code'] || 'CN')],
-    importAll: [this.data.policy?.config?.['code'] === '*' || this.data.policy?.config?.['code'] === 'all'],
+    code: [
+      this.data.policy?.config?.['code'] === '*' ? '' : this.data.policy?.config?.['code'] || 'CN',
+    ],
+    importAll: [
+      this.data.policy?.config?.['code'] === '*' || this.data.policy?.config?.['code'] === 'all',
+    ],
     tagMappings: this.fb.array([]),
     separator: [this.data.policy?.config?.['separator'] || ','],
     ipColumn: [this.data.policy?.config?.['ipColumn'] || 0],
@@ -240,10 +267,12 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
       try {
         const mapping = JSON.parse(mappingStr);
         Object.entries(mapping).forEach(([source, target]) => {
-          this.tagMappings.push(this.fb.group({
-            source: [source, Validators.required],
-            target: [target, Validators.required]
-          }));
+          this.tagMappings.push(
+            this.fb.group({
+              source: [source, Validators.required],
+              target: [target, Validators.required],
+            }),
+          );
         });
       } catch (e) {
         console.error('Failed to parse tag mapping', e);
@@ -252,10 +281,12 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
   }
 
   addMapping() {
-    this.tagMappings.push(this.fb.group({
-      source: ['', Validators.required],
-      target: ['', Validators.required]
-    }));
+    this.tagMappings.push(
+      this.fb.group({
+        source: ['', Validators.required],
+        target: ['', Validators.required],
+      }),
+    );
   }
 
   removeMapping(index: number) {
@@ -280,12 +311,12 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
     } else if (val.format === 'geoip') {
       config['language'] = val.language || 'zh-CN';
     } else if (val.format === 'geoip-dat') {
-      config['code'] = val.importAll ? '*' : (val.code || 'CN');
+      config['code'] = val.importAll ? '*' : val.code || 'CN';
     }
 
     // Process Tag Mapping
     const mapping: Record<string, string> = {};
-    (val.tagMappings as any[] || []).forEach((m: any) => {
+    ((val.tagMappings as any[]) || []).forEach((m: any) => {
       if (m.source && m.target) {
         mapping[m.source.trim().toUpperCase()] = m.target.trim();
       }
@@ -318,7 +349,9 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+        this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', {
+          duration: 3000,
+        });
       },
     });
   }

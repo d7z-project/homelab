@@ -6,6 +6,7 @@ import (
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
 	"testing"
+	"time"
 )
 
 func TestDataConsistency(t *testing.T) {
@@ -125,23 +126,38 @@ func TestDataConsistency(t *testing.T) {
 		}
 		wf, _ = actions.CreateWorkflow(ctx, wf)
 
-		// Trigger multiple times concurrently
-		results := make(chan error, 5)
+		type runResult struct {
+			err error
+			id  string
+		}
+		results := make(chan runResult, 5)
 		for i := 0; i < 5; i++ {
 			go func() {
-				_, err := actions.RunWorkflow(ctx, wf.ID, nil, "Manual")
-				results <- err
+				id, err := actions.RunWorkflow(ctx, wf.ID, nil, "Manual")
+				results <- runResult{err: err, id: id}
 			}()
 		}
 
+		var instanceIDs []string
 		successCount := 0
 		failCount := 0
 		for i := 0; i < 5; i++ {
-			err := <-results
-			if err == nil {
+			res := <-results
+			if res.err == nil {
 				successCount++
+				instanceIDs = append(instanceIDs, res.id)
 			} else {
 				failCount++
+			}
+		}
+
+		for _, id := range instanceIDs {
+			for j := 0; j < 50; j++ {
+				instance, _ := actions.GetTaskInstance(ctx, id)
+				if instance != nil && (instance.Status == "Success" || instance.Status == "Failed") {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
 			}
 		}
 

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
-	"homelab/pkg/services/actions"
 	repo "homelab/pkg/repositories/site"
+	"homelab/pkg/services/actions"
 	"io"
 	"os"
 	"path/filepath"
@@ -54,16 +54,22 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	filePath := inputs["filePath"]
 	format := inputs["format"]
 	mode := inputs["mode"]
-	if mode == "" { mode = "append" }
+	if mode == "" {
+		mode = "append"
+	}
 	defaultTags := strings.Split(inputs["defaultTags"], ",")
 
 	group, err := p.service.GetGroup(ctx.Context, groupID)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	ctx.Logger.Logf("Importing site data to pool %s...", group.Name)
 
 	f, err := os.Open(filePath)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer f.Close()
 
 	var newEntries []models.SitePoolEntry
@@ -71,15 +77,19 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			line := strings.TrimSpace(scanner.Text())
-			if line == "" || strings.HasPrefix(line, "#") { continue }
-			
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+
 			entry := parseTextRule(line)
 			entry.Tags = defaultTags
-			
+
 			// Normalize
 			val, err := idna.ToASCII(strings.ToLower(entry.Value))
-			if err == nil { entry.Value = val }
-			
+			if err == nil {
+				entry.Value = val
+			}
+
 			newEntries = append(newEntries, entry)
 		}
 	} else {
@@ -97,8 +107,10 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 		reader, _ := NewReader(pf)
 		for {
 			entry, err := reader.Next()
-			if err == io.EOF { break }
-			
+			if err == io.EOF {
+				break
+			}
+
 			// Simple deduplication for append mode
 			duplicate := false
 			for _, ne := range newEntries {
@@ -107,7 +119,9 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 					break
 				}
 			}
-			if duplicate && mode == "append" { continue }
+			if duplicate && mode == "append" {
+				continue
+			}
 
 			var tagIndices []uint32
 			for _, t := range entry.Tags {
@@ -126,7 +140,9 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	for _, ne := range newEntries {
 		var tagIndices []uint32
 		for _, t := range ne.Tags {
-			if t == "" { continue }
+			if t == "" {
+				continue
+			}
 			if _, ok := tagSet[t]; !ok {
 				tagSet[t] = struct{}{}
 				allTags = append(allTags, t)

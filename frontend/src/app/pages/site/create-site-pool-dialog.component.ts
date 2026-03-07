@@ -36,7 +36,12 @@ import { NetworkSiteService } from '../../generated';
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" [disabled]="form.invalid || loading" (click)="submit()">
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="form.invalid || loading"
+        (click)="submit()"
+      >
         创建
       </button>
     </mat-dialog-actions>
@@ -74,7 +79,9 @@ export class CreateSitePoolDialogComponent {
         },
         error: (err) => {
           this.loading = false;
-          this.snackBar.open(`创建失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+          this.snackBar.open(`创建失败: ${err.error?.message || err.message}`, '关闭', {
+            duration: 3000,
+          });
         },
       });
   }

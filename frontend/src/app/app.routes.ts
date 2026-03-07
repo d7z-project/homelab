@@ -58,12 +58,16 @@ export const routes: Routes = [
       },
       {
         path: 'network/analysis',
-        loadComponent: () => import('./pages/network/analysis/analysis.component').then((m) => m.AnalysisComponent),
+        loadComponent: () =>
+          import('./pages/network/analysis/analysis.component').then((m) => m.AnalysisComponent),
         data: { toolbar: { shadow: false, sticky: false } },
       },
       {
         path: 'network/intelligence',
-        loadComponent: () => import('./pages/network/intelligence/intelligence.component').then((m) => m.IntelligenceComponent),
+        loadComponent: () =>
+          import('./pages/network/intelligence/intelligence.component').then(
+            (m) => m.IntelligenceComponent,
+          ),
         data: { toolbar: { shadow: false, sticky: false } },
       },
       {

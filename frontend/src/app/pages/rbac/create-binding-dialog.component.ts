@@ -1,4 +1,12 @@
-import { Component, Inject, OnInit, inject, signal, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  Inject,
+  OnInit,
+  inject,
+  signal,
+  ChangeDetectorRef,
+  AfterViewInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';

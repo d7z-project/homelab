@@ -19,11 +19,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
-import {
-  ActionsService,
-  ModelsTaskInstance,
-  ModelsLogEntry,
-} from '../../generated';
+import { ActionsService, ModelsTaskInstance, ModelsLogEntry } from '../../generated';
 import { interval, Subscription, firstValueFrom } from 'rxjs';
 
 interface StepState {
@@ -48,15 +44,24 @@ interface StepState {
     MatExpansionModule,
   ],
   template: `
-    <div class="flex flex-col h-full bg-surface-container-lowest text-on-surface overflow-hidden font-sans">
+    <div
+      class="flex flex-col h-full bg-surface-container-lowest text-on-surface overflow-hidden font-sans"
+    >
       <!-- Header -->
-      <header class="flex items-center justify-between px-4 sm:px-6 h-16 border-b border-outline-variant/20 bg-surface shrink-0 z-10 shadow-sm">
+      <header
+        class="flex items-center justify-between px-4 sm:px-6 h-16 border-b border-outline-variant/20 bg-surface shrink-0 z-10 shadow-sm"
+      >
         <div class="flex items-center gap-4 min-w-0">
-          <mat-icon class="!w-6 !h-6 !text-[24px] shrink-0" [style.color]="getStatusColor(instance().status)">
+          <mat-icon
+            class="!w-6 !h-6 !text-[24px] shrink-0"
+            [style.color]="getStatusColor(instance().status)"
+          >
             {{ getStatusIcon(instance().status) }}
           </mat-icon>
           <div class="flex flex-col min-w-0">
-            <h2 class="text-sm sm:text-lg font-bold truncate m-0 tracking-tight">{{ workflowName() }}</h2>
+            <h2 class="text-sm sm:text-lg font-bold truncate m-0 tracking-tight">
+              {{ workflowName() }}
+            </h2>
             <div class="flex items-center gap-2 text-[10px] sm:text-xs text-outline font-medium">
               <span class="uppercase tracking-widest">{{ instance().status }}</span>
               <span class="opacity-30">•</span>
@@ -69,7 +74,9 @@ interface StepState {
 
         <div class="flex items-center gap-2">
           @if (instance().status === 'Running') {
-            <button mat-button color="warn" (click)="cancel()" class="!rounded-full font-bold">停止执行</button>
+            <button mat-button color="warn" (click)="cancel()" class="!rounded-full font-bold">
+              停止执行
+            </button>
           }
           <button mat-icon-button (click)="dialogRef.close()" class="!w-10 !h-10 text-outline">
             <mat-icon class="!text-[24px]">close</mat-icon>
@@ -79,19 +86,32 @@ interface StepState {
 
       <div class="flex flex-1 overflow-hidden bg-[#fafafa]">
         <!-- Sidebar Navigation -->
-        <nav class="w-64 border-r border-outline-variant/10 bg-surface hidden lg:flex flex-col shrink-0 py-4 overflow-y-auto custom-scrollbar">
+        <nav
+          class="w-64 border-r border-outline-variant/10 bg-surface hidden lg:flex flex-col shrink-0 py-4 overflow-y-auto custom-scrollbar"
+        >
           @for (s of stepStates(); track s.index) {
-            <div (click)="scrollToStep(s.index)" 
-                 [class.active-nav]="currentRunningStep() === s.index"
-                 class="px-6 py-3 flex items-center gap-4 cursor-pointer hover:bg-outline/5 transition-all relative group">
-              <mat-icon class="!w-4 !h-4 !text-[18px] shrink-0" [style.color]="getStepStatusColor(s.index)">
+            <div
+              (click)="scrollToStep(s.index)"
+              [class.active-nav]="currentRunningStep() === s.index"
+              class="px-6 py-3 flex items-center gap-4 cursor-pointer hover:bg-outline/5 transition-all relative group"
+            >
+              <mat-icon
+                class="!w-4 !h-4 !text-[18px] shrink-0"
+                [style.color]="getStepStatusColor(s.index)"
+              >
                 {{ getStepStatusIcon(s.index) }}
               </mat-icon>
               <div class="flex flex-col min-w-0">
-                <span class="text-[13px] truncate font-bold" [class.text-primary]="currentRunningStep() === s.index" [class.text-outline]="currentRunningStep() !== s.index">
+                <span
+                  class="text-[13px] truncate font-bold"
+                  [class.text-primary]="currentRunningStep() === s.index"
+                  [class.text-outline]="currentRunningStep() !== s.index"
+                >
                   {{ s.name }}
                 </span>
-                <span class="text-[9px] font-mono text-outline opacity-60">{{ getStepDuration(s.index) }}</span>
+                <span class="text-[9px] font-mono text-outline opacity-60">{{
+                  getStepDuration(s.index)
+                }}</span>
               </div>
               @if (currentRunningStep() === s.index) {
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
@@ -104,11 +124,13 @@ interface StepState {
         <main #scrollContent class="flex-1 overflow-y-auto scroll-smooth pb-32">
           <div class="max-w-5xl mx-auto p-4 sm:p-8">
             <!-- Unified Pill Container -->
-            <div class="pill-outer-container shadow-2xl shadow-black/5 bg-surface border border-outline-variant/30 overflow-hidden flex flex-col">
+            <div
+              class="pill-outer-container shadow-2xl shadow-black/5 bg-surface border border-outline-variant/30 overflow-hidden flex flex-col"
+            >
               @for (s of stepStates(); track s.index; let last = $last) {
-                <mat-expansion-panel 
+                <mat-expansion-panel
                   #panel
-                  [expanded]="s.expanded" 
+                  [expanded]="s.expanded"
                   (opened)="onPanelOpened(s.index)"
                   (closed)="s.expanded = false"
                   [class.is-expanded]="s.expanded"
@@ -116,21 +138,41 @@ interface StepState {
                 >
                   <mat-expansion-panel-header class="!h-14 !px-6 transition-colors duration-200">
                     <mat-panel-title class="flex items-center gap-4 !mr-0">
-                      <mat-icon class="!w-5 !h-5 !text-[20px] shrink-0" 
-                        [class.animate-spin-slow]="currentRunningStep() === s.index && getStepStatusIcon(s.index) === 'pending'"
-                        [style.color]="getStepStatusColor(s.index)">
+                      <mat-icon
+                        class="!w-5 !h-5 !text-[20px] shrink-0"
+                        [class.animate-spin-slow]="
+                          currentRunningStep() === s.index &&
+                          getStepStatusIcon(s.index) === 'pending'
+                        "
+                        [style.color]="getStepStatusColor(s.index)"
+                      >
                         {{ getStepStatusIcon(s.index) }}
                       </mat-icon>
-                      <span class="text-sm font-bold tracking-tight text-on-surface">{{ s.name }}</span>
-                      <span class="ml-auto text-[10px] font-mono text-outline opacity-60 bg-outline/5 px-2 py-0.5 rounded-full">{{ getStepDuration(s.index) }}</span>
+                      <span class="text-sm font-bold tracking-tight text-on-surface">{{
+                        s.name
+                      }}</span>
+                      <span
+                        class="ml-auto text-[10px] font-mono text-outline opacity-60 bg-outline/5 px-2 py-0.5 rounded-full"
+                        >{{ getStepDuration(s.index) }}</span
+                      >
                     </mat-panel-title>
                   </mat-expansion-panel-header>
 
-                  <div class="terminal-content font-mono text-[12px] leading-relaxed py-4 bg-[#0d1117] border-y border-outline-variant/10">
+                  <div
+                    class="terminal-content font-mono text-[12px] leading-relaxed py-4 bg-[#0d1117] border-y border-outline-variant/10"
+                  >
                     @for (log of s.logs; track $index) {
-                      <div class="flex gap-4 group hover:bg-white/5 px-6 transition-colors border-l-2 border-transparent hover:border-primary/20">
-                        <span class="text-[#484f58] select-none shrink-0 tabular-nums w-16 text-right opacity-50">{{ log.timestamp | date: 'HH:mm:ss' }}</span>
-                        <span class="break-all whitespace-pre-wrap flex-1 text-[#d1d5db]" [innerHTML]="formatMessage(log.message || '')"></span>
+                      <div
+                        class="flex gap-4 group hover:bg-white/5 px-6 transition-colors border-l-2 border-transparent hover:border-primary/20"
+                      >
+                        <span
+                          class="text-[#484f58] select-none shrink-0 tabular-nums w-16 text-right opacity-50"
+                          >{{ log.timestamp | date: 'HH:mm:ss' }}</span
+                        >
+                        <span
+                          class="break-all whitespace-pre-wrap flex-1 text-[#d1d5db]"
+                          [innerHTML]="formatMessage(log.message || '')"
+                        ></span>
                       </div>
                     } @empty {
                       <div class="px-6 text-[#484f58] italic py-2">等待日志输出...</div>
@@ -148,40 +190,82 @@ interface StepState {
 
       <!-- Control Bar -->
       <div class="fixed bottom-10 right-10 flex flex-col gap-3 z-20">
-        <button mat-mini-fab (click)="toggleAutoScroll()" 
-          [class.!bg-primary]="autoScroll()" 
+        <button
+          mat-mini-fab
+          (click)="toggleAutoScroll()"
+          [class.!bg-primary]="autoScroll()"
           [class.!bg-surface-container-highest]="!autoScroll()"
-          class="!text-white shadow-lg" matTooltip="自动跟随">
+          class="!text-white shadow-lg"
+          matTooltip="自动跟随"
+        >
           <mat-icon>{{ autoScroll() ? 'sync' : 'sync_disabled' }}</mat-icon>
         </button>
-        <button mat-mini-fab (click)="scrollToBottom()" class="!bg-surface-container-highest !text-on-surface shadow-lg" matTooltip="到底部">
+        <button
+          mat-mini-fab
+          (click)="scrollToBottom()"
+          class="!bg-surface-container-highest !text-on-surface shadow-lg"
+          matTooltip="到底部"
+        >
           <mat-icon>vertical_align_bottom</mat-icon>
         </button>
       </div>
     </div>
   `,
-  styles: [`
-    :host { display: block; width: 100vw; height: 100vh; }
-    ::ng-deep .pill-step-panel .mat-expansion-panel-body { padding: 0 !important; }
-    ::ng-deep .pill-step-panel .mat-expansion-indicator { display: none !important; }
-    
-    .pill-outer-container { border-radius: 28px; }
-    .pill-step-panel { border: none !important; margin: 0 !important; box-shadow: none !important; }
-    
-    /* 展开态：仅改变背景色和左侧线条，绝不显示阴影 */
-    .pill-step-panel.is-expanded mat-expansion-panel-header {
-      background-color: var(--mat-sys-surface-container-high) !important;
-      border-left: 4px solid var(--mat-sys-primary);
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+      ::ng-deep .pill-step-panel .mat-expansion-panel-body {
+        padding: 0 !important;
+      }
+      ::ng-deep .pill-step-panel .mat-expansion-indicator {
+        display: none !important;
+      }
 
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--mat-sys-outline-variant); border-radius: 10px; }
+      .pill-outer-container {
+        border-radius: 28px;
+      }
+      .pill-step-panel {
+        border: none !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+      }
 
-    .animate-spin-slow { animation: spin 3s linear infinite; }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    
-    .active-nav { background-color: var(--mat-sys-primary-container) !important; color: var(--mat-sys-on-primary-container) !important; }
-  `]
+      /* 展开态：仅改变背景色和左侧线条，绝不显示阴影 */
+      .pill-step-panel.is-expanded mat-expansion-panel-header {
+        background-color: var(--mat-sys-surface-container-high) !important;
+        border-left: 4px solid var(--mat-sys-primary);
+      }
+
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--mat-sys-outline-variant);
+        border-radius: 10px;
+      }
+
+      .animate-spin-slow {
+        animation: spin 3s linear infinite;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .active-nav {
+        background-color: var(--mat-sys-primary-container) !important;
+        color: var(--mat-sys-on-primary-container) !important;
+      }
+    `,
+  ],
 })
 export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   @ViewChild('scrollContent') scrollContent!: ElementRef;
@@ -191,26 +275,31 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   private pollSubscription?: Subscription;
   private dialogData = inject(MAT_DIALOG_DATA);
 
-  isHandset = toSignal(this.breakpointObserver.observe(Breakpoints.Handset).pipe(map(r => r.matches)), { initialValue: false });
+  isHandset = toSignal(
+    this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((r) => r.matches)),
+    { initialValue: false },
+  );
   instance = signal<ModelsTaskInstance>(this.dialogData.instance);
   workflowName = signal<string>('');
   stepStates = signal<StepState[]>([]);
   autoScroll = signal(true);
   now = signal(new Date());
-  
+
   currentRunningStep = computed(() => (this.instance() as any).currentStep ?? -1);
   private pollingActive = true;
 
   duration = computed(() => {
     const start = new Date(this.instance().startedAt || new Date()).getTime();
-    const end = this.instance().finishedAt ? new Date(this.instance().finishedAt!).getTime() : this.now().getTime();
+    const end = this.instance().finishedAt
+      ? new Date(this.instance().finishedAt!).getTime()
+      : this.now().getTime();
     const diff = Math.max(0, Math.floor((end - start) / 1000));
     return this.formatSeconds(diff);
   });
 
   constructor(public dialogRef: MatDialogRef<TaskDetailDialogComponent>) {
     this.workflowName.set(this.instance().workflowId || 'Workflow');
-    
+
     effect(() => {
       const current = this.currentRunningStep();
       const status = this.instance().status;
@@ -235,12 +324,41 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
   private async initStepStates() {
     const inst = this.instance() as any;
-    const steps = (inst.steps || []).map((s: any) => ({ id: s.id || '', name: s.name || s.id || '' }));
+    const steps = (inst.steps || []).map((s: any) => ({
+      id: s.id || '',
+      name: s.name || s.id || '',
+    }));
 
     const states: StepState[] = [];
-    states.push({ index: 0, id: 'init', name: '任务初始化', logs: [], offset: 0, expanded: false, loading: false });
-    steps.forEach((s: any, i: number) => states.push({ index: i + 1, id: s.id, name: s.name, logs: [], offset: 0, expanded: false, loading: false }));
-    states.push({ index: steps.length + 1, id: 'cleanup', name: '清理与结束', logs: [], offset: 0, expanded: false, loading: false });
+    states.push({
+      index: 0,
+      id: 'init',
+      name: '任务初始化',
+      logs: [],
+      offset: 0,
+      expanded: false,
+      loading: false,
+    });
+    steps.forEach((s: any, i: number) =>
+      states.push({
+        index: i + 1,
+        id: s.id,
+        name: s.name,
+        logs: [],
+        offset: 0,
+        expanded: false,
+        loading: false,
+      }),
+    );
+    states.push({
+      index: steps.length + 1,
+      id: 'cleanup',
+      name: '清理与结束',
+      logs: [],
+      offset: 0,
+      expanded: false,
+      loading: false,
+    });
 
     const status = inst.status;
     const current = this.currentRunningStep();
@@ -253,24 +371,31 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     }
 
     this.stepStates.set(states);
-    states.filter(s => s.expanded).forEach(s => this.loadLogsForStep(s.index));
+    states.filter((s) => s.expanded).forEach((s) => this.loadLogsForStep(s.index));
 
     // Async fetch workflow name for display if available, but don't block
     try {
       const workflows = await firstValueFrom(this.orchService.actionsWorkflowsGet());
-      const wf = workflows.find(w => w.id === inst.workflowId);
+      const wf = workflows.find((w) => w.id === inst.workflowId);
       if (wf) this.workflowName.set(wf.name || wf.id || '');
     } catch (e) {}
   }
 
   private expandStepOnly(index: number) {
-    this.stepStates.update(states => {
+    this.stepStates.update((states) => {
       let changed = false;
-      states.forEach(s => {
+      states.forEach((s) => {
         if (s.index === index) {
-          if (!s.expanded) { s.expanded = true; this.loadLogsForStep(s.index); changed = true; }
+          if (!s.expanded) {
+            s.expanded = true;
+            this.loadLogsForStep(s.index);
+            changed = true;
+          }
         } else {
-          if (s.expanded) { s.expanded = false; changed = true; }
+          if (s.expanded) {
+            s.expanded = false;
+            changed = true;
+          }
         }
       });
       return changed ? [...states] : states;
@@ -281,10 +406,10 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     if (!this.pollingActive) return;
     try {
       const insts = await firstValueFrom(this.orchService.actionsInstancesGet());
-      const updated = insts.find(i => i.id === this.instance().id);
+      const updated = insts.find((i) => i.id === this.instance().id);
       if (updated) {
         this.instance.set(updated);
-        const expanded = this.stepStates().filter(s => s.expanded);
+        const expanded = this.stepStates().filter((s) => s.expanded);
         for (const s of expanded) {
           await this.loadLogsForStep(s.index);
         }
@@ -310,9 +435,11 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
     s.loading = true;
     try {
-      const res = await firstValueFrom<any>(this.orchService.actionsInstancesIdLogsGet(this.instance().id!, index, s.offset));
+      const res = await firstValueFrom<any>(
+        this.orchService.actionsInstancesIdLogsGet(this.instance().id!, index, s.offset),
+      );
       if (res && res.logs) {
-        this.stepStates.update(prevStates => {
+        this.stepStates.update((prevStates) => {
           const target = prevStates[index];
           if (res.logs.length > 0) {
             target.logs = [...target.logs, ...res.logs];
@@ -321,7 +448,9 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
           target.loading = false;
           return [...prevStates];
         });
-        if (res.logs.length > 0 && this.autoScroll()) { this.scrollToBottom(); }
+        if (res.logs.length > 0 && this.autoScroll()) {
+          this.scrollToBottom();
+        }
       } else {
         s.loading = false;
       }
@@ -334,7 +463,9 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     this.expandStepOnly(index);
     setTimeout(() => {
       const panelEl = document.querySelectorAll('.pill-step-panel')[index];
-      if (panelEl) { panelEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      if (panelEl) {
+        panelEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }, 150);
   }
 
@@ -349,13 +480,21 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
   toggleAutoScroll() {
     this.autoScroll.set(!this.autoScroll());
-    if (this.autoScroll()) { this.scrollToBottom(); }
+    if (this.autoScroll()) {
+      this.scrollToBottom();
+    }
   }
 
   formatMessage(msg: string): string {
     let formatted = msg.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const ansiMap: { [key: string]: string } = {
-      '31': '#f85149', '32': '#3fb950', '33': '#d29922', '34': '#58a6ff', '35': '#bc8cff', '36': '#39c5bb', '90': '#484f58',
+      '31': '#f85149',
+      '32': '#3fb950',
+      '33': '#d29922',
+      '34': '#58a6ff',
+      '35': '#bc8cff',
+      '36': '#39c5bb',
+      '90': '#484f58',
     };
     formatted = formatted.replace(/\x1b\[(\d+)m(.*?)\x1b\[0m/g, (match, code, content) => {
       const color = ansiMap[code];
@@ -389,20 +528,29 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
   getStatusIcon(status: string | undefined): string {
     switch (status) {
-      case 'Success': return 'check_circle';
-      case 'Failed': return 'error';
-      case 'Running': return 'pending';
-      case 'Cancelled': return 'cancel';
-      default: return 'help_outline';
+      case 'Success':
+        return 'check_circle';
+      case 'Failed':
+        return 'error';
+      case 'Running':
+        return 'pending';
+      case 'Cancelled':
+        return 'cancel';
+      default:
+        return 'help_outline';
     }
   }
 
   getStatusColor(status: string | undefined): string {
     switch (status) {
-      case 'Success': return '#3fb950';
-      case 'Failed': return '#f85149';
-      case 'Running': return '#d29922';
-      default: return '#8b949e';
+      case 'Success':
+        return '#3fb950';
+      case 'Failed':
+        return '#f85149';
+      case 'Running':
+        return '#d29922';
+      default:
+        return '#8b949e';
     }
   }
 
@@ -426,11 +574,16 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   getStepStatusColor(index: number): string {
     const icon = this.getStepStatusIcon(index);
     switch (icon) {
-      case 'check_circle': return '#3fb950';
-      case 'error': return '#f85149';
-      case 'cancel': return '#8b949e';
-      case 'pending': return '#d29922';
-      default: return '#8b949e';
+      case 'check_circle':
+        return '#3fb950';
+      case 'error':
+        return '#f85149';
+      case 'cancel':
+        return '#8b949e';
+      case 'pending':
+        return '#d29922';
+      default:
+        return '#8b949e';
     }
   }
 }

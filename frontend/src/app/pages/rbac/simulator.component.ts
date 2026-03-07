@@ -13,7 +13,12 @@ import {
   MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
 import { FormsModule, NgModel } from '@angular/forms';
-import { RbacService, ModelsServiceAccount, ModelsResourcePermissions, ModelsDiscoverResult } from '../../generated';
+import {
+  RbacService,
+  ModelsServiceAccount,
+  ModelsResourcePermissions,
+  ModelsDiscoverResult,
+} from '../../generated';
 import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -105,7 +110,14 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                 color="primary"
                 class="!rounded-2xl !px-12"
                 (click)="simulate()"
-                [disabled]="loading() || !saId() || !verb() || !resource() || resourceModel.invalid || verbModel.invalid"
+                [disabled]="
+                  loading() ||
+                  !saId() ||
+                  !verb() ||
+                  !resource() ||
+                  resourceModel.invalid ||
+                  verbModel.invalid
+                "
               >
                 @if (loading()) {
                   <mat-spinner diameter="20" class="mr-2"></mat-spinner>

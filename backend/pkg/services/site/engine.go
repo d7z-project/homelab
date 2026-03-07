@@ -52,7 +52,7 @@ func (t *SuffixTrie) Insert(ruleType uint8, value string, tags []string) {
 func (t *SuffixTrie) Match(domain string) (matched bool, matchedPattern string, tags []string) {
 	parts := strings.Split(domain, ".")
 	curr := t.root
-	
+
 	var lastDomainNode *trieNode
 	var lastDomainPattern string
 

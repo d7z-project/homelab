@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"io"
 	"homelab/pkg/common"
 	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	siteservice "homelab/pkg/services/site"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -40,7 +40,10 @@ func ListSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
 	search := r.URL.Query().Get("search")
 	items, total, err := sitePoolService.ListGroups(r.Context(), page, pageSize, search)
-	if err != nil { HandleError(w, r, err); return }
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.PaginatedSuccess(w, r, items, total, page, pageSize)
 }
 
@@ -54,8 +57,14 @@ func ListSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools [post]
 func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	var group models.SiteGroup
-	if err := render.Bind(r, &group); err != nil { common.BadRequestError(w, r, http.StatusBadRequest, err.Error()); return }
-	if err := sitePoolService.CreateGroup(r.Context(), &group); err != nil { HandleError(w, r, err); return }
+	if err := render.Bind(r, &group); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := sitePoolService.CreateGroup(r.Context(), &group); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, group)
 }
 
@@ -68,7 +77,10 @@ func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id} [delete]
 func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := sitePoolService.DeleteGroup(r.Context(), id); err != nil { HandleError(w, r, err); return }
+	if err := sitePoolService.DeleteGroup(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, "success")
 }
 
@@ -86,10 +98,15 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	cursor, _ := strconv.ParseInt(r.URL.Query().Get("cursor"), 10, 64)
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit <= 0 { limit = 100 }
+	if limit <= 0 {
+		limit = 100
+	}
 	search := r.URL.Query().Get("search")
 	res, err := sitePoolService.PreviewPool(r.Context(), id, cursor, limit, search)
-	if err != nil { HandleError(w, r, err); return }
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, res)
 }
 
@@ -105,8 +122,14 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var req models.SitePoolEntryRequest
-	if err := render.Bind(r, &req); err != nil { common.BadRequestError(w, r, http.StatusBadRequest, err.Error()); return }
-	if err := sitePoolService.ManagePoolEntry(r.Context(), id, &req, "add"); err != nil { HandleError(w, r, err); return }
+	if err := render.Bind(r, &req); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := sitePoolService.ManagePoolEntry(r.Context(), id, &req, "add"); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, "success")
 }
 
@@ -124,7 +147,10 @@ func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	val := r.URL.Query().Get("value")
 	t, _ := strconv.Atoi(r.URL.Query().Get("type"))
 	req := models.SitePoolEntryRequest{Type: uint8(t), Value: val}
-	if err := sitePoolService.ManagePoolEntry(r.Context(), id, &req, "delete"); err != nil { HandleError(w, r, err); return }
+	if err := sitePoolService.ManagePoolEntry(r.Context(), id, &req, "delete"); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, "success")
 }
 
@@ -143,9 +169,15 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 		Domain   string   `json:"domain"`
 		GroupIDs []string `json:"groupIds"`
 	}
-	if err := render.DecodeJSON(r.Body, &req); err != nil { common.BadRequestError(w, r, http.StatusBadRequest, err.Error()); return }
+	if err := render.DecodeJSON(r.Body, &req); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
 	res, err := siteAnalysisEngine.HitTest(r.Context(), req.Domain, req.GroupIDs)
-	if err != nil { HandleError(w, r, err); return }
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, res)
 }
 
@@ -164,7 +196,10 @@ func ListSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
 	page, pageSize := getPaginationParams(r)
 	search := r.URL.Query().Get("search")
 	items, total, err := sitePoolService.ListExports(r.Context(), page, pageSize, search)
-	if err != nil { HandleError(w, r, err); return }
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.PaginatedSuccess(w, r, items, total, page, pageSize)
 }
 
@@ -178,8 +213,43 @@ func ListSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/exports [post]
 func CreateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	var export models.SiteExport
-	if err := render.Bind(r, &export); err != nil { common.BadRequestError(w, r, http.StatusBadRequest, err.Error()); return }
-	if err := sitePoolService.CreateExport(r.Context(), &export); err != nil { HandleError(w, r, err); return }
+	if err := render.Bind(r, &export); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := sitePoolService.CreateExport(r.Context(), &export); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, export)
+}
+
+// UpdateSiteExportHandler godoc
+// @Summary Update a site export
+// @Tags network/site
+// @Accept json
+// @Produce json
+// @Param id path string true "Export ID"
+// @Param export body models.SiteExport true "Site Export"
+// @Success 200 {object} models.SiteExport
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Export Not Found"
+// @Security ApiKeyAuth
+// @Router /network/site/exports/{id} [put]
+func UpdateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var export models.SiteExport
+	if err := render.Bind(r, &export); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	export.ID = id
+	if err := sitePoolService.UpdateExport(r.Context(), &export); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, export)
 }
 
@@ -192,8 +262,23 @@ func CreateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/exports/{id} [delete]
 func DeleteSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := sitePoolService.DeleteExport(r.Context(), id); err != nil { HandleError(w, r, err); return }
+	if err := sitePoolService.DeleteExport(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, "success")
+}
+
+// ListSiteExportTasksHandler godoc
+// @Summary List all site export tasks
+// @Tags network/site
+// @Produce json
+// @Success 200 {array} siteservice.ExportTask
+// @Security ApiKeyAuth
+// @Router /network/site/exports/tasks [get]
+func ListSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
+	tasks := siteExportManager.ListTasks()
+	common.Success(w, r, tasks)
 }
 
 // TriggerSiteExportHandler godoc
@@ -207,9 +292,14 @@ func DeleteSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 func TriggerSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	format := r.URL.Query().Get("format")
-	if format == "" { format = "text" }
+	if format == "" {
+		format = "text"
+	}
 	taskID, err := siteExportManager.TriggerExport(r.Context(), id, format)
-	if err != nil { HandleError(w, r, err); return }
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, map[string]string{"taskId": taskID})
 }
 
@@ -223,8 +313,37 @@ func TriggerSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "taskId")
 	task := siteExportManager.GetTask(id)
-	if task == nil { common.BadRequestError(w, r, http.StatusNotFound, "task not found"); return }
+	if task == nil {
+		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found")
+		return
+	}
 	common.Success(w, r, task)
+}
+
+// PreviewSiteExportHandler godoc
+// @Summary Preview Site export expression
+// @Tags network/site
+// @Accept json
+// @Produce json
+// @Param request body models.SiteExportPreviewRequest true "Preview Request"
+// @Success 200 {array} models.SitePoolEntry
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Security ApiKeyAuth
+// @Router /network/site/exports/preview [post]
+func PreviewSiteExportHandler(w http.ResponseWriter, r *http.Request) {
+	var req models.SiteExportPreviewRequest
+	if err := render.Bind(r, &req); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	res, err := sitePoolService.PreviewExport(r.Context(), &req)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, res)
 }
 
 // DownloadSiteExportHandler godoc
@@ -237,10 +356,16 @@ func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "taskId")
 	task := siteExportManager.GetTask(id)
-	if task == nil || task.Status != "Success" { http.Error(w, "file not ready", http.StatusNotFound); return }
-	tempFileName := fmt.Sprintf("site_export_%s.%s", task.ID, task.Format)
+	if task == nil || task.Status != "Success" {
+		http.Error(w, "file not ready", http.StatusNotFound)
+		return
+	}
+	tempFileName := fmt.Sprintf("site_export_%s.%s", id, task.Format)
 	f, err := common.TempDir.Open(filepath.Join("temp", tempFileName))
-	if err != nil { http.Error(w, "file not found", http.StatusNotFound); return }
+	if err != nil {
+		http.Error(w, "file not found", http.StatusNotFound)
+		return
+	}
 	defer f.Close()
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", tempFileName))
 	w.Header().Set("Content-Type", "application/octet-stream")
@@ -262,11 +387,12 @@ func SiteRouter(r chi.Router) {
 		})
 		r.Route("/exports", func(r chi.Router) {
 			r.Get("/", ListSiteExportsHandler)
+			r.Get("/tasks", ListSiteExportTasksHandler)
 			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteExportHandler)
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteExportHandler)
 			r.Post("/{id}/trigger", TriggerSiteExportHandler)
 			r.Get("/task/{taskId}", SiteExportTaskStatusHandler)
-			r.Get("/download/{taskId}", DownloadSiteExportHandler)
+			r.Post("/preview", PreviewSiteExportHandler)
 		})
 	})
 }

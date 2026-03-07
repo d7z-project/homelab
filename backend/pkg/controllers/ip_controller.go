@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"io"
 	"homelab/pkg/common"
 	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	ipservice "homelab/pkg/services/ip"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -203,6 +203,35 @@ func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, export)
 }
 
+// UpdateExportHandler godoc
+// @Summary Update an IP export
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param id path string true "Export ID"
+// @Param export body models.IPExport true "IP Export"
+// @Success 200 {object} models.IPExport
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Export Not Found"
+// @Security ApiKeyAuth
+// @Router /network/ip/exports/{id} [put]
+func UpdateExportHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var export models.IPExport
+	if err := render.Bind(r, &export); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	export.ID = id
+	if err := ipPoolService.UpdateExport(r.Context(), &export); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, export)
+}
+
 // DeleteExportHandler godoc
 // @Summary Delete an IP export
 // @Tags network/ip
@@ -268,6 +297,18 @@ func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, res)
 }
 
+// ListExportTasksHandler godoc
+// @Summary List all IP export tasks
+// @Tags network/ip
+// @Produce json
+// @Success 200 {array} ipservice.ExportTask
+// @Security ApiKeyAuth
+// @Router /network/ip/exports/tasks [get]
+func ListExportTasksHandler(w http.ResponseWriter, r *http.Request) {
+	tasks := exportManager.ListTasks()
+	common.Success(w, r, tasks)
+}
+
 // TriggerExportHandler godoc
 // @Summary Trigger dynamic export
 // @Tags network/ip
@@ -307,10 +348,36 @@ func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	taskId := chi.URLParam(r, "taskId")
 	task := exportManager.GetTask(taskId)
 	if task == nil {
-		common.BadRequestError(w, r, http.StatusNotFound, "task not found")
+		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found")
 		return
 	}
 	common.Success(w, r, task)
+}
+
+// PreviewExportHandler godoc
+// @Summary Preview IP export expression
+// @Tags network/ip
+// @Accept json
+// @Produce json
+// @Param request body models.IPExportPreviewRequest true "Preview Request"
+// @Success 200 {array} models.IPPoolEntry
+// @Failure 400 {object} common.Response "Bad Request"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Security ApiKeyAuth
+// @Router /network/ip/exports/preview [post]
+func PreviewExportHandler(w http.ResponseWriter, r *http.Request) {
+	var req models.IPExportPreviewRequest
+	if err := render.Bind(r, &req); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	res, err := ipPoolService.PreviewExport(r.Context(), &req)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, res)
 }
 
 // DownloadExportHandler godoc
@@ -319,9 +386,7 @@ func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce octet-stream
 // @Param taskId path string true "Task ID"
 // @Success 200 {file} file
-// @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "File Not Found"
-// @Security ApiKeyAuth
 // @Router /network/ip/exports/download/{taskId} [get]
 func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 	taskId := chi.URLParam(r, "taskId")
@@ -331,7 +396,7 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tempFileName := fmt.Sprintf("export_%s.%s", task.ID, task.Format)
+	tempFileName := fmt.Sprintf("export_%s.%s", taskId, task.Format)
 	tempPath := filepath.Join("temp", tempFileName)
 
 	f, err := common.TempDir.Open(tempPath)
@@ -546,11 +611,13 @@ func IPRouter(r chi.Router) {
 		})
 		r.Route("/exports", func(r chi.Router) {
 			r.Get("/", ListExportsHandler)
+			r.Get("/tasks", ListExportTasksHandler)
 			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateExportHandler)
+			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateExportHandler)
 			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteExportHandler)
 			r.Post("/{id}/trigger", TriggerExportHandler)
 			r.Get("/task/{taskId}", ExportTaskStatusHandler)
-			r.Get("/download/{taskId}", DownloadExportHandler)
+			r.Post("/preview", PreviewExportHandler)
 		})
 		r.Route("/sync", func(r chi.Router) {
 			r.Get("/", ListSyncPoliciesHandler)

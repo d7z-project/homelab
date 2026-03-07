@@ -275,7 +275,11 @@ export class DnsComponent implements OnInit, OnDestroy {
 
   async loadDomains(reset = false) {
     const data = (await firstValueFrom(
-      this.networkDnsService.networkDnsDomainsGet(this.domainPage(), this.pageSize(), this.domainSearch()),
+      this.networkDnsService.networkDnsDomainsGet(
+        this.domainPage(),
+        this.pageSize(),
+        this.domainSearch(),
+      ),
     )) as NetworkDnsDomainsGet200Response;
     if (reset) this.domains.set(data.items || []);
     else {

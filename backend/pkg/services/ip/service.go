@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/expr-lang/expr"
 	"github.com/google/uuid"
 	"github.com/oschwald/maxminddb-golang/v2"
 	"github.com/robfig/cron/v3"
@@ -87,10 +88,11 @@ const (
 )
 
 type IPPoolService struct {
-	mmdb     *MMDBManager
-	cron     *cron.Cron
-	cronIDs  map[string]cron.EntryID
-	cronLock sync.Mutex
+	mmdb          *MMDBManager
+	cron          *cron.Cron
+	cronIDs       map[string]cron.EntryID
+	cronLock      sync.Mutex
+	exportManager *ExportManager
 }
 
 func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
@@ -99,6 +101,10 @@ func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 		cron:    cron.New(),
 		cronIDs: make(map[string]cron.EntryID),
 	}
+}
+
+func (s *IPPoolService) SetExportManager(em *ExportManager) {
+	s.exportManager = em
 }
 
 func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
@@ -545,6 +551,10 @@ func (s *IPPoolService) UpdateExport(ctx context.Context, export *models.IPExpor
 }
 
 func (s *IPPoolService) DeleteExport(ctx context.Context, id string) error {
+	// 级联删除相关的任务和物理文件
+	if s.exportManager != nil {
+		s.exportManager.DeleteTasksByExportID(id)
+	}
 	return repo.DeleteExport(ctx, id)
 }
 
@@ -554,6 +564,57 @@ func (s *IPPoolService) GetExport(ctx context.Context, id string) (*models.IPExp
 
 func (s *IPPoolService) ListExports(ctx context.Context, page, pageSize int, search string) ([]models.IPExport, int, error) {
 	return repo.ListExports(ctx, page, pageSize, search)
+}
+
+func (s *IPPoolService) PreviewExport(ctx context.Context, req *models.IPExportPreviewRequest) ([]models.IPPoolEntry, error) {
+	program, err := expr.Compile(req.Rule, expr.Env(map[string]interface{}{
+		"tags": []string{},
+		"cidr": "",
+		"ip":   "",
+	}))
+	if err != nil {
+		return nil, fmt.Errorf("compile error: %w", err)
+	}
+
+	var results []models.IPPoolEntry
+	for _, gid := range req.GroupIDs {
+		poolPath := filepath.Join(PoolsDir, gid+".bin")
+		pf, err := common.FS.Open(poolPath)
+		if err != nil {
+			continue
+		}
+		reader, err := NewReader(pf)
+		if err != nil {
+			pf.Close()
+			continue
+		}
+
+		for len(results) < 50 {
+			prefix, tags, err := reader.Next()
+			if err == io.EOF {
+				break
+			}
+
+			output, err := expr.Run(program, map[string]interface{}{
+				"tags": tags,
+				"cidr": prefix.String(),
+				"ip":   prefix.Addr().String(),
+			})
+
+			if err == nil && output == true {
+				results = append(results, models.IPPoolEntry{
+					CIDR: prefix.String(),
+					Tags: tags,
+				})
+			}
+		}
+		pf.Close()
+		if len(results) >= 50 {
+			break
+		}
+	}
+
+	return results, nil
 }
 
 // Discovery LookupFuncs
@@ -750,7 +811,9 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 			}
 			if record.City.Names != nil {
 				lang := policy.Config["language"]
-				if lang == "" { lang = "zh-CN" }
+				if lang == "" {
+					lang = "zh-CN"
+				}
 				if cityName, ok := record.City.Names[lang]; ok && cityName != "" {
 					idxs = append(idxs, getTagIdx(cityName))
 				} else if cityName, ok := record.City.Names["en"]; ok && cityName != "" {
@@ -767,10 +830,14 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		importAll := targetCode == "" || targetCode == "*" || targetCode == "all"
 
 		data, err := os.ReadFile(tempSrc.Name())
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
 		v2Entries, err := ParseV2RayGeoIP(data, targetCode, importAll)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
 		for _, e := range v2Entries {
 			addEntryToAggregate(e.Prefix, []uint32{internalTagIdx, getTagIdx(e.CountryCode)})
@@ -881,7 +948,6 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		}
 	}
 
-
 	if len(aggregate) == 0 {
 		return fmt.Errorf("no valid IP/CIDR found in source")
 	}
@@ -891,7 +957,9 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	defer poolWriteMutex.Unlock()
 
 	group, err := repo.GetGroup(ctx, policy.TargetGroupID)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	_ = common.FS.MkdirAll(PoolsDir, 0755)
 	poolPath := filepath.Join(PoolsDir, policy.TargetGroupID+".bin")

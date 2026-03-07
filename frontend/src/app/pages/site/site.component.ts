@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  signal,
+  computed,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
@@ -21,8 +29,14 @@ import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateSitePoolDialogComponent } from './create-site-pool-dialog.component';
 import { CreateSiteExportDialogComponent } from './create-site-export-dialog.component';
 import { ManageSiteEntriesDialogComponent } from './manage-site-entries-dialog.component';
+import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkSiteService, ModelsSiteGroup, ModelsSiteExport, IpExportTask, ModelsSiteAnalysisResult } from '../../generated';
+import {
+  NetworkSiteService,
+  ModelsSiteGroup,
+  ModelsSiteExport,
+  ModelsSiteAnalysisResult,
+} from '../../generated';
 import { FormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -48,33 +62,39 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     MatFormFieldModule,
   ],
   templateUrl: './site.component.html',
-  styles: [`
-    :host { display: block; }
-    .site-tabs-integrated {
-      ::ng-deep .mat-mdc-tab-header {
-        background: var(--mat-sys-surface);
-        border-bottom: 1px solid var(--mat-sys-outline-variant);
-        position: sticky;
-        top: 0;
-        z-index: 10;
+  styles: [
+    `
+      :host {
+        display: block;
       }
-      ::ng-deep .mat-mdc-tab-body-wrapper { background: var(--mat-sys-surface-container-lowest); }
-    }
-    .search-field-m3 {
-      ::ng-deep .mdc-text-field--filled {
-        background-color: transparent !important;
+      .site-tabs-integrated {
+        ::ng-deep .mat-mdc-tab-header {
+          background: var(--mat-sys-surface);
+          border-bottom: 1px solid var(--mat-sys-outline-variant);
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+        ::ng-deep .mat-mdc-tab-body-wrapper {
+          background: var(--mat-sys-surface-container-lowest);
+        }
       }
-      ::ng-deep .mdc-line-ripple {
-        display: none;
+      .search-field-m3 {
+        ::ng-deep .mdc-text-field--filled {
+          background-color: transparent !important;
+        }
+        ::ng-deep .mdc-line-ripple {
+          display: none;
+        }
+        ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+          display: none;
+        }
+        ::ng-deep .mat-mdc-text-field-wrapper {
+          padding-bottom: 0;
+        }
       }
-      ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-        display: none;
-      }
-      ::ng-deep .mat-mdc-text-field-wrapper {
-        padding-bottom: 0;
-      }
-    }
-  `]
+    `,
+  ],
 })
 export class SiteComponent implements OnInit, OnDestroy {
   private siteService = inject(NetworkSiteService);
@@ -105,18 +125,19 @@ export class SiteComponent implements OnInit, OnDestroy {
   exportTotal = signal(0);
   exportPage = signal(1);
   exportSearch = signal('');
-  activeTasks = signal<Record<string, any>>({});
 
   // Analysis state
   analysisDomain = signal('');
   analysisResult = signal<ModelsSiteAnalysisResult | null>(null);
 
   displayedPoolColumns = computed(() =>
-    this.isHandset() ? ['name', 'actions'] : ['name', 'description', 'entryCount', 'updatedAt', 'actions']
+    this.isHandset()
+      ? ['name', 'actions']
+      : ['name', 'description', 'entryCount', 'updatedAt', 'actions'],
   );
 
   displayedExportColumns = computed(() =>
-    this.isHandset() ? ['name', 'actions'] : ['name', 'rule', 'updatedAt', 'actions']
+    this.isHandset() ? ['name', 'actions'] : ['name', 'rule', 'updatedAt', 'actions'],
   );
 
   hasSearchContent = computed(() => {
@@ -235,7 +256,7 @@ export class SiteComponent implements OnInit, OnDestroy {
       height: '100vh',
       maxWidth: '100vw',
       panelClass: 'full-screen-dialog',
-      data: { pool }
+      data: { pool },
     });
     dialogRef.afterClosed().subscribe(() => {
       this.loadPools();
@@ -254,7 +275,9 @@ export class SiteComponent implements OnInit, OnDestroy {
             this.loadPools();
           },
           error: (err) => {
-            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', {
+              duration: 3000,
+            });
           },
         });
       }
@@ -270,7 +293,11 @@ export class SiteComponent implements OnInit, OnDestroy {
 
   deleteExport(exp: ModelsSiteExport) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: { title: '删除确认', message: `确定要删除导出配置 [${exp.name}] 吗？` },
+      data: {
+        title: '删除确认',
+        message: `确定要删除导出配置 [${exp.name}] 吗？此操作将级联删除该配置下的所有历史导出任务。`,
+        color: 'warn',
+      },
     });
     dialogRef.afterClosed().subscribe((res) => {
       if (res && exp.id) {
@@ -280,7 +307,9 @@ export class SiteComponent implements OnInit, OnDestroy {
             this.loadExports();
           },
           error: (err) => {
-            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', {
+              duration: 3000,
+            });
           },
         });
       }
@@ -291,42 +320,40 @@ export class SiteComponent implements OnInit, OnDestroy {
     if (!exp.id) return;
     this.siteService.networkSiteExportsIdTriggerPost(exp.id, 'text').subscribe({
       next: (res: any) => {
-        const taskId = res.taskId;
-        this.snackBar.open(`导出任务已触发`, '关闭', { duration: 2000 });
-        this.pollTaskStatus(taskId, exp.id as string);
+        this.openTasks();
       },
       error: (err) => {
-        this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-      }
+        this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', {
+          duration: 3000,
+        });
+      },
     });
   }
 
-  pollTaskStatus(taskId: string, exportId: string) {
-    const interval = setInterval(() => {
-      this.siteService.networkSiteExportsTaskTaskIdGet(taskId).subscribe({
-        next: (task) => {
-          this.activeTasks.update(v => ({...v, [exportId]: task}));
-          if (task.status === 'Success' || task.status === 'Failed' || task.status === 'Cancelled') {
-            clearInterval(interval);
-          }
-        },
-        error: () => clearInterval(interval)
-      });
-    }, 1000);
+  openTasks() {
+    this.dialog.open(ExportTasksDialogComponent, {
+      width: '600px',
+      data: { type: 'site' },
+      panelClass: 'tasks-dialog',
+    });
   }
 
   runAnalysis() {
     if (!this.analysisDomain()) return;
     this.loading.set(true);
-    this.siteService.networkSiteAnalysisHitTestPost({ domain: this.analysisDomain(), groupIds: [] }).subscribe({
-      next: (res) => {
-        this.analysisResult.set(res);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.snackBar.open(`分析失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-        this.loading.set(false);
-      }
-    });
+    this.siteService
+      .networkSiteAnalysisHitTestPost({ domain: this.analysisDomain(), groupIds: [] })
+      .subscribe({
+        next: (res) => {
+          this.analysisResult.set(res);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.snackBar.open(`分析失败: ${err.error?.message || err.message}`, '关闭', {
+            duration: 3000,
+          });
+          this.loading.set(false);
+        },
+      });
   }
 }

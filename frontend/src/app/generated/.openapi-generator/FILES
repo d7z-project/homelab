@@ -28,6 +28,7 @@ model/modelsDomain.ts
 model/modelsExportDomain.ts
 model/modelsIPAnalysisResult.ts
 model/modelsIPExport.ts
+model/modelsIPExportPreviewRequest.ts
 model/modelsIPExportTriggerResponse.ts
 model/modelsIPGroup.ts
 model/modelsIPHitTestRequest.ts
@@ -55,6 +56,7 @@ model/modelsSimulatePermissionsRequest.ts
 model/modelsSiteAnalysisResult.ts
 model/modelsSiteDNSAnalysis.ts
 model/modelsSiteExport.ts
+model/modelsSiteExportPreviewRequest.ts
 model/modelsSiteGroup.ts
 model/modelsSitePoolEntry.ts
 model/modelsSitePoolEntryRequest.ts

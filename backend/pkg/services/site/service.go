@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/expr-lang/expr"
 	"github.com/google/uuid"
 	"github.com/spf13/afero"
 )
@@ -58,10 +59,16 @@ func init() {
 			})
 		}
 		total := len(items)
-		if limit <= 0 { limit = 20 }
-		if offset >= total { return []models.LookupItem{}, total, nil }
+		if limit <= 0 {
+			limit = 20
+		}
+		if offset >= total {
+			return []models.LookupItem{}, total, nil
+		}
 		end := offset + limit
-		if end > total { end = total }
+		if end > total {
+			end = total
+		}
 		return items[offset:end], total, nil
 	})
 }
@@ -71,11 +78,16 @@ const (
 )
 
 type SitePoolService struct {
-	engine *AnalysisEngine
+	engine        *AnalysisEngine
+	exportManager *ExportManager
 }
 
 func NewSitePoolService(engine *AnalysisEngine) *SitePoolService {
 	return &SitePoolService{engine: engine}
+}
+
+func (s *SitePoolService) SetExportManager(em *ExportManager) {
+	s.exportManager = em
 }
 
 // Group Methods
@@ -114,7 +126,7 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
-	
+
 	old, _ := repo.GetGroup(ctx, id)
 	exports, _, err := repo.ListExports(ctx, 1, 1000, "")
 	if err != nil {
@@ -161,10 +173,16 @@ func (s *SitePoolService) ListGroups(ctx context.Context, page, pageSize int, se
 	}
 	total := len(filtered)
 	start := (page - 1) * pageSize
-	if start < 0 { start = 0 }
-	if start >= total { return []models.SiteGroup{}, total, nil }
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []models.SiteGroup{}, total, nil
+	}
 	end := start + pageSize
-	if end > total { end = total }
+	if end > total {
+		end = total
+	}
 	return filtered[start:end], total, nil
 }
 
@@ -195,14 +213,18 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 			reader, _ := NewReader(pf)
 			for {
 				entry, err := reader.Next()
-				if err == io.EOF { break }
-				
+				if err == io.EOF {
+					break
+				}
+
 				if entry.Type == req.Type && entry.Value == req.Value {
 					if mode == "add" {
 						pf.Close()
 						return fmt.Errorf("rule already exists: %d:%s", req.Type, req.Value)
 					}
-					if mode == "delete" || mode == "update" { continue }
+					if mode == "delete" || mode == "update" {
+						continue
+					}
 				}
 
 				var tagIndices []uint32
@@ -234,11 +256,15 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	_ = common.FS.MkdirAll(PoolsDir, 0755)
 	tempFile := poolPath + ".tmp"
 	tf, err := common.FS.Create(tempFile)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	codec := NewCodec()
 	err = codec.WritePool(tf, allTags, entries)
 	tf.Close()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	_ = common.FS.Rename(tempFile, poolPath)
 
 	group.EntryCount = int64(len(entries))
@@ -260,35 +286,54 @@ func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, curso
 	}
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
 	f, err := common.FS.Open(poolPath)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer f.Close()
 
 	reader, err := NewReader(f)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	if cursor > 0 {
 		if seeker, ok := f.(io.Seeker); ok {
-			if _, err := seeker.Seek(cursor, io.SeekStart); err != nil { return nil, err }
-		} else { return nil, fmt.Errorf("vfs does not support seeking") }
+			if _, err := seeker.Seek(cursor, io.SeekStart); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, fmt.Errorf("vfs does not support seeking")
+		}
 	}
 
 	res := &models.SitePoolPreviewResponse{Total: int64(reader.EntryCount()), Entries: []models.SitePoolEntry{}}
 	search = strings.ToLower(search)
 	matched := 0
 	for {
-		if matched >= limit { break }
+		if matched >= limit {
+			break
+		}
 		entry, err := reader.Next()
-		if err == io.EOF { break }
-		if err != nil { return nil, err }
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
 
 		if search != "" {
 			found := strings.Contains(strings.ToLower(entry.Value), search)
 			if !found {
 				for _, t := range entry.Tags {
-					if strings.Contains(strings.ToLower(t), search) { found = true; break }
+					if strings.Contains(strings.ToLower(t), search) {
+						found = true
+						break
+					}
 				}
 			}
-			if !found { continue }
+			if !found {
+				continue
+			}
 		}
 		res.Entries = append(res.Entries, entry)
 		matched++
@@ -296,7 +341,11 @@ func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, curso
 
 	if seeker, ok := f.(io.Seeker); ok {
 		next, _ := seeker.Seek(0, io.SeekCurrent)
-		if matched < limit { res.NextCursor = 0 } else { res.NextCursor = next }
+		if matched < limit {
+			res.NextCursor = 0
+		} else {
+			res.NextCursor = next
+		}
 	}
 	return res, nil
 }
@@ -312,13 +361,18 @@ func (s *SitePoolService) CreateExport(ctx context.Context, export *models.SiteE
 
 func (s *SitePoolService) UpdateExport(ctx context.Context, export *models.SiteExport) error {
 	old, err := repo.GetExport(ctx, export.ID)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	export.CreatedAt = old.CreatedAt
 	export.UpdatedAt = time.Now()
 	return repo.SaveExport(ctx, export)
 }
 
 func (s *SitePoolService) DeleteExport(ctx context.Context, id string) error {
+	if s.exportManager != nil {
+		s.exportManager.DeleteTasksByExportID(id)
+	}
 	return repo.DeleteExport(ctx, id)
 }
 
@@ -328,4 +382,52 @@ func (s *SitePoolService) GetExport(ctx context.Context, id string) (*models.Sit
 
 func (s *SitePoolService) ListExports(ctx context.Context, page, pageSize int, search string) ([]models.SiteExport, int, error) {
 	return repo.ListExports(ctx, page, pageSize, search)
+}
+
+func (s *SitePoolService) PreviewExport(ctx context.Context, req *models.SiteExportPreviewRequest) ([]models.SitePoolEntry, error) {
+	program, err := expr.Compile(req.Rule, expr.Env(map[string]interface{}{
+		"tags":   []string{},
+		"domain": "",
+		"type":   uint8(0),
+	}))
+	if err != nil {
+		return nil, fmt.Errorf("compile error: %w", err)
+	}
+
+	var results []models.SitePoolEntry
+	for _, gid := range req.GroupIDs {
+		poolPath := filepath.Join(PoolsDir, gid+".bin")
+		pf, err := common.FS.Open(poolPath)
+		if err != nil {
+			continue
+		}
+		reader, err := NewReader(pf)
+		if err != nil {
+			pf.Close()
+			continue
+		}
+
+		for len(results) < 50 {
+			entry, err := reader.Next()
+			if err == io.EOF {
+				break
+			}
+
+			out, err := expr.Run(program, map[string]interface{}{
+				"tags":   entry.Tags,
+				"domain": entry.Value,
+				"type":   entry.Type,
+			})
+
+			if err == nil && out == true {
+				results = append(results, entry)
+			}
+		}
+		pf.Close()
+		if len(results) >= 50 {
+			break
+		}
+	}
+
+	return results, nil
 }

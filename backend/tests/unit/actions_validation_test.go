@@ -61,9 +61,17 @@ func TestActionsRegexValidation(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 
 		// Valid input
-		_, err := actions.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"env": "prod"})
+		instanceID, err := actions.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"env": "prod"})
 		if err != nil {
 			t.Errorf("Expected success for valid regex variable, got: %v", err)
+		} else {
+			for i := 0; i < 50; i++ {
+				instance, _ := actions.GetTaskInstance(ctx, instanceID)
+				if instance != nil && (instance.Status == "Success" || instance.Status == "Failed") {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
 		}
 
 		// Invalid input
@@ -255,10 +263,18 @@ func TestActionsRegexValidation(t *testing.T) {
 
 		// 2. Test TriggerWorkflow (Workflow Variables)
 		// Empty input for optional_var should succeed despite regex
-		_, err = actions.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"optional_var": ""})
+		instanceID2, err := actions.TriggerWorkflow(ctx, workflow, "root", "Manual", map[string]string{"optional_var": ""})
 		if err != nil && !strings.Contains(err.Error(), "not found") { // Ignore "target workflow not found" error from the processor execution part
 			if strings.Contains(err.Error(), "match required format") {
 				t.Errorf("TriggerWorkflow failed regex for empty optional variable: %v", err)
+			}
+		} else if err == nil {
+			for i := 0; i < 50; i++ {
+				instance, _ := actions.GetTaskInstance(ctx, instanceID2)
+				if instance != nil && (instance.Status == "Success" || instance.Status == "Failed") {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
 			}
 		}
 	})

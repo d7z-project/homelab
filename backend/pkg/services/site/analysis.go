@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
-	repo "homelab/pkg/repositories/site"
 	iprepo "homelab/pkg/repositories/ip"
+	repo "homelab/pkg/repositories/site"
 	"homelab/pkg/services/ip"
 	"io"
 	"net"
@@ -56,8 +56,12 @@ func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*Compo
 	matcher := NewCompositeMatcher()
 	for {
 		entry, err := reader.Next()
-		if err == io.EOF { break }
-		if err != nil { return nil, err }
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
 
 		switch entry.Type {
 		case 0, 3: // Keyword or Full (Full handled by Trie too for simplicity in this implementation)
@@ -132,7 +136,6 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []
 			break
 		}
 	}
-
 
 	// Always attempt DNS analysis for domain intelligence
 	res.DNS = e.dnsLookup(domain)

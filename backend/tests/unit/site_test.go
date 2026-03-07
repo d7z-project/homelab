@@ -7,14 +7,14 @@ import (
 	"homelab/tests"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSiteTrie(t *testing.T) {
 	trie := site.NewSuffixTrie()
 	tags := []string{"cn", "direct"}
-	trie.Insert(2, "google.com", tags) // Domain
+	trie.Insert(2, "google.com", tags)                 // Domain
 	trie.Insert(3, "www.baidu.com", []string{"baidu"}) // Full
 
 	// 1. Precise Match (Domain)
@@ -65,7 +65,7 @@ func TestSiteService(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	engine := site.NewAnalysisEngine()
+	engine := site.NewAnalysisEngine(nil)
 	service := site.NewSitePoolService(engine)
 
 	group := &models.SiteGroup{Name: "Test Site Pool"}
@@ -75,9 +75,9 @@ func TestSiteService(t *testing.T) {
 
 	// Manage Entry
 	req := &models.SitePoolEntryRequest{
-		Type: 2,
+		Type:  2,
 		Value: "example.com",
-		Tags: []string{"test"},
+		Tags:  []string{"test"},
 	}
 	err = service.ManagePoolEntry(ctx, group.ID, req, "add")
 	assert.NoError(t, err)

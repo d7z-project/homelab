@@ -1708,23 +1708,57 @@ paths:
                 format: binary
                 type: string
           description: OK
-        "401":
-          content:
-            application/octet-stream:
-              schema:
-                $ref: "#/components/schemas/common.Response"
-          description: Unauthorized
         "404":
           content:
             application/octet-stream:
               schema:
                 $ref: "#/components/schemas/common.Response"
           description: File Not Found
-      security:
-      - ApiKeyAuth: []
       summary: Download export result
       tags:
       - network/ip
+  /network/ip/exports/preview:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.IPExportPreviewRequest"
+        description: Preview Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/models.IPPoolEntry"
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
+      summary: Preview IP export expression
+      tags:
+      - network/ip
+      x-codegen-request-body-name: request
   /network/ip/exports/task/{taskId}:
     get:
       parameters:
@@ -1756,6 +1790,22 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get export task status
+      tags:
+      - network/ip
+  /network/ip/exports/tasks:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ip.ExportTask"
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all IP export tasks
       tags:
       - network/ip
   /network/ip/exports/{id}:
@@ -1797,6 +1847,58 @@ paths:
       summary: Delete an IP export
       tags:
       - network/ip
+    put:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.IPExport"
+        description: IP Export
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.IPExport"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Export Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Update an IP export
+      tags:
+      - network/ip
+      x-codegen-request-body-name: export
   /network/ip/exports/{id}/trigger:
     post:
       parameters:
@@ -2440,6 +2542,48 @@ paths:
       summary: Download site export result
       tags:
       - network/site
+  /network/site/exports/preview:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SiteExportPreviewRequest"
+        description: Preview Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/models.SitePoolEntry"
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
+      summary: Preview Site export expression
+      tags:
+      - network/site
+      x-codegen-request-body-name: request
   /network/site/exports/task/{taskId}:
     get:
       parameters:
@@ -2457,6 +2601,22 @@ paths:
                 $ref: "#/components/schemas/site.ExportTask"
           description: OK
       summary: Get site export task status
+      tags:
+      - network/site
+  /network/site/exports/tasks:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/site.ExportTask"
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: List all site export tasks
       tags:
       - network/site
   /network/site/exports/{id}:
@@ -2478,6 +2638,58 @@ paths:
       summary: Delete a site export
       tags:
       - network/site
+    put:
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SiteExport"
+        description: Site Export
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.SiteExport"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Export Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Update a site export
+      tags:
+      - network/site
+      x-codegen-request-body-name: export
   /network/site/exports/{id}/trigger:
     post:
       parameters:
@@ -3362,6 +3574,8 @@ components:
       type: object
     ip.ExportTask:
       example:
+        createdAt: createdAt
+        recordCount: 6
         format: format
         progress: 0.8008281904610115
         resultURL: resultURL
@@ -3369,6 +3583,8 @@ components:
         error: error
         status: status
       properties:
+        createdAt:
+          type: string
         error:
           type: string
         format:
@@ -3378,6 +3594,9 @@ components:
         progress:
           format: float64
           type: number
+        recordCount:
+          format: int64
+          type: integer
         resultURL:
           type: string
         status:
@@ -3555,6 +3774,15 @@ components:
           description: go-expr 表达式
           type: string
         updatedAt:
+          type: string
+      type: object
+    models.IPExportPreviewRequest:
+      properties:
+        groupIds:
+          items:
+            type: string
+          type: array
+        rule:
           type: string
       type: object
     models.IPExportTriggerResponse:
@@ -4116,6 +4344,15 @@ components:
         updatedAt:
           type: string
       type: object
+    models.SiteExportPreviewRequest:
+      properties:
+        groupIds:
+          items:
+            type: string
+          type: array
+        rule:
+          type: string
+      type: object
     models.SiteGroup:
       example:
         createdAt: createdAt
@@ -4174,7 +4411,7 @@ components:
       type: object
     models.SitePoolPreviewResponse:
       example:
-        nextCursor: 6
+        nextCursor: 0
         entries:
         - type: 0
           value: value
@@ -4186,7 +4423,7 @@ components:
           tags:
           - tags
           - tags
-        total: 1
+        total: 6
       properties:
         entries:
           items:
@@ -4516,6 +4753,8 @@ components:
       type: object
     site.ExportTask:
       example:
+        createdAt: createdAt
+        recordCount: 6
         format: format
         progress: 0.8008281904610115
         resultURL: resultURL
@@ -4523,6 +4762,8 @@ components:
         error: error
         status: status
       properties:
+        createdAt:
+          type: string
         error:
           type: string
         format:
@@ -4532,6 +4773,9 @@ components:
         progress:
           format: float64
           type: number
+        recordCount:
+          format: int64
+          type: integer
         resultURL:
           type: string
         status:

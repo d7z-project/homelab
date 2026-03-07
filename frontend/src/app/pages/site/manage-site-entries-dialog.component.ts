@@ -45,11 +45,20 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
         </div>
       </mat-toolbar>
 
-      <div class="flex-1 flex flex-col overflow-hidden relative p-4 sm:p-6 max-w-7xl mx-auto w-full">
+      <div
+        class="flex-1 flex flex-col overflow-hidden relative p-4 sm:p-6 max-w-7xl mx-auto w-full"
+      >
         <!-- Entry Form -->
-        <div class="p-6 bg-surface-container-low border border-outline-variant/30 rounded-2xl shrink-0 mb-6 shadow-sm">
-          <h3 class="text-sm font-bold uppercase tracking-widest text-primary mb-4">{{ isEditMode() ? '修改标签' : '添加新规则' }}</h3>
-          <form [formGroup]="form" class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div
+          class="p-6 bg-surface-container-low border border-outline-variant/30 rounded-2xl shrink-0 mb-6 shadow-sm"
+        >
+          <h3 class="text-sm font-bold uppercase tracking-widest text-primary mb-4">
+            {{ isEditMode() ? '修改标签' : '添加新规则' }}
+          </h3>
+          <form
+            [formGroup]="form"
+            class="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+          >
             <mat-form-field appearance="outline" class="w-full sm:w-40">
               <mat-label>类型</mat-label>
               <mat-select formControlName="type" [disabled]="isEditMode()">
@@ -62,7 +71,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
             <mat-form-field appearance="outline" class="flex-1 w-full">
               <mat-label>规则值 (Value)</mat-label>
-              <input matInput formControlName="value" placeholder="例如 google.com" [readonly]="isEditMode()" />
+              <input
+                matInput
+                formControlName="value"
+                placeholder="例如 google.com"
+                [readonly]="isEditMode()"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="flex-1 w-full">
@@ -74,7 +88,13 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               @if (isEditMode()) {
                 <button mat-button type="button" (click)="cancelEdit()">取消</button>
               }
-              <button mat-flat-button color="primary" class="h-[56px] px-8" [disabled]="form.invalid || submitting()" (click)="submit()">
+              <button
+                mat-flat-button
+                color="primary"
+                class="h-[56px] px-8"
+                [disabled]="form.invalid || submitting()"
+                (click)="submit()"
+              >
                 {{ isEditMode() ? '保存' : '添加' }}
               </button>
             </div>
@@ -85,15 +105,25 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
         <div class="mb-4">
           <mat-form-field appearance="outline" class="w-full sm:w-96">
             <mat-label>搜索规则或标签</mat-label>
-            <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)" placeholder="输入关键字..." />
+            <input
+              matInput
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="onSearchChange($event)"
+              placeholder="输入关键字..."
+            />
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
         </div>
 
         <!-- Table -->
-        <div class="flex-1 overflow-auto border border-outline-variant/30 rounded-xl relative bg-surface" (scroll)="onScroll($event)">
+        <div
+          class="flex-1 overflow-auto border border-outline-variant/30 rounded-xl relative bg-surface"
+          (scroll)="onScroll($event)"
+        >
           @if (loading() && entries().length === 0) {
-            <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-surface/80">
+            <div
+              class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-surface/80"
+            >
               <mat-spinner diameter="40"></mat-spinner>
             </div>
           }
@@ -101,12 +131,22 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
             <ng-container matColumnDef="type">
               <th mat-header-cell *matHeaderCellDef class="font-bold">类型</th>
               <td mat-cell *matCellDef="let element">
-                <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border border-outline-variant">
+                <span
+                  class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border border-outline-variant"
+                >
                   @switch (element.type) {
-                    @case (0) { kw }
-                    @case (1) { re }
-                    @case (2) { dom }
-                    @case (3) { full }
+                    @case (0) {
+                      kw
+                    }
+                    @case (1) {
+                      re
+                    }
+                    @case (2) {
+                      dom
+                    }
+                    @case (3) {
+                      full
+                    }
                   }
                 </span>
               </td>
@@ -114,7 +154,9 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
             <ng-container matColumnDef="value">
               <th mat-header-cell *matHeaderCellDef class="font-bold">规则值</th>
-              <td mat-cell *matCellDef="let element" class="font-mono text-sm">{{ element.value }}</td>
+              <td mat-cell *matCellDef="let element" class="font-mono text-sm">
+                {{ element.value }}
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="tags">
@@ -122,7 +164,9 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               <td mat-cell *matCellDef="let element">
                 <div class="flex flex-wrap gap-1 py-2">
                   @for (t of element.tags; track t) {
-                    <span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px]">{{ t }}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px]">{{
+                      t
+                    }}</span>
                   }
                 </div>
               </td>
@@ -131,26 +175,44 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef class="w-[100px] font-bold">操作</th>
               <td mat-cell *matCellDef="let element">
-                <button mat-icon-button color="primary" (click)="editEntry(element)" matTooltip="修改标签">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  (click)="editEntry(element)"
+                  matTooltip="修改标签"
+                >
                   <mat-icon class="!text-sm">edit</mat-icon>
                 </button>
-                <button mat-icon-button color="warn" (click)="deleteEntry(element)" matTooltip="删除">
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="deleteEntry(element)"
+                  matTooltip="删除"
+                >
                   <mat-icon class="!text-sm">delete</mat-icon>
                 </button>
               </td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="['type', 'value', 'tags', 'actions']; sticky: true" class="bg-surface-container-low"></tr>
-            <tr mat-row *matRowDef="let row; columns: ['type', 'value', 'tags', 'actions'];" class="hover:bg-on-surface/5 transition-colors"></tr>
+            <tr
+              mat-header-row
+              *matHeaderRowDef="['type', 'value', 'tags', 'actions']; sticky: true"
+              class="bg-surface-container-low"
+            ></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: ['type', 'value', 'tags', 'actions']"
+              class="hover:bg-on-surface/5 transition-colors"
+            ></tr>
           </table>
-          
+
           @if (loadingMore()) {
             <div class="py-4 flex justify-center"><mat-spinner diameter="30"></mat-spinner></div>
           }
         </div>
       </div>
     </div>
-  `
+  `,
 })
 export class ManageSiteEntriesDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -162,7 +224,7 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
   loadingMore = signal(false);
   submitting = signal(false);
   isEditMode = signal(false);
-  
+
   nextCursor = 0;
   hasMore = signal(true);
   searchQuery = '';
@@ -171,19 +233,25 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
   form = this.fb.group({
     type: [2, Validators.required],
     value: ['', Validators.required],
-    tags: ['']
+    tags: [''],
   });
 
   constructor(
     public dialogRef: MatDialogRef<ManageSiteEntriesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { pool: ModelsSiteGroup }
+    @Inject(MAT_DIALOG_DATA) public data: { pool: ModelsSiteGroup },
   ) {
-    this.searchSubject.pipe(debounceTime(400), distinctUntilChanged()).subscribe(() => this.loadEntries(true));
+    this.searchSubject
+      .pipe(debounceTime(400), distinctUntilChanged())
+      .subscribe(() => this.loadEntries(true));
   }
 
-  ngOnInit() { this.loadEntries(true); }
+  ngOnInit() {
+    this.loadEntries(true);
+  }
 
-  onSearchChange(val: string) { this.searchSubject.next(val); }
+  onSearchChange(val: string) {
+    this.searchSubject.next(val);
+  }
 
   loadEntries(reset = false) {
     if (reset) {
@@ -196,17 +264,23 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
       this.loadingMore.set(true);
     }
 
-    this.siteService.networkSitePoolsIdPreviewGet(this.data.pool.id!, this.nextCursor, 50, this.searchQuery).subscribe({
-      next: (res) => {
-        const newEntries = res.entries || [];
-        if (reset) this.entries.set(newEntries); else this.entries.update(v => [...v, ...newEntries]);
-        this.nextCursor = res.nextCursor || 0;
-        this.hasMore.set(this.nextCursor > 0 && newEntries.length > 0);
-        this.loading.set(false);
-        this.loadingMore.set(false);
-      },
-      error: () => { this.loading.set(false); this.loadingMore.set(false); }
-    });
+    this.siteService
+      .networkSitePoolsIdPreviewGet(this.data.pool.id!, this.nextCursor, 50, this.searchQuery)
+      .subscribe({
+        next: (res) => {
+          const newEntries = res.entries || [];
+          if (reset) this.entries.set(newEntries);
+          else this.entries.update((v) => [...v, ...newEntries]);
+          this.nextCursor = res.nextCursor || 0;
+          this.hasMore.set(this.nextCursor > 0 && newEntries.length > 0);
+          this.loading.set(false);
+          this.loadingMore.set(false);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.loadingMore.set(false);
+        },
+      });
   }
 
   onScroll(event: Event) {
@@ -219,7 +293,7 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
     this.form.patchValue({
       type: entry.type as any,
       value: entry.value,
-      tags: (entry.tags || []).join(', ')
+      tags: (entry.tags || []).join(', '),
     });
   }
 
@@ -232,35 +306,54 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
     if (this.form.invalid) return;
     this.submitting.set(true);
     const val = this.form.getRawValue();
-    const tags = val.tags ? val.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+    const tags = val.tags
+      ? val.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t)
+      : [];
 
-    this.siteService.networkSitePoolsIdEntriesPost(this.data.pool.id!, { type: val.type as any, value: val.value!, tags }).subscribe({
-      next: () => {
-        this.snackBar.open(this.isEditMode() ? '修改成功' : '添加成功', '关闭', { duration: 2000 });
-        this.cancelEdit();
-        this.submitting.set(false);
-        this.loadEntries(true);
-      },
-      error: (err) => {
-        this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-        this.submitting.set(false);
-      }
-    });
+    this.siteService
+      .networkSitePoolsIdEntriesPost(this.data.pool.id!, {
+        type: val.type as any,
+        value: val.value!,
+        tags,
+      })
+      .subscribe({
+        next: () => {
+          this.snackBar.open(this.isEditMode() ? '修改成功' : '添加成功', '关闭', {
+            duration: 2000,
+          });
+          this.cancelEdit();
+          this.submitting.set(false);
+          this.loadEntries(true);
+        },
+        error: (err) => {
+          this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', {
+            duration: 3000,
+          });
+          this.submitting.set(false);
+        },
+      });
   }
 
   deleteEntry(entry: ModelsSitePoolEntry) {
     if (!confirm(`确定要删除 ${entry.value} 吗？`)) return;
     this.submitting.set(true);
-    this.siteService.networkSitePoolsIdEntriesDelete(this.data.pool.id!, entry.type!, entry.value!).subscribe({
-      next: () => {
-        this.snackBar.open('删除成功', '关闭', { duration: 2000 });
-        this.submitting.set(false);
-        this.loadEntries(true);
-      },
-      error: (err) => {
-        this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
-        this.submitting.set(false);
-      }
-    });
+    this.siteService
+      .networkSitePoolsIdEntriesDelete(this.data.pool.id!, entry.type!, entry.value!)
+      .subscribe({
+        next: () => {
+          this.snackBar.open('删除成功', '关闭', { duration: 2000 });
+          this.submitting.set(false);
+          this.loadEntries(true);
+        },
+        error: (err) => {
+          this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', {
+            duration: 3000,
+          });
+          this.submitting.set(false);
+        },
+      });
   }
 }

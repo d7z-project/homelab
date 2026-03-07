@@ -10,10 +10,12 @@
 
 
 export interface IpExportTask { 
+    createdAt?: string;
     error?: string;
     format?: string;
     id?: string;
     progress?: number;
+    recordCount?: number;
     resultURL?: string;
     /**
      * Pending, Running, Success, Failed

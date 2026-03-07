@@ -1,4 +1,13 @@
-import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef, effect } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  signal,
+  computed,
+  ViewChild,
+  ElementRef,
+  effect,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -12,12 +21,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { HttpClient } from '@angular/common/http';
 import { Router, ActivatedRoute } from '@angular/router';
-import { 
-  NetworkIpService, 
-  NetworkSiteService, 
-  ModelsIPAnalysisResult, 
-  ModelsIPInfoResponse, 
-  ModelsSiteAnalysisResult 
+import {
+  NetworkIpService,
+  NetworkSiteService,
+  ModelsIPAnalysisResult,
+  ModelsIPInfoResponse,
+  ModelsSiteAnalysisResult,
 } from '../../../generated';
 import { PageHeaderComponent } from '../../../shared/page-header.component';
 import * as echarts from 'echarts';
@@ -39,26 +48,36 @@ import * as echarts from 'echarts';
     PageHeaderComponent,
   ],
   templateUrl: './analysis.component.html',
-  styles: [`
-    .search-field-m3 {
-      ::ng-deep .mdc-text-field--filled { background-color: transparent !important; }
-      ::ng-deep .mdc-line-ripple { display: none; }
-      ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
-      ::ng-deep .mat-mdc-text-field-wrapper { padding-bottom: 0; }
-    }
-    .map-wrapper {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      min-height: 300px;
-    }
-    .clickable-link {
-      cursor: pointer;
-      &:hover {
-        text-decoration: underline;
-        color: var(--mat-sys-primary);
+  styles: [
+    `
+      .search-field-m3 {
+        ::ng-deep .mdc-text-field--filled {
+          background-color: transparent !important;
+        }
+        ::ng-deep .mdc-line-ripple {
+          display: none;
+        }
+        ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+          display: none;
+        }
+        ::ng-deep .mat-mdc-text-field-wrapper {
+          padding-bottom: 0;
+        }
       }
-    }
-  `]
+      .map-wrapper {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        min-height: 300px;
+      }
+      .clickable-link {
+        cursor: pointer;
+        &:hover {
+          text-decoration: underline;
+          color: var(--mat-sys-primary);
+        }
+      }
+    `,
+  ],
 })
 export class AnalysisComponent implements OnInit {
   @ViewChild('mapContainer') set mapContainer(content: ElementRef) {
@@ -68,7 +87,7 @@ export class AnalysisComponent implements OnInit {
     }
   }
   private _mapContainer?: ElementRef;
-  
+
   private ipService = inject(NetworkIpService);
   private siteService = inject(NetworkSiteService);
   private snackBar = inject(MatSnackBar);
@@ -84,10 +103,12 @@ export class AnalysisComponent implements OnInit {
   ipResult = signal<ModelsIPAnalysisResult | null>(null);
   ipInfo = signal<ModelsIPInfoResponse | null>(null);
   siteResult = signal<ModelsSiteAnalysisResult | null>(null);
-  
+
   private chart?: echarts.ECharts;
 
-  hasResult = computed(() => !!(this.ipResult() || this.ipInfo() || this.siteResult() || this.hitTestLoading()));
+  hasResult = computed(
+    () => !!(this.ipResult() || this.ipInfo() || this.siteResult() || this.hitTestLoading()),
+  );
 
   constructor() {
     effect(() => {
@@ -99,10 +120,10 @@ export class AnalysisComponent implements OnInit {
 
   private refreshMap() {
     if (!this._mapContainer) return;
-    
+
     const info = this.ipInfo();
     const site = this.siteResult();
-    
+
     let infos: ModelsIPInfoResponse[] = [];
     if (info) {
       infos = [info];
@@ -117,7 +138,7 @@ export class AnalysisComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       const q = params['q'];
       if (q && q !== this.query()) {
         this.query.set(q);
@@ -128,18 +149,18 @@ export class AnalysisComponent implements OnInit {
 
   private initChart(element: HTMLElement, infos: ModelsIPInfoResponse[]): void {
     echarts.getInstanceByDom(element)?.dispose();
-    
+
     const chart = echarts.init(element);
     this.chart = chart;
-    
-    this.http.get('maps/world.json').subscribe(geoJson => {
+
+    this.http.get('maps/world.json').subscribe((geoJson) => {
       echarts.registerMap('world', geoJson as any);
-      
-      const scatterData = infos.map(info => {
-        const coords = info.location?.split(',').map(v => parseFloat(v)) || [0, 0];
+
+      const scatterData = infos.map((info) => {
+        const coords = info.location?.split(',').map((v) => parseFloat(v)) || [0, 0];
         return {
           name: info.ip,
-          value: [coords[1], coords[0]]
+          value: [coords[1], coords[0]],
         };
       });
 
@@ -153,15 +174,15 @@ export class AnalysisComponent implements OnInit {
           label: { show: false },
           emphasis: {
             label: { show: false },
-            itemStyle: { areaColor: '#3b82f6' }
+            itemStyle: { areaColor: '#3b82f6' },
           },
           itemStyle: {
             areaColor: '#1e293b',
             borderColor: '#334155',
-            borderWidth: 0.5
+            borderWidth: 0.5,
           },
           zoom: 1.5,
-          center: center
+          center: center,
         },
         series: [
           {
@@ -179,15 +200,15 @@ export class AnalysisComponent implements OnInit {
               fontWeight: 'bold',
               backgroundColor: 'rgba(0,0,0,0.7)',
               padding: [4, 8],
-              borderRadius: 4
+              borderRadius: 4,
             },
             itemStyle: { color: '#3b82f6', shadowBlur: 10, shadowColor: '#3b82f6' },
-            zlevel: 1
-          }
-        ]
+            zlevel: 1,
+          },
+        ],
       };
       chart.setOption(option);
-      
+
       const resizeObserver = new ResizeObserver(() => chart.resize());
       resizeObserver.observe(element);
     });
@@ -201,7 +222,7 @@ export class AnalysisComponent implements OnInit {
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { q: val },
-        queryParamsHandling: 'merge'
+        queryParamsHandling: 'merge',
       });
     }
 
@@ -229,7 +250,8 @@ export class AnalysisComponent implements OnInit {
 
   checkIsIP(val: string): boolean {
     const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
+    const ipv6Regex =
+      /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
     return ipv4Regex.test(val) || ipv6Regex.test(val);
   }
 
@@ -242,7 +264,7 @@ export class AnalysisComponent implements OnInit {
       error: (err) => {
         this.handleError(err);
         this.hitTestLoading.set(false);
-      }
+      },
     });
 
     this.ipService.networkIpAnalysisInfoGet(ip).subscribe({
@@ -250,7 +272,7 @@ export class AnalysisComponent implements OnInit {
         this.ipInfo.set(res);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false)
+      error: () => this.loading.set(false),
     });
   }
 
@@ -265,11 +287,13 @@ export class AnalysisComponent implements OnInit {
         this.handleError(err);
         this.hitTestLoading.set(false);
         this.loading.set(false);
-      }
+      },
     });
   }
 
   private handleError(err: any) {
-    this.snackBar.open(`分析失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+    this.snackBar.open(`分析失败: ${err.error?.message || err.message}`, '关闭', {
+      duration: 3000,
+    });
   }
 }

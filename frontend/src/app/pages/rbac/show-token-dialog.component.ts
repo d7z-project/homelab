@@ -21,14 +21,18 @@ import { MatSnackBar } from '@angular/material/snack-bar';
             显示名称: <strong>{{ data.name || '-' }}</strong>
           </p>
         </div>
-        <div class="bg-error-container/10 rounded-2xl p-5 space-y-4 border border-error/30 animate-in shake-x duration-500">
+        <div
+          class="bg-error-container/10 rounded-2xl p-5 space-y-4 border border-error/30 animate-in shake-x duration-500"
+        >
           <div class="flex items-start gap-3 text-error">
             <mat-icon
               class="!w-[20px] !h-[20px] !text-[20px] !flex !items-center !justify-center shrink-0"
               >warning</mat-icon
             >
             <div class="space-y-1">
-              <p class="text-xs font-bold leading-relaxed uppercase tracking-wider">一次性机密令牌</p>
+              <p class="text-xs font-bold leading-relaxed uppercase tracking-wider">
+                一次性机密令牌
+              </p>
               <p class="text-[11px] opacity-80 leading-relaxed">
                 后端仅存储此令牌的哈希摘要。出于安全考虑，离开此页面后将<strong>无法再次找回</strong>。泄露或遗失请立即重置。
               </p>

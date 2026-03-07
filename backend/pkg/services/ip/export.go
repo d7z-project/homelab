@@ -8,41 +8,200 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/ip"
 	"io"
+	"net"
+	"net/netip"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/expr-lang/expr"
+	"github.com/maxmind/mmdbwriter"
+	"github.com/maxmind/mmdbwriter/mmdbtype"
+	"gopkg.d7z.net/middleware/kv"
 )
 
 type ExportTask struct {
-	ID        string
-	Status    string // Pending, Running, Success, Failed
-	Progress  float64
-	Format    string
-	ResultURL string
-	Error     string
-	mu        sync.Mutex
+	ID          string
+	Status      string // Pending, Running, Success, Failed
+	Progress    float64
+	Format      string
+	ResultURL   string
+	Error       string
+	CreatedAt   time.Time
+	RecordCount int64
+	mu          sync.Mutex
+}
+
+type ExportTaskDTO struct {
+	ID          string    `json:"ID"`
+	Status      string    `json:"Status"`
+	Progress    float64   `json:"Progress"`
+	Format      string    `json:"Format"`
+	ResultURL   string    `json:"ResultURL"`
+	Error       string    `json:"Error"`
+	CreatedAt   time.Time `json:"CreatedAt"`
+	RecordCount int64     `json:"RecordCount"`
 }
 
 type ExportManager struct {
 	mu       sync.RWMutex
 	tasks    map[string]*ExportTask
 	analysis *AnalysisEngine
+	wg       sync.WaitGroup
 }
 
 func NewExportManager(analysis *AnalysisEngine) *ExportManager {
-	return &ExportManager{
+	m := &ExportManager{
 		tasks:    make(map[string]*ExportTask),
 		analysis: analysis,
 	}
+	m.loadTasks()
+	return m
 }
 
-func (m *ExportManager) GetTask(id string) *ExportTask {
+func (m *ExportManager) loadTasks() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	data, err := common.DB.Child("network", "ip").Get(context.Background(), "export_tasks")
+	if err == nil && data != "" {
+		_ = json.Unmarshal([]byte(data), &m.tasks)
+		for _, t := range m.tasks {
+			if t.Status == "Running" || t.Status == "Pending" {
+				t.Status = "Failed"
+				t.Error = "Server restarted"
+			}
+		}
+	}
+}
+
+func (m *ExportManager) saveTasksLocked() {
+	dumps := make(map[string]ExportTaskDTO)
+	for id, t := range m.tasks {
+		t.mu.Lock()
+		dumps[id] = ExportTaskDTO{
+			ID:          t.ID,
+			Status:      t.Status,
+			Progress:    t.Progress,
+			Format:      t.Format,
+			ResultURL:   t.ResultURL,
+			Error:       t.Error,
+			CreatedAt:   t.CreatedAt,
+			RecordCount: t.RecordCount,
+		}
+		t.mu.Unlock()
+	}
+
+	b, _ := json.Marshal(dumps)
+	_ = common.DB.Child("network", "ip").Put(context.Background(), "export_tasks", string(b), kv.TTLKeep)
+}
+
+func (m *ExportManager) saveTasks() {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return m.tasks[id]
+	m.saveTasksLocked()
+}
+
+func (m *ExportManager) GetTask(id string) *ExportTaskDTO {
+	m.mu.RLock()
+	t := m.tasks[id]
+	m.mu.RUnlock()
+
+	if t == nil {
+		return nil
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return &ExportTaskDTO{
+		ID:          t.ID,
+		Status:      t.Status,
+		Progress:    t.Progress,
+		Format:      t.Format,
+		ResultURL:   t.ResultURL,
+		Error:       t.Error,
+		CreatedAt:   t.CreatedAt,
+		RecordCount: t.RecordCount,
+	}
+}
+
+func (m *ExportManager) ListTasks() []ExportTaskDTO {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	res := make([]ExportTaskDTO, 0, len(m.tasks))
+	for _, t := range m.tasks {
+		t.mu.Lock()
+		res = append(res, ExportTaskDTO{
+			ID:          t.ID,
+			Status:      t.Status,
+			Progress:    t.Progress,
+			Format:      t.Format,
+			ResultURL:   t.ResultURL,
+			Error:       t.Error,
+			CreatedAt:   t.CreatedAt,
+			RecordCount: t.RecordCount,
+		})
+		t.mu.Unlock()
+	}
+	return res
+}
+
+func (m *ExportManager) StartCleanupTimer() {
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		for range ticker.C {
+			m.Cleanup()
+		}
+	}()
+}
+
+func (m *ExportManager) Cleanup() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	now := time.Now()
+	changed := false
+	for id, t := range m.tasks {
+		t.mu.Lock()
+		status := t.Status
+		createdAt := t.CreatedAt
+		t.mu.Unlock()
+
+		// 清理超过 24 小时的任务
+		if now.Sub(createdAt) > 24*time.Hour && status != "Running" {
+			m.deleteTask(id)
+			changed = true
+		}
+	}
+	if changed {
+		m.saveTasksLocked()
+	}
+}
+
+func (m *ExportManager) DeleteTasksByExportID(exportID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	changed := false
+	for id := range m.tasks {
+		if strings.HasPrefix(id, exportID+"-") {
+			m.deleteTask(id)
+			changed = true
+		}
+	}
+	if changed {
+		m.saveTasksLocked()
+	}
+}
+
+func (m *ExportManager) deleteTask(id string) {
+	t := m.tasks[id]
+	if t == nil {
+		return
+	}
+	// 删除物理文件
+	tempFileName := fmt.Sprintf("export_%s.%s", t.ID, t.Format)
+	tempPath := filepath.Join("temp", tempFileName)
+	_ = common.TempDir.Remove(tempPath)
+	delete(m.tasks, id)
 }
 
 func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, format string) (string, error) {
@@ -54,29 +213,44 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	m.mu.Lock()
 	// 取消该导出配置之前的任务 (IP.md: Cancel & Replace)
 	for id, t := range m.tasks {
-		if strings.HasPrefix(id, exportID+":") && t.Status == "Running" {
+		if strings.HasPrefix(id, exportID+"-") {
 			t.mu.Lock()
-			t.Status = "Cancelled"
+			if t.Status == "Running" || t.Status == "Pending" {
+				t.Status = "Cancelled"
+			}
 			t.mu.Unlock()
 		}
 	}
 
-	taskID := fmt.Sprintf("%s:%d", exportID, time.Now().UnixNano())
+	taskID := fmt.Sprintf("%s-%d", exportID, time.Now().UnixNano())
 	task := &ExportTask{
-		ID:     taskID,
-		Status: "Pending",
-		Format: format,
+		ID:        taskID,
+		Status:    "Pending",
+		Format:    format,
+		CreatedAt: time.Now(),
 	}
 	m.tasks[taskID] = task
+	m.saveTasksLocked()
 	m.mu.Unlock()
 
+	m.wg.Add(1)
 	go m.runExport(context.Background(), task, e)
 
 	return taskID, nil
 }
 
+func (m *ExportManager) WaitAll() {
+	m.wg.Wait()
+}
+
 func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *models.IPExport) {
+	defer m.wg.Done()
 	task.mu.Lock()
+	if task.Status == "Cancelled" {
+		task.mu.Unlock()
+		m.saveTasks()
+		return
+	}
 	task.Status = "Running"
 	task.mu.Unlock()
 
@@ -93,6 +267,7 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 		task.Status = "Failed"
 		task.Error = "Compile error: " + err.Error()
 		task.mu.Unlock()
+		m.saveTasks()
 		return
 	}
 
@@ -108,8 +283,8 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 		totalEntries = 1 // 避免除零
 	}
 
-	processed := int64(0)
-	
+	totalRead := int64(0)
+
 	tempFileName := fmt.Sprintf("export_%s.%s", task.ID, task.Format)
 	tempPath := filepath.Join("temp", tempFileName)
 	_ = common.TempDir.MkdirAll("temp", 0755)
@@ -119,6 +294,7 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 		task.Status = "Failed"
 		task.Error = "File create error: " + err.Error()
 		task.mu.Unlock()
+		m.saveTasks()
 		return
 	}
 	defer f.Close()
@@ -128,6 +304,18 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 	}
 
 	firstJsonItem := true
+	
+	var mmdbWriter *mmdbwriter.Tree
+	var v2rayGroups map[string][]netip.Prefix
+
+	if task.Format == "mmdb" {
+		mmdbWriter, _ = mmdbwriter.New(mmdbwriter.Options{
+			DatabaseType: "GeoIP2-Country",
+			RecordSize:   24,
+		})
+	} else if task.Format == "v2ray-dat" {
+		v2rayGroups = make(map[string][]netip.Prefix)
+	}
 
 	for _, gid := range e.GroupIDs {
 		poolPath := filepath.Join(PoolsDir, gid+".bin")
@@ -135,12 +323,17 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 		if err != nil {
 			continue
 		}
-		reader, _ := NewReader(pf)
+		reader, err := NewReader(pf)
+		if err != nil {
+			pf.Close()
+			continue
+		}
 		for {
 			task.mu.Lock()
 			if task.Status == "Cancelled" {
 				task.mu.Unlock()
 				pf.Close()
+				m.saveTasks()
 				return
 			}
 			task.mu.Unlock()
@@ -149,22 +342,33 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 			if err == io.EOF {
 				break
 			}
-			processed++
-			
+			totalRead++
+
 			// 运行表达式
 			output, err := expr.Run(program, map[string]interface{}{
 				"tags": tags,
 				"cidr": prefix.String(),
 				"ip":   prefix.Addr().String(),
 			})
-			
+
 			if err == nil && output == true {
+				task.mu.Lock()
+				task.RecordCount++
+				task.mu.Unlock()
+
+				var publicTags []string
+				for _, t := range tags {
+					if !strings.HasPrefix(t, "_") {
+						publicTags = append(publicTags, t)
+					}
+				}
+
 				// 匹配成功，写入结果
 				switch task.Format {
 				case "text":
 					f.WriteString(prefix.String() + "\n")
 				case "json":
-					item := map[string]interface{}{"cidr": prefix.String(), "tags": tags}
+					item := map[string]interface{}{"cidr": prefix.String(), "tags": publicTags}
 					b, _ := json.Marshal(item)
 					if !firstJsonItem {
 						f.WriteString(",\n")
@@ -173,18 +377,40 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 					firstJsonItem = false
 				case "yaml":
 					f.WriteString(fmt.Sprintf("- cidr: %s\n", prefix.String()))
-					if len(tags) > 0 {
+					if len(publicTags) > 0 {
 						f.WriteString("  tags:\n")
-						for _, t := range tags {
+						for _, t := range publicTags {
 							f.WriteString(fmt.Sprintf("    - %s\n", t))
 						}
+					}
+				case "v2ray-dat":
+					if len(publicTags) == 0 {
+						v2rayGroups["unknown"] = append(v2rayGroups["unknown"], prefix)
+					} else {
+						for _, t := range publicTags {
+							v2rayGroups[t] = append(v2rayGroups[t], prefix)
+						}
+					}
+				case "mmdb":
+					code := "XX"
+					if len(publicTags) > 0 {
+						code = publicTags[0]
+					}
+					record := mmdbtype.Map{
+						"country": mmdbtype.Map{
+							"iso_code": mmdbtype.String(strings.ToUpper(code)),
+						},
+					}
+					_, importNet, _ := net.ParseCIDR(prefix.String())
+					if importNet != nil {
+						_ = mmdbWriter.Insert(importNet, record)
 					}
 				}
 			}
 
-			if processed%1000 == 0 {
+			if totalRead%1000 == 0 {
 				task.mu.Lock()
-				task.Progress = float64(processed) / float64(totalEntries)
+				task.Progress = float64(totalRead) / float64(totalEntries)
 				task.mu.Unlock()
 			}
 		}
@@ -192,7 +418,11 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 	}
 
 	if task.Format == "json" {
-		f.WriteString("\n]")
+		f.WriteString("\n]\n")
+	} else if task.Format == "v2ray-dat" {
+		_ = BuildV2RayGeoIP(f, v2rayGroups)
+	} else if task.Format == "mmdb" {
+		_, _ = mmdbWriter.WriteTo(f)
 	}
 
 	task.mu.Lock()
@@ -202,4 +432,5 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 		task.ResultURL = "/api/v1/network/ip/exports/download/" + task.ID
 	}
 	task.mu.Unlock()
+	m.saveTasks()
 }

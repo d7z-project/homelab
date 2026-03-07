@@ -13,6 +13,8 @@ func Router(r chi.Router) {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/ping", middlewares.PingHandler)
 		r.Post("/login", controllers.LoginHandler)
+		r.Get("/network/ip/exports/download/{taskId}", controllers.DownloadExportHandler)
+		r.Get("/network/site/exports/download/{taskId}", controllers.DownloadSiteExportHandler)
 		r.Route("/actions/webhooks/{token}", func(r chi.Router) {
 			r.Get("/", controllers.WebhookHandler)
 			r.Post("/", controllers.WebhookHandler)

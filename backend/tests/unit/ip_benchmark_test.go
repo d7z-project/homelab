@@ -15,14 +15,14 @@ func BenchmarkIPCodecRead(b *testing.B) {
 	// Prepare test data
 	codec := ip.NewCodec()
 	tags := []string{"test_tag_1", "test_tag_2"}
-	
+
 	// Create a dummy pool with 1 million entries
 	entryCount := 1000000
 	entries := make([]ip.Entry, 0, entryCount)
-	
+
 	baseIP := netip.MustParseAddr("10.0.0.0")
 	baseIPBytes := baseIP.As4()
-	
+
 	for i := 0; i < entryCount; i++ {
 		// generate some sequential IPs
 		ipBytes := make([]byte, 4)
@@ -30,7 +30,7 @@ func BenchmarkIPCodecRead(b *testing.B) {
 		ipBytes[2] = byte((i >> 8) & 0xFF)
 		ipBytes[3] = byte(i & 0xFF)
 		addr := netip.AddrFrom4(*(*[4]byte)(ipBytes))
-		
+
 		entries = append(entries, ip.Entry{
 			Prefix:     netip.PrefixFrom(addr, 32),
 			TagIndices: []uint32{0},
@@ -39,7 +39,7 @@ func BenchmarkIPCodecRead(b *testing.B) {
 
 	testFs := afero.NewMemMapFs()
 	common.FS = testFs
-	
+
 	f, _ := testFs.Create("benchmark_pool.bin")
 	_ = codec.WritePool(f, tags, entries)
 	f.Close()
@@ -61,7 +61,7 @@ func BenchmarkIPCodecRead(b *testing.B) {
 			}
 			count++
 		}
-		
+
 		b.StopTimer()
 		rf.Close()
 		if count != entryCount {
@@ -78,7 +78,7 @@ func BenchmarkIPTrieLookup(b *testing.B) {
 	trie.Insert(netip.MustParsePrefix("10.0.0.0/8"), []string{"private"})
 	trie.Insert(netip.MustParsePrefix("192.168.0.0/16"), []string{"lan"})
 	trie.Insert(netip.MustParsePrefix("172.16.0.0/12"), []string{"lan"})
-	
+
 	// Add more to increase tree depth/width
 	for i := 0; i < 1000; i++ {
 		ipStr := fmt.Sprintf("100.64.%d.0/24", i%256)
@@ -96,7 +96,7 @@ func BenchmarkIPTrieLookup(b *testing.B) {
 			trie.Lookup(testIP)
 		}
 	})
-	
+
 	b.Run("Miss", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			trie.Lookup(testIPMiss)

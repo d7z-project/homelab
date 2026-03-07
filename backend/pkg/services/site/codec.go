@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
-	"io"
 	"homelab/pkg/models"
+	"io"
 )
 
 const (

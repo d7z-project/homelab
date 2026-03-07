@@ -211,8 +211,18 @@ export class MainComponent {
             icon: 'dns',
             label: 'DNS 管理',
             children: [
-              { link: '/network/dns', queryParams: { tab: 'domain' }, icon: 'language', label: '域名管理' },
-              { link: '/network/dns', queryParams: { tab: 'record' }, icon: 'layers', label: '解析记录' },
+              {
+                link: '/network/dns',
+                queryParams: { tab: 'domain' },
+                icon: 'language',
+                label: '域名管理',
+              },
+              {
+                link: '/network/dns',
+                queryParams: { tab: 'record' },
+                icon: 'layers',
+                label: '解析记录',
+              },
             ],
           },
           {
@@ -220,8 +230,18 @@ export class MainComponent {
             icon: 'router',
             label: 'IP 管理',
             children: [
-              { link: '/network/ip', queryParams: { tab: 'pool' }, icon: 'view_list', label: '地址池' },
-              { link: '/network/ip', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+              {
+                link: '/network/ip',
+                queryParams: { tab: 'pool' },
+                icon: 'view_list',
+                label: '地址池',
+              },
+              {
+                link: '/network/ip',
+                queryParams: { tab: 'export' },
+                icon: 'import_export',
+                label: '动态导出',
+              },
               { link: '/network/ip/sync', icon: 'sync', label: '同步策略' },
             ],
           },
@@ -230,8 +250,18 @@ export class MainComponent {
             icon: 'web',
             label: '域名池管理',
             children: [
-              { link: '/network/site', queryParams: { tab: 'pool' }, icon: 'view_list', label: '域名池' },
-              { link: '/network/site', queryParams: { tab: 'export' }, icon: 'import_export', label: '动态导出' },
+              {
+                link: '/network/site',
+                queryParams: { tab: 'pool' },
+                icon: 'view_list',
+                label: '域名池',
+              },
+              {
+                link: '/network/site',
+                queryParams: { tab: 'export' },
+                icon: 'import_export',
+                label: '动态导出',
+              },
             ],
           },
         ],

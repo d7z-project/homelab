@@ -120,8 +120,13 @@ import {
         @if (showAllOption) {
           <mat-option [value]="{ id: '', name: allOptionLabel }" class="!h-auto !py-3">
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-primary">all_inclusive</mat-icon>
+              <div
+                class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"
+              >
+                <mat-icon
+                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-primary"
+                  >all_inclusive</mat-icon
+                >
               </div>
               <span class="font-bold text-sm">{{ allOptionLabel }}</span>
             </div>
@@ -131,10 +136,15 @@ import {
           <mat-option [value]="item" class="!h-auto !py-3">
             <div class="flex items-start gap-4">
               <!-- Optimized Icon Container with absolute centering -->
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5">
-                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70">{{ item.icon || 'label' }}</mat-icon>
+              <div
+                class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5"
+              >
+                <mat-icon
+                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70"
+                  >{{ item.icon || 'label' }}</mat-icon
+                >
               </div>
-              
+
               <!-- Content Container -->
               <div class="flex flex-col min-w-0 flex-1 leading-tight">
                 <span class="font-bold text-[14px] text-on-surface truncate">{{ item.name }}</span>
@@ -142,7 +152,9 @@ import {
                   {{ item.id }}
                 </span>
                 @if (item.description) {
-                  <span class="text-[11px] text-outline truncate opacity-80 mt-1 italic leading-tight">
+                  <span
+                    class="text-[11px] text-outline truncate opacity-80 mt-1 italic leading-tight"
+                  >
                     {{ item.description }}
                   </span>
                 }

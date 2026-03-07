@@ -104,10 +104,16 @@ func ListGroups(ctx context.Context, page, pageSize int, search string) ([]model
 
 	total := len(res)
 	start := (page - 1) * pageSize
-	if start < 0 { start = 0 }
-	if start >= total { return []models.SiteGroup{}, total, nil }
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []models.SiteGroup{}, total, nil
+	}
 	end := start + pageSize
-	if end > total { end = total }
+	if end > total {
+		end = total
+	}
 	return res[start:end], total, nil
 }
 
@@ -183,9 +189,15 @@ func ListExports(ctx context.Context, page, pageSize int, search string) ([]mode
 
 	total := len(res)
 	start := (page - 1) * pageSize
-	if start < 0 { start = 0 }
-	if start >= total { return []models.SiteExport{}, total, nil }
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []models.SiteExport{}, total, nil
+	}
 	end := start + pageSize
-	if end > total { end = total }
+	if end > total {
+		end = total
+	}
 	return res[start:end], total, nil
 }

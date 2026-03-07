@@ -358,7 +358,9 @@ export class ActionsComponent implements OnInit, OnDestroy {
         } catch (err: any) {
           const msg = err.error?.message || err.message || '';
           if (msg.includes('permission denied') && msg.includes('write access required')) {
-            this.snackBar.open('删除失败: 您没有该工作流的修改/删除权限', '了解', { duration: 5000 });
+            this.snackBar.open('删除失败: 您没有该工作流的修改/删除权限', '了解', {
+              duration: 5000,
+            });
           } else {
             this.snackBar.open('删除失败', '关闭', { duration: 2000 });
           }
@@ -404,9 +406,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
   private async executeRun(wf: ModelsWorkflow, inputs: { [key: string]: string }) {
     this.loading.set(true);
     try {
-      await firstValueFrom(
-        this.orchService.actionsWorkflowsWorkflowIdRunPost(wf.id!, { inputs }),
-      );
+      await firstValueFrom(this.orchService.actionsWorkflowsWorkflowIdRunPost(wf.id!, { inputs }));
       this.snackBar.open('工作流已启动', '关闭', { duration: 3000 });
       this.filterByWorkflow(wf.id!);
       await this.loadInstances();
@@ -478,9 +478,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       if (result) {
         this.loading.set(true);
         try {
-          const res = await firstValueFrom(
-            this.orchService.actionsInstancesCleanupPost(days),
-          );
+          const res = await firstValueFrom(this.orchService.actionsInstancesCleanupPost(days));
           this.snackBar.open(`清理完成，共删除 ${(res as any).deleted || 0} 条记录`, '关闭', {
             duration: 3000,
           });

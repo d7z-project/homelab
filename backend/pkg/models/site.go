@@ -46,8 +46,8 @@ type SiteExport struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	Rule        string    `json:"rule"`      // go-expr 表达式
-	GroupIDs    []string  `json:"groupIds"`  // 依赖的域名池 ID 列表
+	Rule        string    `json:"rule"`     // go-expr 表达式
+	GroupIDs    []string  `json:"groupIds"` // 依赖的域名池 ID 列表
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
@@ -69,9 +69,25 @@ func (e *SiteExport) Bind(r *http.Request) error {
 	return nil
 }
 
-// SitePoolEntry 代表域名池中的单条记录
+// SiteExportPreviewRequest 动态导出预览请求
+type SiteExportPreviewRequest struct {
+	Rule     string   `json:"rule"`
+	GroupIDs []string `json:"groupIds"`
+}
+
+func (req *SiteExportPreviewRequest) Bind(r *http.Request) error {
+	if req.Rule == "" {
+		return errors.New("rule expression is required")
+	}
+	if len(req.GroupIDs) == 0 {
+		return errors.New("at least one source group is required")
+	}
+	return nil
+}
+
+// SitePoolEntry 代表 Site 池中的单条记录
 type SitePoolEntry struct {
-	Type uint8    `json:"type"` // 0:Keyword, 1:Regex, 2:Domain, 3:Full
+	Type  uint8    `json:"type"` // 0:Keyword, 1:Regex, 2:Domain, 3:Full
 	Value string   `json:"value"`
 	Tags  []string `json:"tags"`
 }

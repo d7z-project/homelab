@@ -66,7 +66,7 @@ func TestSiteAnalysisEngine(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	engine := site.NewAnalysisEngine()
+	engine := site.NewAnalysisEngine(nil)
 	service := site.NewSitePoolService(engine)
 
 	// Create pool and entries
@@ -102,7 +102,7 @@ func TestSiteExportManager(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 	common.TempDir = afero.NewMemMapFs()
 
-	analysis := site.NewAnalysisEngine()
+	analysis := site.NewAnalysisEngine(nil)
 	manager := site.NewExportManager(analysis)
 	service := site.NewSitePoolService(analysis)
 
@@ -140,6 +140,22 @@ func TestSiteExportManager(t *testing.T) {
 	content, _ := afero.ReadFile(common.TempDir, "temp/site_export_"+taskID+".text")
 	assert.Contains(t, string(content), "domain:a.com")
 	assert.NotContains(t, string(content), "full:b.com")
+
+	// Allow background saveTasks to complete before teardown
+	for i := 0; i < 50; i++ {
+		allDone := true
+		for _, task := range manager.ListTasks() {
+			if task.Status == "Running" || task.Status == "Pending" {
+				allDone = false
+				break
+			}
+		}
+		if allDone {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	manager.WaitAll()
 }
 
 func TestSiteImportProcessor(t *testing.T) {
@@ -149,7 +165,7 @@ func TestSiteImportProcessor(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 	actions.Init()
 
-	analysis := site.NewAnalysisEngine()
+	analysis := site.NewAnalysisEngine(nil)
 	service := site.NewSitePoolService(analysis)
 	site.RegisterSiteProcessors(service)
 
@@ -193,7 +209,7 @@ func TestSitePreviewSearch(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	engine := site.NewAnalysisEngine()
+	engine := site.NewAnalysisEngine(nil)
 	service := site.NewSitePoolService(engine)
 
 	group := &models.SiteGroup{ID: "search_pool", Name: "Search Pool"}

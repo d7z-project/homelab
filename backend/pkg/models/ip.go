@@ -15,21 +15,21 @@ var idRegex = regexp.MustCompile(`^[a-z0-9_\-]+$`)
 
 // IPSyncPolicy 代表一个 IP 数据同步策略
 type IPSyncPolicy struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	SourceURL     string    `json:"sourceUrl"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description"`
+	SourceURL     string            `json:"sourceUrl"`
 	Format        string            `json:"format"` // "text", "geoip"
 	Mode          string            `json:"mode"`   // "overwrite", "append"
 	Config        map[string]string `json:"config"` // 格式特定的配置
 	TargetGroupID string            `json:"targetGroupId"`
-	Cron          string    `json:"cron"`
-	Enabled       bool      `json:"enabled"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
-	LastRunAt     time.Time `json:"lastRunAt"`
-	LastStatus    string    `json:"lastStatus"` // "success", "failed"
-	ErrorMessage  string    `json:"errorMessage"`
+	Cron          string            `json:"cron"`
+	Enabled       bool              `json:"enabled"`
+	CreatedAt     time.Time         `json:"createdAt"`
+	UpdatedAt     time.Time         `json:"updatedAt"`
+	LastRunAt     time.Time         `json:"lastRunAt"`
+	LastStatus    string            `json:"lastStatus"` // "success", "failed"
+	ErrorMessage  string            `json:"errorMessage"`
 }
 
 func (p *IPSyncPolicy) Bind(r *http.Request) error {
@@ -119,8 +119,8 @@ type IPExport struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	Rule        string    `json:"rule"`      // go-expr 表达式
-	GroupIDs    []string  `json:"groupIds"`  // 依赖的 IP 池 ID 列表
+	Rule        string    `json:"rule"`     // go-expr 表达式
+	GroupIDs    []string  `json:"groupIds"` // 依赖的 IP 池 ID 列表
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
@@ -137,6 +137,22 @@ func (e *IPExport) Bind(r *http.Request) error {
 		return errors.New("rule expression is required")
 	}
 	if len(e.GroupIDs) == 0 {
+		return errors.New("at least one source group is required")
+	}
+	return nil
+}
+
+// IPExportPreviewRequest 动态导出预览请求
+type IPExportPreviewRequest struct {
+	Rule     string   `json:"rule"`
+	GroupIDs []string `json:"groupIds"`
+}
+
+func (req *IPExportPreviewRequest) Bind(r *http.Request) error {
+	if req.Rule == "" {
+		return errors.New("rule expression is required")
+	}
+	if len(req.GroupIDs) == 0 {
 		return errors.New("at least one source group is required")
 	}
 	return nil

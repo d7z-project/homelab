@@ -6,8 +6,8 @@ import (
 	"homelab/pkg/models"
 	"homelab/pkg/services/actions"
 	authservice "homelab/pkg/services/auth"
-	"homelab/pkg/services/rbac"
 	"homelab/pkg/services/ip"
+	"homelab/pkg/services/rbac"
 	"homelab/pkg/services/site"
 	"homelab/tests"
 	"strings"
@@ -106,7 +106,7 @@ func TestSitePoolSecurityInstanceLevel(t *testing.T) {
 		t.Fatalf("Failed to create SA: %v", err)
 	}
 
-	analysis := site.NewAnalysisEngine()
+	analysis := site.NewAnalysisEngine(nil)
 	service := site.NewSitePoolService(analysis)
 
 	// 2. Setup Site Pools

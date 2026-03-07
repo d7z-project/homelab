@@ -1,12 +1,4 @@
-import {
-  Component,
-  Input,
-  OnInit,
-  inject,
-  signal,
-  Optional,
-  Self,
-} from '@angular/core';
+import { Component, Input, OnInit, inject, signal, Optional, Self } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ControlValueAccessor,
@@ -20,7 +12,10 @@ import {
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DiscoveryService, ModelsLookupItem, ModelsDiscoverResult } from '../generated';
@@ -75,8 +70,13 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
         @for (ref of staticSuggestions; track ref) {
           <mat-option [value]="ref" class="!h-auto !py-3">
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-secondary/70">data_object</mat-icon>
+              <div
+                class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0"
+              >
+                <mat-icon
+                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-secondary/70"
+                  >data_object</mat-icon
+                >
               </div>
               <span class="font-mono text-sm text-secondary truncate">{{ ref }}</span>
             </div>
@@ -87,8 +87,13 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
         @for (ref of rbacSuggestions; track ref.fullId) {
           <mat-option [value]="ref" class="!h-auto !py-3">
             <div class="flex items-start gap-4">
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5">
-                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70">{{ ref.final ? 'description' : 'folder' }}</mat-icon>
+              <div
+                class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5"
+              >
+                <mat-icon
+                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70"
+                  >{{ ref.final ? 'description' : 'folder' }}</mat-icon
+                >
               </div>
               <div class="flex flex-col min-w-0 flex-1 leading-tight">
                 <span class="font-bold text-[14px] text-on-surface truncate">{{ ref.name }}</span>
@@ -104,8 +109,13 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
         @for (item of items(); track item.id) {
           <mat-option [value]="item.id" class="!h-auto !py-3">
             <div class="flex items-start gap-4">
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5">
-                <mat-icon class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70">{{ item.icon || 'label' }}</mat-icon>
+              <div
+                class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5"
+              >
+                <mat-icon
+                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70"
+                  >{{ item.icon || 'label' }}</mat-icon
+                >
               </div>
               <div class="flex flex-col min-w-0 flex-1 leading-tight">
                 <span class="font-bold text-[14px] text-on-surface truncate">{{ item.name }}</span>
@@ -113,7 +123,9 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
                   {{ item.id }}
                 </span>
                 @if (item.description) {
-                  <span class="text-[11px] text-outline truncate opacity-80 mt-1 italic leading-tight">
+                  <span
+                    class="text-[11px] text-outline truncate opacity-80 mt-1 italic leading-tight"
+                  >
                     {{ item.description }}
                   </span>
                 }
@@ -152,7 +164,7 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
   @Input() appearance: 'fill' | 'outline' = 'outline';
   /** Subscript sizing behavior */
   @Input() subscriptSizing: 'fixed' | 'dynamic' = 'fixed';
-  
+
   /** Static string suggestions (e.g. for variable completion) */
   @Input() staticSuggestions: string[] = [];
 

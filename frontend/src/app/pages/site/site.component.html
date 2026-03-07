@@ -1,6 +1,8 @@
 <div class="animate-in fade-in duration-500 pb-20">
   @if (loading() && pools().length === 0 && exports().length === 0) {
-    <div class="fixed inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]">
+    <div
+      class="fixed inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]"
+    >
       <mat-spinner diameter="40"></mat-spinner>
     </div>
   }
@@ -26,7 +28,9 @@
           >
             <div chips>
               @if (poolSearch()) {
-                <div class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm">
+                <div
+                  class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
+                >
                   <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
                   <span>正在搜索: "{{ poolSearch() }}"</span>
                   <button
@@ -41,24 +45,26 @@
             </div>
           </app-page-header>
 
-          <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+          <div
+            class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
+          >
             <table mat-table [dataSource]="pools()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">池名称</th>
-                <td mat-cell *matCellDef="let element" class="py-4">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">池名称</th>
+                <td mat-cell *matCellDef="let element" class="py-4 text-center">
                   <div class="font-medium text-primary">{{ element.name }}</div>
                   <div class="text-[10px] text-outline font-mono opacity-60">{{ element.id }}</div>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="description">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">描述</th>
-                <td mat-cell *matCellDef="let element" class="text-sm text-outline">{{ element.description || '-' }}</td>
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">描述</th>
+                <td mat-cell *matCellDef="let element" class="text-sm text-outline text-center">{{ element.description || '-' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="entryCount">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">条目数</th>
-                <td mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">条目数</th>
+                <td mat-cell *matCellDef="let element" class="text-center">
                   <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
                     {{ element.entryCount }}
                   </span>
@@ -66,14 +72,14 @@
               </ng-container>
 
               <ng-container matColumnDef="updatedAt">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">更新时间</th>
-                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono">{{ element.updatedAt | date:'short' }}</td>
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">更新时间</th>
+                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono text-center">{{ element.updatedAt | date:'yyyy-MM-dd HH:mm:ss' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 bg-surface-container-low font-bold" style="width: 1px">操作</th>
-                <td mat-cell *matCellDef="let element" class="text-right !pr-6">
-                  <div class="flex justify-end gap-1">
+                <th mat-header-cell *matHeaderCellDef class="text-center bg-surface-container-low font-bold" style="width: 1px">操作</th>
+                <td mat-cell *matCellDef="let element" class="text-center">
+                  <div class="flex justify-center gap-1">
                     <button mat-icon-button (click)="manageEntries(element)" matTooltip="管理数据">
                       <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">list_alt</mat-icon>
                     </button>
@@ -85,10 +91,17 @@
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedPoolColumns()"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedPoolColumns();" class="hover:bg-surface-container-low/50 transition-colors"></tr>
-              
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedPoolColumns()"
+                class="hover:bg-surface-container-low/50 transition-colors"
+              ></tr>
+
               <tr class="mat-mdc-row" *matNoDataRow>
-                <td class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic" [attr.colspan]="displayedPoolColumns().length">
+                <td
+                  class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
+                  [attr.colspan]="displayedPoolColumns().length"
+                >
                   没有找到域名池数据
                 </td>
               </tr>
@@ -113,7 +126,9 @@
           >
             <div chips>
               @if (exportSearch()) {
-                <div class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm">
+                <div
+                  class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
+                >
                   <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
                   <span>正在搜索: "{{ exportSearch() }}"</span>
                   <button
@@ -128,75 +143,119 @@
             </div>
           </app-page-header>
 
-          <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+          <div
+            class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
+          >
             <table mat-table [dataSource]="exports()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">配置名称</th>
-                <td mat-cell *matCellDef="let element" class="py-4">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
+                  配置名称
+                </th>
+                <td mat-cell *matCellDef="let element" class="py-4 text-center">
                   <div class="font-medium text-primary">{{ element.name }}</div>
                   <div class="text-[10px] text-outline opacity-60">{{ element.description }}</div>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="rule">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">过滤规则 (go-expr)</th>
-                <td mat-cell *matCellDef="let element">
-                  <code class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-primary font-mono border border-outline-variant">{{ element.rule }}</code>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
+                  过滤规则 (go-expr)
+                </th>
+                <td mat-cell *matCellDef="let element" class="text-center">
+                  <code
+                    class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-primary font-mono border border-outline-variant"
+                    >{{ element.rule }}</code
+                  >
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="updatedAt">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">状态 / 时间</th>
-                <td mat-cell *matCellDef="let element">
-                  @if (activeTasks()[element.id]) {
-                    <div class="flex items-center gap-2 mb-1">
-                      <div class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border" 
-                           [class.bg-primary/5]="activeTasks()[element.id].status === 'Running'"
-                           [class.text-primary]="activeTasks()[element.id].status === 'Running'"
-                           [class.border-primary/20]="activeTasks()[element.id].status === 'Running'"
-                           [class.bg-green-50]="activeTasks()[element.id].status === 'Success'"
-                           [class.text-green-700]="activeTasks()[element.id].status === 'Success'"
-                           [class.border-green-200]="activeTasks()[element.id].status === 'Success'"
-                           [class.bg-red-50]="activeTasks()[element.id].status === 'Failed'"
-                           [class.text-red-700]="activeTasks()[element.id].status === 'Failed'"
-                           [class.border-red-200]="activeTasks()[element.id].status === 'Failed'">
-                        {{ activeTasks()[element.id].status }}
-                      </div>
-                      @if (activeTasks()[element.id].status === 'Running') {
-                        <div class="text-[10px] font-mono text-primary animate-pulse">
-                          {{ ((activeTasks()[element.id].progress || 0) * 100) | number:'1.0-0' }}%
-                        </div>
-                      }
-                    </div>
-                  }
-                  <div class="text-[10px] text-outline font-mono">{{ element.updatedAt | date:'short' }}</div>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
+                  更新时间
+                </th>
+                <td mat-cell *matCellDef="let element" class="text-center">
+                  <div class="text-[10px] text-outline font-mono">
+                    {{ element.updatedAt | date: 'yyyy-MM-dd HH:mm:ss' }}
+                  </div>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 bg-surface-container-low font-bold" style="width: 1px">操作</th>
-                <td mat-cell *matCellDef="let element" class="text-right !pr-6">
-                  <div class="flex justify-end gap-1">
-                    <button mat-icon-button (click)="triggerExport(element)" matTooltip="立即导出" [disabled]="activeTasks()[element.id]?.status === 'Running'">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">play_circle_outline</mat-icon>
-                    </button>
-                    @if (activeTasks()[element.id]?.status === 'Success') {
-                      <a mat-icon-button color="primary" [href]="activeTasks()[element.id].resultURL" matTooltip="下载结果" target="_blank">
-                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">download</mat-icon>
-                      </a>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="text-center bg-surface-container-low font-bold"
+                  style="width: 1px"
+                >
+                  操作
+                </th>
+                <td mat-cell *matCellDef="let element" class="text-center">
+                  <div class="flex justify-center gap-1">
+                    @if (!isHandset()) {
+                      <button
+                        mat-icon-button
+                        (click)="triggerExport(element)"
+                        matTooltip="立即导出"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >play_circle_outline</mat-icon
+                        >
+                      </button>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="deleteExport(element)"
+                        matTooltip="删除配置"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >delete_outline</mat-icon
+                        >
+                      </button>
+                    } @else {
+                      <button mat-icon-button [matMenuTriggerFor]="exportMenu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #exportMenu="matMenu">
+                        <ng-template matMenuContent>
+                          <button mat-menu-item (click)="triggerExport(element)">
+                            <mat-icon>play_circle_outline</mat-icon>
+                            <span>立即导出</span>
+                          </button>
+                          <button mat-menu-item (click)="deleteExport(element)">
+                            <mat-icon color="warn">delete_outline</mat-icon>
+                            <span class="text-error">删除配置</span>
+                          </button>
+                        </ng-template>
+                      </mat-menu>
                     }
-                    <button mat-icon-button color="warn" (click)="deleteExport(element)" matTooltip="删除配置">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
-                    </button>
                   </div>
                 </td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedExportColumns()"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedExportColumns();" class="hover:bg-surface-container-low/50 transition-colors"></tr>
-              
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedExportColumns()"
+                class="hover:bg-surface-container-low/50 transition-colors"
+              ></tr>
+
               <tr class="mat-mdc-row" *matNoDataRow>
-                <td class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic" [attr.colspan]="displayedExportColumns().length">
+                <td
+                  class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
+                  [attr.colspan]="displayedExportColumns().length"
+                >
                   没有找到导出配置
                 </td>
               </tr>
@@ -209,6 +268,23 @@
 
   <!-- FABs Container -->
   <div class="fixed bottom-8 right-8 z-50 flex flex-col gap-4 items-end">
+    <!-- Export History FAB (Only for Dynamic Export Tab) -->
+    @if (selectedTabIndex() === 1) {
+      <button
+        mat-fab
+        [extended]="!isHandset()"
+        color="secondary"
+        (click)="openTasks()"
+        class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-3"
+        matTooltip="查看导出历史"
+      >
+        <mat-icon>history</mat-icon>
+        @if (!isHandset()) {
+          <span class="ml-2 font-medium">导出任务</span>
+        }
+      </button>
+    }
+
     <!-- Search FAB -->
     <button
       mat-fab
@@ -217,9 +293,25 @@
       (click)="uiService.searchConfig() ? uiService.closeSearch() : openSearch()"
       class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-2"
     >
-      <mat-icon>{{ uiService.searchConfig() ? (hasSearchContent() ? 'filter_alt_off' : 'close') : (hasSearchContent() ? 'filter_alt' : 'search') }}</mat-icon>
+      <mat-icon>{{
+        uiService.searchConfig()
+          ? hasSearchContent()
+            ? 'filter_alt_off'
+            : 'close'
+          : hasSearchContent()
+            ? 'filter_alt'
+            : 'search'
+      }}</mat-icon>
       @if (!isHandset()) {
-        <span class="ml-2 font-medium">{{ hasSearchContent() ? (uiService.searchConfig() ? '清除搜索' : '正在筛选') : (uiService.searchConfig() ? '收起搜索' : '搜索内容') }}</span>
+        <span class="ml-2 font-medium">{{
+          hasSearchContent()
+            ? uiService.searchConfig()
+              ? '清除搜索'
+              : '正在筛选'
+            : uiService.searchConfig()
+              ? '收起搜索'
+              : '搜索内容'
+        }}</span>
       }
     </button>
 
@@ -235,7 +327,9 @@
       >
         <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig()?.icon }}</mat-icon>
         @if (!isHandset()) {
-          <span class="ml-2 font-medium">{{ showScrollTop() ? '回到顶部' : fabConfig()?.label }}</span>
+          <span class="ml-2 font-medium">{{
+            showScrollTop() ? '回到顶部' : fabConfig()?.label
+          }}</span>
         }
       </button>
     }

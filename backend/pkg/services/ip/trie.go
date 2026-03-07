@@ -42,13 +42,13 @@ func (t *IPPoolTrie) Insert(p netip.Prefix, tags []string) {
 		byteIdx := i / 8
 		bitIdx := 7 - (i % 8)
 		bit := (ipBytes[byteIdx] >> uint(bitIdx)) & 1
-		
+
 		if curr.children[bit] == nil {
 			curr.children[bit] = &trieNode{}
 		}
 		curr = curr.children[bit]
 	}
-	
+
 	// 如果已经有 tags 了，合并（或者根据业务逻辑替换，这里选择追加并去重）
 	curr.prefix = &p
 	curr.tags = append(curr.tags, tags...)
@@ -85,7 +85,7 @@ func (t *IPPoolTrie) Lookup(ip netip.Addr) (netip.Prefix, []string, bool) {
 		byteIdx := i / 8
 		bitIdx := 7 - (i % 8)
 		bit := (ipBytes[byteIdx] >> uint(bitIdx)) & 1
-		
+
 		if curr.children[bit] == nil {
 			break
 		}

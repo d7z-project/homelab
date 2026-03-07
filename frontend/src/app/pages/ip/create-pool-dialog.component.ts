@@ -38,7 +38,12 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" [disabled]="form.invalid || loading" (click)="submit()">
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="form.invalid || loading"
+        (click)="submit()"
+      >
         {{ data.pool ? '保存' : '创建' }}
       </button>
     </mat-dialog-actions>
@@ -89,7 +94,9 @@ export class CreatePoolDialogComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 });
+        this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', {
+          duration: 3000,
+        });
       },
     });
   }

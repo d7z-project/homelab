@@ -338,11 +338,7 @@ export class CreateRoleDialogComponent implements AfterViewInit {
     }
   }
 
-  onVerbSelected(
-    event: MatAutocompleteSelectedEvent,
-    rule: RuleWithUI,
-    inputEl: HTMLInputElement,
-  ) {
+  onVerbSelected(event: MatAutocompleteSelectedEvent, rule: RuleWithUI, inputEl: HTMLInputElement) {
     if (!rule.verbs) rule.verbs = [];
     const val = event.option.viewValue;
     if (!rule.verbs.includes(val)) {

@@ -45,7 +45,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
     // Poll status every 5 seconds if any is downloading
     this.pollInterval = setInterval(() => {
       const data = this.sources();
-      if (Array.isArray(data) && data.some(s => s.status === 'Downloading')) {
+      if (Array.isArray(data) && data.some((s) => s.status === 'Downloading')) {
         this.loadSources();
       }
     }, 5000);
@@ -68,20 +68,24 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
         console.error('Failed to load intelligence sources', err);
         this.sources.set([]);
         this.loading.set(false);
-      }
+      },
     });
   }
 
   createSource() {
-    this.dialog.open(CreateSourceDialogComponent, { width: '500px' })
-      .afterClosed().subscribe(res => {
+    this.dialog
+      .open(CreateSourceDialogComponent, { width: '500px' })
+      .afterClosed()
+      .subscribe((res) => {
         if (res) this.loadSources();
       });
   }
 
   editSource(source: ModelsIntelligenceSource) {
-    this.dialog.open(CreateSourceDialogComponent, { width: '500px', data: source })
-      .afterClosed().subscribe(res => {
+    this.dialog
+      .open(CreateSourceDialogComponent, { width: '500px', data: source })
+      .afterClosed()
+      .subscribe((res) => {
         if (res) this.loadSources();
       });
   }
@@ -93,7 +97,10 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
         this.snackBar.open('同步任务已启动', '关闭', { duration: 2000 });
         this.loadSources();
       },
-      error: (err) => this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 })
+      error: (err) =>
+        this.snackBar.open(`触发失败: ${err.error?.message || err.message}`, '关闭', {
+          duration: 3000,
+        }),
     });
   }
 
@@ -108,7 +115,10 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
             this.snackBar.open('删除成功', '关闭', { duration: 3000 });
             this.loadSources();
           },
-          error: (err) => this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', { duration: 3000 })
+          error: (err) =>
+            this.snackBar.open(`删除失败: ${err.error?.message || err.message}`, '关闭', {
+              duration: 3000,
+            }),
         });
       }
     });
