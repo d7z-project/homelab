@@ -67,7 +67,7 @@ func CleanupAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 // AuditRouter registers the audit routes
 func AuditRouter(r chi.Router) {
 	r.Route("/audit", func(r chi.Router) {
-		r.Get("/logs", ListAuditLogsHandler)
+		r.With(middlewares.RequirePermission("list", "audit")).Get("/logs", ListAuditLogsHandler)
 		r.With(middlewares.RequirePermission("delete", "audit")).Post("/logs/cleanup", CleanupAuditLogsHandler)
 	})
 }

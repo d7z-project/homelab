@@ -8,6 +8,7 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/intelligence"
 	"homelab/pkg/services/ip"
+	"homelab/pkg/services/rbac"
 	"io"
 	"log"
 	"net/http"
@@ -22,6 +23,12 @@ import (
 var (
 	ErrSourceNotFound = fmt.Errorf("%w: intelligence source not found", common.ErrNotFound)
 )
+
+func init() {
+	rbac.RegisterResourceWithVerbs("network/intelligence", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+		return []models.DiscoverResult{}, nil
+	}, []string{"list", "create", "update", "delete", "execute", "*"})
+}
 
 type IntelligenceService struct {
 	mmdb    *ip.MMDBManager

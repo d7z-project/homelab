@@ -52,7 +52,7 @@ func init() {
 			}
 		}
 		return res, nil
-	}, []string{"get", "list", "create", "update", "delete", "*"})
+	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
 	discovery.Register("network/ip/pools", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
 		groups, _, err := repo.ListGroups(ctx, 1, 1000, search)

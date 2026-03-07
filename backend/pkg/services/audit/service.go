@@ -27,7 +27,7 @@ func init() {
 			}
 		}
 		return res, nil
-	}, []string{"get", "list", "*"})
+	}, []string{"get", "list", "delete", "*"})
 }
 
 // ListLogs retrieves audit logs with optional pagination and filtering.

@@ -403,22 +403,22 @@ func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
 // RBACRouter registers the RBAC routes
 func RBACRouter(r chi.Router) {
 	r.Route("/rbac", func(r chi.Router) {
-		r.Get("/resources/suggest", SuggestResourcesHandler)
-		r.Get("/verbs/suggest", SuggestVerbsHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/resources/suggest", SuggestResourcesHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/verbs/suggest", SuggestVerbsHandler)
 		r.With(middlewares.RequirePermission("simulate", "rbac")).Post("/simulate", SimulatePermissionsHandler)
 
-		r.Get("/serviceaccounts", ListServiceAccountsHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/serviceaccounts", ListServiceAccountsHandler)
 		r.With(middlewares.RequirePermission("create", "rbac")).Post("/serviceaccounts", CreateServiceAccountHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Put("/serviceaccounts/{id}", UpdateServiceAccountHandler)
 		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/serviceaccounts/{id}", DeleteServiceAccountHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Post("/serviceaccounts/{id}/reset", ResetServiceAccountTokenHandler)
 
-		r.Get("/roles", ListRolesHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/roles", ListRolesHandler)
 		r.With(middlewares.RequirePermission("create", "rbac")).Post("/roles", CreateRoleHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Put("/roles/{id}", UpdateRoleHandler)
 		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/roles/{id}", DeleteRoleHandler)
 
-		r.Get("/rolebindings", ListRoleBindingsHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/rolebindings", ListRoleBindingsHandler)
 		r.With(middlewares.RequirePermission("create", "rbac")).Post("/rolebindings", CreateRoleBindingHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Put("/rolebindings/{id}", UpdateRoleBindingHandler)
 		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/rolebindings/{id}", DeleteRoleBindingHandler)

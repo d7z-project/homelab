@@ -375,24 +375,25 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 func SiteRouter(r chi.Router) {
 	r.Route("/network/site", func(r chi.Router) {
 		r.Route("/pools", func(r chi.Router) {
-			r.Get("/", ListSiteGroupsHandler)
+			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ListSiteGroupsHandler)
 			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteGroupHandler)
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteGroupHandler)
-			r.Get("/{id}/preview", PreviewSitePoolHandler)
-			r.Post("/{id}/entries", ManageSitePoolEntryHandler)
-			r.Delete("/{id}/entries", DeleteSitePoolEntryHandler)
+			r.With(middlewares.RequirePermission("get", "network/site")).Get("/{id}/preview", PreviewSitePoolHandler)
+			r.With(middlewares.RequirePermission("update", "network/site")).Post("/{id}/entries", ManageSitePoolEntryHandler)
+			r.With(middlewares.RequirePermission("update", "network/site")).Delete("/{id}/entries", DeleteSitePoolEntryHandler)
 		})
 		r.Route("/analysis", func(r chi.Router) {
-			r.Post("/hit-test", SiteHitTestHandler)
+			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/hit-test", SiteHitTestHandler)
 		})
 		r.Route("/exports", func(r chi.Router) {
-			r.Get("/", ListSiteExportsHandler)
-			r.Get("/tasks", ListSiteExportTasksHandler)
+			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ListSiteExportsHandler)
+			r.With(middlewares.RequirePermission("list", "network/site")).Get("/tasks", ListSiteExportTasksHandler)
 			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteExportHandler)
+			r.With(middlewares.RequirePermission("update", "network/site")).Put("/{id}", UpdateSiteExportHandler)
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteExportHandler)
-			r.Post("/{id}/trigger", TriggerSiteExportHandler)
-			r.Get("/task/{taskId}", SiteExportTaskStatusHandler)
-			r.Post("/preview", PreviewSiteExportHandler)
+			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/{id}/trigger", TriggerSiteExportHandler)
+			r.With(middlewares.RequirePermission("get", "network/site")).Get("/task/{taskId}", SiteExportTaskStatusHandler)
+			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/preview", PreviewSiteExportHandler)
 		})
 	})
 }

@@ -467,11 +467,11 @@ func ValidateRegexHandler(w http.ResponseWriter, r *http.Request) {
 // ActionsRouter registers the actions routes
 func ActionsRouter(r chi.Router) {
 	r.Route("/actions", func(r chi.Router) {
-		r.Get("/workflows", ListWorkflowsHandler)
-		r.Post("/workflows", CreateWorkflowHandler)
-		r.Get("/workflows/schema", GetWorkflowSchemaHandler)
-		r.Post("/workflows/validate", ValidateWorkflowHandler)
-		r.Post("/validate/regex", ValidateRegexHandler)
+		r.With(middlewares.RequirePermission("list", "actions")).Get("/workflows", ListWorkflowsHandler)
+		r.With(middlewares.RequirePermission("create", "actions")).Post("/workflows", CreateWorkflowHandler)
+		r.With(middlewares.RequirePermission("get", "actions")).Get("/workflows/schema", GetWorkflowSchemaHandler)
+		r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/validate", ValidateWorkflowHandler)
+		r.With(middlewares.RequirePermission("execute", "actions")).Post("/validate/regex", ValidateRegexHandler)
 
 		// Use Chi's idiomatic With() pattern for cleaner middleware integration
 		r.With(middlewares.RequirePermission("update", "actions/*")).Put("/workflows/{id}", UpdateWorkflowHandler)
@@ -479,13 +479,13 @@ func ActionsRouter(r chi.Router) {
 		r.With(middlewares.RequirePermission("execute", "actions/*")).Post("/workflows/{workflowId}/run", RunWorkflowHandler)
 		r.With(middlewares.RequirePermission("update", "actions/*")).Post("/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
 
-		r.Get("/instances", ListInstancesHandler)
+		r.With(middlewares.RequirePermission("list", "actions")).Get("/instances", ListInstancesHandler)
 		r.With(middlewares.RequirePermission("delete", "actions/*")).Post("/instances/cleanup", CleanupInstancesHandler)
-		r.Get("/instances/{id}/logs", GetInstanceLogsHandler)
+		r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}/logs", GetInstanceLogsHandler)
 		r.With(middlewares.RequirePermission("delete", "actions/*")).Delete("/instances/{id}", DeleteInstanceHandler)
 		r.With(middlewares.RequirePermission("execute", "actions/*")).Post("/instances/{id}/cancel", CancelInstanceHandler)
 
-		r.Get("/manifests", ListManifestsHandler)
+		r.With(middlewares.RequirePermission("list", "actions")).Get("/manifests", ListManifestsHandler)
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/probe", ProbeHandler)
 	})
 }

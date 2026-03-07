@@ -237,12 +237,12 @@ func DNSRouter(r chi.Router) {
 	r.Route("/network/dns", func(r chi.Router) {
 		r.With(middlewares.RequirePermission("get", "network/dns")).Get("/export", ExportHandler)
 
-		r.Get("/domains", ListDomainsHandler)
+		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/domains", ListDomainsHandler)
 		r.With(middlewares.RequirePermission("create", "network/dns/*")).Post("/domains", CreateDomainHandler)
 		r.With(middlewares.RequirePermission("update", "network/dns/*")).Put("/domains/{id}", UpdateDomainHandler)
 		r.With(middlewares.RequirePermission("delete", "network/dns/*")).Delete("/domains/{id}", DeleteDomainHandler)
 
-		r.Get("/records", ListRecordsHandler)
+		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/records", ListRecordsHandler)
 		r.With(middlewares.RequirePermission("create", "network/dns/*")).Post("/records", CreateRecordHandler)
 		r.With(middlewares.RequirePermission("update", "network/dns/*")).Put("/records/{id}", UpdateRecordHandler)
 		r.With(middlewares.RequirePermission("delete", "network/dns/*")).Delete("/records/{id}", DeleteRecordHandler)

@@ -131,11 +131,10 @@ func SyncIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 
 func IntelligenceRouter(r chi.Router) {
 	r.Route("/network/intelligence", func(r chi.Router) {
-		r.Use(middlewares.RequirePermission("admin", "network/intelligence"))
-		r.Get("/sources", ListIntelligenceSourcesHandler)
-		r.Post("/sources", CreateIntelligenceSourceHandler)
-		r.Put("/sources/{id}", UpdateIntelligenceSourceHandler)
-		r.Delete("/sources/{id}", DeleteIntelligenceSourceHandler)
-		r.Post("/sources/{id}/sync", SyncIntelligenceSourceHandler)
+		r.With(middlewares.RequirePermission("list", "network/intelligence")).Get("/sources", ListIntelligenceSourcesHandler)
+		r.With(middlewares.RequirePermission("create", "network/intelligence")).Post("/sources", CreateIntelligenceSourceHandler)
+		r.With(middlewares.RequirePermission("update", "network/intelligence")).Put("/sources/{id}", UpdateIntelligenceSourceHandler)
+		r.With(middlewares.RequirePermission("delete", "network/intelligence")).Delete("/sources/{id}", DeleteIntelligenceSourceHandler)
+		r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/sources/{id}/sync", SyncIntelligenceSourceHandler)
 	})
 }

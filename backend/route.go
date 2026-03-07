@@ -25,50 +25,44 @@ func Router(r chi.Router) {
 			r.Use(middlewares.AuthMiddleware)
 			r.Get("/info", controllers.InfoHandler)
 			r.Post("/logout", controllers.LogoutHandler)
-			r.Get("/network/dns/export", controllers.ExportHandler)
 			r.Route("/discovery", controllers.DiscoveryController)
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "rbac"))
 				r.Use(middlewares.AuditMiddleware("rbac"))
 				controllers.RBACRouter(r)
 
 				// Root Session Management
-				r.Get("/auth/sessions", controllers.ListSessionsHandler)
-				r.Delete("/auth/sessions/{id}", controllers.RevokeSessionHandler)
+				r.With(middlewares.RequirePermission("admin", "rbac")).Get("/auth/sessions", controllers.ListSessionsHandler)
+				r.With(middlewares.RequirePermission("admin", "rbac")).Delete("/auth/sessions/{id}", controllers.RevokeSessionHandler)
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("*", "audit"))
 				r.Use(middlewares.AuditMiddleware("audit"))
 				controllers.AuditRouter(r)
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "network/dns"))
 				r.Use(middlewares.AuditMiddleware("network/dns"))
 				controllers.DNSRouter(r)
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "actions"))
 				r.Use(middlewares.AuditMiddleware("actions"))
 				controllers.ActionsRouter(r)
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "network/ip"))
 				r.Use(middlewares.AuditMiddleware("network/ip"))
 				controllers.IPRouter(r)
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.RequirePermission("admin", "network/site"))
 				r.Use(middlewares.AuditMiddleware("network/site"))
 				controllers.SiteRouter(r)
 			})
 
 			r.Group(func(r chi.Router) {
+				r.Use(middlewares.AuditMiddleware("network/intelligence"))
 				controllers.IntelligenceRouter(r)
 			})
 		})
