@@ -53,8 +53,8 @@ func TestIPExportCascadeDeleteAndCleanup(t *testing.T) {
 	tasks := manager.ListTasks()
 	assert.Len(t, tasks, 1)
 
-	// Trigger again to test cascade
-	taskID2, _ := manager.TriggerExport(ctx, export.ID, "text")
+	// Trigger again with different format to avoid cache hit and test multiple tasks
+	taskID2, _ := manager.TriggerExport(ctx, export.ID, "json")
 	for i := 0; i < 50; i++ {
 		t := manager.GetTask(taskID2)
 		if t != nil && (t.Status == "Success" || t.Status == "Failed" || t.Status == "Cancelled") {

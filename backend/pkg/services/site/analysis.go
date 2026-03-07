@@ -80,6 +80,10 @@ func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*Compo
 	return matcher, nil
 }
 
+func (e *AnalysisEngine) RemoveCache(groupID string) {
+	e.cache.Remove(groupID)
+}
+
 func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []string) (*models.SiteAnalysisResult, error) {
 	res := &models.SiteAnalysisResult{Matched: false}
 

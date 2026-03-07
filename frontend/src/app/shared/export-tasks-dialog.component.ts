@@ -79,9 +79,8 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
                   </div>
                   <div class="flex items-center gap-1 font-bold uppercase">
                     <mat-icon class="!w-4 !h-4 !text-[16px]">description</mat-icon>
-                    <span>{{ task.Format }}</span>
-                  </div>
-                  <div class="flex items-center gap-1 font-mono font-medium">
+                    <span>{{ task.Format | uppercase }}</span>
+                  </div>                  <div class="flex items-center gap-1 font-mono font-medium">
                     <mat-icon class="!w-4 !h-4 !text-[16px]">data_array</mat-icon>
                     <span>{{ task.RecordCount || 0 }} 条数据</span>
                   </div>

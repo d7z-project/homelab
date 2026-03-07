@@ -117,9 +117,9 @@ analysisEngine := ip.NewAnalysisEngine(mmdbManager)
 exportManager := ip.NewExportManager(analysisEngine)
 exportManager.StartCleanupTimer()
 ipPoolService.SetExportManager(exportManager)
+ipPoolService.SetAnalysisEngine(analysisEngine)
 controllers.InitIPControllers(ipPoolService, analysisEngine, exportManager)
 ipPoolService.StartSyncRunner(context.Background())
-
 // Initialize Site Services
 siteAnalysisEngine := site.NewAnalysisEngine(mmdbManager)
 sitePoolService := site.NewSitePoolService(siteAnalysisEngine)

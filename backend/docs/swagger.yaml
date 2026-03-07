@@ -38,6 +38,9 @@ definitions:
     type: object
   ip.ExportTask:
     properties:
+      checksum:
+        description: Rule + GroupChecksums + Format
+        type: string
       createdAt:
         type: string
       error:

@@ -38,6 +38,7 @@ func TestIPSyncLogic(t *testing.T) {
 
 		policy1 := &models.IPSyncPolicy{
 			ID: "_p1", Name: "P1", SourceURL: server1.URL, Format: "text", Mode: "overwrite", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy1)
 		_ = service.Sync(ctx, "_p1")
@@ -50,6 +51,7 @@ func TestIPSyncLogic(t *testing.T) {
 
 		policy2 := &models.IPSyncPolicy{
 			ID: "_p2", Name: "P2", SourceURL: server2.URL, Format: "text", Mode: "overwrite", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy2)
 		_ = service.Sync(ctx, "_p2")
@@ -89,14 +91,14 @@ func TestIPSyncLogic(t *testing.T) {
 
 		policyA := &models.IPSyncPolicy{
 			ID: "_pa", Name: "PA", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
-			Config: map[string]string{"tags": "SOURCE_A"},
+			Config: map[string]string{"tags": "SOURCE_A", "allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyA)
 		_ = service.Sync(ctx, "_pa")
 
 		policyB := &models.IPSyncPolicy{
 			ID: "_pb", Name: "PB", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
-			Config: map[string]string{"tags": "SOURCE_B"},
+			Config: map[string]string{"tags": "SOURCE_B", "allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyB)
 		_ = service.Sync(ctx, "_pb")
@@ -108,7 +110,7 @@ func TestIPSyncLogic(t *testing.T) {
 		for _, e := range res.Entries {
 			if e.CIDR == "8.8.8.8/32" {
 				// Should have tags from both policies
-				assert.ElementsMatch(t, []string{"_PA", "_PB", "SOURCE_A", "SOURCE_B"}, e.Tags)
+				assert.ElementsMatch(t, []string{"_pa", "_pb", "source_a", "source_b"}, e.Tags)
 			}
 		}
 	})
@@ -121,6 +123,7 @@ func TestIPSyncLogic(t *testing.T) {
 
 		policyApp := &models.IPSyncPolicy{
 			ID: "_papp", Name: "PApp", SourceURL: serverApp.URL, Format: "text", Mode: "append", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyApp)
 
@@ -141,22 +144,22 @@ func TestIPSyncLogic(t *testing.T) {
 
 		policyRem := &models.IPSyncPolicy{
 			ID: "_prem", Name: "Removal Test", SourceURL: serverRem.URL, Format: "text",
-			Mode: "overwrite", TargetGroupID: "test_pool", Config: map[string]string{"tags": "TAG_A"},
+			Mode: "overwrite", TargetGroupID: "test_pool", Config: map[string]string{"tags": "tag_a", "allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyRem)
 		_ = service.Sync(ctx, "_prem")
 
 		res, _ := service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
-		assert.Contains(t, res.Entries[0].Tags, "TAG_A")
+		assert.Contains(t, res.Entries[0].Tags, "tag_a")
 
-		// 2. 模拟源数据更新：修改配置，将标签改为 TAG_B
-		policyRem.Config["tags"] = "TAG_B"
+		// 2. 模拟源数据更新：修改配置，将标签改为 tag_b
+		policyRem.Config["tags"] = "tag_b"
 		_ = service.UpdateSyncPolicy(ctx, policyRem)
 		_ = service.Sync(ctx, "_prem")
 
-		// 验证：TAG_A 应该消失，只有 TAG_B
+		// 验证：tag_a 应该消失，只有 tag_b
 		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
-		assert.Contains(t, res.Entries[0].Tags, "TAG_B")
-		assert.NotContains(t, res.Entries[0].Tags, "TAG_A")
+		assert.Contains(t, res.Entries[0].Tags, "tag_b")
+		assert.NotContains(t, res.Entries[0].Tags, "tag_a")
 	})
 }

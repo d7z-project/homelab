@@ -4976,6 +4976,10 @@ const docTemplate = `{
         "ip.ExportTask": {
             "type": "object",
             "properties": {
+                "checksum": {
+                    "description": "Rule + GroupChecksums + Format",
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },

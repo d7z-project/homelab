@@ -75,6 +75,10 @@ func (e *AnalysisEngine) GetTrie(ctx context.Context, groupID string) (*IPPoolTr
 	return trie, nil
 }
 
+func (e *AnalysisEngine) RemoveCache(groupID string) {
+	e.trieCache.Remove(groupID)
+}
+
 // HitTest 研判 API
 func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []string) (*models.IPAnalysisResult, error) {
 	ip, err := netip.ParseAddr(ipStr)

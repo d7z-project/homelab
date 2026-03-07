@@ -127,6 +127,9 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
+	sitePoolWriteMutex.Lock()
+	defer sitePoolWriteMutex.Unlock()
+
 	old, _ := repo.GetGroup(ctx, id)
 	exports, _, err := repo.ListExports(ctx, 1, 1000, "")
 	if err != nil {
@@ -144,6 +147,9 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 
 	poolPath := filepath.Join(PoolsDir, id+".bin")
 	_ = common.FS.Remove(poolPath)
+	if s.engine != nil {
+		s.engine.RemoveCache(id)
+	}
 
 	if old != nil {
 		commonaudit.FromContext(ctx).Log("DeleteSiteGroup", old.Name, "Deleted", true)

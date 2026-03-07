@@ -82,9 +82,19 @@ func TestSiteService(t *testing.T) {
 	err = service.ManagePoolEntry(ctx, group.ID, req, "add")
 	assert.NoError(t, err)
 
-	// Preview
-	res, err := service.PreviewPool(ctx, group.ID, 0, 10, "")
+	// Manage Entry with Uppercase Tags
+	req = &models.SitePoolEntryRequest{
+		Type:  2,
+		Value: "uppercase.com",
+		Tags:  []string{"  UPPER  "},
+	}
+	_ = req.Bind(nil) // Normalize tags to lowercase
+	err = service.ManagePoolEntry(ctx, group.ID, req, "add")
 	assert.NoError(t, err)
-	assert.Len(t, res.Entries, 1)
-	assert.Equal(t, "example.com", res.Entries[0].Value)
+
+	// Preview and verify lowercase
+	res2, _ := service.PreviewPool(ctx, group.ID, 0, 10, "UPPER")
+	assert.Len(t, res2.Entries, 1)
+	assert.Equal(t, "uppercase.com", res2.Entries[0].Value)
+	assert.Equal(t, "upper", res2.Entries[0].Tags[0])
 }

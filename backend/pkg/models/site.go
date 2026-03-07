@@ -108,7 +108,11 @@ func (req *SitePoolEntryRequest) Bind(r *http.Request) error {
 		return errors.New("invalid rule type")
 	}
 	for i, t := range req.Tags {
-		req.Tags[i] = strings.ToLower(strings.TrimSpace(t))
+		t = strings.ToLower(strings.TrimSpace(t))
+		if strings.HasPrefix(t, "_") {
+			return fmt.Errorf("tag '%s' is invalid: tags starting with '_' are reserved for internal use", t)
+		}
+		req.Tags[i] = t
 	}
 	return nil
 }

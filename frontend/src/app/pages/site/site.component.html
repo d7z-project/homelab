@@ -206,22 +206,28 @@
                     @if (!isHandset()) {
                       <button
                         mat-icon-button
-                        (click)="triggerExport(element)"
+                        [matMenuTriggerFor]="formatMenu"
                         matTooltip="立即导出"
                       >
-                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                          >play_circle_outline</mat-icon
-                        >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">play_circle_outline</mat-icon>
                       </button>
-                      <button
-                        mat-icon-button
-                        color="warn"
-                        (click)="deleteExport(element)"
-                        matTooltip="删除配置"
-                      >
-                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                          >delete_outline</mat-icon
-                        >
+                      <mat-menu #formatMenu="matMenu">
+                        <button mat-menu-item (click)="triggerExport(element, 'text')">
+                          <mat-icon>text_snippet</mat-icon>
+                          <span>文本格式 (.txt)</span>
+                        </button>
+                        <button mat-menu-item (click)="triggerExport(element, 'json')">
+                          <mat-icon>data_object</mat-icon>
+                          <span>JSON 格式</span>
+                        </button>
+                        <button mat-menu-item (click)="triggerExport(element, 'yaml')">
+                          <mat-icon>list_alt</mat-icon>
+                          <span>YAML 格式</span>
+                        </button>
+                      </mat-menu>
+
+                      <button mat-icon-button color="warn" (click)="deleteExport(element)" matTooltip="删除配置">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
                       </button>
                     } @else {
                       <button mat-icon-button [matMenuTriggerFor]="exportMenu">
@@ -229,10 +235,15 @@
                       </button>
                       <mat-menu #exportMenu="matMenu">
                         <ng-template matMenuContent>
-                          <button mat-menu-item (click)="triggerExport(element)">
+                          <button mat-menu-item [matMenuTriggerFor]="formatMenuMobile">
                             <mat-icon>play_circle_outline</mat-icon>
                             <span>立即导出</span>
                           </button>
+                          <mat-menu #formatMenuMobile="matMenu">
+                            <button mat-menu-item (click)="triggerExport(element, 'text')">文本 (.txt)</button>
+                            <button mat-menu-item (click)="triggerExport(element, 'json')">JSON</button>
+                            <button mat-menu-item (click)="triggerExport(element, 'yaml')">YAML</button>
+                          </mat-menu>
                           <button mat-menu-item (click)="deleteExport(element)">
                             <mat-icon color="warn">delete_outline</mat-icon>
                             <span class="text-error">删除配置</span>
@@ -260,6 +271,131 @@
                 </td>
               </tr>
             </table>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- 命中分析 Tab -->
+    <mat-tab label="命中分析">
+      <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
+        <div class="max-w-3xl mx-auto space-y-6">
+          <app-page-header
+            title="域名命中推演"
+            subtitle="验证特定域名在当前规则库下的匹配结果"
+            icon="psychology"
+          ></app-page-header>
+
+          <div class="bg-surface border border-outline-variant rounded-3xl p-6 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 items-start">
+              <mat-form-field appearance="outline" class="flex-1 w-full">
+                <mat-label>输入要测试的域名</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="analysisDomain"
+                  placeholder="例如: www.google.com"
+                  (keyup.enter)="runAnalysis()"
+                />
+                <mat-icon matPrefix class="mr-2">language</mat-icon>
+              </mat-form-field>
+
+              <button
+                mat-flat-button
+                color="primary"
+                class="h-[56px] px-8 !rounded-2xl"
+                [disabled]="!analysisDomain() || loading()"
+                (click)="runAnalysis()"
+              >
+                @if (loading()) {
+                  <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                } @else {
+                  <mat-icon class="mr-2">bolt</mat-icon>
+                }
+                立即分析
+              </button>
+            </div>
+
+            @if (analysisResult()) {
+              <div
+                class="animate-in fade-in zoom-in-95 duration-300 border rounded-2xl p-6"
+                [class.bg-green-50]="analysisResult()?.matched"
+                [class.border-green-200]="analysisResult()?.matched"
+                [class.bg-surface-container-low]="!analysisResult()?.matched"
+                [class.border-outline-variant]="!analysisResult()?.matched"
+              >
+                <div class="flex items-start gap-4">
+                  <div
+                    class="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                    [class.bg-green-100]="analysisResult()?.matched"
+                    [class.text-green-700]="analysisResult()?.matched"
+                    [class.bg-outline-variant/20]="!analysisResult()?.matched"
+                    [class.text-outline]="!analysisResult()?.matched"
+                  >
+                    <mat-icon>{{
+                      analysisResult()?.matched ? 'check_circle' : 'help_outline'
+                    }}</mat-icon>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-lg font-bold mb-1">
+                      {{ analysisResult()?.matched ? '分析命中' : '未命中规则' }}
+                    </h4>
+                    <p class="text-sm opacity-70 mb-4">
+                      {{
+                        analysisResult()?.matched
+                          ? '该域名已被现有规则库捕获'
+                          : '该域名在当前库中无匹配项'
+                      }}
+                    </p>
+
+                    @if (analysisResult()?.matched) {
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                        <div class="p-3 bg-white/50 rounded-xl border border-black/5">
+                          <div class="text-[10px] uppercase font-bold opacity-50 mb-1">匹配模式</div>
+                          <code class="text-sm font-mono font-bold text-primary">{{
+                            analysisResult()?.pattern
+                          }}</code>
+                        </div>
+                        <div class="p-3 bg-white/50 rounded-xl border border-black/5">
+                          <div class="text-[10px] uppercase font-bold opacity-50 mb-1">规则类型</div>
+                          <span class="text-sm font-bold">
+                            @switch (analysisResult()?.ruleType) {
+                              @case (0) {
+                                Keyword
+                              }
+                              @case (1) {
+                                Regexp
+                              }
+                              @case (2) {
+                                Domain
+                              }
+                              @case (3) {
+                                Full
+                              }
+                            }
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="flex flex-wrap gap-1.5 mt-2">
+                        @for (t of analysisResult()?.tags; track t) {
+                          <span
+                            class="px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tighter"
+                            [class.bg-primary/10]="!t.startsWith('_')"
+                            [class.border-primary/20]="!t.startsWith('_')"
+                            [class.text-primary]="!t.startsWith('_')"
+                            [class.bg-surface-container-high]="t.startsWith('_')"
+                            [class.text-outline]="t.startsWith('_')"
+                            [class.border-outline-variant]="t.startsWith('_')"
+                          >
+                            {{ t | uppercase }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
           </div>
         </div>
       </div>

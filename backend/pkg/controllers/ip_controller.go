@@ -617,6 +617,7 @@ func IPRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/{id}/trigger", TriggerExportHandler)
 			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/task/{taskId}", ExportTaskStatusHandler)
+			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/download/{taskId}", DownloadExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/preview", PreviewExportHandler)
 		})
 		r.Route("/sync", func(r chi.Router) {

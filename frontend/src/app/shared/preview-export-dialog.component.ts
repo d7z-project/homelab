@@ -71,7 +71,7 @@ export interface PreviewExportData {
                           [class.bg-primary-container]="!tag.startsWith('_')"
                           [class.text-on-primary-container]="!tag.startsWith('_')"
                           [class.border-primary]="!tag.startsWith('_')">
-                      {{ tag }}
+                      {{ tag | uppercase }}
                     </span>
                   }
                   @if (!element.tags || element.tags.length === 0) {
@@ -120,7 +120,7 @@ export interface PreviewExportData {
                           [class.bg-primary-container]="!tag.startsWith('_')"
                           [class.text-on-primary-container]="!tag.startsWith('_')"
                           [class.border-primary]="!tag.startsWith('_')">
-                      {{ tag }}
+                      {{ tag | uppercase }}
                     </span>
                   }
                   @if (!element.tags || element.tags.length === 0) {

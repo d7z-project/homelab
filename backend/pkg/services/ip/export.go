@@ -2,6 +2,8 @@ package ip
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"homelab/pkg/common"
@@ -18,6 +20,7 @@ import (
 	"github.com/expr-lang/expr"
 	"github.com/maxmind/mmdbwriter"
 	"github.com/maxmind/mmdbwriter/mmdbtype"
+	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 )
 
@@ -30,6 +33,7 @@ type ExportTask struct {
 	Error       string
 	CreatedAt   time.Time
 	RecordCount int64
+	Checksum    string // Rule + GroupChecksums + Format
 	mu          sync.Mutex
 }
 
@@ -42,6 +46,7 @@ type ExportTaskDTO struct {
 	Error       string    `json:"Error"`
 	CreatedAt   time.Time `json:"CreatedAt"`
 	RecordCount int64     `json:"RecordCount"`
+	Checksum    string    `json:"Checksum"`
 }
 
 type ExportManager struct {
@@ -88,6 +93,7 @@ func (m *ExportManager) saveTasksLocked() {
 			Error:       t.Error,
 			CreatedAt:   t.CreatedAt,
 			RecordCount: t.RecordCount,
+			Checksum:    t.Checksum,
 		}
 		t.mu.Unlock()
 	}
@@ -122,6 +128,7 @@ func (m *ExportManager) GetTask(id string) *ExportTaskDTO {
 		Error:       t.Error,
 		CreatedAt:   t.CreatedAt,
 		RecordCount: t.RecordCount,
+		Checksum:    t.Checksum,
 	}
 }
 
@@ -140,6 +147,7 @@ func (m *ExportManager) ListTasks() []ExportTaskDTO {
 			Error:       t.Error,
 			CreatedAt:   t.CreatedAt,
 			RecordCount: t.RecordCount,
+			Checksum:    t.Checksum,
 		})
 		t.mu.Unlock()
 	}
@@ -203,15 +211,40 @@ func (m *ExportManager) deleteTask(id string) {
 	_ = common.TempDir.Remove(tempPath)
 	delete(m.tasks, id)
 }
-
 func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, format string) (string, error) {
 	e, err := repo.GetExport(ctx, exportID)
 	if err != nil {
 		return "", err
 	}
 
+	// 计算当前导出的 Checksum
+	hf := sha256.New()
+	hf.Write([]byte(e.Rule))
+	hf.Write([]byte(format))
+	for _, gid := range e.GroupIDs {
+		hf.Write([]byte(gid))
+		g, _ := repo.GetGroup(ctx, gid)
+		if g != nil {
+			hf.Write([]byte(g.Checksum))
+		}
+	}
+	currentChecksum := hex.EncodeToString(hf.Sum(nil))
+
 	m.mu.Lock()
-	// 取消该导出配置之前的任务 (IP.md: Cancel & Replace)
+	// 检查缓存 (Task 10)
+	for _, t := range m.tasks {
+		if t.Checksum == currentChecksum && t.Status == "Success" {
+			// 检查物理文件是否真的还在
+			tempFileName := fmt.Sprintf("export_%s.%s", t.ID, t.Format)
+			tempPath := filepath.Join("temp", tempFileName)
+			if exists, _ := afero.Exists(common.TempDir, tempPath); exists {
+				m.mu.Unlock()
+				return t.ID, nil
+			}
+		}
+	}
+
+	// 取消该导出配置之前的任务
 	for id, t := range m.tasks {
 		if strings.HasPrefix(id, exportID+"-") {
 			t.mu.Lock()
@@ -227,6 +260,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 		ID:        taskID,
 		Status:    "Pending",
 		Format:    format,
+		Checksum:  currentChecksum,
 		CreatedAt: time.Now(),
 	}
 	m.tasks[taskID] = task
@@ -304,7 +338,7 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 	}
 
 	firstJsonItem := true
-	
+
 	var mmdbWriter *mmdbwriter.Tree
 	var v2rayGroups map[string][]netip.Prefix
 
@@ -385,10 +419,10 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 					}
 				case "v2ray-dat":
 					if len(publicTags) == 0 {
-						v2rayGroups["unknown"] = append(v2rayGroups["unknown"], prefix)
+						v2rayGroups["UNKNOWN"] = append(v2rayGroups["UNKNOWN"], prefix)
 					} else {
 						for _, t := range publicTags {
-							v2rayGroups[t] = append(v2rayGroups[t], prefix)
+							v2rayGroups[strings.ToUpper(t)] = append(v2rayGroups[strings.ToUpper(t)], prefix)
 						}
 					}
 				case "mmdb":

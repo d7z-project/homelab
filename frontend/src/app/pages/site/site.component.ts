@@ -316,9 +316,9 @@ export class SiteComponent implements OnInit, OnDestroy {
     });
   }
 
-  triggerExport(exp: ModelsSiteExport) {
+  triggerExport(exp: ModelsSiteExport, format: string = 'text') {
     if (!exp.id) return;
-    this.siteService.networkSiteExportsIdTriggerPost(exp.id, 'text').subscribe({
+    this.siteService.networkSiteExportsIdTriggerPost(exp.id, format).subscribe({
       next: (res: any) => {
         this.openTasks();
       },

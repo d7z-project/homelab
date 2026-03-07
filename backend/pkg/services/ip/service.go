@@ -16,8 +16,10 @@ import (
 	"homelab/pkg/services/discovery"
 	"homelab/pkg/services/rbac"
 	"io"
+	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -88,11 +90,12 @@ const (
 )
 
 type IPPoolService struct {
-	mmdb          *MMDBManager
-	cron          *cron.Cron
-	cronIDs       map[string]cron.EntryID
-	cronLock      sync.Mutex
-	exportManager *ExportManager
+	mmdb           *MMDBManager
+	cron           *cron.Cron
+	cronIDs        map[string]cron.EntryID
+	cronLock       sync.Mutex
+	exportManager  *ExportManager
+	analysisEngine *AnalysisEngine
 }
 
 func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
@@ -105,6 +108,10 @@ func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 
 func (s *IPPoolService) SetExportManager(em *ExportManager) {
 	s.exportManager = em
+}
+
+func (s *IPPoolService) SetAnalysisEngine(ae *AnalysisEngine) {
+	s.analysisEngine = ae
 }
 
 func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
@@ -365,6 +372,11 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	group.Checksum = hex.EncodeToString(hf.Sum(nil))
 
 	err = repo.SaveGroup(ctx, group)
+	if err == nil {
+		if s.analysisEngine != nil {
+			s.analysisEngine.RemoveCache(groupID)
+		}
+	}
 
 	actionName := "ManagePoolEntry"
 	commonaudit.FromContext(ctx).Log(actionName, targetPrefix.String(), mode, err == nil)
@@ -377,6 +389,10 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
+
+	poolWriteMutex.Lock()
+	defer poolWriteMutex.Unlock()
+
 	old, _ := repo.GetGroup(ctx, id)
 	// 校验依赖：检查是否有 IPExport 引用了此池
 	exports, _, err := repo.ListExports(ctx, 1, 1000, "")
@@ -389,6 +405,17 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 		}
 	}
 
+	// 校验依赖：检查是否有同步策略引用了此池
+	policies, _, err := repo.ListSyncPolicies(ctx, 1, 1000, "")
+	if err != nil {
+		return err
+	}
+	for _, p := range policies {
+		if p.TargetGroupID == id {
+			return fmt.Errorf("cannot delete group %s: referenced by sync policy %s", id, p.Name)
+		}
+	}
+
 	// 删除 DB 记录
 	err = repo.DeleteGroup(ctx, id)
 	if err != nil {
@@ -398,6 +425,9 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 	// 级联删除 VFS 中的数据文件
 	poolPath := filepath.Join(PoolsDir, id+".bin")
 	_ = common.FS.Remove(poolPath)
+	if s.analysisEngine != nil {
+		s.analysisEngine.RemoveCache(id)
+	}
 
 	if old != nil {
 		commonaudit.FromContext(ctx).Log("DeleteIPGroup", old.Name, "Deleted", true)
@@ -532,30 +562,48 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursor 
 // Export Methods
 
 func (s *IPPoolService) CreateExport(ctx context.Context, export *models.IPExport) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
+	}
 	if export.ID == "" {
 		export.ID = uuid.NewString()
 	}
 	export.CreatedAt = time.Now()
 	export.UpdatedAt = time.Now()
-	return repo.SaveExport(ctx, export)
+	err := repo.SaveExport(ctx, export)
+	commonaudit.FromContext(ctx).Log("CreateIPExport", export.Name, "Created", err == nil)
+	return err
 }
 
 func (s *IPPoolService) UpdateExport(ctx context.Context, export *models.IPExport) error {
+	resource := "network/ip/export/" + export.ID
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
+		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
+	}
 	old, err := repo.GetExport(ctx, export.ID)
 	if err != nil {
 		return err
 	}
 	export.CreatedAt = old.CreatedAt
 	export.UpdatedAt = time.Now()
-	return repo.SaveExport(ctx, export)
+	err = repo.SaveExport(ctx, export)
+	commonaudit.FromContext(ctx).Log("UpdateIPExport", export.Name, "Updated", err == nil)
+	return err
 }
 
 func (s *IPPoolService) DeleteExport(ctx context.Context, id string) error {
+	resource := "network/ip/export/" + id
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
+		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
+	}
+
 	// 级联删除相关的任务和物理文件
 	if s.exportManager != nil {
 		s.exportManager.DeleteTasksByExportID(id)
 	}
-	return repo.DeleteExport(ctx, id)
+	err := repo.DeleteExport(ctx, id)
+	commonaudit.FromContext(ctx).Log("DeleteIPExport", id, "Deleted", err == nil)
+	return err
 }
 
 func (s *IPPoolService) GetExport(ctx context.Context, id string) (*models.IPExport, error) {
@@ -630,6 +678,9 @@ func (s *IPPoolService) LookupExport(ctx context.Context, id string) (interface{
 // Sync Methods
 
 func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPSyncPolicy) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
+	}
 	if policy.ID == "" {
 		for i := 0; i < 10; i++ { // 最多重试 10 次
 			newID := generatePolicyID()
@@ -653,6 +704,9 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPS
 }
 
 func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *models.IPSyncPolicy) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
+	}
 	old, err := repo.GetSyncPolicy(ctx, policy.ID)
 	if err != nil {
 		return err
@@ -693,6 +747,9 @@ func (s *IPPoolService) ListSyncPolicies(ctx context.Context, page, pageSize int
 }
 
 func (s *IPPoolService) Sync(ctx context.Context, id string) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
+	}
 	policy, err := repo.GetSyncPolicy(ctx, id)
 	if err != nil {
 		return err
@@ -710,6 +767,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 	}
 
 	_ = repo.SaveSyncPolicy(ctx, policy)
+	commonaudit.FromContext(ctx).Log("TriggerIPSync", policy.Name, "Triggered", err == nil)
 	return err
 }
 
@@ -725,6 +783,11 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	}
 
 	// 1. 下载原始数据到临时文件
+	// SSRF 防护：校验 URL
+	if err := validateSourceURL(policy.SourceURL, policy); err != nil {
+		return err
+	}
+
 	tempSrc, err := os.CreateTemp("", "sync_src_*.tmp")
 	if err != nil {
 		return err
@@ -732,7 +795,10 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	defer os.Remove(tempSrc.Name())
 	defer tempSrc.Close()
 
-	resp, err := http.Get(policy.SourceURL)
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	resp, err := client.Get(policy.SourceURL)
 	if err != nil {
 		return err
 	}
@@ -758,9 +824,9 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	}
 
 	getTagIdx := func(t string) uint32 {
-		t = strings.ToUpper(strings.TrimSpace(t))
+		t = strings.ToLower(strings.TrimSpace(t))
 		if mapped, ok := tagMapping[t]; ok {
-			t = mapped
+			t = strings.ToLower(mapped)
 		}
 		if idx, ok := tagMap[t]; ok {
 			return idx
@@ -971,7 +1037,7 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		if err == nil {
 			reader, _ := NewReader(pf)
 			oldTags := reader.Tags()
-			targetInternalTag := strings.ToUpper(policy.ID)
+			targetInternalTag := strings.ToLower(policy.ID)
 
 			for {
 				prefix, tagIdxs, err := reader.NextIndices()
@@ -985,8 +1051,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 				hasOtherPolicy := false
 
 				for _, idx := range tagIdxs {
-					tagName := oldTags[idx]
-					if strings.ToUpper(tagName) == targetInternalTag {
+					tagName := strings.ToLower(oldTags[idx])
+					if tagName == targetInternalTag {
 						isFromThisPolicy = true
 					} else {
 						if strings.HasPrefix(tagName, "_") {
@@ -1070,4 +1136,54 @@ func generatePolicyID() string {
 		b[i+1] = letters[rb[i]%uint8(len(letters))]
 	}
 	return string(b)
+}
+func validateSourceURL(urlStr string, policy *models.IPSyncPolicy) error {
+	allowPrivate := false
+	if policy != nil && policy.Config != nil && policy.Config["allowPrivate"] == "true" {
+		allowPrivate = true
+	}
+
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	hostname := u.Hostname()
+	if hostname == "localhost" && !allowPrivate {
+		return fmt.Errorf("SSRF detected: localhost is forbidden")
+	}
+
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		// 如果解析失败，可能是 IP 直连或者非法的
+		ip := net.ParseIP(hostname)
+		if ip != nil {
+			if isPrivateIP(ip) && !allowPrivate {
+				return fmt.Errorf("SSRF detected: private IP %s is forbidden", ip)
+			}
+			return nil
+		}
+		// 暂时允许无法解析的情况（如容器内 DNS），但在生产中应更严格
+		return nil
+	}
+
+	for _, ip := range ips {
+		if isPrivateIP(ip) && !allowPrivate {
+			return fmt.Errorf("SSRF detected: host %s resolves to private IP %s", hostname, ip)
+		}
+	}
+
+	return nil
+}
+
+func isPrivateIP(ip net.IP) bool {
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+	if ip4 := ip.To4(); ip4 != nil {
+		return ip4[0] == 10 ||
+			(ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31) ||
+			(ip4[0] == 192 && ip4[1] == 168)
+	}
+	return false
 }

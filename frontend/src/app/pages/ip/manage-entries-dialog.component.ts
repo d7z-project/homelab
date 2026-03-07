@@ -208,7 +208,7 @@ import { Router } from '@angular/router';
                           [class.border-outline-variant]="t.startsWith('_')"
                           [matTooltip]="t.startsWith('_') ? '系统保留标签' : ''"
                         >
-                          {{ t }}
+                          {{ t | uppercase }}
                         </span>
                       }
                       @if (!element.tags || element.tags.length === 0) {
