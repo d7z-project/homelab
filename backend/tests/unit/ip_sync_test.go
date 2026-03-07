@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,17 @@ func TestIPSyncLogic(t *testing.T) {
 	group := &models.IPGroup{ID: "test_pool", Name: "Test Pool"}
 	_ = service.CreateGroup(ctx, group)
 
+	syncAndWait := func(id string) {
+		_ = service.Sync(ctx, id)
+		for i := 0; i < 50; i++ {
+			p, _ := service.GetSyncPolicy(ctx, id)
+			if p != nil && (p.LastStatus == "success" || p.LastStatus == "failed") {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+
 	t.Run("Precision Overwrite and Multi-Source Coexistence", func(t *testing.T) {
 		// Policy 1: 1.1.1.1, 1.1.1.2
 		server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +53,7 @@ func TestIPSyncLogic(t *testing.T) {
 			Config: map[string]string{"allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy1)
-		_ = service.Sync(ctx, "_p1")
+		syncAndWait("_p1")
 
 		// Policy 2: 2.2.2.2
 		server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +66,7 @@ func TestIPSyncLogic(t *testing.T) {
 			Config: map[string]string{"allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy2)
-		_ = service.Sync(ctx, "_p2")
+		syncAndWait("_p2")
 
 		// Verify Total: 3
 		res, _ := service.PreviewPool(ctx, "test_pool", 0, 10, "")
@@ -67,7 +79,7 @@ func TestIPSyncLogic(t *testing.T) {
 		defer server1_v2.Close()
 		policy1.SourceURL = server1_v2.URL
 		_ = service.UpdateSyncPolicy(ctx, policy1)
-		_ = service.Sync(ctx, "_p1")
+		syncAndWait("_p1")
 
 		// Final Result: 1.1.1.100 (from P1) + 2.2.2.2 (from P2) = 2 records
 		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "")
@@ -94,14 +106,14 @@ func TestIPSyncLogic(t *testing.T) {
 			Config: map[string]string{"tags": "SOURCE_A", "allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyA)
-		_ = service.Sync(ctx, "_pa")
+		syncAndWait("_pa")
 
 		policyB := &models.IPSyncPolicy{
 			ID: "_pb", Name: "PB", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
 			Config: map[string]string{"tags": "SOURCE_B", "allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyB)
-		_ = service.Sync(ctx, "_pb")
+		syncAndWait("_pb")
 
 		// Total should be previous 2 + current 1 = 3
 		res, _ := service.PreviewPool(ctx, "test_pool", 0, 100, "")
@@ -127,8 +139,8 @@ func TestIPSyncLogic(t *testing.T) {
 		}
 		_ = service.CreateSyncPolicy(ctx, policyApp)
 
-		_ = service.Sync(ctx, "_papp")
-		_ = service.Sync(ctx, "_papp") // Sync again with same content
+		syncAndWait("_papp")
+		syncAndWait("_papp") // Sync again with same content
 
 		// Total should be previous 3 + current 1 = 4 (not 5, because of deduplication)
 		res, _ := service.PreviewPool(ctx, "test_pool", 0, 100, "")
@@ -147,7 +159,7 @@ func TestIPSyncLogic(t *testing.T) {
 			Mode: "overwrite", TargetGroupID: "test_pool", Config: map[string]string{"tags": "tag_a", "allowPrivate": "true"},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyRem)
-		_ = service.Sync(ctx, "_prem")
+		syncAndWait("_prem")
 
 		res, _ := service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
 		assert.Contains(t, res.Entries[0].Tags, "tag_a")
@@ -155,7 +167,7 @@ func TestIPSyncLogic(t *testing.T) {
 		// 2. 模拟源数据更新：修改配置，将标签改为 tag_b
 		policyRem.Config["tags"] = "tag_b"
 		_ = service.UpdateSyncPolicy(ctx, policyRem)
-		_ = service.Sync(ctx, "_prem")
+		syncAndWait("_prem")
 
 		// 验证：tag_a 应该消失，只有 tag_b
 		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")

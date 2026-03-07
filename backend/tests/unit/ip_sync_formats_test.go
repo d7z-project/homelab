@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"bytes"
 	"net/netip"
@@ -30,6 +31,17 @@ func TestIPSyncFormats(t *testing.T) {
 	group := &models.IPGroup{ID: "format_pool", Name: "Format Pool"}
 	_ = service.CreateGroup(ctx, group)
 
+	syncAndWait := func(id string) {
+		_ = service.Sync(ctx, id)
+		for i := 0; i < 50; i++ {
+			p, _ := service.GetSyncPolicy(ctx, id)
+			if p != nil && (p.LastStatus == "success" || p.LastStatus == "failed") {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+
 	t.Run("Sync CSV Format", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "ip,tag")
@@ -48,8 +60,7 @@ func TestIPSyncFormats(t *testing.T) {
 			},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy)
-		err := service.Sync(ctx, "csv_policy")
-		assert.NoError(t, err)
+		syncAndWait("csv_policy")
 
 		res, _ := service.PreviewPool(ctx, "format_pool", 0, 10, "")
 		found := false
@@ -83,8 +94,7 @@ func TestIPSyncFormats(t *testing.T) {
 			},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy)
-		err := service.Sync(ctx, "v2ray_policy")
-		assert.NoError(t, err)
+		syncAndWait("v2ray_policy")
 
 		res, _ := service.PreviewPool(ctx, "format_pool", 0, 100, "")
 		found := false

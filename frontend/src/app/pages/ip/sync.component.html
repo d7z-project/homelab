@@ -180,7 +180,12 @@
             </th>
             <td mat-cell *matCellDef="let element" class="py-4 text-center">
               <div class="flex flex-col items-center">
-                @if (element.lastRunAt && element.lastRunAt !== '0001-01-01T00:00:00Z') {
+                @if (element.lastStatus === 'pending' || element.lastStatus === 'running') {
+                  <div class="flex items-center gap-2 text-primary font-bold text-[11px] animate-pulse">
+                    <mat-spinner diameter="16"></mat-spinner>
+                    <span>{{ element.lastStatus === 'pending' ? '等待中...' : '同步中...' }}</span>
+                  </div>
+                } @else if (element.lastRunAt && element.lastRunAt !== '0001-01-01T00:00:00Z') {
                   <div
                     class="flex items-center justify-center gap-1.5 font-mono text-[11px] font-bold"
                     [class.text-green-600]="element.lastStatus === 'success'"
@@ -194,7 +199,7 @@
                 } @else {
                   <span class="text-[10px] text-outline opacity-40 italic">从未运行</span>
                 }
-                @if (element.errorMessage) {
+                @if (element.errorMessage && element.lastStatus !== 'running') {
                   <span
                     class="text-[10px] text-red-400 max-w-[150px] truncate mx-auto"
                     [matTooltip]="element.errorMessage"
@@ -222,11 +227,11 @@
                     mat-icon-button
                     (click)="triggerSync(element)"
                     matTooltip="立即同步"
-                    [disabled]="syncingRows()[element.id]"
+                    [disabled]="syncingRows()[element.id] || element.lastStatus === 'pending' || element.lastStatus === 'running'"
                   >
                     <mat-icon
                       class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                      [class.animate-spin]="syncingRows()[element.id]"
+                      [class.animate-spin]="syncingRows()[element.id] || element.lastStatus === 'pending' || element.lastStatus === 'running'"
                       >sync</mat-icon
                     >
                   </button>

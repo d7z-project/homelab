@@ -121,6 +121,31 @@ func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 		svc.removeCronJob(policyID)
 	})
 
+	// 集群事件: 异步触发同步
+	common.RegisterEventHandler("ip_sync_run", func(ctx context.Context, policyID string) {
+		// 使用分布式锁确保同一策略只被一个节点执行
+		lockKey := "action:ip_sync:" + policyID
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release == nil {
+			return
+		}
+		defer release()
+
+		// 注入系统权限
+		sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
+			Type: "sa",
+			ID:   "system",
+		})
+		sysCtx = commonauth.WithPermissions(sysCtx, &models.ResourcePermissions{AllowedAll: true})
+
+		policy, err := repo.GetSyncPolicy(sysCtx, policyID)
+		if err != nil || !policy.Enabled {
+			return
+		}
+
+		_ = svc.doSync(sysCtx, policy)
+	})
+
 	return svc
 }
 
@@ -804,25 +829,55 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 		return err
 	}
 
-	policy.LastRunAt = time.Now()
-
-	err = s.doSync(ctx, policy)
-	if err != nil {
-		policy.LastStatus = "failed"
-		policy.ErrorMessage = err.Error()
-	} else {
-		policy.LastStatus = "success"
-		policy.ErrorMessage = ""
+	// 冲突校验：如果已在 Pending 或 Running，则不允许再次触发
+	if policy.LastStatus == "pending" || policy.LastStatus == "running" {
+		return fmt.Errorf("sync is already in progress for policy: %s", policy.Name)
 	}
 
+	policy.LastStatus = "pending"
+	policy.LastRunAt = time.Now()
 	_ = repo.SaveSyncPolicy(ctx, policy)
-	commonaudit.FromContext(ctx).Log("TriggerIPSync", policy.Name, "Triggered", err == nil)
-	return err
+
+	if common.Subscriber != nil {
+		common.NotifyCluster(ctx, "ip_sync_run", id)
+	} else {
+		// Standalone/Test mode fallback: execute locally in background
+		go func() {
+			// 注入系统权限
+			sysCtx := commonauth.WithAuth(context.Background(), &commonauth.AuthContext{
+				Type: "sa",
+				ID:   "system",
+			})
+			sysCtx = commonauth.WithPermissions(sysCtx, &models.ResourcePermissions{AllowedAll: true})
+			_ = s.doSync(sysCtx, policy)
+		}()
+	}
+
+	commonaudit.FromContext(ctx).Log("TriggerIPSync", policy.Name, "Triggered Asynchronously", true)
+	return nil
 }
 
-func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy) error {
+func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy) (err error) {
+	// 更新为 Running 状态
+	policy.LastStatus = "running"
+	_ = repo.SaveSyncPolicy(ctx, policy)
+
+	defer func() {
+		if err != nil {
+			policy.LastStatus = "failed"
+			policy.ErrorMessage = err.Error()
+		} else {
+			policy.LastStatus = "success"
+			policy.ErrorMessage = ""
+		}
+		policy.LastRunAt = time.Now()
+		_ = repo.SaveSyncPolicy(ctx, policy)
+		commonaudit.FromContext(ctx).Log("IPSyncExecute", policy.Name, "Finished", err == nil)
+	}()
+
 	if policy == nil {
-		return fmt.Errorf("policy is nil")
+		err = fmt.Errorf("policy is nil")
+		return err
 	}
 	if policy.ID == "" {
 		policy.ID = generatePolicyID()
@@ -833,7 +888,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 
 	// 1. 下载原始数据到临时文件
 	// SSRF 防护：校验 URL
-	if err := validateSourceURL(policy.SourceURL, policy); err != nil {
+	err = validateSourceURL(policy.SourceURL, policy)
+	if err != nil {
 		return err
 	}
 
@@ -901,7 +957,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	}
 
 	if policy.Format == "geoip" {
-		mdb, err := maxminddb.Open(tempSrc.Name())
+		var mdb *maxminddb.Reader
+		mdb, err = maxminddb.Open(tempSrc.Name())
 		if err != nil {
 			return fmt.Errorf("failed to open as maxminddb: %w", err)
 		}
@@ -944,12 +1001,14 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		targetCode := policy.Config["code"]
 		importAll := targetCode == "" || targetCode == "*" || targetCode == "all"
 
-		data, err := os.ReadFile(tempSrc.Name())
+		var data []byte
+		data, err = os.ReadFile(tempSrc.Name())
 		if err != nil {
 			return err
 		}
 
-		v2Entries, err := ParseV2RayGeoIP(data, targetCode, importAll)
+		var v2Entries []parsedV2RayEntry
+		v2Entries, err = ParseV2RayGeoIP(data, targetCode, importAll)
 		if err != nil {
 			return err
 		}
@@ -958,7 +1017,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 			addEntryToAggregate(e.Prefix, []uint32{internalTagIdx, getTagIdx(e.CountryCode)})
 		}
 	} else if policy.Format == "csv" {
-		f, err := os.Open(tempSrc.Name())
+		var f *os.File
+		f, err = os.Open(tempSrc.Name())
 		if err != nil {
 			return err
 		}
@@ -990,7 +1050,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 		reader.Comma = rune(sep[0])
 		reader.FieldsPerRecord = -1
 
-		records, err := reader.ReadAll()
+		var records [][]string
+		records, err = reader.ReadAll()
 		if err != nil {
 			return fmt.Errorf("failed to read csv: %w", err)
 		}
@@ -1025,7 +1086,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 			addEntryToAggregate(prefix, idxs)
 		}
 	} else {
-		data, err := os.ReadFile(tempSrc.Name())
+		var data []byte
+		data, err = os.ReadFile(tempSrc.Name())
 		if err != nil {
 			return err
 		}
@@ -1068,13 +1130,15 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	}
 
 	// 3. 写入目标池
-	release, err := s.lockPool(ctx, policy.TargetGroupID)
+	var release func()
+	release, err = s.lockPool(ctx, policy.TargetGroupID)
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	group, err := repo.GetGroup(ctx, policy.TargetGroupID)
+	var group *models.IPGroup
+	group, err = repo.GetGroup(ctx, policy.TargetGroupID)
 	if err != nil {
 		return err
 	}
@@ -1085,7 +1149,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 
 	// 处理旧数据合并
 	if exists, _ := afero.Exists(common.FS, poolPath); exists {
-		pf, err := common.FS.Open(poolPath)
+		var pf afero.File
+		pf, err = common.FS.Open(poolPath)
 		if err == nil {
 			reader, _ := NewReader(pf)
 			oldTags := reader.Tags()
@@ -1155,7 +1220,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 
 	finalTags := newTags
 	// 写入最终文件
-	tf, err := common.FS.Create(tempFile)
+	var tf afero.File
+	tf, err = common.FS.Create(tempFile)
 	if err != nil {
 		return err
 	}
@@ -1168,7 +1234,8 @@ func (s *IPPoolService) doSync(ctx context.Context, policy *models.IPSyncPolicy)
 	}
 
 	// 计算哈希并更新元数据
-	content, err := afero.ReadFile(common.FS, tempFile)
+	var content []byte
+	content, err = afero.ReadFile(common.FS, tempFile)
 	if err != nil {
 		_ = common.FS.Remove(tempFile)
 		return err

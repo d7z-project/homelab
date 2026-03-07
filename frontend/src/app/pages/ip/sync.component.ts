@@ -98,12 +98,20 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   hasSearchContent = computed(() => this.search().length > 0);
   hasMore = computed(() => this.policies().length < this.total());
+  
+  // 是否有任何策略正在同步中
+  anySyncing = computed(() => 
+    this.policies().some(p => p.lastStatus === 'pending' || p.lastStatus === 'running')
+  );
+
+  private refreshTimer?: any;
 
   ngOnInit() {
     this.uiService.configureToolbar({ shadow: false });
     this.loadGroups();
     this.loadPolicies(true);
     this.setupScrollListener();
+    this.setupRefreshTimer();
   }
 
   ngOnDestroy() {
@@ -112,6 +120,22 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     if (this.scrollListener) {
       const scrollElement = document.querySelector('mat-sidenav-content');
       scrollElement?.removeEventListener('scroll', this.scrollListener);
+    }
+    this.stopRefreshTimer();
+  }
+
+  private setupRefreshTimer() {
+    this.refreshTimer = setInterval(() => {
+      // 如果有任何正在同步的任务，或者当前处于加载状态，则自动刷新
+      if (this.anySyncing() && !this.loading()) {
+        this.loadPolicies(true);
+      }
+    }, 3000); // 3秒刷新一次
+  }
+
+  private stopRefreshTimer() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
     }
   }
 

@@ -153,12 +153,14 @@
                       mat-icon-button
                       icon-button-center
                       (click)="runWorkflow(wf)"
-                      [disabled]="!wf.enabled"
-                      [matTooltip]="wf.enabled ? '启动工作流' : '工作流已禁用，无法启动'"
-                      [class.text-primary]="wf.enabled"
+                      [disabled]="!wf.enabled || isWorkflowRunning(wf.id)"
+                      [matTooltip]="isWorkflowRunning(wf.id) ? '工作流正在运行中' : (wf.enabled ? '启动工作流' : '工作流已禁用，无法启动')"
+                      [class.text-primary]="wf.enabled && !isWorkflowRunning(wf.id)"
                     >
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
-                        >play_circle</mat-icon
+                      <mat-icon
+                        class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                        [class.animate-spin]="isWorkflowRunning(wf.id)"
+                        >{{ isWorkflowRunning(wf.id) ? 'sync' : 'play_circle' }}</mat-icon
                       >
                     </button>
 

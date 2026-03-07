@@ -255,6 +255,11 @@ export class ActionsComponent implements OnInit, OnDestroy {
     return this.workflows().find((w) => w.id === id)?.name || id;
   }
 
+  isWorkflowRunning(workflowId: string | undefined): boolean {
+    if (!workflowId) return false;
+    return this.instances().some((i) => i.workflowId === workflowId && (i.status === 'Running' || i.status === 'Pending'));
+  }
+
   getTriggerLabel(trigger: string | undefined): string {
     if (!trigger) return '-';
     if (trigger === 'Manual') return '手动执行';

@@ -5,6 +5,7 @@ import (
 	"homelab/pkg/services/ip"
 	"homelab/tests"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -65,15 +66,26 @@ func TestIPServiceExtended(t *testing.T) {
 	_ = service.CreateSyncPolicy(ctx, ssrfPolicy)
 
 	err = service.Sync(ctx, "ssrf")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "SSRF detected")
+	assert.NoError(t, err)
+
+	// Wait for async completion (should fail due to SSRF)
+	var pSync *models.IPSyncPolicy
+	for i := 0; i < 50; i++ {
+		pSync, _ = service.GetSyncPolicy(ctx, "ssrf")
+		if pSync != nil && (pSync.LastStatus == "success" || pSync.LastStatus == "failed") {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	assert.Equal(t, "failed", pSync.LastStatus)
+	assert.Contains(t, pSync.ErrorMessage, "SSRF detected")
 }
 
 func TestIPValidationService(t *testing.T) {
-	mmdb := ip.NewMMDBManager()
-
 	cleanup := tests.SetupTestDB()
 	defer cleanup()
+
+	mmdb := ip.NewMMDBManager()
 	ctx := tests.SetupMockRootContext()
 	service := ip.NewIPPoolService(mmdb)
 
