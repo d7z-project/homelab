@@ -108,7 +108,16 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 
 	// 冲突校验：如果已在 Pending 或 Running，则不允许再次触发
 	if policy.LastStatus == "pending" || policy.LastStatus == "running" {
-		return fmt.Errorf("sync is already in progress for policy: %s", policy.Name)
+		// 健壮性改进：探测锁状态。如果能拿到锁，说明之前的执行者已挂（锁已自动释放）
+		lockKey := "action:ip_sync:" + id
+		if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+			// 能拿到锁，说明之前的状态是过期的僵尸状态
+			release()
+			// 继续执行，允许后续流程重新竞争并更新状态
+		} else {
+			// 锁确实被占用，说明真的有其他节点在跑
+			return fmt.Errorf("sync is already in progress for policy: %s", policy.Name)
+		}
 	}
 
 	policy.LastStatus = "pending"

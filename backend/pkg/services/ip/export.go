@@ -10,6 +10,7 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/ip"
 	"io"
+	"log"
 	"net"
 	"net/netip"
 	"path/filepath"
@@ -26,7 +27,7 @@ import (
 
 type ExportTask struct {
 	ID          string
-	Status      string // Pending, Running, Success, Failed
+	Status      string // Pending, Running, Success, Failed, Cancelled
 	Progress    float64
 	Format      string
 	ResultURL   string
@@ -71,12 +72,33 @@ func (m *ExportManager) loadTasks() {
 	data, err := common.DB.Child("network", "ip").Get(context.Background(), "export_tasks")
 	if err == nil && data != "" {
 		_ = json.Unmarshal([]byte(data), &m.tasks)
-		for _, t := range m.tasks {
-			if t.Status == "Running" || t.Status == "Pending" {
+		// 注意：此处不再盲目重置状态，交给 Reconcile 处理
+	}
+}
+
+// Reconcile 扫描所有任务，清理僵死状态
+func (m *ExportManager) Reconcile(ctx context.Context) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	changed := false
+	for _, t := range m.tasks {
+		t.mu.Lock()
+		if t.Status == "Running" || t.Status == "Pending" {
+			// 探测锁状态
+			lockKey := "action:ip_export:" + t.ID
+			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				// 能拿到锁说明执行者已挂
 				t.Status = "Failed"
-				t.Error = "Server restarted"
+				t.Error = "Interrupted by system restart or node failure"
+				changed = true
+				release()
 			}
 		}
+		t.mu.Unlock()
+	}
+	if changed {
+		m.saveTasksLocked()
 	}
 }
 
@@ -174,7 +196,7 @@ func (m *ExportManager) Cleanup() {
 		createdAt := t.CreatedAt
 		t.mu.Unlock()
 
-		// 清理超过 24 小时的任务
+		// 清理超过 24 小时的任务 (排除运行中的)
 		if now.Sub(createdAt) > 24*time.Hour && status != "Running" {
 			m.deleteTask(id)
 			changed = true
@@ -231,10 +253,9 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	currentChecksum := hex.EncodeToString(hf.Sum(nil))
 
 	m.mu.Lock()
-	// 检查缓存 (Task 10)
+	// 1. 检查缓存
 	for _, t := range m.tasks {
 		if t.Checksum == currentChecksum && t.Status == "Success" {
-			// 检查物理文件是否真的还在
 			tempFileName := fmt.Sprintf("export_%s.%s", t.ID, t.Format)
 			tempPath := filepath.Join("temp", tempFileName)
 			if exists, _ := afero.Exists(common.TempDir, tempPath); exists {
@@ -244,10 +265,24 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 		}
 	}
 
-	// 收集该导出配置之前的任务，稍后在锁外取消
+	// 2. 冲突检查与僵尸任务探测
 	var toCancel []*ExportTask
-	for id, t := range m.tasks {
-		if strings.HasPrefix(id, exportID+"-") {
+	for _, t := range m.tasks {
+		if strings.HasPrefix(t.ID, exportID+"-") {
+			t.mu.Lock()
+			if t.Status == "Pending" || t.Status == "Running" {
+				lockKey := "action:ip_export:" + t.ID
+				if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+					// 发现僵死任务，标记为 Cancelled 并继续
+					t.Status = "Cancelled"
+					release()
+				} else {
+					t.mu.Unlock()
+					m.mu.Unlock()
+					return "", fmt.Errorf("an export task for %s is already in progress", exportID)
+				}
+			}
+			t.mu.Unlock()
 			toCancel = append(toCancel, t)
 		}
 	}
@@ -264,15 +299,6 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	m.saveTasksLocked()
 	m.mu.Unlock()
 
-	// 在管理器锁之外取消旧任务，避免 ABBA 死锁
-	for _, t := range toCancel {
-		t.mu.Lock()
-		if t.Status == "Running" || t.Status == "Pending" {
-			t.Status = "Cancelled"
-		}
-		t.mu.Unlock()
-	}
-
 	m.wg.Add(1)
 	go m.runExport(context.Background(), task, e)
 
@@ -285,6 +311,16 @@ func (m *ExportManager) WaitAll() {
 
 func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *models.IPExport) {
 	defer m.wg.Done()
+
+	// 获取分布式锁，证明该节点正在处理该任务
+	lockKey := "action:ip_export:" + task.ID
+	release := common.Locker.TryLock(ctx, lockKey)
+	if release == nil {
+		log.Printf("IP Export %s already handled by another node", task.ID)
+		return
+	}
+	defer release()
+
 	task.mu.Lock()
 	if task.Status == "Cancelled" {
 		task.mu.Unlock()
@@ -295,8 +331,6 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 	task.mu.Unlock()
 
 	// 1. 编译表达式
-	// 支持 AST 预分析降级 (Task 9) - 简化版：这里如果只是 Tag in [...] 可以走捷径，
-	// 但 expr 内部也已足够快。
 	program, err := expr.Compile(e.Rule, expr.Env(map[string]interface{}{
 		"tags": []string{},
 		"cidr": "",

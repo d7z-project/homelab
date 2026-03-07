@@ -69,9 +69,14 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 		src := &sources[i]
 		// Reset "Downloading" status if stuck from previous run
 		if src.Status == "Downloading" {
-			src.Status = "Error"
-			src.ErrorMessage = "Interrupted by system restart"
-			_ = repo.SaveSource(ctx, src)
+			// 健壮性：仅当该同步任务对应的分布式锁未被占有时才重置
+			lockKey := "network:intelligence:sync:" + src.ID
+			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				src.Status = "Error"
+				src.ErrorMessage = "Interrupted by system restart or node failure"
+				_ = repo.SaveSource(ctx, src)
+				release()
+			}
 		}
 
 		if src.AutoUpdate && src.UpdateCron != "" {

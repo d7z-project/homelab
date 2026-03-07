@@ -161,8 +161,22 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 		ID:   "system",
 	})
 	sysCtx = commonauth.WithPermissions(sysCtx, &models.ResourcePermissions{AllowedAll: true})
+
+	// 1. 状态自愈 (Reconciliation)
+	// 扫描所有运行中的策略，如果能拿到对应的分布式锁，说明该任务已僵死，需要重置
 	policies, _, _ := repo.ListSyncPolicies(sysCtx, 1, 10000, "")
 	for _, p := range policies {
+		if p.LastStatus == "running" || p.LastStatus == "pending" {
+			lockKey := "action:ip_sync:" + p.ID
+			if release := common.Locker.TryLock(sysCtx, lockKey); release != nil {
+				// 任务僵死：更新状态并释放锁
+				p.LastStatus = "failed"
+				p.ErrorMessage = "interrupted by system restart"
+				_ = repo.SaveSyncPolicy(sysCtx, &p)
+				release()
+			}
+		}
+
 		if p.Enabled {
 			s.addCronJob(p)
 		}

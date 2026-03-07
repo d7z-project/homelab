@@ -21,7 +21,18 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 		return err
 	}
 
+	if source.Status == "Downloading" {
+		lockKey := "network:intelligence:sync:" + id
+		if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+			// 能拿到锁，说明之前的状态已僵死
+			release()
+		} else {
+			return fmt.Errorf("sync is already in progress for source: %s", source.Name)
+		}
+	}
+
 	source.Status = "Downloading"
+	source.ErrorMessage = ""
 	_ = repo.SaveSource(ctx, source)
 
 	go s.runDownload(id)

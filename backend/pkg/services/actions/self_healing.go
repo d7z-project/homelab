@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"homelab/pkg/common"
 	repo "homelab/pkg/repositories/actions"
 	"log"
 	"strings"
@@ -18,11 +19,16 @@ func BootUpSelfHealing() {
 	}
 
 	for _, instance := range instances {
-		if instance.Status == "Running" {
-			instance.Status = "Failed"
-			instance.Error = "System restarted while task was running"
-			_ = repo.SaveTaskInstance(ctx, &instance)
-			log.Printf("Self-healing: marked task %s as Failed", instance.ID)
+		if instance.Status == "Running" || instance.Status == "Pending" {
+			// 健壮性：仅当该任务对应的分布式锁未被占有时才重置
+			lockKey := "action:task:" + instance.ID
+			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				instance.Status = "Failed"
+				instance.Error = "System restarted while task was running or node failure"
+				_ = repo.SaveTaskInstance(ctx, &instance)
+				log.Printf("Self-healing: marked zombie task %s as Failed", instance.ID)
+				release()
+			}
 		}
 	}
 	// Clean up temp dirs in actions sub-directory (actionsFS is already scoped to 'orch')

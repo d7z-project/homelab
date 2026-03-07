@@ -8,6 +8,7 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/site"
 	"io"
+	"log"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -19,7 +20,7 @@ import (
 
 type ExportTask struct {
 	ID          string
-	Status      string
+	Status      string // Pending, Running, Success, Failed, Cancelled
 	Progress    float64
 	Format      string
 	ResultURL   string
@@ -62,12 +63,33 @@ func (m *ExportManager) loadTasks() {
 	data, err := common.DB.Child("network", "site").Get(context.Background(), "export_tasks")
 	if err == nil && data != "" {
 		_ = json.Unmarshal([]byte(data), &m.tasks)
-		for _, t := range m.tasks {
-			if t.Status == "Running" || t.Status == "Pending" {
+		// 注意：此处不再盲目重置状态，交给 Reconcile 处理
+	}
+}
+
+// Reconcile 扫描所有任务，清理僵死状态
+func (m *ExportManager) Reconcile(ctx context.Context) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	changed := false
+	for _, t := range m.tasks {
+		t.mu.Lock()
+		if t.Status == "Running" || t.Status == "Pending" {
+			// 探测锁状态
+			lockKey := "action:site_export:" + t.ID
+			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				// 能拿到锁说明执行者已挂
 				t.Status = "Failed"
-				t.Error = "Server restarted"
+				t.Error = "Interrupted by system restart or node failure"
+				changed = true
+				release()
 			}
 		}
+		t.mu.Unlock()
+	}
+	if changed {
+		m.saveTasksLocked()
 	}
 }
 
@@ -204,10 +226,24 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	}
 
 	m.mu.Lock()
-	// 收集旧任务
+	// 冲突检查与僵尸任务探测
 	var toCancel []*ExportTask
-	for id, t := range m.tasks {
-		if strings.HasPrefix(id, exportID+"-") {
+	for _, t := range m.tasks {
+		if strings.HasPrefix(t.ID, exportID+"-") {
+			t.mu.Lock()
+			if t.Status == "Pending" || t.Status == "Running" {
+				lockKey := "action:site_export:" + t.ID
+				if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+					// 僵死任务，标记为 Cancelled 并继续
+					t.Status = "Cancelled"
+					release()
+				} else {
+					t.mu.Unlock()
+					m.mu.Unlock()
+					return "", fmt.Errorf("an export task for %s is already in progress", exportID)
+				}
+			}
+			t.mu.Unlock()
 			toCancel = append(toCancel, t)
 		}
 	}
@@ -217,15 +253,6 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	m.tasks[taskID] = task
 	m.saveTasksLocked()
 	m.mu.Unlock()
-
-	// 锁外取消
-	for _, t := range toCancel {
-		t.mu.Lock()
-		if t.Status == "Running" || t.Status == "Pending" {
-			t.Status = "Cancelled"
-		}
-		t.mu.Unlock()
-	}
 
 	m.wg.Add(1)
 	go m.runExport(context.Background(), task, e)
@@ -238,6 +265,16 @@ func (m *ExportManager) WaitAll() {
 
 func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *models.SiteExport) {
 	defer m.wg.Done()
+
+	// 获取分布式锁，证明该节点正在处理该任务
+	lockKey := "action:site_export:" + task.ID
+	release := common.Locker.TryLock(ctx, lockKey)
+	if release == nil {
+		log.Printf("Site Export %s already handled by another node", task.ID)
+		return
+	}
+	defer release()
+
 	task.mu.Lock()
 	if task.Status == "Cancelled" {
 		task.mu.Unlock()

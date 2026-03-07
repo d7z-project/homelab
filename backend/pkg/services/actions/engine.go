@@ -63,7 +63,17 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 		return "", fmt.Errorf("failed to check for running instances: %w", err)
 	}
 	for _, inst := range instances {
-		if inst.WorkflowID == workflow.ID && inst.Status == "Running" {
+		if inst.WorkflowID == workflow.ID && (inst.Status == "Running" || inst.Status == "Pending") {
+			// 健壮性：探测锁状态。如果能拿到锁，说明之前的执行者已挂
+			lockKey := "action:task:" + inst.ID
+			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				// 能拿到锁，说明是僵死状态，我们手动清理并允许新任务开始
+				inst.Status = "Failed"
+				inst.Error = "Interrupted by system restart or node failure"
+				_ = repo.SaveTaskInstance(ctx, &inst)
+				release()
+				continue
+			}
 			e.activeWorkflows.Delete(workflow.ID)
 			return "", fmt.Errorf("workflow %s is already running on another node (instance: %v)", workflow.ID, inst.ID)
 		}
@@ -140,6 +150,15 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 }
 
 func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workflow *models.Workflow, logger *TaskLogger, cancel context.CancelFunc) {
+	// 获取分布式锁，证明该节点正在处理该任务
+	lockKey := "action:task:" + instance.ID
+	release := common.Locker.TryLock(ctx, lockKey)
+	if release == nil {
+		logger.Logf("Task %s already handled by another node", instance.ID)
+		return
+	}
+	defer release()
+
 	defer func() {
 		finalStepIdx := len(instance.Steps) + 1
 		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
