@@ -10,7 +10,7 @@ all: frontend-build backend-build client-go-gen ## 构建并编译前后端及 G
 # --- 后端 (Go) ---
 backend-gen: ## 生成 Swagger 文档
 	@echo "Updating backend swagger docs..."
-	@cd $(BACKEND_DIR) && go generate ./...
+	@cd $(BACKEND_DIR) && go run github.com/swaggo/swag/cmd/swag@latest init
 
 backend-build: backend-gen ## 编译后端程序
 	@mkdir -p $(BIN_DIR)
@@ -28,7 +28,7 @@ $(FRONTEND_DIR)/node_modules: $(FRONTEND_DIR)/package.json
 frontend-install: $(FRONTEND_DIR)/node_modules ## 手动触发安装前端依赖
 
 frontend-gen: backend-gen $(FRONTEND_DIR)/node_modules ## 根据 Swagger 文档生成前端 API 客户端
-	cd $(FRONTEND_DIR) && npm run generate-api
+	cd $(FRONTEND_DIR) && npm run generate-api && npm run fmt
 
 frontend-build: frontend-gen ## 编译前端页面
 	cd $(FRONTEND_DIR) && npm run build

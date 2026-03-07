@@ -279,6 +279,7 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursor 
 			}
 		}
 
+		common.SortTags(tags)
 		res.Entries = append(res.Entries, models.IPPoolEntry{
 			CIDR: prefix.String(),
 			Tags: tags,

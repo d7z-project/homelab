@@ -35,10 +35,10 @@ func TestSiteExportDeduplication(t *testing.T) {
 	// domain:mail.google.com [tag3]
 	// full:bing.com [tag4]
 
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "google.com", Tags: []string{"tag1"}}, "add")
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "www.google.com", Tags: []string{"tag2"}}, "add")
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "mail.google.com", Tags: []string{"tag3"}}, "add")
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "bing.com", Tags: []string{"tag4"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "google.com", NewTags: []string{"tag1"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "www.google.com", NewTags: []string{"tag2"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "mail.google.com", NewTags: []string{"tag3"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "bing.com", NewTags: []string{"tag4"}}, "add")
 
 	export := &models.SiteExport{
 		Name:     "Dedupe Export",

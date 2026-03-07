@@ -73,8 +73,8 @@ func TestSiteAnalysisEngine(t *testing.T) {
 	group := &models.SiteGroup{Name: "Analysis Pool"}
 	_ = service.CreateGroup(ctx, group)
 
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "google.com", Tags: []string{"search"}}, "add")
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 0, Value: "apple", Tags: []string{"tech"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "google.com", NewTags: []string{"search"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 0, Value: "apple", NewTags: []string{"tech"}}, "add")
 
 	// Hit Test
 	t.Run("HitTest Domain", func(t *testing.T) {
@@ -109,8 +109,8 @@ func TestSiteExportManager(t *testing.T) {
 	// Setup data
 	group := &models.SiteGroup{Name: "Pool 1"}
 	_ = service.CreateGroup(ctx, group)
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "a.com", Tags: []string{"cn"}}, "add")
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "b.com", Tags: []string{"us"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "a.com", NewTags: []string{"cn"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "b.com", NewTags: []string{"us"}}, "add")
 
 	export := &models.SiteExport{
 		Name:     "Export 1",
@@ -217,8 +217,8 @@ func TestSitePreviewSearch(t *testing.T) {
 	group := &models.SiteGroup{ID: "search_pool", Name: "Search Pool"}
 	_ = service.CreateGroup(ctx, group)
 
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "microsoft.com", Tags: []string{"work"}}, "add")
-	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "github.com", Tags: []string{"dev"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "microsoft.com", NewTags: []string{"work"}}, "add")
+	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "github.com", NewTags: []string{"dev"}}, "add")
 
 	// 1. Search by Value
 	res, _ := service.PreviewPool(ctx, group.ID, 0, 10, "git")

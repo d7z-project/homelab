@@ -79,9 +79,13 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               />
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="flex-1 w-full">
+            <mat-form-field appearance="outline" class="flex-1 w-full" subscriptSizing="dynamic">
               <mat-label>标签 (Tags)</mat-label>
               <input matInput formControlName="tags" placeholder="逗号分隔" />
+              <mat-hint>下划线开头的标签为系统保留，不可在此添加或修改</mat-hint>
+              <mat-error *ngIf="form.get('tags')?.hasError('internalTag')">
+                标签不能以下划线 '_' 开头
+              </mat-error>
             </mat-form-field>
 
             <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
@@ -162,12 +166,22 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
             <ng-container matColumnDef="tags">
               <th mat-header-cell *matHeaderCellDef class="font-bold">标签</th>
               <td mat-cell *matCellDef="let element">
-                <div class="flex flex-wrap gap-1 py-2">
+                <div class="flex flex-wrap gap-1 py-1">
                   @for (t of element.tags; track t) {
                     <span
-                      class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-tight"
+                      class="px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-tight"
+                      [class.bg-primary/10]="!t.startsWith('_')"
+                      [class.border-primary/20]="!t.startsWith('_')"
+                      [class.text-primary]="!t.startsWith('_')"
+                      [class.bg-surface-container-high]="t.startsWith('_')"
+                      [class.text-outline]="t.startsWith('_')"
+                      [class.border-outline-variant]="t.startsWith('_')"
+                      [matTooltip]="t.startsWith('_') ? '系统保留标签' : ''"
                       >{{ t | uppercase }}</span
                     >
+                  }
+                  @if (!element.tags || element.tags.length === 0) {
+                    <span class="text-outline/30 text-[10px] italic">未设置标签</span>
                   }
                 </div>
               </td>
@@ -234,8 +248,22 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
   form = this.fb.group({
     type: [2, Validators.required],
     value: ['', Validators.required],
-    tags: [''],
+    tags: [
+      '',
+      [
+        (control: any) => {
+          const val = control.value || '';
+          const tags = val.split(',').map((t: string) => t.trim().toLowerCase());
+          if (tags.some((t: string) => t.startsWith('_'))) {
+            return { internalTag: true };
+          }
+          return null;
+        },
+      ],
+    ],
   });
+
+  private originalUserTags: string[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<ManageSiteEntriesDialogComponent>,
@@ -270,6 +298,18 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
       .subscribe({
         next: (res) => {
           const newEntries = res.entries || [];
+          // 排序标签：带下划线的排在第一位
+          newEntries.forEach((entry) => {
+            if (entry.tags) {
+              entry.tags.sort((a, b) => {
+                const aInt = a.startsWith('_');
+                const bInt = b.startsWith('_');
+                if (aInt && !bInt) return -1;
+                if (!aInt && bInt) return 1;
+                return a.localeCompare(b);
+              });
+            }
+          });
           if (reset) this.entries.set(newEntries);
           else this.entries.update((v) => [...v, ...newEntries]);
           this.nextCursor = res.nextCursor || 0;
@@ -291,15 +331,17 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
 
   editEntry(entry: ModelsSitePoolEntry) {
     this.isEditMode.set(true);
+    this.originalUserTags = (entry.tags || []).filter((t) => !t.startsWith('_'));
     this.form.patchValue({
       type: entry.type as any,
       value: entry.value,
-      tags: (entry.tags || []).join(', '),
+      tags: this.originalUserTags.join(', '),
     });
   }
 
   cancelEdit() {
     this.isEditMode.set(false);
+    this.originalUserTags = [];
     this.form.reset({ type: 2 });
   }
 
@@ -307,7 +349,7 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
     if (this.form.invalid) return;
     this.submitting.set(true);
     const val = this.form.getRawValue();
-    const tags = val.tags
+    const newTags = val.tags
       ? val.tags
           .split(',')
           .map((t) => t.trim().toLowerCase())
@@ -318,7 +360,8 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
       .networkSitePoolsIdEntriesPost(this.data.pool.id!, {
         type: val.type as any,
         value: val.value!,
-        tags,
+        oldTags: this.isEditMode() ? this.originalUserTags : undefined,
+        newTags: newTags,
       })
       .subscribe({
         next: () => {

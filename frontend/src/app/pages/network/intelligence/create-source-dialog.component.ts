@@ -50,7 +50,10 @@ import { NetworkIntelligenceService, ModelsIntelligenceSource } from '../../../g
         <div
           class="flex flex-col gap-2 p-4 bg-surface-container-low rounded-2xl border border-outline-variant"
         >
-          <mat-slide-toggle formControlName="autoUpdate">启用自动更新</mat-slide-toggle>
+          <div class="flex gap-6">
+            <mat-slide-toggle formControlName="autoUpdate">启用自动更新</mat-slide-toggle>
+            <mat-slide-toggle formControlName="allowPrivate">允许私有 IP</mat-slide-toggle>
+          </div>
 
           @if (form.get('autoUpdate')?.value) {
             <mat-form-field appearance="outline" class="mt-2">
@@ -90,6 +93,7 @@ export class CreateSourceDialogComponent implements OnInit {
     url: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+$/)]],
     autoUpdate: [false],
     cron: [''],
+    allowPrivate: [false],
   });
 
   ngOnInit() {
@@ -100,6 +104,7 @@ export class CreateSourceDialogComponent implements OnInit {
         url: this.data.url,
         autoUpdate: this.data.autoUpdate,
         cron: this.data.cron,
+        allowPrivate: this.data.config?.['allowPrivate'] === 'true',
       });
       if (this.data.autoUpdate) {
         this.form.get('cron')?.setValidators(Validators.required);
@@ -124,6 +129,13 @@ export class CreateSourceDialogComponent implements OnInit {
     this.loading = true;
     const val = this.form.value;
 
+    const config: Record<string, string> = { ...this.data?.config };
+    if (val.allowPrivate) {
+      config['allowPrivate'] = 'true';
+    } else {
+      delete config['allowPrivate'];
+    }
+
     const payload: ModelsIntelligenceSource = {
       name: val.name!,
       type: val.type!,
@@ -135,6 +147,7 @@ export class CreateSourceDialogComponent implements OnInit {
       lastUpdatedAt: this.data ? this.data.lastUpdatedAt : '0001-01-01T00:00:00Z',
       id: this.data ? this.data.id : '',
       errorMessage: this.data ? this.data.errorMessage : '',
+      config: config,
     };
 
     const obs =

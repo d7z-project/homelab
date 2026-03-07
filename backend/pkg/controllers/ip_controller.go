@@ -354,6 +354,25 @@ func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, task)
 }
 
+// CancelExportTaskHandler godoc
+// @Summary Cancel an IP export task
+// @Tags network/ip
+// @Produce json
+// @Param taskId path string true "Task ID"
+// @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Task Not Found"
+// @Security ApiKeyAuth
+// @Router /network/ip/exports/task/{taskId}/cancel [post]
+func CancelExportTaskHandler(w http.ResponseWriter, r *http.Request) {
+	taskId := chi.URLParam(r, "taskId")
+	if !exportManager.CancelTask(taskId) {
+		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found or not cancelable")
+		return
+	}
+	common.Success(w, r, "success")
+}
+
 // PreviewExportHandler godoc
 // @Summary Preview IP export expression
 // @Tags network/ip
@@ -617,6 +636,7 @@ func IPRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/{id}/trigger", TriggerExportHandler)
 			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/task/{taskId}", ExportTaskStatusHandler)
+			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/task/{taskId}/cancel", CancelExportTaskHandler)
 			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/download/{taskId}", DownloadExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/preview", PreviewExportHandler)
 		})

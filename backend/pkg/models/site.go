@@ -94,9 +94,11 @@ type SitePoolEntry struct {
 
 // SitePoolEntryRequest 用于维护条目的请求
 type SitePoolEntryRequest struct {
-	Type  uint8    `json:"type"`
-	Value string   `json:"value"`
-	Tags  []string `json:"tags"`
+	Type    uint8    `json:"type"`
+	Value   string   `json:"value"`
+	Tags    []string `json:"tags"`    // 已废弃，由 NewTags 代替
+	OldTags []string `json:"oldTags"` // 被替换的标签（用于编辑场景）
+	NewTags []string `json:"newTags"` // 新增或更新后的标签
 }
 
 func (req *SitePoolEntryRequest) Bind(r *http.Request) error {
@@ -107,12 +109,18 @@ func (req *SitePoolEntryRequest) Bind(r *http.Request) error {
 	if req.Type > 3 {
 		return errors.New("invalid rule type")
 	}
-	for i, t := range req.Tags {
+
+	// 兼容旧 Tags 字段
+	if len(req.Tags) > 0 && len(req.NewTags) == 0 {
+		req.NewTags = req.Tags
+	}
+
+	for i, t := range req.NewTags {
 		t = strings.ToLower(strings.TrimSpace(t))
 		if strings.HasPrefix(t, "_") {
 			return fmt.Errorf("tag '%s' is invalid: tags starting with '_' are reserved for internal use", t)
 		}
-		req.Tags[i] = t
+		req.NewTags[i] = t
 	}
 	return nil
 }

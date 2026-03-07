@@ -40,6 +40,8 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	var allTags []string
 	tagSet := make(map[string]struct{})
 
+	var entryToUpdate *models.SitePoolEntry
+
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
 	if exists, _ := afero.Exists(common.FS, poolPath); exists {
 		pf, err := common.FS.Open(poolPath)
@@ -57,6 +59,9 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 						return fmt.Errorf("rule already exists: %d:%s", req.Type, req.Value)
 					}
 					if mode == "delete" || mode == "update" {
+						if mode == "update" {
+							entryToUpdate = &entry
+						}
 						continue
 					}
 				}
@@ -76,8 +81,42 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	}
 
 	if mode == "add" || mode == "update" {
+		finalTags := req.NewTags
+		if mode == "update" && entryToUpdate != nil {
+			// 只有在提供 OldTags 时才执行增量更新，否则全量替换（保留内部标签）
+			merged := make(map[string]struct{})
+			// 1. 保留原本的所有内部标签
+			for _, t := range entryToUpdate.Tags {
+				if strings.HasPrefix(t, "_") {
+					merged[t] = struct{}{}
+				}
+			}
+			if len(req.OldTags) > 0 {
+				// 增量模式：保留原本非 OldTags 的用户标签
+				oldTagSet := make(map[string]struct{})
+				for _, t := range req.OldTags {
+					oldTagSet[t] = struct{}{}
+				}
+				for _, t := range entryToUpdate.Tags {
+					if !strings.HasPrefix(t, "_") {
+						if _, ok := oldTagSet[t]; !ok {
+							merged[t] = struct{}{}
+						}
+					}
+				}
+			}
+			// 2. 加入本次的新标签
+			for _, t := range req.NewTags {
+				merged[t] = struct{}{}
+			}
+			finalTags = make([]string, 0, len(merged))
+			for t := range merged {
+				finalTags = append(finalTags, t)
+			}
+		}
+
 		var tagIndices []uint32
-		for _, t := range req.Tags {
+		for _, t := range finalTags {
 			if _, ok := tagSet[t]; !ok {
 				tagSet[t] = struct{}{}
 				allTags = append(allTags, t)
@@ -188,6 +227,7 @@ func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, curso
 				continue
 			}
 		}
+		common.SortTags(entry.Tags)
 		res.Entries = append(res.Entries, entry)
 		matched++
 	}

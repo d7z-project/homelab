@@ -114,3 +114,7 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 func (s *IntelligenceService) GetTasks() *task.Manager[*SyncTask] {
 	return s.tasks
 }
+
+func (s *IntelligenceService) CancelTask(id string) bool {
+	return s.tasks.CancelTask(id)
+}

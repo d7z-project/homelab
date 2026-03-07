@@ -158,6 +158,10 @@ func (m *ExportManager) DeleteTasksByExportID(exportID string) {
 	m.core.DeleteTasksByPrefix(exportID + "-")
 }
 
+func (m *ExportManager) CancelTask(id string) bool {
+	return m.core.CancelTask(id)
+}
+
 func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, format string) (string, error) {
 	e, err := repo.GetExport(ctx, exportID)
 	if err != nil {

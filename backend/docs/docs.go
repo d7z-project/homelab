@@ -2105,6 +2105,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/network/intelligence/sync/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/intelligence"
+                ],
+                "summary": "Cancel intelligence sync task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Task Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/network/ip/analysis/hit-test": {
             "post": {
                 "security": [
@@ -2440,6 +2485,51 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/ip.ExportTask"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Task Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/ip/exports/task/{taskId}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/ip"
+                ],
+                "summary": "Cancel an IP export task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "401": {
@@ -3595,6 +3685,51 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/site.ExportTask"
+                        }
+                    }
+                }
+            }
+        },
+        "/network/site/exports/task/{taskId}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/site"
+                ],
+                "summary": "Cancel a site export task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Task Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
                         }
                     }
                 }
@@ -5854,7 +5989,22 @@ const docTemplate = `{
         "models.SitePoolEntryRequest": {
             "type": "object",
             "properties": {
+                "newTags": {
+                    "description": "新增或更新后的标签",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "oldTags": {
+                    "description": "被替换的标签（用于编辑场景）",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "tags": {
+                    "description": "已废弃，由 NewTags 代替",
                     "type": "array",
                     "items": {
                         "type": "string"

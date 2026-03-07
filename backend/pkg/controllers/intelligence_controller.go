@@ -129,6 +129,25 @@ func SyncIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "sync started")
 }
 
+// CancelIntelligenceSyncHandler godoc
+// @Summary Cancel intelligence sync task
+// @Tags network/intelligence
+// @Produce json
+// @Param id path string true "Task ID"
+// @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Task Not Found"
+// @Security ApiKeyAuth
+// @Router /network/intelligence/sync/{id}/cancel [post]
+func CancelIntelligenceSyncHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if !intelligenceService.CancelTask(id) {
+		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found or not cancelable")
+		return
+	}
+	common.Success(w, r, "success")
+}
+
 func IntelligenceRouter(r chi.Router) {
 	r.Route("/network/intelligence", func(r chi.Router) {
 		r.With(middlewares.RequirePermission("list", "network/intelligence")).Get("/sources", ListIntelligenceSourcesHandler)
@@ -136,5 +155,6 @@ func IntelligenceRouter(r chi.Router) {
 		r.With(middlewares.RequirePermission("update", "network/intelligence")).Put("/sources/{id}", UpdateIntelligenceSourceHandler)
 		r.With(middlewares.RequirePermission("delete", "network/intelligence")).Delete("/sources/{id}", DeleteIntelligenceSourceHandler)
 		r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/sources/{id}/sync", SyncIntelligenceSourceHandler)
+		r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/sync/{id}/cancel", CancelIntelligenceSyncHandler)
 	})
 }

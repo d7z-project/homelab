@@ -320,6 +320,25 @@ func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, task)
 }
 
+// CancelSiteExportTaskHandler godoc
+// @Summary Cancel a site export task
+// @Tags network/site
+// @Produce json
+// @Param taskId path string true "Task ID"
+// @Success 200 {string} string "success"
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 404 {object} common.Response "Task Not Found"
+// @Security ApiKeyAuth
+// @Router /network/site/exports/task/{taskId}/cancel [post]
+func CancelSiteExportTaskHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "taskId")
+	if !siteExportManager.CancelTask(id) {
+		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found or not cancelable")
+		return
+	}
+	common.Success(w, r, "success")
+}
+
 // PreviewSiteExportHandler godoc
 // @Summary Preview Site export expression
 // @Tags network/site
@@ -393,6 +412,7 @@ func SiteRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/{id}/trigger", TriggerSiteExportHandler)
 			r.With(middlewares.RequirePermission("get", "network/site")).Get("/task/{taskId}", SiteExportTaskStatusHandler)
+			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/task/{taskId}/cancel", CancelSiteExportTaskHandler)
 			r.With(middlewares.RequirePermission("get", "network/site")).Get("/download/{taskId}", DownloadSiteExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/preview", PreviewSiteExportHandler)
 		})

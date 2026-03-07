@@ -28,7 +28,7 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
     MatSnackBarModule,
   ],
   template: `
-    <h2 mat-dialog-title class="!flex items-center justify-between">
+    <h2 mat-dialog-title class="flex! items-center justify-between">
       <div class="flex items-center gap-2">
         <mat-icon color="primary">history</mat-icon>
         <span>导出任务列表 ({{ type === 'ip' ? 'IP' : '域名' }})</span>
@@ -36,7 +36,7 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
       <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
     </h2>
 
-    <mat-dialog-content class="!p-0 min-h-[400px]">
+    <mat-dialog-content class="p-0! min-h-[400px]">
       <div class="px-6 py-4 border-b border-outline-variant/30 sticky top-0 z-10 bg-surface">
         <mat-form-field
           appearance="outline"
@@ -55,54 +55,54 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
       </div>
 
       <div class="flex flex-col divide-y divide-outline-variant/20 bg-surface">
-        @for (task of filteredTasks(); track task.ID) {
+        @for (task of filteredTasks(); track task.id) {
           <div class="px-6 py-4 hover:bg-surface-container-low transition-colors group">
             <div class="flex items-start justify-between gap-4 mb-2">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                   <span
                     class="font-mono text-sm font-bold truncate max-w-[200px]"
-                    [matTooltip]="task.ID"
+                    [matTooltip]="task.id"
                   >
-                    {{ task.ID }}
+                    {{ task.id }}
                   </span>
                   <span
                     class="px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider"
-                    [class.bg-blue-50]="task.Status === 'Running' || task.Status === 'Pending'"
-                    [class.text-blue-700]="task.Status === 'Running' || task.Status === 'Pending'"
-                    [class.border-blue-200]="task.Status === 'Running' || task.Status === 'Pending'"
-                    [class.bg-green-50]="task.Status === 'Success'"
-                    [class.text-green-700]="task.Status === 'Success'"
-                    [class.border-green-200]="task.Status === 'Success'"
-                    [class.bg-red-50]="task.Status === 'Failed' || task.Status === 'Cancelled'"
-                    [class.text-red-700]="task.Status === 'Failed' || task.Status === 'Cancelled'"
-                    [class.border-red-200]="task.Status === 'Failed' || task.Status === 'Cancelled'"
+                    [class.bg-blue-50]="task.status === 'Running' || task.status === 'Pending'"
+                    [class.text-blue-700]="task.status === 'Running' || task.status === 'Pending'"
+                    [class.border-blue-200]="task.status === 'Running' || task.status === 'Pending'"
+                    [class.bg-green-50]="task.status === 'Success'"
+                    [class.text-green-700]="task.status === 'Success'"
+                    [class.border-green-200]="task.status === 'Success'"
+                    [class.bg-red-50]="task.status === 'Failed' || task.status === 'Cancelled'"
+                    [class.text-red-700]="task.status === 'Failed' || task.status === 'Cancelled'"
+                    [class.border-red-200]="task.status === 'Failed' || task.status === 'Cancelled'"
                   >
-                    {{ task.Status }}
+                    {{ task.status }}
                   </span>
                 </div>
                 <div class="flex items-center gap-4 text-xs text-outline opacity-80 mt-2">
                   <div class="flex items-center gap-1">
-                    <mat-icon class="!w-4 !h-4 !text-[16px]">calendar_today</mat-icon>
-                    <span>{{ task.CreatedAt | date: 'yyyy-MM-dd HH:mm:ss' }}</span>
+                    <mat-icon class="w-4! h-4! text-[16px]!">calendar_today</mat-icon>
+                    <span>{{ task.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}</span>
                   </div>
                   <div class="flex items-center gap-1 font-bold uppercase">
-                    <mat-icon class="!w-4 !h-4 !text-[16px]">description</mat-icon>
-                    <span>{{ task.Format | uppercase }}</span>
+                    <mat-icon class="w-4! h-4! text-[16px]!">description</mat-icon>
+                    <span>{{ task.format | uppercase }}</span>
                   </div>
                   <div class="flex items-center gap-1 font-mono font-medium">
-                    <mat-icon class="!w-4 !h-4 !text-[16px]">data_array</mat-icon>
-                    <span>{{ task.RecordCount || 0 }} 条数据</span>
+                    <mat-icon class="w-4! h-4! text-[16px]!">data_array</mat-icon>
+                    <span>{{ task.recordCount || 0 }} 条数据</span>
                   </div>
                 </div>
               </div>
 
               <div class="flex items-center gap-2">
-                @if (task.Status === 'Success') {
+                @if (task.status === 'Success') {
                   <button
                     mat-icon-button
                     color="primary"
-                    (click)="copyLink(task.ResultURL)"
+                    (click)="copyLink(task.resultUrl)"
                     matTooltip="复制下载地址"
                   >
                     <mat-icon>content_copy</mat-icon>
@@ -110,47 +110,57 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
                   <a
                     mat-flat-button
                     color="primary"
-                    [href]="task.ResultURL"
+                    [href]="task.resultUrl"
                     target="_blank"
-                    class="!rounded-xl"
+                    class="rounded-xl!"
                   >
                     <mat-icon class="mr-1">download</mat-icon>
                     下载
                   </a>
                 }
-                @if (task.Status === 'Failed') {
-                  <button mat-icon-button color="warn" [matTooltip]="task.Error">
+                @if (task.status === 'Running' || task.status === 'Pending') {
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="cancelTask(task.id)"
+                    matTooltip="取消任务"
+                  >
+                    <mat-icon>stop_circle</mat-icon>
+                  </button>
+                }
+                @if (task.status === 'Failed') {
+                  <button mat-icon-button color="warn" [matTooltip]="task.error">
                     <mat-icon>error_outline</mat-icon>
                   </button>
                 }
               </div>
             </div>
 
-            @if (task.Status === 'Running' || task.Status === 'Pending') {
+            @if (task.status === 'Running' || task.status === 'Pending') {
               <div class="space-y-1 mt-3">
                 <mat-progress-bar
                   mode="determinate"
-                  [value]="(task.Progress || 0) * 100"
+                  [value]="(task.progress || 0) * 100"
                   class="h-2 rounded-full"
                 ></mat-progress-bar>
                 <div class="flex justify-end text-xs font-mono text-primary font-bold">
-                  {{ (task.Progress || 0) * 100 | number: '1.0-1' }}%
+                  {{ (task.progress || 0) * 100 | number: '1.0-1' }}%
                 </div>
               </div>
             }
           </div>
         } @empty {
           <div class="p-16 flex flex-col items-center justify-center text-outline/40 italic">
-            <mat-icon class="!w-16 !h-16 !text-[64px] mb-4 opacity-20">cloud_off</mat-icon>
+            <mat-icon class="w-16! h-16! text-[64px]! mb-4 opacity-20">cloud_off</mat-icon>
             <span class="text-base">暂无匹配的导出任务</span>
           </div>
         }
       </div>
     </mat-dialog-content>
 
-    <div mat-dialog-actions align="end" class="!px-6 !py-4 border-t border-outline-variant/30">
+    <div mat-dialog-actions align="end" class="px-6! py-4! border-t border-outline-variant/30">
       <div class="flex-1 text-xs text-outline text-left italic">任务将在 24 小时后自动清理</div>
-      <button mat-button mat-dialog-close class="px-6 !rounded-xl">关闭</button>
+      <button mat-button mat-dialog-close class="px-6 rounded-xl!">关闭</button>
     </div>
   `,
   styles: [
@@ -200,8 +210,10 @@ export class ExportTasksDialogComponent implements OnInit, OnDestroy {
   filteredTasks = computed(() => {
     const s = this.search().toLowerCase();
     return this.tasks()
-      .filter((t) => t.ID.toLowerCase().includes(s) || t.Status.toLowerCase().includes(s))
-      .sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime());
+      .filter(
+        (t) => (t.id || '').toLowerCase().includes(s) || (t.status || '').toLowerCase().includes(s),
+      )
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   });
 
   constructor(
@@ -231,6 +243,22 @@ export class ExportTasksDialogComponent implements OnInit, OnDestroy {
       this.tasks.set(res || []);
     } catch (err) {
       console.error('Failed to load export tasks:', err);
+    }
+  }
+
+  async cancelTask(taskId: string) {
+    try {
+      if (this.type === 'ip') {
+        await firstValueFrom(this.ipService.networkIpExportsTaskTaskIdCancelPost(taskId));
+      } else {
+        await firstValueFrom(this.siteService.networkSiteExportsTaskTaskIdCancelPost(taskId));
+      }
+      this.snackBar.open('任务取消成功', '关闭', { duration: 2000 });
+      this.refresh();
+    } catch (err: any) {
+      this.snackBar.open(`取消失败: ${err.error?.message || err.message}`, '关闭', {
+        duration: 3000,
+      });
     }
   }
 

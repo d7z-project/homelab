@@ -270,6 +270,58 @@ func TestIPExportCancellation(t *testing.T) {
 	manager.WaitAll()
 }
 
+func TestIPExportManualCancellation(t *testing.T) {
+	cleanup := tests.SetupTestDB()
+	defer cleanup()
+	ctx := tests.SetupMockRootContext()
+	common.TempDir = afero.NewMemMapFs()
+
+	mmdb := ip.NewMMDBManager()
+	analysis := ip.NewAnalysisEngine(mmdb)
+	manager := ip.NewExportManager(analysis)
+	service := ip.NewIPPoolService(mmdb)
+
+	_ = service.CreateGroup(ctx, &models.IPGroup{ID: "pool1", Name: "Pool 1"})
+	common.FS = afero.NewMemMapFs()
+	codec := ip.NewCodec()
+	f, _ := common.FS.Create("network/ip/pools/pool1.bin")
+	var dummyEntries []ip.Entry
+	for i := 0; i < 20000; i++ {
+		dummyEntries = append(dummyEntries, ip.Entry{Prefix: netip.MustParsePrefix("1.1.1.1/32"), TagIndices: []uint32{0}})
+	}
+	_ = codec.WritePool(f, []string{"t"}, dummyEntries)
+	f.Close()
+
+	export := &models.IPExport{ID: "long_export", Name: "Long Export", Rule: "true", GroupIDs: []string{"pool1"}}
+	_ = service.CreateExport(ctx, export)
+
+	taskID, _ := manager.TriggerExport(ctx, "long_export", "text")
+
+	// Wait for Running
+	for i := 0; i < 50; i++ {
+		t := manager.GetTask(taskID)
+		if t != nil && t.Status == "Running" {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// Manual Cancel
+	ok := manager.CancelTask(taskID)
+	assert.True(t, ok)
+
+	// Wait for Cancelled
+	for i := 0; i < 50; i++ {
+		t := manager.GetTask(taskID)
+		if t != nil && (t.Status == "Cancelled" || t.Status == "Failed") {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	assert.Equal(t, "Cancelled", manager.GetTask(taskID).Status)
+	manager.WaitAll()
+}
+
 func TestManagePoolEntry(t *testing.T) {
 	cleanup := tests.SetupTestDB()
 	defer cleanup()

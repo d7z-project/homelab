@@ -72,18 +72,18 @@ func TestSiteService(t *testing.T) {
 
 	// Manage Entry
 	req := &models.SitePoolEntryRequest{
-		Type:  2,
-		Value: "example.com",
-		Tags:  []string{"test"},
+		Type:    2,
+		Value:   "example.com",
+		NewTags: []string{"test"},
 	}
 	err = service.ManagePoolEntry(ctx, group.ID, req, "add")
 	assert.NoError(t, err)
 
 	// Manage Entry with Uppercase Tags
 	req = &models.SitePoolEntryRequest{
-		Type:  2,
-		Value: "uppercase.com",
-		Tags:  []string{"  UPPER  "},
+		Type:    2,
+		Value:   "uppercase.com",
+		NewTags: []string{"  UPPER  "},
 	}
 	_ = req.Bind(nil) // Normalize tags to lowercase
 	err = service.ManagePoolEntry(ctx, group.ID, req, "add")

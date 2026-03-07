@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/netip"
 	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -169,7 +168,7 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 				}
 			}
 
-			slices.Sort(finalTags)
+			common.SortTags(finalTags)
 			return &models.IPAnalysisResult{
 				Matched: true,
 				CIDR:    prefix.String(),

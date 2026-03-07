@@ -195,8 +195,9 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
           <mat-hint>标准 5 位 Cron 表达式 (e.g. 0 0 * * *)</mat-hint>
         </mat-form-field>
 
-        <div class="py-2">
+        <div class="py-2 flex gap-6">
           <mat-slide-toggle formControlName="enabled">启用此策略</mat-slide-toggle>
+          <mat-slide-toggle formControlName="allowPrivate">允许私有 IP</mat-slide-toggle>
         </div>
       </form>
     </mat-dialog-content>
@@ -238,6 +239,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
     targetGroupId: [this.data.policy?.targetGroupId || '', Validators.required],
     cron: [this.data.policy?.cron || '0 0 * * *', Validators.required],
     enabled: [this.data.policy?.enabled ?? true],
+    allowPrivate: [this.data.policy?.config?.['allowPrivate'] === 'true'],
     // Specific configs
     tags: [this.data.policy?.config?.['tags'] || this.data.policy?.config?.['tag'] || 'sync'],
     language: [this.data.policy?.config?.['language'] || 'zh-CN'],
@@ -312,6 +314,10 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
       config['language'] = val.language || 'zh-CN';
     } else if (val.format === 'geoip-dat') {
       config['code'] = val.importAll ? '*' : val.code || 'CN';
+    }
+
+    if (val.allowPrivate) {
+      config['allowPrivate'] = 'true';
     }
 
     // Process Tag Mapping

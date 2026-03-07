@@ -11,7 +11,6 @@ import (
 	"io"
 	"net"
 	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -167,7 +166,7 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []
 				}
 			}
 
-			slices.Sort(finalTags)
+			common.SortTags(finalTags)
 			res.Matched = true
 			res.RuleType = ruleType
 			res.Pattern = pattern

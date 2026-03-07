@@ -625,7 +625,18 @@ definitions:
     type: object
   models.SitePoolEntryRequest:
     properties:
+      newTags:
+        description: 新增或更新后的标签
+        items:
+          type: string
+        type: array
+      oldTags:
+        description: 被替换的标签（用于编辑场景）
+        items:
+          type: string
+        type: array
       tags:
+        description: 已废弃，由 NewTags 代替
         items:
           type: string
         type: array
@@ -2180,6 +2191,34 @@ paths:
       summary: Trigger manual sync
       tags:
       - network/intelligence
+  /network/intelligence/sync/{id}/cancel:
+    post:
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Task Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel intelligence sync task
+      tags:
+      - network/intelligence
   /network/ip/analysis/hit-test:
     post:
       consumes:
@@ -2503,6 +2542,34 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get export task status
+      tags:
+      - network/ip
+  /network/ip/exports/task/{taskId}/cancel:
+    post:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Task Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel an IP export task
       tags:
       - network/ip
   /network/ip/exports/tasks:
@@ -3199,6 +3266,34 @@ paths:
           schema:
             $ref: '#/definitions/site.ExportTask'
       summary: Get site export task status
+      tags:
+      - network/site
+  /network/site/exports/task/{taskId}/cancel:
+    post:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Task Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel a site export task
       tags:
       - network/site
   /network/site/exports/tasks:
