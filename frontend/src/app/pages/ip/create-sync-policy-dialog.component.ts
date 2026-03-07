@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
 import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../generated';
 
 @Component({
@@ -26,6 +27,7 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
     MatSlideToggleModule,
     MatIconModule,
     MatTooltipModule,
+    DiscoverySelectComponent,
   ],
   template: `
     <h2 mat-dialog-title>{{ data.policy ? '编辑同步策略' : '新建同步策略' }}</h2>
@@ -165,12 +167,13 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
           </div>
         </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>目标地址池</mat-label>
-          <mat-select formControlName="targetGroupId" required>
-            <mat-option *ngFor="let p of pools()" [value]="p.id">{{ p.name }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+        <app-discovery-select
+          code="network/ip/pools"
+          label="目标地址池"
+          placeholder="搜索地址池..."
+          formControlName="targetGroupId"
+          required
+        ></app-discovery-select>
 
         <mat-form-field appearance="outline">
           <mat-label>Cron 表达式</mat-label>
@@ -202,7 +205,6 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
   public data = inject(MAT_DIALOG_DATA) as { policy?: ModelsIPSyncPolicy };
 
   loading = false;
-  pools = signal<ModelsIPGroup[]>([]);
 
   form = this.fb.group({
     name: [this.data.policy?.name || '', Validators.required],
@@ -229,7 +231,6 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadPools();
     this.initMappings();
   }
 
@@ -259,12 +260,6 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
 
   removeMapping(index: number) {
     this.tagMappings.removeAt(index);
-  }
-
-  loadPools() {
-    this.ipService.networkIpPoolsGet(1, 1000).subscribe({
-      next: (res) => this.pools.set(res.items || []),
-    });
   }
 
   submit() {

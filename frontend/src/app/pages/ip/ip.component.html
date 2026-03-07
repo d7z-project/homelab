@@ -13,7 +13,7 @@
   >
     <!-- IP 地址池 Tab -->
     <mat-tab label="地址池">
-      <div class="py-6 px-4 sm:px-8">
+      <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <app-page-header
             title="IP 地址池"
@@ -44,15 +44,15 @@
           <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
             <table mat-table [dataSource]="pools()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">池名称</th>
-                <td mat-cell *matCellDef="let element" class="py-4">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">池名称</th>
+                <td mat-cell *matCellDef="let element" class="py-4 text-center">
                   <div class="font-medium text-primary">{{ element.name }}</div>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="description">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">描述</th>
-                <td mat-cell *matCellDef="let element" class="text-sm text-outline">{{ element.description || '-' }}</td>
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">描述</th>
+                <td mat-cell *matCellDef="let element" class="text-sm text-outline text-center">{{ element.description || '-' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="entryCount">
@@ -65,31 +65,68 @@
               </ng-container>
 
               <ng-container matColumnDef="updatedAt">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">更新时间</th>
-                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono">{{ element.updatedAt | date:'yyyy-MM-dd HH:mm' }}</td>
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">更新时间</th>
+                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono text-center">{{ element.updatedAt | date:'yyyy-MM-dd HH:mm:ss' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 bg-surface-container-low font-bold" style="width: 1px">操作</th>
-                <td mat-cell *matCellDef="let element" class="text-right !pr-6">
-                  <div class="flex justify-end gap-1">
-                    <button mat-icon-button (click)="manageEntries(element)" matTooltip="管理数据">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">list_alt</mat-icon>
-                    </button>
-                    <button mat-icon-button [matMenuTriggerFor]="poolMenu">
-                      <mat-icon>more_vert</mat-icon>
-                    </button>
-                    <mat-menu #poolMenu="matMenu">
-                      <button mat-menu-item (click)="editPool(element)">
-                        <mat-icon>edit</mat-icon>
-                        <span>编辑池信息</span>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="text-center bg-surface-container-low font-bold"
+                  style="width: 1px; white-space: nowrap"
+                >
+                  操作
+                </th>
+                <td
+                  mat-cell
+                  *matCellDef="let element"
+                  class="text-center"
+                  style="white-space: nowrap"
+                >
+                  <div class="flex justify-center gap-1">
+                    @if (!isHandset()) {
+                      <button mat-icon-button (click)="manageEntries(element)" matTooltip="管理数据">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >list_alt</mat-icon
+                        >
                       </button>
-                      <mat-divider></mat-divider>
-                      <button mat-menu-item (click)="deletePool(element)" class="text-red-500">
-                        <mat-icon color="warn">delete_outline</mat-icon>
-                        <span class="text-error">删除池</span>
+                      <button mat-icon-button (click)="editPool(element)" matTooltip="编辑">
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >edit</mat-icon
+                        >
                       </button>
-                    </mat-menu>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="deletePool(element)"
+                        matTooltip="删除"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >delete_outline</mat-icon
+                        >
+                      </button>
+                    } @else {
+                      <button mat-icon-button [matMenuTriggerFor]="poolMenu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #poolMenu="matMenu">
+                        <ng-template matMenuContent>
+                          <button mat-menu-item (click)="manageEntries(element)">
+                            <mat-icon>list_alt</mat-icon>
+                            <span>管理数据</span>
+                          </button>
+                          <button mat-menu-item (click)="editPool(element)">
+                            <mat-icon>edit</mat-icon>
+                            <span>编辑</span>
+                          </button>
+                          <button mat-menu-item (click)="deletePool(element)">
+                            <mat-icon color="warn">delete_outline</mat-icon>
+                            <span class="text-error">删除</span>
+                          </button>
+                        </ng-template>
+                      </mat-menu>
+                    }
                   </div>
                 </td>
               </ng-container>
@@ -116,7 +153,7 @@
 
     <!-- 动态导出 Tab -->
     <mat-tab label="动态导出">
-      <div class="py-6 px-4 sm:px-8">
+      <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
           <app-page-header
             title="动态导出"
@@ -147,25 +184,25 @@
           <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
             <table mat-table [dataSource]="exports()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">配置名称</th>
-                <td mat-cell *matCellDef="let element" class="py-4">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">配置名称</th>
+                <td mat-cell *matCellDef="let element" class="py-4 text-center">
                   <div class="font-medium text-primary">{{ element.name }}</div>
                   <div class="text-[10px] text-outline opacity-60">{{ element.description }}</div>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="rule">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">过滤规则 (go-expr)</th>
-                <td mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">过滤规则 (go-expr)</th>
+                <td mat-cell *matCellDef="let element" class="text-center">
                   <code class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-primary font-mono border border-outline-variant">{{ element.rule }}</code>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="updatedAt">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">状态 / 时间</th>
-                <td mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">状态 / 时间</th>
+                <td mat-cell *matCellDef="let element" class="text-center">
                   @if (activeTasks()[element.id]) {
-                    <div class="flex items-center gap-2 mb-1">
+                    <div class="flex items-center justify-center gap-2 mb-1">
                       <div class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border" 
                            [class.bg-primary/5]="activeTasks()[element.id].status === 'Running'"
                            [class.text-primary]="activeTasks()[element.id].status === 'Running'"
@@ -185,25 +222,92 @@
                       }
                     </div>
                   }
-                  <div class="text-[10px] text-outline font-mono">{{ element.updatedAt | date:'yyyy-MM-dd HH:mm' }}</div>
+                  <div class="text-[10px] text-outline font-mono">{{ element.updatedAt | date:'yyyy-MM-dd HH:mm:ss' }}</div>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-right !pr-6 bg-surface-container-low font-bold" style="width: 1px">操作</th>
-                <td mat-cell *matCellDef="let element" class="text-right !pr-6">
-                  <div class="flex justify-end gap-1">
-                    <button mat-icon-button (click)="triggerExport(element)" matTooltip="立即导出" [disabled]="activeTasks()[element.id]?.status === 'Running'">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">play_circle_outline</mat-icon>
-                    </button>
-                    @if (activeTasks()[element.id]?.status === 'Success') {
-                      <a mat-icon-button color="primary" [href]="activeTasks()[element.id].resultURL" matTooltip="下载结果" target="_blank">
-                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">download</mat-icon>
-                      </a>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="text-center bg-surface-container-low font-bold"
+                  style="width: 1px; white-space: nowrap"
+                >
+                  操作
+                </th>
+                <td
+                  mat-cell
+                  *matCellDef="let element"
+                  class="text-center"
+                  style="white-space: nowrap"
+                >
+                  <div class="flex justify-center gap-1">
+                    @if (!isHandset()) {
+                      <button
+                        mat-icon-button
+                        (click)="triggerExport(element)"
+                        matTooltip="立即导出"
+                        [disabled]="activeTasks()[element.id]?.status === 'Running'"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >play_circle_outline</mat-icon
+                        >
+                      </button>
+                      @if (activeTasks()[element.id]?.status === 'Success') {
+                        <a
+                          mat-icon-button
+                          color="primary"
+                          [href]="activeTasks()[element.id].resultURL"
+                          matTooltip="下载结果"
+                          target="_blank"
+                        >
+                          <mat-icon
+                            class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                            >download</mat-icon
+                          >
+                        </a>
+                      }
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="deleteExport(element)"
+                        matTooltip="删除配置"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >delete_outline</mat-icon
+                        >
+                      </button>
+                    } @else {
+                      <button mat-icon-button [matMenuTriggerFor]="exportMenu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #exportMenu="matMenu">
+                        <ng-template matMenuContent>
+                          <button
+                            mat-menu-item
+                            (click)="triggerExport(element)"
+                            [disabled]="activeTasks()[element.id]?.status === 'Running'"
+                          >
+                            <mat-icon>play_circle_outline</mat-icon>
+                            <span>立即导出</span>
+                          </button>
+                          @if (activeTasks()[element.id]?.status === 'Success') {
+                            <a
+                              mat-menu-item
+                              [href]="activeTasks()[element.id].resultURL"
+                              target="_blank"
+                            >
+                              <mat-icon>download</mat-icon>
+                              <span>下载结果</span>
+                            </a>
+                          }
+                          <button mat-menu-item (click)="deleteExport(element)">
+                            <mat-icon color="warn">delete_outline</mat-icon>
+                            <span class="text-error">删除配置</span>
+                          </button>
+                        </ng-template>
+                      </mat-menu>
                     }
-                    <button mat-icon-button color="warn" (click)="deleteExport(element)" matTooltip="删除配置">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
-                    </button>
                   </div>
                 </td>
               </ng-container>
@@ -238,10 +342,35 @@
       [color]="hasSearchContent() ? 'tertiary' : 'secondary'"
       (click)="uiService.searchConfig() ? uiService.closeSearch() : openSearch()"
       class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-2"
+      [matTooltip]="
+        hasSearchContent()
+          ? uiService.searchConfig()
+            ? '清除搜索'
+            : '正在筛选'
+          : uiService.searchConfig()
+            ? '关闭'
+            : '搜索'
+      "
     >
-      <mat-icon>{{ uiService.searchConfig() ? (hasSearchContent() ? 'filter_alt_off' : 'close') : (hasSearchContent() ? 'filter_alt' : 'search') }}</mat-icon>
+      <mat-icon>{{
+        uiService.searchConfig()
+          ? hasSearchContent()
+            ? 'filter_alt_off'
+            : 'close'
+          : hasSearchContent()
+            ? 'filter_alt'
+            : 'search'
+      }}</mat-icon>
       @if (!isHandset()) {
-        <span class="ml-2 font-medium text-xs uppercase tracking-wider">搜索内容</span>
+        <span class="ml-2 font-medium">{{
+          hasSearchContent()
+            ? uiService.searchConfig()
+              ? '清除搜索'
+              : '正在筛选'
+            : uiService.searchConfig()
+              ? '收起搜索'
+              : '搜索内容'
+        }}</span>
       }
     </button>
 
@@ -254,10 +383,13 @@
         (click)="showScrollTop() ? scrollToTop() : fabConfig().action()"
         [disabled]="loading()"
         class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
+        [matTooltip]="showScrollTop() ? '回到顶部' : ''"
       >
         <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig().icon }}</mat-icon>
         @if (!isHandset()) {
-          <span class="ml-2 font-medium text-xs uppercase tracking-wider">{{ showScrollTop() ? '回到顶部' : fabConfig().label }}</span>
+          <span class="ml-2 font-medium">{{
+            showScrollTop() ? '回到顶部' : fabConfig().label
+          }}</span>
         }
       </button>
     }

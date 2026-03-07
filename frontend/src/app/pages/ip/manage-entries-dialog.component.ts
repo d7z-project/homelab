@@ -83,13 +83,15 @@ import { Router } from '@angular/router';
                 </mat-error>
               </mat-form-field>
 
-              <div class="flex gap-2">
+              <div class="flex gap-2 h-[56px] items-center">
                 @if (isEditMode()) {
-                  <button mat-button type="button" (click)="cancelEdit()" class="h-14 px-6 !rounded-2xl">取消</button>
+                  <button mat-button type="button" (click)="cancelEdit()" class="h-full px-6 !rounded-2xl">取消</button>
                 }
-                <button mat-flat-button color="primary" class="h-14 px-8 !rounded-2xl shadow-sm" [disabled]="form.invalid || submitting()" (click)="submit()">
+                <button mat-flat-button color="primary" class="h-full px-8 !rounded-2xl shadow-sm" [disabled]="form.invalid || submitting()" (click)="submit()">
                   <div class="flex items-center gap-2">
-                    <mat-spinner *ngIf="submitting()" diameter="20" color="accent"></mat-spinner>
+                    @if (submitting()) {
+                      <mat-spinner diameter="18" class="animate-spin"></mat-spinner>
+                    }
                     <span>{{ isEditMode() ? '保存修改' : '确认添加' }}</span>
                   </div>
                 </button>

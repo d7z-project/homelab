@@ -123,6 +123,7 @@ body {
   font-size: 13px !important;
   letter-spacing: 0.02em;
   text-align: center !important;
+  white-space: nowrap !important;
 }
 
 .mat-mdc-cell {

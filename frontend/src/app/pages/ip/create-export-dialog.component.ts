@@ -1,14 +1,14 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
-import { NetworkIpService, ModelsIPGroup } from '../../generated';
+import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
+import { NetworkIpService } from '../../generated';
 
 @Component({
   selector: 'app-create-export-dialog',
@@ -20,8 +20,8 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatIconModule,
+    DiscoverySelectComponent,
   ],
   template: `
     <h2 mat-dialog-title>新建导出配置</h2>
@@ -43,14 +43,14 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
           <mat-hint>可用变量: tags ([]string), cidr (string), ip (string). 示例: <code>"cn" in tags || cidr == "8.8.8.8/32"</code></mat-hint>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>依赖的数据池</mat-label>
-          <mat-select formControlName="groupIds" multiple required>
-            @for (pool of pools(); track pool.id) {
-              <mat-option [value]="pool.id">{{ pool.name }} ({{ pool.id }})</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+        <app-discovery-select
+          code="network/ip/pools"
+          label="依赖的数据池"
+          placeholder="搜索地址池..."
+          formControlName="groupIds"
+          [multiple]="true"
+          required
+        ></app-discovery-select>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -61,14 +61,13 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
     </mat-dialog-actions>
   `,
 })
-export class CreateExportDialogComponent implements OnInit {
+export class CreateExportDialogComponent {
   private fb = inject(FormBuilder);
   private ipService = inject(NetworkIpService);
   private dialogRef = inject(MatDialogRef<CreateExportDialogComponent>);
   private snackBar = inject(MatSnackBar);
 
   loading = signal(false);
-  pools = signal<ModelsIPGroup[]>([]);
 
   form = this.fb.group({
     name: ['', Validators.required],
@@ -76,12 +75,6 @@ export class CreateExportDialogComponent implements OnInit {
     rule: ['"cn" in tags', Validators.required],
     groupIds: [[] as string[], Validators.required],
   });
-
-  ngOnInit() {
-    this.ipService.networkIpPoolsGet(1, 1000).subscribe({
-      next: (res) => this.pools.set(res.items || []),
-    });
-  }
 
   submit() {
     if (this.form.invalid) return;
