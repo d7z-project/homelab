@@ -205,7 +205,9 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			return err
 		}
 
-		client := &http.Client{Timeout: 300 * time.Second}
+		client := &http.Client{Timeout: 300 * time.Second, Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+		}}
 		resp, err := client.Do(req)
 		if err != nil {
 			finalErr = err

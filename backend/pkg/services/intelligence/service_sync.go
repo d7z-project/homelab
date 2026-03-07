@@ -109,7 +109,9 @@ func (s *IntelligenceService) downloadFile(ctx context.Context, source *models.I
 		return err
 	}
 
-	client := &http.Client{Timeout: 300 * time.Second}
+	client := &http.Client{Timeout: 300 * time.Second, Transport: &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+	}}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
