@@ -28,13 +28,19 @@ var TempDir afero.Fs
 // UpdateGlobalVersion 更新指定模块的全局版本号
 func UpdateGlobalVersion(ctx context.Context, module string) int64 {
 	version := time.Now().UnixNano()
-	_ = DB.Child("system", "sync", "version").Put(ctx, module, strconv.FormatInt(version, 10), kv.TTLKeep)
+	parts := strings.Split(module, "/")
+	ns := append([]string{"system", "sync", "version"}, parts[:len(parts)-1]...)
+	key := parts[len(parts)-1]
+	_ = DB.Child(ns...).Put(ctx, key, strconv.FormatInt(version, 10), kv.TTLKeep)
 	return version
 }
 
 // GetGlobalVersion 获取指定模块的全局版本号
 func GetGlobalVersion(ctx context.Context, module string) int64 {
-	val, err := DB.Child("system", "sync", "version").Get(ctx, module)
+	parts := strings.Split(module, "/")
+	ns := append([]string{"system", "sync", "version"}, parts[:len(parts)-1]...)
+	key := parts[len(parts)-1]
+	val, err := DB.Child(ns...).Get(ctx, key)
 	if err != nil || val == "" {
 		return 0
 	}

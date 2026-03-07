@@ -393,6 +393,7 @@ func SiteRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/{id}/trigger", TriggerSiteExportHandler)
 			r.With(middlewares.RequirePermission("get", "network/site")).Get("/task/{taskId}", SiteExportTaskStatusHandler)
+			r.With(middlewares.RequirePermission("get", "network/site")).Get("/download/{taskId}", DownloadSiteExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/preview", PreviewSiteExportHandler)
 		})
 	})

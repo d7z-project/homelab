@@ -44,6 +44,21 @@ func NewIntelligenceService(mmdb *ip.MMDBManager) *IntelligenceService {
 		entries: make(map[string]cron.EntryID),
 	}
 	s.cron.Start()
+
+	// 集群事件: 其他节点更新了数据源时，本节点刷新 cron 调度
+	common.RegisterEventHandler("intelligence_source_update", func(ctx context.Context, sourceID string) {
+		src, err := repo.GetSource(ctx, sourceID)
+		if err != nil {
+			s.removeCronJob(sourceID)
+			return
+		}
+		s.updateCronJob(*src)
+	})
+
+	common.RegisterEventHandler("intelligence_source_delete", func(ctx context.Context, sourceID string) {
+		s.removeCronJob(sourceID)
+	})
+
 	return s
 }
 
@@ -121,6 +136,7 @@ func (s *IntelligenceService) CreateSource(ctx context.Context, source *models.I
 		return err
 	}
 	s.updateCronJob(*source)
+	common.NotifyCluster(ctx, "intelligence_source_update", source.ID)
 	return nil
 }
 
@@ -139,6 +155,7 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.I
 	}
 
 	s.updateCronJob(*source)
+	common.NotifyCluster(ctx, "intelligence_source_update", source.ID)
 	commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Name, "Success", true)
 	return nil
 }
@@ -152,6 +169,7 @@ func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error
 		return err
 	}
 	s.removeCronJob(id)
+	common.NotifyCluster(ctx, "intelligence_source_delete", id)
 	return nil
 }
 
@@ -207,7 +225,8 @@ func (s *IntelligenceService) runDownload(id string) {
 		source.Status = "Ready"
 		source.ErrorMessage = ""
 		source.LastUpdatedAt = time.Now()
-		_ = s.mmdb.Reload()
+		common.UpdateGlobalVersion(ctx, "network/intelligence/mmdb")
+		common.NotifyCluster(ctx, "mmdb_update", source.Type)
 	}
 
 	_ = repo.SaveSource(ctx, source)

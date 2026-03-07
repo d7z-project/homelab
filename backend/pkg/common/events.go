@@ -67,3 +67,10 @@ func StartEventLoop(ctx context.Context) {
 		}
 	}()
 }
+
+// GetEventHandlers returns registered handlers for a given event (used for testing).
+func GetEventHandlers(event string) []EventHandler {
+	eventHandlersMu.RLock()
+	defer eventHandlersMu.RUnlock()
+	return eventHandlers[event]
+}

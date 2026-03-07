@@ -97,11 +97,31 @@ type IPPoolService struct {
 }
 
 func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
-	return &IPPoolService{
+	svc := &IPPoolService{
 		mmdb:    mmdb,
 		cron:    cron.New(),
 		cronIDs: make(map[string]cron.EntryID),
 	}
+
+	// 集群事件: 其他节点更新了同步策略时，本节点刷新 cron 调度
+	common.RegisterEventHandler("ip_sync_policy_update", func(ctx context.Context, policyID string) {
+		policy, err := repo.GetSyncPolicy(ctx, policyID)
+		if err != nil {
+			svc.removeCronJob(policyID)
+			return
+		}
+		if policy.Enabled {
+			svc.addCronJob(*policy)
+		} else {
+			svc.removeCronJob(policyID)
+		}
+	})
+
+	common.RegisterEventHandler("ip_sync_policy_delete", func(ctx context.Context, policyID string) {
+		svc.removeCronJob(policyID)
+	})
+
+	return svc
 }
 
 func (s *IPPoolService) lockPool(ctx context.Context, id string) (func(), error) {
@@ -398,9 +418,7 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 
 	err = repo.SaveGroup(ctx, group)
 	if err == nil {
-		if s.analysisEngine != nil {
-			s.analysisEngine.RemoveCache(groupID)
-		}
+		notifyIPPoolUpdate(ctx, groupID)
 	}
 
 	actionName := "ManagePoolEntry"
@@ -726,6 +744,7 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPS
 	err := repo.SaveSyncPolicy(ctx, policy)
 	if err == nil && policy.Enabled {
 		s.addCronJob(*policy)
+		common.NotifyCluster(ctx, "ip_sync_policy_update", policy.ID)
 	}
 	commonaudit.FromContext(ctx).Log("CreateIPSyncPolicy", policy.Name, "Created", err == nil)
 	return err
@@ -748,6 +767,7 @@ func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *models.IPS
 		} else {
 			s.removeCronJob(policy.ID)
 		}
+		common.NotifyCluster(ctx, "ip_sync_policy_update", policy.ID)
 	}
 	commonaudit.FromContext(ctx).Log("UpdateIPSyncPolicy", policy.Name, "Updated", err == nil)
 	return err
@@ -761,6 +781,7 @@ func (s *IPPoolService) DeleteSyncPolicy(ctx context.Context, id string) error {
 	err = repo.DeleteSyncPolicy(ctx, id)
 	if err == nil {
 		s.removeCronJob(id)
+		common.NotifyCluster(ctx, "ip_sync_policy_delete", id)
 	}
 	commonaudit.FromContext(ctx).Log("DeleteIPSyncPolicy", old.Name, "Deleted", err == nil)
 	return err

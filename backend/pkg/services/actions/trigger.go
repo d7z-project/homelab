@@ -25,7 +25,24 @@ var GlobalTriggerManager = &TriggerManager{
 }
 
 func (m *TriggerManager) Start() {
+	m.registerClusterHandlers()
 	m.cron.Start()
+}
+
+func (m *TriggerManager) registerClusterHandlers() {
+	// 当其他节点创建/更新了工作流时，本节点也需要刷新 cron 调度
+	common.RegisterEventHandler("workflow_trigger_update", func(ctx context.Context, workflowID string) {
+		wf, err := repo.GetWorkflow(ctx, workflowID)
+		if err != nil {
+			return
+		}
+		m.UpdateTriggers(*wf)
+	})
+
+	// 当其他节点删除了工作流时，本节点也需要移除 cron 调度
+	common.RegisterEventHandler("workflow_trigger_delete", func(ctx context.Context, workflowID string) {
+		m.RemoveTriggers(workflowID)
+	})
 }
 
 func (m *TriggerManager) InitTriggers(ctx context.Context) error {

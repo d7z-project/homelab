@@ -1,6 +1,7 @@
 package ip
 
 import (
+	"context"
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
@@ -27,6 +28,12 @@ type MMDBManager struct {
 func NewMMDBManager() *MMDBManager {
 	m := &MMDBManager{}
 	_ = m.Reload() // 尝试初始加载
+
+	// 注册集群事件: 当任意节点更新了 MMDB 文件时，所有节点重新加载
+	common.RegisterEventHandler("mmdb_update", func(ctx context.Context, payload string) {
+		_ = m.Reload()
+	})
+
 	return m
 }
 
