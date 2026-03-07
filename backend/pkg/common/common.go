@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"net/http"
@@ -52,6 +53,28 @@ func GetGlobalVersion(ctx context.Context, module string) int64 {
 func NotifyCluster(ctx context.Context, event string, payload string) {
 	if Subscriber != nil {
 		_ = Subscriber.Publish(ctx, "homelab:cluster:events", event+":"+payload)
+	}
+}
+
+// LockWithTimeout 尝试获取分布式锁，带重试和超时机制
+func LockWithTimeout(ctx context.Context, lockKey string, timeout time.Duration) (func(), error) {
+	if Locker == nil {
+		return func() {}, nil // 单机模式或未配置锁，跳过逻辑
+	}
+	start := time.Now()
+	for {
+		release := Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		if timeout > 0 && time.Since(start) >= timeout {
+			return nil, fmt.Errorf("lock timeout: %s", lockKey)
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
 	}
 }
 
