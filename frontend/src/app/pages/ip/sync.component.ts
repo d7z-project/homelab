@@ -101,7 +101,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   // 是否有任何策略正在同步中
   anySyncing = computed(() =>
-    this.policies().some((p) => p.lastStatus === 'pending' || p.lastStatus === 'running'),
+    this.policies().some((p) => p.lastStatus === 'Pending' || p.lastStatus === 'Running'),
   );
 
   private refreshTimer?: any;

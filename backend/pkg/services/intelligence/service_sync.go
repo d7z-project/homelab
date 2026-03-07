@@ -25,7 +25,7 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 	existingTask, ok := s.tasks.GetTask(id)
 	if ok {
 		status := existingTask.GetStatus()
-		if status == "Pending" || status == "Running" {
+		if status == models.TaskStatusPending || status == models.TaskStatusRunning {
 			lockKey := "action:intelligence_sync:" + id
 			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
 				// 僵尸任务
@@ -38,13 +38,13 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 	}
 
 	task := &SyncTask{
-		ID:        id, // 这里使用 sourceID 作为 TaskID，确保同源唯一性
-		Status:    "Pending",
+		ID:        id,
+		Status:    models.TaskStatusPending,
 		CreatedAt: time.Now(),
 	}
 	s.tasks.AddTask(task)
 
-	source.Status = "Downloading"
+	source.Status = models.TaskStatusRunning
 	source.ErrorMessage = ""
 	_ = repo.SaveSource(ctx, source)
 
@@ -56,6 +56,7 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 
 func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 	s.tasks.RunTask(bgCtx, id, func(taskCtx context.Context, task *SyncTask) error {
+		source, err := repo.GetSource(taskCtx, id)
 		var finalErr error
 		defer func() {
 			// 这里必须使用 Background 因为 taskCtx 已经被 Cancel 了，如果用 taskCtx 会导致 DB 操作失败
@@ -64,20 +65,19 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 				return
 			}
 			if errors.Is(taskCtx.Err(), context.Canceled) {
-				source.Status = "Cancelled"
+				source.Status = models.TaskStatusCancelled
 				source.ErrorMessage = "Task cancelled manually"
 			} else if finalErr != nil {
-				source.Status = "Error"
+				source.Status = models.TaskStatusFailed
 				source.ErrorMessage = finalErr.Error()
 			} else {
-				source.Status = "Ready"
+				source.Status = models.TaskStatusSuccess
 				source.ErrorMessage = ""
 				source.LastUpdatedAt = time.Now()
 			}
 			_ = repo.SaveSource(context.Background(), source)
 		}()
 
-		source, err := repo.GetSource(taskCtx, id)
 		if err != nil || source == nil {
 			finalErr = fmt.Errorf("source not found")
 			return finalErr

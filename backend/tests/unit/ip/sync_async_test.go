@@ -65,7 +65,7 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 
 		// 验证状态立即变为 pending
 		p, _ := repo.GetSyncPolicy(ctx, policy.ID)
-		if p.LastStatus != "pending" {
+		if p.LastStatus != models.TaskStatusPending {
 			t.Errorf("Expected status pending, got %s", p.LastStatus)
 		}
 
@@ -92,7 +92,7 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 
 		// 此时数据库状态应该是 pending
 		p, _ := repo.GetSyncPolicy(ctx, policy.ID)
-		if p.LastStatus != "pending" {
+		if p.LastStatus != models.TaskStatusPending {
 			t.Fatalf("Policy should be in pending state, got %s", p.LastStatus)
 		}
 
@@ -105,7 +105,7 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 		// 循环等待因为它是被发配到后台执行的 goroutine
 		for i := 0; i < 20; i++ {
 			p, _ = repo.GetSyncPolicy(ctx, policy.ID)
-			if p.LastStatus != "pending" && p.LastStatus != "running" {
+			if p.LastStatus != models.TaskStatusPending && p.LastStatus != models.TaskStatusRunning {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -113,7 +113,7 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 
 		// 验证状态已更新（异步完成）
 		p, _ = repo.GetSyncPolicy(ctx, policy.ID)
-		if p.LastStatus == "pending" {
+		if p.LastStatus == models.TaskStatusPending {
 			t.Error("Status should have changed from pending after execution")
 		}
 

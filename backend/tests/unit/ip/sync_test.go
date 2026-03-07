@@ -36,7 +36,7 @@ func TestIPSyncLogic(t *testing.T) {
 		_ = service.Sync(ctx, id)
 		for i := 0; i < 50; i++ {
 			p, _ := service.GetSyncPolicy(ctx, id)
-			if p != nil && (p.LastStatus == "success" || p.LastStatus == "failed") {
+			if p != nil && (p.LastStatus == models.TaskStatusSuccess || p.LastStatus == models.TaskStatusFailed) {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -227,7 +227,7 @@ func TestIPSyncLogic(t *testing.T) {
 		// 稍微等等异步执行报错
 		time.Sleep(200 * time.Millisecond)
 		p, _ := service.GetSyncPolicy(ctx, "ssrf")
-		assert.Equal(t, "failed", p.LastStatus)
+		assert.Equal(t, models.TaskStatusFailed, p.LastStatus)
 		assert.Contains(t, p.ErrorMessage, "SSRF detected")
 	})
 }
@@ -244,14 +244,13 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 		_ = service.CreateSyncPolicy(ctx, policy)
 
 		// 模拟一个假装正在跑的任务（通过 TaskManager 直接注入）
-		task := &ip.SyncTask{ID: "zombie_p", Status: "Running", CreatedAt: time.Now()}
+		task := &ip.SyncTask{ID: "zombie_p", Status: models.TaskStatusRunning, CreatedAt: time.Now()}
 		service.GetSyncTasks().AddTask(task)
-
 		// 执行自愈
 		service.GetSyncTasks().Reconcile(ctx)
 
 		retrieved, _ := service.GetSyncTasks().GetTask("zombie_p")
-		assert.Equal(t, "Failed", retrieved.GetStatus())
+		assert.Equal(t, models.TaskStatusFailed, retrieved.GetStatus())
 		assert.Contains(t, retrieved.Error, "node failure")
 	})
 
@@ -287,7 +286,7 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 		// 等待进入 Running 状态
 		for i := 0; i < 50; i++ {
 			p, _ := service.GetSyncPolicy(ctx, "cancel_p")
-			if p.LastStatus == "running" {
+			if p.LastStatus == models.TaskStatusRunning {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -300,11 +299,11 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 		var pFinal *models.IPSyncPolicy
 		for i := 0; i < 50; i++ {
 			pFinal, _ = service.GetSyncPolicy(ctx, "cancel_p")
-			if pFinal.LastStatus == "cancelled" || pFinal.LastStatus == "failed" {
+			if pFinal.LastStatus == models.TaskStatusCancelled || pFinal.LastStatus == models.TaskStatusFailed {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
-		assert.Equal(t, "cancelled", pFinal.LastStatus)
+		assert.Equal(t, models.TaskStatusCancelled, pFinal.LastStatus)
 	})
 }

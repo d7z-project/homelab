@@ -25,25 +25,25 @@ import (
 )
 
 type ExportTask struct {
-	ID          string    `json:"id"`
-	Status      string    `json:"status"` // Pending, Running, Success, Failed, Cancelled
-	Progress    float64   `json:"progress"`
-	Format      string    `json:"format"`
-	ResultURL   string    `json:"resultUrl"`
-	Error       string    `json:"error"`
-	CreatedAt   time.Time `json:"createdAt"`
-	RecordCount int64     `json:"recordCount"`
-	Checksum    string    `json:"checksum"` // Rule + GroupChecksums + Format
+	ID          string            `json:"id"`
+	Status      models.TaskStatus `json:"status"` // Pending, Running, Success, Failed, Cancelled
+	Progress    float64           `json:"progress"`
+	Format      string            `json:"format"`
+	ResultURL   string            `json:"resultUrl"`
+	Error       string            `json:"error"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	RecordCount int64             `json:"recordCount"`
+	Checksum    string            `json:"checksum"` // Rule + GroupChecksums + Format
 	mu          sync.Mutex
 }
 
 func (t *ExportTask) GetID() string { return t.ID }
-func (t *ExportTask) GetStatus() string {
+func (t *ExportTask) GetStatus() models.TaskStatus {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.Status
 }
-func (t *ExportTask) SetStatus(status string) {
+func (t *ExportTask) SetStatus(status models.TaskStatus) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Status = status
@@ -75,15 +75,15 @@ func (t *ExportTask) MarshalJSON() ([]byte, error) {
 var _ models.TaskInfo = (*ExportTask)(nil)
 
 type ExportTaskDTO struct {
-	ID          string    `json:"id"`
-	Status      string    `json:"status"`
-	Progress    float64   `json:"progress"`
-	Format      string    `json:"format"`
-	ResultURL   string    `json:"resultUrl"`
-	Error       string    `json:"error"`
-	CreatedAt   time.Time `json:"createdAt"`
-	RecordCount int64     `json:"recordCount"`
-	Checksum    string    `json:"checksum"`
+	ID          string            `json:"id"`
+	Status      models.TaskStatus `json:"status"`
+	Progress    float64           `json:"progress"`
+	Format      string            `json:"format"`
+	ResultURL   string            `json:"resultUrl"`
+	Error       string            `json:"error"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	RecordCount int64             `json:"recordCount"`
+	Checksum    string            `json:"checksum"`
 }
 
 type ExportManager struct {
@@ -184,7 +184,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	tasks := m.core.RangeAll()
 	for _, t := range tasks {
 		t.mu.Lock()
-		match := t.Checksum == currentChecksum && t.Status == "Success"
+		match := t.Checksum == currentChecksum && t.Status == models.TaskStatusSuccess
 		tID := t.ID
 		tFormat := t.Format
 		t.mu.Unlock()
@@ -201,7 +201,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	for _, t := range tasks {
 		if strings.HasPrefix(t.ID, exportID+"-") {
 			status := t.GetStatus()
-			if status == "Pending" || status == "Running" {
+			if status == models.TaskStatusPending || status == models.TaskStatusRunning {
 				lockKey := "action:ip_export:" + t.ID
 				if release := common.Locker.TryLock(ctx, lockKey); release != nil {
 					m.core.CancelTask(t.ID)
@@ -216,7 +216,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	taskID := fmt.Sprintf("%s-%d", exportID, time.Now().UnixNano())
 	task := &ExportTask{
 		ID:        taskID,
-		Status:    "Pending",
+		Status:    models.TaskStatusPending,
 		Format:    format,
 		Checksum:  currentChecksum,
 		CreatedAt: time.Now(),

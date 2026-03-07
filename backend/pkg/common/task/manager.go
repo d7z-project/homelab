@@ -75,12 +75,12 @@ func (m *Manager[T]) Reconcile(ctx context.Context) {
 	changed := false
 	for _, t := range m.tasks {
 		status := t.GetStatus()
-		if status == "Running" || status == "Pending" {
+		if status == models.TaskStatusRunning || status == models.TaskStatusPending {
 			// 探测锁状态
 			lockKey := fmt.Sprintf("%s:%s", m.lockPrefix, t.GetID())
 			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
 				// 能拿到锁说明执行者已挂
-				t.SetStatus("Failed")
+				t.SetStatus(models.TaskStatusFailed)
 				t.SetError("Interrupted by system restart or node failure")
 				changed = true
 				release() // 主动释放探测锁
@@ -124,8 +124,9 @@ func (m *Manager[T]) CancelTask(id string) bool {
 
 	// 2. 将状态标记为 Cancelled 更新到底层 (异地节点依赖此状态探测)
 	if t, ok := m.tasks[id]; ok {
-		if t.GetStatus() == "Pending" || t.GetStatus() == "Running" {
-			t.SetStatus("Cancelled")
+		status := t.GetStatus()
+		if status == models.TaskStatusPending || status == models.TaskStatusRunning {
+			t.SetStatus(models.TaskStatusCancelled)
 			b, _ := json.Marshal(m.tasks)
 			_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 			return true
@@ -192,7 +193,7 @@ func (m *Manager[T]) Cleanup(maxAge time.Duration) {
 	for id, t := range m.tasks {
 		status := t.GetStatus()
 		createdAt := t.GetCreatedAt()
-		if now.Sub(createdAt) > maxAge && status != "Running" {
+		if now.Sub(createdAt) > maxAge && status != models.TaskStatusRunning {
 			if m.cleanupHook != nil {
 				m.cleanupHook(t)
 			}
@@ -245,12 +246,12 @@ func (m *Manager[T]) RunTask(ctx context.Context, id string, fn func(ctx context
 	defer release() //退出时自动释放锁
 
 	// 2. 状态检查（可能在排队阶段已被要求取消）
-	if t.GetStatus() == "Cancelled" {
+	if t.GetStatus() == models.TaskStatusCancelled {
 		m.Save()
 		return
 	}
 
-	t.SetStatus("Running")
+	t.SetStatus(models.TaskStatusRunning)
 	m.Save()
 
 	// 3. 构建可取消的上下文并注册到活跃表
@@ -268,7 +269,7 @@ func (m *Manager[T]) RunTask(ctx context.Context, id string, fn func(ctx context
 		m.mu.Unlock()
 
 		if r := recover(); r != nil {
-			t.SetStatus("Failed")
+			t.SetStatus(models.TaskStatusFailed)
 			t.SetError(fmt.Sprintf("panic: %v", r))
 			m.Save()
 		}
@@ -282,14 +283,14 @@ func (m *Manager[T]) RunTask(ctx context.Context, id string, fn func(ctx context
 	latestStatus := t.GetStatus() // 有可能其他协程调用 CancelTask 已经标记成了 Cancelled
 	m.mu.RUnlock()
 
-	if latestStatus == "Cancelled" || errors.Is(taskCtx.Err(), context.Canceled) {
-		t.SetStatus("Cancelled")
+	if latestStatus == models.TaskStatusCancelled || errors.Is(taskCtx.Err(), context.Canceled) {
+		t.SetStatus(models.TaskStatusCancelled)
 		t.SetError("Task cancelled manually")
 	} else if err != nil {
-		t.SetStatus("Failed")
+		t.SetStatus(models.TaskStatusFailed)
 		t.SetError(err.Error())
 	} else {
-		t.SetStatus("Success")
+		t.SetStatus(models.TaskStatusSuccess)
 	}
 	m.Save()
 }

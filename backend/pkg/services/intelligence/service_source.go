@@ -12,7 +12,7 @@ import (
 
 func (s *IntelligenceService) CreateSource(ctx context.Context, source *models.IntelligenceSource) error {
 	source.ID = uuid.NewString()
-	source.Status = "Ready"
+	source.Status = models.TaskStatusSuccess
 	if err := repo.SaveSource(ctx, source); err != nil {
 		return err
 	}

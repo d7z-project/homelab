@@ -73,7 +73,7 @@ interface StepState {
         </div>
 
         <div class="flex items-center gap-2">
-          @if (instance().status === 'Running') {
+          @if (instance().status === 'Running' || instance().status === 'Pending') {
             <button mat-button color="warn" (click)="cancel()" class="!rounded-full font-bold">
               停止执行
             </button>
@@ -303,7 +303,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     effect(() => {
       const current = this.currentRunningStep();
       const status = this.instance().status;
-      if (status === 'Running' && current >= 0 && this.autoScroll()) {
+      if ((status === 'Running' || status === 'Pending') && current >= 0 && this.autoScroll()) {
         this.expandStepOnly(current);
       }
     });
@@ -366,7 +366,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     if (status === 'Failed' || status === 'Cancelled') {
       const failedIdx = current >= 0 ? current : states.length - 1;
       if (states[failedIdx]) states[failedIdx].expanded = true;
-    } else if (status === 'Running' && current >= 0) {
+    } else if ((status === 'Running' || status === 'Pending') && current >= 0) {
       if (states[current]) states[current].expanded = true;
     }
 
@@ -413,7 +413,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
         for (const s of expanded) {
           await this.loadLogsForStep(s.index);
         }
-        if (updated.status !== 'Running') {
+        if (updated.status !== 'Running' && updated.status !== 'Pending') {
           this.pollingActive = false;
         }
       }
@@ -533,6 +533,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       case 'Failed':
         return 'error';
       case 'Running':
+      case 'Pending':
         return 'pending';
       case 'Cancelled':
         return 'cancel';
@@ -548,6 +549,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       case 'Failed':
         return '#f85149';
       case 'Running':
+      case 'Pending':
         return '#d29922';
       default:
         return '#8b949e';
@@ -563,7 +565,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       if (index < currentStep) return 'check_circle';
       return 'radio_button_unchecked';
     }
-    if (status === 'Running') {
+    if (status === 'Running' || status === 'Pending') {
       if (index === currentStep) return 'pending';
       if (index < currentStep) return 'check_circle';
       return 'radio_button_unchecked';

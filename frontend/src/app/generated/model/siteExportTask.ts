@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsTaskStatus } from './modelsTaskStatus';
 
 export interface SiteExportTask {
   createdAt?: string;
@@ -19,5 +20,6 @@ export interface SiteExportTask {
   /**
    * Pending, Running, Success, Failed, Cancelled
    */
-  status?: string;
+  status?: ModelsTaskStatus;
 }
+export namespace SiteExportTask {}

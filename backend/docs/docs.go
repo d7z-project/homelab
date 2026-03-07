@@ -5138,7 +5138,11 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "Pending, Running, Success, Failed, Cancelled",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TaskStatus"
+                        }
+                    ]
                 }
             }
         },
@@ -5491,7 +5495,11 @@ const docTemplate = `{
                 },
                 "lastStatus": {
                     "description": "\"success\", \"failed\"",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TaskStatus"
+                        }
+                    ]
                 },
                 "mode": {
                     "description": "\"overwrite\", \"append\"",
@@ -5543,7 +5551,11 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "Ready, Downloading, Error",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TaskStatus"
+                        }
+                    ]
                 },
                 "type": {
                     "description": "asn, city, country",
@@ -6163,7 +6175,11 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "Pending, Running, Success, Failed, Cancelled",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TaskStatus"
+                        }
+                    ]
                 },
                 "stepTimings": {
                     "description": "步骤执行耗时追踪",
@@ -6208,6 +6224,24 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "models.TaskStatus": {
+            "description": "任务执行状态: Pending(阻塞), Running(执行), Success(完成), Failed(失败), Cancelled(取消)",
+            "type": "string",
+            "enum": [
+                "Pending",
+                "Running",
+                "Success",
+                "Failed",
+                "Cancelled"
+            ],
+            "x-enum-varnames": [
+                "TaskStatusPending",
+                "TaskStatusRunning",
+                "TaskStatusSuccess",
+                "TaskStatusFailed",
+                "TaskStatusCancelled"
+            ]
         },
         "models.VarDefinition": {
             "type": "object",
@@ -6321,7 +6355,11 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "Pending, Running, Success, Failed, Cancelled",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TaskStatus"
+                        }
+                    ]
                 }
             }
         }

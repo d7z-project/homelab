@@ -16,7 +16,7 @@ type IntelligenceSource struct {
 	AutoUpdate    bool              `json:"autoUpdate"`
 	UpdateCron    string            `json:"cron"`
 	LastUpdatedAt time.Time         `json:"lastUpdatedAt"`
-	Status        string            `json:"status"` // Ready, Downloading, Error
+	Status        TaskStatus        `json:"status"` // Ready, Downloading, Error
 	ErrorMessage  string            `json:"errorMessage"`
 	Config        map[string]string `json:"config"`
 }

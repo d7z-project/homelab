@@ -67,6 +67,7 @@ model/modelsStepTiming.ts
 model/modelsTaskCleanupResponse.ts
 model/modelsTaskInstance.ts
 model/modelsTaskLogResponse.ts
+model/modelsTaskStatus.ts
 model/modelsVarDefinition.ts
 model/modelsWorkflow.ts
 model/networkDnsDomainsGet200Response.ts

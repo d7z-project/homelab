@@ -45,7 +45,10 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
     // Poll status every 5 seconds if any is downloading
     this.pollInterval = setInterval(() => {
       const data = this.sources();
-      if (Array.isArray(data) && data.some((s) => s.status === 'Downloading')) {
+      if (
+        Array.isArray(data) &&
+        data.some((s) => s.status === 'Running' || s.status === 'Pending')
+      ) {
         this.loadSources();
       }
     }, 5000);

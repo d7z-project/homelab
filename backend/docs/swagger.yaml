@@ -56,8 +56,9 @@ definitions:
       resultUrl:
         type: string
       status:
+        allOf:
+        - $ref: '#/definitions/models.TaskStatus'
         description: Pending, Running, Success, Failed, Cancelled
-        type: string
     type: object
   models.AuditCleanupResponse:
     properties:
@@ -295,8 +296,9 @@ definitions:
       lastRunAt:
         type: string
       lastStatus:
+        allOf:
+        - $ref: '#/definitions/models.TaskStatus'
         description: '"success", "failed"'
-        type: string
       mode:
         description: '"overwrite", "append"'
         type: string
@@ -330,8 +332,9 @@ definitions:
       name:
         type: string
       status:
+        allOf:
+        - $ref: '#/definitions/models.TaskStatus'
         description: Ready, Downloading, Error
-        type: string
       type:
         description: asn, city, country
         type: string
@@ -745,8 +748,9 @@ definitions:
       startedAt:
         type: string
       status:
+        allOf:
+        - $ref: '#/definitions/models.TaskStatus'
         description: Pending, Running, Success, Failed, Cancelled
-        type: string
       stepTimings:
         additionalProperties:
           $ref: '#/definitions/models.StepTiming'
@@ -777,6 +781,21 @@ definitions:
       nextOffset:
         type: integer
     type: object
+  models.TaskStatus:
+    description: '任务执行状态: Pending(阻塞), Running(执行), Success(完成), Failed(失败), Cancelled(取消)'
+    enum:
+    - Pending
+    - Running
+    - Success
+    - Failed
+    - Cancelled
+    type: string
+    x-enum-varnames:
+    - TaskStatusPending
+    - TaskStatusRunning
+    - TaskStatusSuccess
+    - TaskStatusFailed
+    - TaskStatusCancelled
   models.VarDefinition:
     properties:
       default:
@@ -855,8 +874,9 @@ definitions:
       resultUrl:
         type: string
       status:
+        allOf:
+        - $ref: '#/definitions/models.TaskStatus'
         description: Pending, Running, Success, Failed, Cancelled
-        type: string
     type: object
 info:
   contact: {}

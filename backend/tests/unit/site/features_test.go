@@ -126,14 +126,14 @@ func TestSiteExportManager(t *testing.T) {
 	// Wait for task
 	for i := 0; i < 50; i++ {
 		task := manager.GetTask(taskID)
-		if task != nil && task.Status == "Success" {
+		if task != nil && task.Status == models.TaskStatusSuccess {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
 
 	task := manager.GetTask(taskID)
-	assert.Equal(t, "Success", task.Status)
+	assert.Equal(t, models.TaskStatusSuccess, task.Status)
 	assert.NotEmpty(t, task.ResultURL)
 
 	// Verify content
@@ -147,7 +147,7 @@ func TestSiteExportManager(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		allDone := true
 		for _, task := range manager.ListTasks() {
-			if task.Status == "Running" || task.Status == "Pending" {
+			if task.Status == models.TaskStatusRunning || task.Status == models.TaskStatusPending {
 				allDone = false
 				break
 			}

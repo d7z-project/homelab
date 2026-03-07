@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsTaskStatus } from './modelsTaskStatus';
 
 export interface ModelsIPSyncPolicy {
   /**
@@ -27,7 +28,7 @@ export interface ModelsIPSyncPolicy {
   /**
    * \"success\", \"failed\"
    */
-  lastStatus?: string;
+  lastStatus?: ModelsTaskStatus;
   /**
    * \"overwrite\", \"append\"
    */
@@ -37,3 +38,4 @@ export interface ModelsIPSyncPolicy {
   targetGroupId?: string;
   updatedAt?: string;
 }
+export namespace ModelsIPSyncPolicy {}

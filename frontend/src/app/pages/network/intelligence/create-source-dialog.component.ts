@@ -8,7 +8,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { NetworkIntelligenceService, ModelsIntelligenceSource } from '../../../generated';
+import {
+  NetworkIntelligenceService,
+  ModelsIntelligenceSource,
+  ModelsTaskStatus,
+} from '../../../generated';
 
 @Component({
   selector: 'app-create-source-dialog',
@@ -143,7 +147,7 @@ export class CreateSourceDialogComponent implements OnInit {
       enabled: this.data ? this.data.enabled : true,
       autoUpdate: !!val.autoUpdate,
       cron: val.cron || '',
-      status: this.data ? this.data.status : 'Ready',
+      status: this.data ? this.data.status : ModelsTaskStatus.TaskStatusSuccess,
       lastUpdatedAt: this.data ? this.data.lastUpdatedAt : '0001-01-01T00:00:00Z',
       id: this.data ? this.data.id : '',
       errorMessage: this.data ? this.data.errorMessage : '',

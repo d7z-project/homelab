@@ -50,13 +50,13 @@ func TestIntelligenceService_Base(t *testing.T) {
 		var s *models.IntelligenceSource
 		for i := 0; i < 50; i++ {
 			s, _ = repo.GetSource(ctx, source.ID)
-			if s.Status == "Ready" || s.Status == "Error" {
+			if s.Status == models.TaskStatusSuccess || s.Status == models.TaskStatusFailed {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		assert.Equal(t, "Ready", s.Status, "Sync failed: "+s.ErrorMessage)
+		assert.Equal(t, models.TaskStatusSuccess, s.Status, "Sync failed: "+s.ErrorMessage)
 
 		// Verify file in VFS
 		exists, _ := afero.Exists(common.FS, ip.MMDBPathASN)
@@ -76,12 +76,12 @@ func TestIntelligenceService_Base(t *testing.T) {
 		var s *models.IntelligenceSource
 		for i := 0; i < 50; i++ {
 			s, _ = repo.GetSource(ctx, source.ID)
-			if s.Status == "Error" {
+			if s.Status == models.TaskStatusFailed {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
-		assert.Equal(t, "Error", s.Status)
+		assert.Equal(t, models.TaskStatusFailed, s.Status)
 		assert.Contains(t, s.ErrorMessage, "SSRF detected")
 	})
 }
@@ -95,13 +95,13 @@ func TestIntelligence_FrameworkIntegration(t *testing.T) {
 		source := &models.IntelligenceSource{ID: "zombie_src", Name: "Zombie"}
 		_ = service.CreateSource(ctx, source)
 
-		task := &intelligence.SyncTask{ID: "zombie_src", Status: "Running", CreatedAt: time.Now()}
+		task := &intelligence.SyncTask{ID: "zombie_src", Status: models.TaskStatusRunning, CreatedAt: time.Now()}
 		service.GetTasks().AddTask(task)
 
 		service.GetTasks().Reconcile(ctx)
 
 		retrieved, _ := service.GetTasks().GetTask("zombie_src")
-		assert.Equal(t, "Failed", retrieved.GetStatus())
+		assert.Equal(t, models.TaskStatusFailed, retrieved.GetStatus())
 	})
 
 	t.Run("Cancellation of Sync Task", func(t *testing.T) {
@@ -138,7 +138,7 @@ func TestIntelligence_FrameworkIntegration(t *testing.T) {
 		// 确保状态已经切到 Running
 		for i := 0; i < 50; i++ {
 			t, _ := service.GetTasks().GetTask(source.ID)
-			if t.GetStatus() == "Running" {
+			if t.GetStatus() == models.TaskStatusRunning {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -151,24 +151,24 @@ func TestIntelligence_FrameworkIntegration(t *testing.T) {
 		var tFinal models.TaskInfo
 		for i := 0; i < 50; i++ {
 			tf, _ := service.GetTasks().GetTask(source.ID)
-			if tf.GetStatus() == "Cancelled" {
+			if tf.GetStatus() == models.TaskStatusCancelled {
 				tFinal = tf
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 		assert.NotNil(t, tFinal)
-		assert.Equal(t, "Cancelled", tFinal.GetStatus())
+		assert.Equal(t, models.TaskStatusCancelled, tFinal.GetStatus())
 
 		// 验证 Source 状态
 		var sFinal *models.IntelligenceSource
 		for i := 0; i < 50; i++ {
 			sFinal, _ = repo.GetSource(ctx, source.ID)
-			if sFinal.Status == "Cancelled" {
+			if sFinal.Status == models.TaskStatusCancelled {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
-		assert.Equal(t, "Cancelled", sFinal.Status)
+		assert.Equal(t, models.TaskStatusCancelled, sFinal.Status)
 	})
 }

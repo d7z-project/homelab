@@ -112,7 +112,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 	existingTask, ok := s.syncTasks.GetTask(id)
 	if ok {
 		status := existingTask.GetStatus()
-		if status == "Pending" || status == "Running" {
+		if status == models.TaskStatusPending || status == models.TaskStatusRunning {
 			lockKey := "action:ip_sync:" + id
 			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
 				// 任务僵死：框架强制标记取消
@@ -126,12 +126,12 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 
 	task := &SyncTask{
 		ID:        id,
-		Status:    "Pending",
+		Status:    models.TaskStatusPending,
 		CreatedAt: time.Now(),
 	}
 	s.syncTasks.AddTask(task)
 
-	policy.LastStatus = "pending"
+	policy.LastStatus = models.TaskStatusPending
 	policy.LastRunAt = time.Now()
 	_ = repo.SaveSyncPolicy(ctx, policy)
 
@@ -164,7 +164,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			return finalErr
 		}
 
-		policy.LastStatus = "running"
+		policy.LastStatus = models.TaskStatusRunning
 		_ = repo.SaveSyncPolicy(taskCtx, policy)
 
 		defer func() {
@@ -173,13 +173,13 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			}
 			// 使用闭包捕获的命名返回值以确保最后的保存
 			if errors.Is(taskCtx.Err(), context.Canceled) {
-				policy.LastStatus = "cancelled"
+				policy.LastStatus = models.TaskStatusCancelled
 				policy.ErrorMessage = "Task cancelled manually"
 			} else if finalErr != nil {
-				policy.LastStatus = "failed"
+				policy.LastStatus = models.TaskStatusFailed
 				policy.ErrorMessage = finalErr.Error()
 			} else {
-				policy.LastStatus = "success"
+				policy.LastStatus = models.TaskStatusSuccess
 				policy.ErrorMessage = ""
 			}
 			policy.LastRunAt = time.Now()

@@ -51,6 +51,7 @@ export * from './modelsStepTiming';
 export * from './modelsTaskCleanupResponse';
 export * from './modelsTaskInstance';
 export * from './modelsTaskLogResponse';
+export * from './modelsTaskStatus';
 export * from './modelsVarDefinition';
 export * from './modelsWorkflow';
 export * from './networkDnsDomainsGet200Response';

@@ -162,16 +162,16 @@ func (p *WorkflowCallProcessor) Execute(ctx *actions.TaskContext, inputs map[str
 				return nil, fmt.Errorf("failed to poll sub-workflow status: %v", err)
 			}
 
-			if inst.Status != "Running" && inst.Status != "Pending" {
-				ctx.Logger.Logf("Sub-workflow %s finished with status: %s", instanceID, inst.Status)
+			if inst.Status != models.TaskStatusRunning && inst.Status != models.TaskStatusPending {
+				ctx.Logger.Logf("Sub-workflow %s finished with status: %s", instanceID, string(inst.Status))
 				outputs := map[string]string{
 					"instance_id": instanceID,
-					"status":      inst.Status,
+					"status":      string(inst.Status),
 				}
-				if inst.Status == "Success" {
+				if inst.Status == models.TaskStatusSuccess {
 					return outputs, nil
 				}
-				return outputs, fmt.Errorf("sub-workflow %s failed with status: %s", instanceID, inst.Status)
+				return outputs, fmt.Errorf("sub-workflow %s failed with status: %s", instanceID, string(inst.Status))
 			}
 		}
 	}

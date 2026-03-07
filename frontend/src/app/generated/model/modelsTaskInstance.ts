@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsTaskStatus } from './modelsTaskStatus';
 import { ModelsStep } from './modelsStep';
 import { ModelsLogEntry } from './modelsLogEntry';
 import { ModelsStepTiming } from './modelsStepTiming';
@@ -39,7 +40,7 @@ export interface ModelsTaskInstance {
   /**
    * Pending, Running, Success, Failed, Cancelled
    */
-  status?: string;
+  status?: ModelsTaskStatus;
   /**
    * 步骤执行耗时追踪
    */
@@ -59,3 +60,4 @@ export interface ModelsTaskInstance {
   workflowId?: string;
   workspace?: string;
 }
+export namespace ModelsTaskInstance {}

@@ -100,7 +100,7 @@ func TestIPExportManager(t *testing.T) {
 	// Wait for task to complete properly
 	for i := 0; i < 50; i++ {
 		task := manager.GetTask(taskID)
-		if task != nil && task.Status == "Success" {
+		if task != nil && task.Status == models.TaskStatusSuccess {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -108,7 +108,7 @@ func TestIPExportManager(t *testing.T) {
 
 	task := manager.GetTask(taskID)
 	assert.NotNil(t, task)
-	assert.Equal(t, "Success", task.Status)
+	assert.Equal(t, models.TaskStatusSuccess, task.Status)
 	assert.NotEmpty(t, task.ResultURL)
 
 	// Verify text output file exists
@@ -119,28 +119,28 @@ func TestIPExportManager(t *testing.T) {
 	// Trigger export (json)
 	taskIDJson, _ := manager.TriggerExport(ctx, "export1", "json")
 	for i := 0; i < 50; i++ {
-		if manager.GetTask(taskIDJson).Status == "Success" {
+		if manager.GetTask(taskIDJson).Status == models.TaskStatusSuccess {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	assert.True(t, manager.GetTask(taskIDJson).Status == "Success")
+	assert.True(t, manager.GetTask(taskIDJson).Status == models.TaskStatusSuccess)
 
 	// Trigger export (yaml)
 	taskIDYaml, _ := manager.TriggerExport(ctx, "export1", "yaml")
 	for i := 0; i < 50; i++ {
-		if manager.GetTask(taskIDYaml).Status == "Success" {
+		if manager.GetTask(taskIDYaml).Status == models.TaskStatusSuccess {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	assert.True(t, manager.GetTask(taskIDYaml).Status == "Success")
+	assert.True(t, manager.GetTask(taskIDYaml).Status == models.TaskStatusSuccess)
 
 	// Allow background saveTasks to complete before teardown
 	for i := 0; i < 50; i++ {
 		allDone := true
 		for _, task := range manager.ListTasks() {
-			if task.Status == "Running" || task.Status == "Pending" {
+			if task.Status == models.TaskStatusRunning || task.Status == models.TaskStatusPending {
 				allDone = false
 				break
 			}
@@ -253,7 +253,7 @@ func TestIPExportCancellation(t *testing.T) {
 	// 3. Wait for second task to complete
 	for i := 0; i < 50; i++ {
 		t := manager.GetTask(taskID2)
-		if t != nil && (t.Status == "Success" || t.Status == "Failed" || t.Status == "Cancelled") {
+		if t != nil && (t.Status == models.TaskStatusSuccess || t.Status == models.TaskStatusFailed || t.Status == models.TaskStatusCancelled) {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -264,7 +264,7 @@ func TestIPExportCancellation(t *testing.T) {
 
 	assert.NotNil(t, t1)
 	assert.NotNil(t, t2)
-	assert.Equal(t, "Cancelled", t1.Status)
+	assert.Equal(t, models.TaskStatusCancelled, t1.Status)
 
 	// Allow background saveTasks to finish
 	manager.WaitAll()
@@ -300,7 +300,7 @@ func TestIPExportManualCancellation(t *testing.T) {
 	// Wait for Running
 	for i := 0; i < 50; i++ {
 		t := manager.GetTask(taskID)
-		if t != nil && t.Status == "Running" {
+		if t != nil && t.Status == models.TaskStatusRunning {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -313,12 +313,12 @@ func TestIPExportManualCancellation(t *testing.T) {
 	// Wait for Cancelled
 	for i := 0; i < 50; i++ {
 		t := manager.GetTask(taskID)
-		if t != nil && (t.Status == "Cancelled" || t.Status == "Failed") {
+		if t != nil && (t.Status == models.TaskStatusCancelled || t.Status == models.TaskStatusFailed) {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	assert.Equal(t, "Cancelled", manager.GetTask(taskID).Status)
+	assert.Equal(t, models.TaskStatusCancelled, manager.GetTask(taskID).Status)
 	manager.WaitAll()
 }
 

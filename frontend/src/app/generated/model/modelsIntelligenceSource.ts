@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsTaskStatus } from './modelsTaskStatus';
 
 export interface ModelsIntelligenceSource {
   autoUpdate?: boolean;
@@ -20,10 +21,11 @@ export interface ModelsIntelligenceSource {
   /**
    * Ready, Downloading, Error
    */
-  status?: string;
+  status?: ModelsTaskStatus;
   /**
    * asn, city, country
    */
   type?: string;
   url?: string;
 }
+export namespace ModelsIntelligenceSource {}

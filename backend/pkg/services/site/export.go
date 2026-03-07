@@ -18,24 +18,24 @@ import (
 )
 
 type ExportTask struct {
-	ID          string    `json:"id"`
-	Status      string    `json:"status"` // Pending, Running, Success, Failed, Cancelled
-	Progress    float64   `json:"progress"`
-	Format      string    `json:"format"`
-	ResultURL   string    `json:"resultUrl"`
-	Error       string    `json:"error"`
-	CreatedAt   time.Time `json:"createdAt"`
-	RecordCount int64     `json:"recordCount"`
+	ID          string            `json:"id"`
+	Status      models.TaskStatus `json:"status"` // Pending, Running, Success, Failed, Cancelled
+	Progress    float64           `json:"progress"`
+	Format      string            `json:"format"`
+	ResultURL   string            `json:"resultUrl"`
+	Error       string            `json:"error"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	RecordCount int64             `json:"recordCount"`
 	mu          sync.Mutex
 }
 
 func (t *ExportTask) GetID() string { return t.ID }
-func (t *ExportTask) GetStatus() string {
+func (t *ExportTask) GetStatus() models.TaskStatus {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.Status
 }
-func (t *ExportTask) SetStatus(status string) {
+func (t *ExportTask) SetStatus(status models.TaskStatus) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Status = status
@@ -65,14 +65,14 @@ func (t *ExportTask) MarshalJSON() ([]byte, error) {
 var _ models.TaskInfo = (*ExportTask)(nil)
 
 type ExportTaskDTO struct {
-	ID          string    `json:"id"`
-	Status      string    `json:"status"`
-	Progress    float64   `json:"progress"`
-	Format      string    `json:"format"`
-	ResultURL   string    `json:"resultUrl"`
-	Error       string    `json:"error"`
-	CreatedAt   time.Time `json:"createdAt"`
-	RecordCount int64     `json:"recordCount"`
+	ID          string            `json:"id"`
+	Status      models.TaskStatus `json:"status"`
+	Progress    float64           `json:"progress"`
+	Format      string            `json:"format"`
+	ResultURL   string            `json:"resultUrl"`
+	Error       string            `json:"error"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	RecordCount int64             `json:"recordCount"`
 }
 
 type ExportManager struct {
@@ -160,7 +160,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	for _, t := range tasks {
 		if strings.HasPrefix(t.ID, exportID+"-") {
 			status := t.GetStatus()
-			if status == "Pending" || status == "Running" {
+			if status == models.TaskStatusPending || status == models.TaskStatusRunning {
 				lockKey := "action:site_export:" + t.ID
 				if release := common.Locker.TryLock(ctx, lockKey); release != nil {
 					toCancel = append(toCancel, t.ID)
@@ -179,7 +179,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	taskID := fmt.Sprintf("%s-%d", exportID, time.Now().UnixNano())
 	task := &ExportTask{
 		ID:        taskID,
-		Status:    "Pending",
+		Status:    models.TaskStatusPending,
 		Format:    format,
 		CreatedAt: time.Now(),
 	}

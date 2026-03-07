@@ -36,20 +36,20 @@ type IntelligenceService struct {
 }
 
 type SyncTask struct {
-	ID        string    `json:"id"`
-	Status    string    `json:"status"`
-	Error     string    `json:"error"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        string            `json:"id"`
+	Status    models.TaskStatus `json:"status"`
+	Error     string            `json:"error"`
+	CreatedAt time.Time         `json:"createdAt"`
 	mu        sync.Mutex
 }
 
 func (t *SyncTask) GetID() string { return t.ID }
-func (t *SyncTask) GetStatus() string {
+func (t *SyncTask) GetStatus() models.TaskStatus {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.Status
 }
-func (t *SyncTask) SetStatus(status string) {
+func (t *SyncTask) SetStatus(status models.TaskStatus) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Status = status
@@ -99,6 +99,18 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 	defer s.mu.Unlock()
 
 	s.tasks.Reconcile(ctx)
+	// 同步自愈后的任务状态到资源记录
+	for _, t := range s.tasks.RangeAll() {
+		status := t.GetStatus()
+		if status == models.TaskStatusFailed || status == models.TaskStatusCancelled {
+			src, err := repo.GetSource(ctx, t.GetID())
+			if err == nil && src.Status == "Downloading" {
+				src.Status = status
+				src.ErrorMessage = t.Error
+				_ = repo.SaveSource(ctx, src)
+			}
+		}
+	}
 
 	for i := range sources {
 		src := &sources[i]

@@ -28,7 +28,7 @@ type IPSyncPolicy struct {
 	CreatedAt     time.Time         `json:"createdAt"`
 	UpdatedAt     time.Time         `json:"updatedAt"`
 	LastRunAt     time.Time         `json:"lastRunAt"`
-	LastStatus    string            `json:"lastStatus"` // "success", "failed"
+	LastStatus    TaskStatus        `json:"lastStatus"` // "success", "failed"
 	ErrorMessage  string            `json:"errorMessage"`
 }
 

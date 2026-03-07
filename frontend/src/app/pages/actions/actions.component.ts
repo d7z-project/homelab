@@ -578,6 +578,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       case 'Failed':
         return 'bg-error/10 text-error border-error/20';
       case 'Running':
+      case 'Pending':
         return 'bg-primary/10 text-primary border-primary/20';
       case 'Cancelled':
         return 'bg-surface-container-high text-outline border-outline-variant/30';

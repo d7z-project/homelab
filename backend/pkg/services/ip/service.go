@@ -80,20 +80,20 @@ type IPPoolService struct {
 }
 
 type SyncTask struct {
-	ID        string    `json:"id"`
-	Status    string    `json:"status"`
-	Error     string    `json:"error"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        string            `json:"id"`
+	Status    models.TaskStatus `json:"status"`
+	Error     string            `json:"error"`
+	CreatedAt time.Time         `json:"createdAt"`
 	mu        sync.Mutex
 }
 
 func (t *SyncTask) GetID() string { return t.ID }
-func (t *SyncTask) GetStatus() string {
+func (t *SyncTask) GetStatus() models.TaskStatus {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.Status
 }
-func (t *SyncTask) SetStatus(status string) {
+func (t *SyncTask) SetStatus(status models.TaskStatus) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Status = status
@@ -188,6 +188,18 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 
 	// 1. 状态自愈 (Reconciliation) 使用全新框架接管
 	s.syncTasks.Reconcile(sysCtx)
+	for _, t := range s.syncTasks.RangeAll() {
+		status := t.GetStatus()
+		if status == models.TaskStatusFailed || status == models.TaskStatusCancelled {
+			p, err := repo.GetSyncPolicy(sysCtx, t.GetID())
+			if err == nil && (p.LastStatus == models.TaskStatusRunning || p.LastStatus == models.TaskStatusPending) {
+				p.LastStatus = status
+				p.ErrorMessage = t.Error
+				p.LastRunAt = time.Now()
+				_ = repo.SaveSyncPolicy(sysCtx, p)
+			}
+		}
+	}
 
 	// 然后调度启用的策略
 	policies, _, _ := repo.ListSyncPolicies(sysCtx, 1, 10000, "")
