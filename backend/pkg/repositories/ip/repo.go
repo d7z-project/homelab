@@ -6,7 +6,6 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"strings"
-	"sync"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -20,8 +19,6 @@ var (
 	groupListCache  *lru.Cache[string, []models.IPGroup]
 	exportListCache *lru.Cache[string, []models.IPExport]
 	policyListCache *lru.Cache[string, []models.IPSyncPolicy]
-	ipLastModified  time.Time
-	ipMu            sync.RWMutex
 )
 
 func init() {
@@ -31,19 +28,22 @@ func init() {
 	groupListCache, _ = lru.New[string, []models.IPGroup](16)
 	exportListCache, _ = lru.New[string, []models.IPExport](16)
 	policyListCache, _ = lru.New[string, []models.IPSyncPolicy](16)
-	ipLastModified = time.Now()
 }
 
 func updateLastModified() {
-	ipMu.Lock()
-	defer ipMu.Unlock()
-	ipLastModified = time.Now()
+	now := time.Now().Format(time.RFC3339)
+	_ = common.DB.Child("network", "ip").Put(context.Background(), "last_modified", now, kv.TTLKeep)
 }
 
 func GetLastModified() time.Time {
-	ipMu.RLock()
-	defer ipMu.RUnlock()
-	return ipLastModified
+	val, err := common.DB.Child("network", "ip").Get(context.Background(), "last_modified")
+	if err == nil && val != "" {
+		t, err := time.Parse(time.RFC3339, val)
+		if err == nil {
+			return t
+		}
+	}
+	return time.Time{}
 }
 
 // Group Repo

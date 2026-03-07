@@ -216,8 +216,8 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     }
   }
 
-  public onChange: (value: any) => void = () => { };
-  public onTouched: () => void = () => { };
+  public onChange: (value: any) => void = () => {};
+  public onTouched: () => void = () => {};
 
   ngOnInit() {
     // Register validator manually

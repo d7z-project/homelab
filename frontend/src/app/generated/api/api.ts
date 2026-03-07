@@ -16,4 +16,14 @@ export * from './networkSite.service';
 import { NetworkSiteService } from './networkSite.service';
 export * from './rbac.service';
 import { RbacService } from './rbac.service';
-export const APIS = [ActionsService, AuditService, AuthService, DiscoveryService, NetworkDnsService, NetworkIntelligenceService, NetworkIpService, NetworkSiteService, RbacService];
+export const APIS = [
+  ActionsService,
+  AuditService,
+  AuthService,
+  DiscoveryService,
+  NetworkDnsService,
+  NetworkIntelligenceService,
+  NetworkIpService,
+  NetworkSiteService,
+  RbacService,
+];

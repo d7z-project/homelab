@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 )
@@ -22,7 +23,21 @@ type AnalysisEngine struct {
 	mu    sync.RWMutex
 	cache *lru.Cache[string, *CompositeMatcher]
 	mmdb  *ip.MMDBManager
-	locks sync.Map // map[string]*sync.Mutex
+}
+
+func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error) {
+	lockKey := "network:site:matcher:build:" + id
+	for {
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
 }
 
 func NewAnalysisEngine(mmdb *ip.MMDBManager) *AnalysisEngine {
@@ -30,19 +45,25 @@ func NewAnalysisEngine(mmdb *ip.MMDBManager) *AnalysisEngine {
 	return &AnalysisEngine{cache: cache, mmdb: mmdb}
 }
 
-func (e *AnalysisEngine) getLock(groupID string) *sync.Mutex {
-	l, _ := e.locks.LoadOrStore(groupID, &sync.Mutex{})
-	return l.(*sync.Mutex)
-}
-
 func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*CompositeMatcher, error) {
 	if val, ok := e.cache.Get(groupID); ok {
 		return val, nil
 	}
 
-	mu := e.getLock(groupID)
-	mu.Lock()
-	defer mu.Unlock()
+	// 1. 本地重入锁
+	e.mu.Lock()
+	if val, ok := e.cache.Get(groupID); ok {
+		e.mu.Unlock()
+		return val, nil
+	}
+	e.mu.Unlock()
+
+	// 2. 分布式排队锁
+	release, err := e.lockPool(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 
 	if val, ok := e.cache.Get(groupID); ok {
 		return val, nil

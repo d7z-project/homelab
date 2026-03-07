@@ -407,7 +407,7 @@ export class IpComponent implements OnInit, OnDestroy {
     this.dialog.open(PreviewExportDialogComponent, {
       width: '900px',
       maxWidth: '95vw',
-      data: { type: 'ip', rule: '', groupIds: [] }
+      data: { type: 'ip', rule: '', groupIds: [] },
     });
   }
 }

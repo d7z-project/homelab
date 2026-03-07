@@ -164,9 +164,10 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               <td mat-cell *matCellDef="let element">
                 <div class="flex flex-wrap gap-1 py-2">
                   @for (t of element.tags; track t) {
-                    <span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-tight">{{
-                      t | uppercase
-                    }}</span>
+                    <span
+                      class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-tight"
+                      >{{ t | uppercase }}</span
+                    >
                   }
                 </div>
               </td>

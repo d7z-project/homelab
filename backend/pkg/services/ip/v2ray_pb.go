@@ -32,11 +32,11 @@ func BuildV2RayGeoIP(w io.Writer, groups map[string][]netip.Prefix) error {
 		// repeated cidr = 2
 		for _, p := range prefixes {
 			var cidrData []byte
-			
+
 			// ip = 1
 			cidrData = protowire.AppendTag(cidrData, 1, protowire.BytesType)
 			cidrData = protowire.AppendBytes(cidrData, p.Addr().AsSlice())
-			
+
 			// prefix = 2
 			cidrData = protowire.AppendTag(cidrData, 2, protowire.VarintType)
 			cidrData = protowire.AppendVarint(cidrData, uint64(p.Bits()))

@@ -1,38 +1,62 @@
 <div class="animate-in fade-in duration-500 pb-20">
   @if (loading() && pools().length === 0 && exports().length === 0) {
-  <div class="fixed inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+    <div
+      class="fixed inset-0 bg-surface/40 z-50 flex items-center justify-center backdrop-blur-[1px]"
+    >
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
   }
 
-  <mat-tab-group animationDuration="250ms" class="site-tabs-integrated" [selectedIndex]="selectedTabIndex()"
-    (selectedIndexChange)="onTabChange($event)">
+  <mat-tab-group
+    animationDuration="250ms"
+    class="site-tabs-integrated"
+    [selectedIndex]="selectedTabIndex()"
+    (selectedIndexChange)="onTabChange($event)"
+  >
     <!-- 域名池 Tab -->
     <mat-tab label="域名池">
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
-          <app-page-header title="域名资产池" subtitle="管理自定义域名黑白名单与分类规则" icon="view_list" [total]="poolTotal()" unit="个域名池"
-            [loading]="loading()" (refresh)="loadPools(true)">
+          <app-page-header
+            title="域名资产池"
+            subtitle="管理自定义域名黑白名单与分类规则"
+            icon="view_list"
+            [total]="poolTotal()"
+            unit="个域名池"
+            [loading]="loading()"
+            (refresh)="loadPools(true)"
+          >
             <div chips>
               @if (poolSearch()) {
-              <div
-                class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm">
-                <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
-                <span>正在搜索: "{{ poolSearch() }}"</span>
-                <button
-                  class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
-                  (click)="onPoolSearch('')" title="清除搜索">
-                  <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
-                </button>
-              </div>
+                <div
+                  class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
+                >
+                  <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
+                  <span>正在搜索: "{{ poolSearch() }}"</span>
+                  <button
+                    class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
+                    (click)="onPoolSearch('')"
+                    title="清除搜索"
+                  >
+                    <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
+                  </button>
+                </div>
               }
             </div>
           </app-page-header>
 
-          <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+          <div
+            class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
+          >
             <table mat-table [dataSource]="pools()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">池名称</th>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
+                  池名称
+                </th>
                 <td mat-cell *matCellDef="let element" class="py-4 text-center">
                   <div class="font-medium text-primary">{{ element.name }}</div>
                   <div class="text-[10px] text-outline font-mono opacity-60">{{ element.id }}</div>
@@ -40,50 +64,94 @@
               </ng-container>
 
               <ng-container matColumnDef="description">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">描述</th>
-                <td mat-cell *matCellDef="let element" class="text-sm text-outline text-center">{{ element.description
-                  || '-' }}</td>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
+                  描述
+                </th>
+                <td mat-cell *matCellDef="let element" class="text-sm text-outline text-center">
+                  {{ element.description || '-' }}
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="entryCount">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">条目数</th>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
+                  条目数
+                </th>
                 <td mat-cell *matCellDef="let element" class="text-center">
                   <span
-                    class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                    class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20"
+                  >
                     {{ element.entryCount }}
                   </span>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="updatedAt">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">更新时间</th>
-                <td mat-cell *matCellDef="let element" class="text-xs text-outline font-mono text-center">{{
-                  element.updatedAt | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
+                  更新时间
+                </th>
+                <td
+                  mat-cell
+                  *matCellDef="let element"
+                  class="text-xs text-outline font-mono text-center"
+                >
+                  {{ element.updatedAt | date: 'yyyy-MM-dd HH:mm:ss' }}
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-center bg-surface-container-low font-bold"
-                  style="width: 1px">操作</th>
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="text-center bg-surface-container-low font-bold"
+                  style="width: 1px"
+                >
+                  操作
+                </th>
                 <td mat-cell *matCellDef="let element" class="text-center">
                   <div class="flex justify-center gap-1">
                     <button mat-icon-button (click)="manageEntries(element)" matTooltip="管理数据">
-                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">list_alt</mat-icon>
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                        >list_alt</mat-icon
+                      >
                     </button>
-                    <button mat-icon-button color="warn" (click)="deletePool(element)" matTooltip="删除池">
-                      <mat-icon
-                        class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
+                    <button
+                      mat-icon-button
+                      color="warn"
+                      (click)="deletePool(element)"
+                      matTooltip="删除池"
+                    >
+                      <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                        >delete_outline</mat-icon
+                      >
                     </button>
                   </div>
                 </td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedPoolColumns()"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedPoolColumns()"
-                class="hover:bg-surface-container-low/50 transition-colors"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedPoolColumns()"
+                class="hover:bg-surface-container-low/50 transition-colors"
+              ></tr>
 
               <tr class="mat-mdc-row" *matNoDataRow>
-                <td class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
-                  [attr.colspan]="displayedPoolColumns().length">
+                <td
+                  class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
+                  [attr.colspan]="displayedPoolColumns().length"
+                >
                   没有找到域名池数据
                 </td>
               </tr>
@@ -97,29 +165,44 @@
     <mat-tab label="动态导出">
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-4">
-          <app-page-header title="动态导出" subtitle="基于表达式引擎实时过滤并生成 Site 规则列表" icon="import_export" [total]="exportTotal()"
-            unit="个导出配置" [loading]="loading()" (refresh)="loadExports(true)">
+          <app-page-header
+            title="动态导出"
+            subtitle="基于表达式引擎实时过滤并生成 Site 规则列表"
+            icon="import_export"
+            [total]="exportTotal()"
+            unit="个导出配置"
+            [loading]="loading()"
+            (refresh)="loadExports(true)"
+          >
             <div chips>
               @if (exportSearch()) {
-              <div
-                class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm">
-                <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
-                <span>正在搜索: "{{ exportSearch() }}"</span>
-                <button
-                  class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
-                  (click)="onExportSearch('')" title="清除搜索">
-                  <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
-                </button>
-              </div>
+                <div
+                  class="flex items-center gap-1.5 text-primary bg-primary/10 pl-3 pr-1.5 py-1 rounded-full border border-primary/20 animate-in zoom-in-95 group shadow-sm"
+                >
+                  <mat-icon class="!w-4 !h-4 !text-[14px]">filter_alt</mat-icon>
+                  <span>正在搜索: "{{ exportSearch() }}"</span>
+                  <button
+                    class="w-5 h-5 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 ml-1 cursor-pointer border-none p-0"
+                    (click)="onExportSearch('')"
+                    title="清除搜索"
+                  >
+                    <mat-icon class="!w-3 !h-3 !text-[12px] font-bold">close</mat-icon>
+                  </button>
+                </div>
               }
             </div>
           </app-page-header>
 
-
-          <div class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+          <div
+            class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
+          >
             <table mat-table [dataSource]="exports()" class="w-full bg-transparent">
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
                   配置名称
                 </th>
                 <td mat-cell *matCellDef="let element" class="py-4 text-center">
@@ -129,17 +212,27 @@
               </ng-container>
 
               <ng-container matColumnDef="rule">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
                   过滤规则 (go-expr)
                 </th>
                 <td mat-cell *matCellDef="let element" class="text-center">
                   <code
-                    class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-primary font-mono border border-outline-variant">{{ element.rule }}</code>
+                    class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-primary font-mono border border-outline-variant"
+                    >{{ element.rule }}</code
+                  >
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="updatedAt">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold text-center">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-surface-container-low font-bold text-center"
+                >
                   更新时间
                 </th>
                 <td mat-cell *matCellDef="let element" class="text-center">
@@ -150,69 +243,95 @@
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-center bg-surface-container-low font-bold"
-                  style="width: 1px">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="text-center bg-surface-container-low font-bold"
+                  style="width: 1px"
+                >
                   操作
                 </th>
                 <td mat-cell *matCellDef="let element" class="text-center">
                   <div class="flex justify-center gap-1">
                     @if (!isHandset()) {
-                    <button mat-icon-button [matMenuTriggerFor]="formatMenu" matTooltip="立即导出">
-                      <mat-icon
-                        class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">play_circle_outline</mat-icon>
-                    </button>
-                    <mat-menu #formatMenu="matMenu">
-                      <button mat-menu-item (click)="triggerExport(element, 'text')">
-                        <mat-icon>text_snippet</mat-icon>
-                        <span>文本格式 (.txt)</span>
+                      <button
+                        mat-icon-button
+                        [matMenuTriggerFor]="formatMenu"
+                        matTooltip="立即导出"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >play_circle_outline</mat-icon
+                        >
                       </button>
-                      <button mat-menu-item (click)="triggerExport(element, 'json')">
-                        <mat-icon>data_object</mat-icon>
-                        <span>JSON 格式</span>
-                      </button>
-                      <button mat-menu-item (click)="triggerExport(element, 'yaml')">
-                        <mat-icon>list_alt</mat-icon>
-                        <span>YAML 格式</span>
-                      </button>
-                    </mat-menu>
+                      <mat-menu #formatMenu="matMenu">
+                        <button mat-menu-item (click)="triggerExport(element, 'text')">
+                          <mat-icon>text_snippet</mat-icon>
+                          <span>文本格式 (.txt)</span>
+                        </button>
+                        <button mat-menu-item (click)="triggerExport(element, 'json')">
+                          <mat-icon>data_object</mat-icon>
+                          <span>JSON 格式</span>
+                        </button>
+                        <button mat-menu-item (click)="triggerExport(element, 'yaml')">
+                          <mat-icon>list_alt</mat-icon>
+                          <span>YAML 格式</span>
+                        </button>
+                      </mat-menu>
 
-                    <button mat-icon-button color="warn" (click)="deleteExport(element)" matTooltip="删除配置">
-                      <mat-icon
-                        class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center">delete_outline</mat-icon>
-                    </button>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="deleteExport(element)"
+                        matTooltip="删除配置"
+                      >
+                        <mat-icon class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                          >delete_outline</mat-icon
+                        >
+                      </button>
                     } @else {
-                    <button mat-icon-button [matMenuTriggerFor]="exportMenu">
-                      <mat-icon>more_vert</mat-icon>
-                    </button>
-                    <mat-menu #exportMenu="matMenu">
-                      <ng-template matMenuContent>
-                        <button mat-menu-item [matMenuTriggerFor]="formatMenuMobile">
-                          <mat-icon>play_circle_outline</mat-icon>
-                          <span>立即导出</span>
-                        </button>
-                        <mat-menu #formatMenuMobile="matMenu">
-                          <button mat-menu-item (click)="triggerExport(element, 'text')">文本 (.txt)</button>
-                          <button mat-menu-item (click)="triggerExport(element, 'json')">JSON</button>
-                          <button mat-menu-item (click)="triggerExport(element, 'yaml')">YAML</button>
-                        </mat-menu>
-                        <button mat-menu-item (click)="deleteExport(element)">
-                          <mat-icon color="warn">delete_outline</mat-icon>
-                          <span class="text-error">删除配置</span>
-                        </button>
-                      </ng-template>
-                    </mat-menu>
+                      <button mat-icon-button [matMenuTriggerFor]="exportMenu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #exportMenu="matMenu">
+                        <ng-template matMenuContent>
+                          <button mat-menu-item [matMenuTriggerFor]="formatMenuMobile">
+                            <mat-icon>play_circle_outline</mat-icon>
+                            <span>立即导出</span>
+                          </button>
+                          <mat-menu #formatMenuMobile="matMenu">
+                            <button mat-menu-item (click)="triggerExport(element, 'text')">
+                              文本 (.txt)
+                            </button>
+                            <button mat-menu-item (click)="triggerExport(element, 'json')">
+                              JSON
+                            </button>
+                            <button mat-menu-item (click)="triggerExport(element, 'yaml')">
+                              YAML
+                            </button>
+                          </mat-menu>
+                          <button mat-menu-item (click)="deleteExport(element)">
+                            <mat-icon color="warn">delete_outline</mat-icon>
+                            <span class="text-error">删除配置</span>
+                          </button>
+                        </ng-template>
+                      </mat-menu>
                     }
                   </div>
                 </td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedExportColumns()"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedExportColumns()"
-                class="hover:bg-surface-container-low/50 transition-colors"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedExportColumns()"
+                class="hover:bg-surface-container-low/50 transition-colors"
+              ></tr>
 
               <tr class="mat-mdc-row" *matNoDataRow>
-                <td class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
-                  [attr.colspan]="displayedExportColumns().length">
+                <td
+                  class="mat-mdc-cell py-12 text-center text-outline opacity-40 italic"
+                  [attr.colspan]="displayedExportColumns().length"
+                >
                   没有找到导出配置
                 </td>
               </tr>
@@ -226,97 +345,125 @@
     <mat-tab label="命中分析">
       <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
         <div class="max-w-3xl mx-auto space-y-6">
-          <app-page-header title="域名命中推演" subtitle="验证特定域名在当前规则库下的匹配结果" icon="psychology"></app-page-header>
+          <app-page-header
+            title="域名命中推演"
+            subtitle="验证特定域名在当前规则库下的匹配结果"
+            icon="psychology"
+          ></app-page-header>
 
           <div class="bg-surface border border-outline-variant rounded-3xl p-6 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row gap-4 items-start">
               <mat-form-field appearance="outline" class="flex-1 w-full">
                 <mat-label>输入要测试的域名</mat-label>
-                <input matInput [(ngModel)]="analysisDomain" placeholder="例如: www.google.com"
-                  (keyup.enter)="runAnalysis()" />
+                <input
+                  matInput
+                  [(ngModel)]="analysisDomain"
+                  placeholder="例如: www.google.com"
+                  (keyup.enter)="runAnalysis()"
+                />
                 <mat-icon matPrefix class="mr-2">language</mat-icon>
               </mat-form-field>
 
-              <button mat-flat-button color="primary" class="h-[56px] px-8 !rounded-2xl"
-                [disabled]="!analysisDomain() || loading()" (click)="runAnalysis()">
+              <button
+                mat-flat-button
+                color="primary"
+                class="h-[56px] px-8 !rounded-2xl"
+                [disabled]="!analysisDomain() || loading()"
+                (click)="runAnalysis()"
+              >
                 @if (loading()) {
-                <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                  <mat-spinner diameter="20" class="mr-2"></mat-spinner>
                 } @else {
-                <mat-icon class="mr-2">bolt</mat-icon>
+                  <mat-icon class="mr-2">bolt</mat-icon>
                 }
                 立即分析
               </button>
             </div>
 
             @if (analysisResult()) {
-            <div class="animate-in fade-in zoom-in-95 duration-300 border rounded-2xl p-6"
-              [class.bg-green-50]="analysisResult()?.matched" [class.border-green-200]="analysisResult()?.matched"
-              [class.bg-surface-container-low]="!analysisResult()?.matched"
-              [class.border-outline-variant]="!analysisResult()?.matched">
-              <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
-                  [class.bg-green-100]="analysisResult()?.matched" [class.text-green-700]="analysisResult()?.matched"
-                  [class.bg-outline-variant/20]="!analysisResult()?.matched"
-                  [class.text-outline]="!analysisResult()?.matched">
-                  <mat-icon>{{
-                    analysisResult()?.matched ? 'check_circle' : 'help_outline'
+              <div
+                class="animate-in fade-in zoom-in-95 duration-300 border rounded-2xl p-6"
+                [class.bg-green-50]="analysisResult()?.matched"
+                [class.border-green-200]="analysisResult()?.matched"
+                [class.bg-surface-container-low]="!analysisResult()?.matched"
+                [class.border-outline-variant]="!analysisResult()?.matched"
+              >
+                <div class="flex items-start gap-4">
+                  <div
+                    class="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                    [class.bg-green-100]="analysisResult()?.matched"
+                    [class.text-green-700]="analysisResult()?.matched"
+                    [class.bg-outline-variant/20]="!analysisResult()?.matched"
+                    [class.text-outline]="!analysisResult()?.matched"
+                  >
+                    <mat-icon>{{
+                      analysisResult()?.matched ? 'check_circle' : 'help_outline'
                     }}</mat-icon>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h4 class="text-lg font-bold mb-1">
-                    {{ analysisResult()?.matched ? '分析命中' : '未命中规则' }}
-                  </h4>
-                  <p class="text-sm opacity-70 mb-4">
-                    {{
-                    analysisResult()?.matched
-                    ? '该域名已被现有规则库捕获'
-                    : '该域名在当前库中无匹配项'
-                    }}
-                  </p>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-lg font-bold mb-1">
+                      {{ analysisResult()?.matched ? '分析命中' : '未命中规则' }}
+                    </h4>
+                    <p class="text-sm opacity-70 mb-4">
+                      {{
+                        analysisResult()?.matched
+                          ? '该域名已被现有规则库捕获'
+                          : '该域名在当前库中无匹配项'
+                      }}
+                    </p>
 
-                  @if (analysisResult()?.matched) {
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                    <div class="p-3 bg-white/50 rounded-xl border border-black/5">
-                      <div class="text-[10px] uppercase font-bold opacity-50 mb-1">匹配模式</div>
-                      <code class="text-sm font-mono font-bold text-primary">{{
+                    @if (analysisResult()?.matched) {
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                        <div class="p-3 bg-white/50 rounded-xl border border-black/5">
+                          <div class="text-[10px] uppercase font-bold opacity-50 mb-1">
+                            匹配模式
+                          </div>
+                          <code class="text-sm font-mono font-bold text-primary">{{
                             analysisResult()?.pattern
                           }}</code>
-                    </div>
-                    <div class="p-3 bg-white/50 rounded-xl border border-black/5">
-                      <div class="text-[10px] uppercase font-bold opacity-50 mb-1">规则类型</div>
-                      <span class="text-sm font-bold">
-                        @switch (analysisResult()?.ruleType) {
-                        @case (0) {
-                        Keyword
-                        }
-                        @case (1) {
-                        Regexp
-                        }
-                        @case (2) {
-                        Domain
-                        }
-                        @case (3) {
-                        Full
-                        }
-                        }
-                      </span>
-                    </div>
-                  </div>
+                        </div>
+                        <div class="p-3 bg-white/50 rounded-xl border border-black/5">
+                          <div class="text-[10px] uppercase font-bold opacity-50 mb-1">
+                            规则类型
+                          </div>
+                          <span class="text-sm font-bold">
+                            @switch (analysisResult()?.ruleType) {
+                              @case (0) {
+                                Keyword
+                              }
+                              @case (1) {
+                                Regexp
+                              }
+                              @case (2) {
+                                Domain
+                              }
+                              @case (3) {
+                                Full
+                              }
+                            }
+                          </span>
+                        </div>
+                      </div>
 
-                  <div class="flex flex-wrap gap-1.5 mt-2">
-                    @for (t of analysisResult()?.tags; track t) {
-                    <span class="px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tighter"
-                      [class.bg-primary/10]="!t.startsWith('_')" [class.border-primary/20]="!t.startsWith('_')"
-                      [class.text-primary]="!t.startsWith('_')" [class.bg-surface-container-high]="t.startsWith('_')"
-                      [class.text-outline]="t.startsWith('_')" [class.border-outline-variant]="t.startsWith('_')">
-                      {{ t | uppercase }}
-                    </span>
+                      <div class="flex flex-wrap gap-1.5 mt-2">
+                        @for (t of analysisResult()?.tags; track t) {
+                          <span
+                            class="px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tighter"
+                            [class.bg-primary/10]="!t.startsWith('_')"
+                            [class.border-primary/20]="!t.startsWith('_')"
+                            [class.text-primary]="!t.startsWith('_')"
+                            [class.bg-surface-container-high]="t.startsWith('_')"
+                            [class.text-outline]="t.startsWith('_')"
+                            [class.border-outline-variant]="t.startsWith('_')"
+                          >
+                            {{ t | uppercase }}
+                          </span>
+                        }
+                      </div>
                     }
                   </div>
-                  }
                 </div>
               </div>
-            </div>
             }
           </div>
         </div>
@@ -328,66 +475,85 @@
   <div class="fixed bottom-8 right-8 z-50 flex flex-col gap-4 items-end">
     <!-- Preview FAB (Only for Dynamic Export Tab) -->
     @if (selectedTabIndex() === 1) {
-    <button mat-fab [extended]="!isHandset()" color="tertiary" (click)="previewExport()"
-      class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-5"
-      matTooltip="计算预览工具">
-      <mat-icon>science</mat-icon>
-      @if (!isHandset()) {
-      <span class="ml-2 font-medium">计算预览</span>
-      }
-    </button>
+      <button
+        mat-fab
+        [extended]="!isHandset()"
+        color="tertiary"
+        (click)="previewExport()"
+        class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-5"
+        matTooltip="计算预览工具"
+      >
+        <mat-icon>science</mat-icon>
+        @if (!isHandset()) {
+          <span class="ml-2 font-medium">计算预览</span>
+        }
+      </button>
     }
 
     <!-- Export History FAB (Only for Dynamic Export Tab) -->
     @if (selectedTabIndex() === 1) {
-    <button mat-fab [extended]="!isHandset()" color="secondary" (click)="openTasks()"
-      class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-3"
-      matTooltip="查看导出历史">
-      <mat-icon>history</mat-icon>
-      @if (!isHandset()) {
-      <span class="ml-2 font-medium">导出任务</span>
-      }
-    </button>
+      <button
+        mat-fab
+        [extended]="!isHandset()"
+        color="secondary"
+        (click)="openTasks()"
+        class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-3"
+        matTooltip="查看导出历史"
+      >
+        <mat-icon>history</mat-icon>
+        @if (!isHandset()) {
+          <span class="ml-2 font-medium">导出任务</span>
+        }
+      </button>
     }
 
     <!-- Search FAB -->
-    <button mat-fab [extended]="!isHandset()" [color]="hasSearchContent() ? 'tertiary' : 'secondary'"
+    <button
+      mat-fab
+      [extended]="!isHandset()"
+      [color]="hasSearchContent() ? 'tertiary' : 'secondary'"
       (click)="uiService.searchConfig() ? uiService.closeSearch() : openSearch()"
-      class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-2">
+      class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-2"
+    >
       <mat-icon>{{
         uiService.searchConfig()
-        ? hasSearchContent()
-        ? 'filter_alt_off'
-        : 'close'
-        : hasSearchContent()
-        ? 'filter_alt'
-        : 'search'
-        }}</mat-icon>
+          ? hasSearchContent()
+            ? 'filter_alt_off'
+            : 'close'
+          : hasSearchContent()
+            ? 'filter_alt'
+            : 'search'
+      }}</mat-icon>
       @if (!isHandset()) {
-      <span class="ml-2 font-medium">{{
-        hasSearchContent()
-        ? uiService.searchConfig()
-        ? '清除搜索'
-        : '正在筛选'
-        : uiService.searchConfig()
-        ? '收起搜索'
-        : '搜索内容'
+        <span class="ml-2 font-medium">{{
+          hasSearchContent()
+            ? uiService.searchConfig()
+              ? '清除搜索'
+              : '正在筛选'
+            : uiService.searchConfig()
+              ? '收起搜索'
+              : '搜索内容'
         }}</span>
       }
     </button>
 
     <!-- Action FAB -->
     @if (fabConfig()) {
-    <button mat-fab [extended]="!isHandset()" [color]="showScrollTop() ? 'tertiary' : 'primary'"
-      (click)="showScrollTop() ? scrollToTop() : fabConfig()?.action()" [disabled]="loading()"
-      class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4">
-      <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig()?.icon }}</mat-icon>
-      @if (!isHandset()) {
-      <span class="ml-2 font-medium">{{
-        showScrollTop() ? '回到顶部' : fabConfig()?.label
-        }}</span>
-      }
-    </button>
+      <button
+        mat-fab
+        [extended]="!isHandset()"
+        [color]="showScrollTop() ? 'tertiary' : 'primary'"
+        (click)="showScrollTop() ? scrollToTop() : fabConfig()?.action()"
+        [disabled]="loading()"
+        class="!rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
+      >
+        <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig()?.icon }}</mat-icon>
+        @if (!isHandset()) {
+          <span class="ml-2 font-medium">{{
+            showScrollTop() ? '回到顶部' : fabConfig()?.label
+          }}</span>
+        }
+      </button>
     }
   </div>
 </div>

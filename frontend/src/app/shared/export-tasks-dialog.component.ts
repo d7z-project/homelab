@@ -38,12 +38,18 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
 
     <mat-dialog-content class="!p-0 min-h-[400px]">
       <div class="px-6 py-4 border-b border-outline-variant/30 sticky top-0 z-10 bg-surface">
-        <mat-form-field appearance="outline" class="w-full search-field-m3" subscriptSizing="dynamic">
+        <mat-form-field
+          appearance="outline"
+          class="w-full search-field-m3"
+          subscriptSizing="dynamic"
+        >
           <mat-label>搜索任务 ID 或状态...</mat-label>
           <input matInput [(ngModel)]="search" placeholder="输入关键字过滤..." />
           <mat-icon matPrefix class="mr-2 opacity-60">search</mat-icon>
           @if (search()) {
-            <button mat-icon-button matSuffix (click)="search.set('')"><mat-icon>close</mat-icon></button>
+            <button mat-icon-button matSuffix (click)="search.set('')">
+              <mat-icon>close</mat-icon>
+            </button>
           }
         </mat-form-field>
       </div>
@@ -54,7 +60,10 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
             <div class="flex items-start justify-between gap-4 mb-2">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="font-mono text-sm font-bold truncate max-w-[200px]" [matTooltip]="task.ID">
+                  <span
+                    class="font-mono text-sm font-bold truncate max-w-[200px]"
+                    [matTooltip]="task.ID"
+                  >
                     {{ task.ID }}
                   </span>
                   <span
@@ -80,7 +89,8 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
                   <div class="flex items-center gap-1 font-bold uppercase">
                     <mat-icon class="!w-4 !h-4 !text-[16px]">description</mat-icon>
                     <span>{{ task.Format | uppercase }}</span>
-                  </div>                  <div class="flex items-center gap-1 font-mono font-medium">
+                  </div>
+                  <div class="flex items-center gap-1 font-mono font-medium">
                     <mat-icon class="!w-4 !h-4 !text-[16px]">data_array</mat-icon>
                     <span>{{ task.RecordCount || 0 }} 条数据</span>
                   </div>
@@ -139,12 +149,11 @@ import { firstValueFrom, interval, Subscription } from 'rxjs';
     </mat-dialog-content>
 
     <div mat-dialog-actions align="end" class="!px-6 !py-4 border-t border-outline-variant/30">
-      <div class="flex-1 text-xs text-outline text-left italic">
-        任务将在 24 小时后自动清理
-      </div>
+      <div class="flex-1 text-xs text-outline text-left italic">任务将在 24 小时后自动清理</div>
       <button mat-button mat-dialog-close class="px-6 !rounded-xl">关闭</button>
     </div>
-  `,  styles: [
+  `,
+  styles: [
     `
       :host {
         display: block;
@@ -197,7 +206,7 @@ export class ExportTasksDialogComponent implements OnInit, OnDestroy {
 
   constructor(
     public dialogRef: MatDialogRef<ExportTasksDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { type: 'ip' | 'site' }
+    @Inject(MAT_DIALOG_DATA) public data: { type: 'ip' | 'site' },
   ) {
     this.type = data.type;
   }

@@ -268,7 +268,7 @@ func TestIPExportCancellation(t *testing.T) {
 	assert.NotNil(t, t1)
 	assert.NotNil(t, t2)
 	assert.Equal(t, "Cancelled", t1.Status)
-	
+
 	// Allow background saveTasks to finish
 	manager.WaitAll()
 }

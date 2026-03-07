@@ -151,6 +151,21 @@ func init() {
 	})
 }
 
+func lockDomain(ctx context.Context, id string) (func(), error) {
+	lockKey := "network:dns:domain:" + id
+	for {
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+}
+
 // Domain Service
 
 func ListDomains(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
@@ -309,6 +324,13 @@ func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, e
 	if err != nil {
 		return nil, errors.New("domain not found")
 	}
+
+	release, err := lockDomain(ctx, dom.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
 	resource := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, record.Name, record.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
@@ -342,6 +364,12 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 	if dom == nil {
 		return nil, errors.New("domain not found")
 	}
+
+	release, err := lockDomain(ctx, dom.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 
 	resOld := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
 	resNew := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, record.Name, record.Type)
@@ -386,6 +414,13 @@ func DeleteRecord(ctx context.Context, id string) error {
 	if dom == nil {
 		return errors.New("domain not found")
 	}
+
+	release, err := lockDomain(ctx, dom.ID)
+	if err != nil {
+		return err
+	}
+	defer release()
+
 	resource := fmt.Sprintf("network/dns/%s/%s/%s", dom.Name, existing.Name, existing.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)

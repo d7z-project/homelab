@@ -17,7 +17,6 @@ var (
 	recordCache     *lru.Cache[string, *models.Record]
 	domainListCache *lru.Cache[string, []models.Domain]
 	recordListCache *lru.Cache[string, []models.Record]
-	dnsLastModified time.Time
 )
 
 func init() {
@@ -25,11 +24,17 @@ func init() {
 	recordCache, _ = lru.New[string, *models.Record](2048)
 	domainListCache, _ = lru.New[string, []models.Domain](16)
 	recordListCache, _ = lru.New[string, []models.Record](128)
-	dnsLastModified = time.Now()
 }
 
 func GetLastModified() time.Time {
-	return dnsLastModified
+	val, err := common.DB.Child("network", "dns").Get(context.Background(), "last_modified")
+	if err == nil && val != "" {
+		t, err := time.Parse(time.RFC3339, val)
+		if err == nil {
+			return t
+		}
+	}
+	return time.Time{}
 }
 
 func ClearCache() {
@@ -37,11 +42,12 @@ func ClearCache() {
 	recordCache.Purge()
 	domainListCache.Purge()
 	recordListCache.Purge()
-	dnsLastModified = time.Now()
+	updateLastModified()
 }
 
 func updateLastModified() {
-	dnsLastModified = time.Now()
+	now := time.Now().Format(time.RFC3339)
+	_ = common.DB.Child("network", "dns").Put(context.Background(), "last_modified", now, kv.TTLKeep)
 }
 
 // Domain Repo

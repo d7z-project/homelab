@@ -5,8 +5,8 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/controllers"
 	"homelab/pkg/models"
-	"homelab/pkg/services/site"
 	"homelab/pkg/services/rbac"
+	"homelab/pkg/services/site"
 	"homelab/tests"
 	"net/http"
 	"net/http/httptest"
@@ -54,7 +54,7 @@ func TestSiteSecurity(t *testing.T) {
 		req := httptest.NewRequest("GET", "/network/site/pools", nil)
 		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
 		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
-		
+
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -64,10 +64,10 @@ func TestSiteSecurity(t *testing.T) {
 		body := `{"name": "New Site Pool"}`
 		req := httptest.NewRequest("POST", "/network/site/pools", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
 		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
-		
+
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
@@ -94,11 +94,11 @@ func TestSiteSecurity(t *testing.T) {
 		req := httptest.NewRequest("POST", "/network/site/exports/"+exp.ID+"/trigger", nil)
 		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
 		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
-		
+
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusOK, rr.Code)
-		
+
 		// Cleanup tasks
 		siteExportManager.WaitAll()
 	})

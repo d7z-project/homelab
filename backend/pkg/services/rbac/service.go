@@ -13,9 +13,25 @@ import (
 	authservice "homelab/pkg/services/auth"
 	"homelab/pkg/services/discovery"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+func lockRBAC(ctx context.Context, id string) (func(), error) {
+	lockKey := "rbac:sync:" + id
+	for {
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+}
 
 func ListServiceAccounts(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
@@ -121,6 +137,12 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
+
+	release, err := lockRBAC(ctx, "global")
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	existing, err := rbacrepo.GetServiceAccount(ctx, id)
 	if err != nil {
@@ -239,6 +261,13 @@ func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
+
+	release, err := lockRBAC(ctx, "role:"+id)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
 	if role.ID != id {
 		return nil, errors.New("id in body does not match path")
 	}
@@ -270,6 +299,12 @@ func DeleteRole(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
+
+	release, err := lockRBAC(ctx, "global")
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	existing, err := rbacrepo.GetRole(ctx, id)
 	if err != nil {

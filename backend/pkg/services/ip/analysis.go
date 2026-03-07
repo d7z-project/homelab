@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 )
@@ -20,7 +21,21 @@ type AnalysisEngine struct {
 	mu        sync.RWMutex
 	trieCache *lru.Cache[string, *IPPoolTrie]
 	mmdb      *MMDBManager
-	locks     sync.Map // map[string]*sync.Mutex
+}
+
+func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error) {
+	lockKey := "network:ip:trie:build:" + id
+	for {
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
 }
 
 func NewAnalysisEngine(mmdb *MMDBManager) *AnalysisEngine {
@@ -31,11 +46,6 @@ func NewAnalysisEngine(mmdb *MMDBManager) *AnalysisEngine {
 	}
 }
 
-func (e *AnalysisEngine) getLock(groupID string) *sync.Mutex {
-	l, _ := e.locks.LoadOrStore(groupID, &sync.Mutex{})
-	return l.(*sync.Mutex)
-}
-
 // GetTrie 获取或构建指定池的 Trie
 func (e *AnalysisEngine) GetTrie(ctx context.Context, groupID string) (*IPPoolTrie, error) {
 	// 检查缓存
@@ -43,12 +53,24 @@ func (e *AnalysisEngine) GetTrie(ctx context.Context, groupID string) (*IPPoolTr
 		return val, nil
 	}
 
-	// 锁定该特定组的构建过程，避免全局锁导致的性能抖动
-	mu := e.getLock(groupID)
-	mu.Lock()
-	defer mu.Unlock()
+	// 1. 本地重入锁/并发保护 (防止当前实例内部多协程同时触发)
+	e.mu.Lock()
+	if val, ok := e.trieCache.Get(groupID); ok {
+		e.mu.Unlock()
+		return val, nil
+	}
+	e.mu.Unlock()
 
-	// Double check
+	// 2. 分布式排队锁 (防止集群内所有实例同时读取存储并构建，序列化 I/O)
+	release, err := e.lockPool(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
+	// 再次检查缓存 (可能上一个持有分布式锁的实例已经建好了，
+	// 但当前实例还没建，所以这里其实还是要建一次。
+	// 但至少现在我们保证同一时间只有一个实例在执行大文件的读取和计算。)
 	if val, ok := e.trieCache.Get(groupID); ok {
 		return val, nil
 	}

@@ -1,6 +1,7 @@
 package unit
 
 import (
+	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/actions"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"testing"
 	"time"
-	"fmt"
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -126,7 +126,9 @@ func TestSiteExportManager(t *testing.T) {
 	// Wait for task
 	for i := 0; i < 50; i++ {
 		task := manager.GetTask(taskID)
-		if task != nil && task.Status == "Success" { break }
+		if task != nil && task.Status == "Success" {
+			break
+		}
 		time.Sleep(20 * time.Millisecond)
 	}
 
@@ -188,9 +190,9 @@ func TestSiteImportProcessor(t *testing.T) {
 	}
 
 	_, err := p.Execute(taskCtx, map[string]string{
-		"targetPool": group.ID,
-		"filePath":   tempFile.Name(),
-		"format":     "text",
+		"targetPool":  group.ID,
+		"filePath":    tempFile.Name(),
+		"format":      "text",
 		"defaultTags": "imported",
 	})
 	assert.NoError(t, err)

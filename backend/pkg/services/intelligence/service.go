@@ -169,14 +169,36 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 	return nil
 }
 
+func (s *IntelligenceService) lockSync(ctx context.Context, id string) (func(), error) {
+	lockKey := "network:intelligence:sync:" + id
+	for {
+		release := common.Locker.TryLock(ctx, lockKey)
+		if release != nil {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
+}
+
 func (s *IntelligenceService) runDownload(id string) {
 	ctx := context.Background()
+	release, err := s.lockSync(ctx, id)
+	if err != nil {
+		log.Printf("IntelligenceService: failed to acquire lock for %s: %v", id, err)
+		return
+	}
+	defer release()
+
 	source, _ := repo.GetSource(ctx, id)
 	if source == nil {
 		return
 	}
 
-	err := s.downloadFile(source)
+	err = s.downloadFile(source)
 	if err != nil {
 		source.Status = "Error"
 		source.ErrorMessage = err.Error()

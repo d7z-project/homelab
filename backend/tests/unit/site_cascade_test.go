@@ -42,7 +42,7 @@ func TestSitePoolCascadeDeleteAndDependencies(t *testing.T) {
 	// 3. Test Successful Deletion and Cache Clearing
 	// Fill cache
 	_, _ = engine.GetMatcher(ctx, "test_site_pool")
-	
+
 	err = service.DeleteGroup(ctx, "test_site_pool")
 	assert.NoError(t, err)
 

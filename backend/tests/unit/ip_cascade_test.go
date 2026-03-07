@@ -55,7 +55,7 @@ func TestIPPoolCascadeDeleteAndDependencies(t *testing.T) {
 	// 4. Test Successful Deletion and Cache Clearing
 	// Fill cache
 	_, _ = analysisEngine.GetTrie(ctx, "test_pool")
-	
+
 	err = service.DeleteGroup(ctx, "test_pool")
 	assert.NoError(t, err)
 

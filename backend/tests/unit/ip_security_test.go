@@ -56,7 +56,7 @@ func TestIPSecurity(t *testing.T) {
 		// Inject SA identity
 		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
 		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
-		
+
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -66,11 +66,11 @@ func TestIPSecurity(t *testing.T) {
 		body := `{"name": "New Pool"}`
 		req := httptest.NewRequest("POST", "/network/ip/pools", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		// Inject SA identity
 		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
 		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
-		
+
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code) // RequirePermission returns 401 for permission denied
@@ -98,11 +98,11 @@ func TestIPSecurity(t *testing.T) {
 		// Inject SA identity
 		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
 		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
-		
+
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusOK, rr.Code)
-		
+
 		// Cleanup tasks
 		exportManager.WaitAll()
 	})

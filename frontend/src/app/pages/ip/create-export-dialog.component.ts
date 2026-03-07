@@ -1,7 +1,12 @@
 import { Component, inject, signal, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { MatDialogRef, MatDialogModule, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
+import {
+  MatDialogRef,
+  MatDialogModule,
+  MAT_DIALOG_DATA,
+  MatDialog,
+} from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -55,7 +60,9 @@ import { NetworkIpService, ModelsIPExport } from '../../generated';
         >
           <mat-expansion-panel-header class="!h-10">
             <mat-panel-title class="flex items-center gap-2 text-xs font-bold text-primary">
-              <mat-icon class="!w-4 !h-4 !text-[16px] flex items-center justify-center">help_outline</mat-icon>
+              <mat-icon class="!w-4 !h-4 !text-[16px] flex items-center justify-center"
+                >help_outline</mat-icon
+              >
               过滤规则编写指南 (go-expr)
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -94,7 +101,9 @@ import { NetworkIpService, ModelsIPExport } from '../../generated';
                   <code>"cn" in tags</code>
                 </div>
                 <div class="p-2 bg-surface-container border border-outline-variant/20 rounded-lg">
-                  <div class="text-on-surface-variant font-medium mb-1">复合逻辑 (非广告的中国 IP)</div>
+                  <div class="text-on-surface-variant font-medium mb-1">
+                    复合逻辑 (非广告的中国 IP)
+                  </div>
                   <code>"cn" in tags && !("ads" in tags)</code>
                 </div>
                 <div class="p-2 bg-surface-container border border-outline-variant/20 rounded-lg">
@@ -147,7 +156,6 @@ export class CreateExportDialogComponent {
       groupIds: [this.data.export?.groupIds || ([] as string[]), Validators.required],
     });
   }
-
 
   submit() {
     if (this.form.invalid) return;

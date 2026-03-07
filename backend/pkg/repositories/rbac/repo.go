@@ -7,6 +7,7 @@ import (
 	"homelab/pkg/models"
 	"strings"
 	"sync"
+	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"gopkg.d7z.net/middleware/kv"
@@ -20,10 +21,29 @@ var (
 		valid bool
 		mu    sync.RWMutex
 	}
+
+	rbacLastModified time.Time
+	rbacMu           sync.RWMutex
 )
 
 func init() {
 	roleCache, _ = lru.New[string, *models.Role](1024)
+}
+
+func GetLastModified() time.Time {
+	val, err := common.DB.Child("auth", "rbac").Get(context.Background(), "last_modified")
+	if err == nil && val != "" {
+		t, err := time.Parse(time.RFC3339, val)
+		if err == nil {
+			return t
+		}
+	}
+	return time.Time{}
+}
+
+func updateLastModified() {
+	now := time.Now().Format(time.RFC3339)
+	_ = common.DB.Child("auth", "rbac").Put(context.Background(), "last_modified", now, kv.TTLKeep)
 }
 
 func ClearCache() {
@@ -31,6 +51,7 @@ func ClearCache() {
 	rbCache.mu.Lock()
 	rbCache.valid = false
 	rbCache.mu.Unlock()
+	updateLastModified()
 }
 
 func InvalidateCache(roleID string) {
@@ -40,6 +61,7 @@ func InvalidateCache(roleID string) {
 	rbCache.mu.Lock()
 	rbCache.valid = false
 	rbCache.mu.Unlock()
+	updateLastModified()
 }
 
 // ServiceAccount Repo
@@ -102,6 +124,19 @@ func ListServiceAccounts(ctx context.Context, page uint64, pageSize uint, search
 // Role Repo
 
 func GetRole(ctx context.Context, id string) (*models.Role, error) {
+	// Check distributed last modified to invalidate local cache if needed
+	remoteLM := GetLastModified()
+	rbacMu.RLock()
+	localLM := rbacLastModified
+	rbacMu.RUnlock()
+
+	if remoteLM.After(localLM) {
+		ClearCache()
+		rbacMu.Lock()
+		rbacLastModified = remoteLM
+		rbacMu.Unlock()
+	}
+
 	if val, ok := roleCache.Get(id); ok {
 		return val, nil
 	}
@@ -233,6 +268,19 @@ func ListRoleBindings(ctx context.Context, page uint64, pageSize uint, search st
 }
 
 func ListRoleBindingsAll(ctx context.Context) ([]models.RoleBinding, error) {
+	// Check distributed last modified to invalidate local cache if needed
+	remoteLM := GetLastModified()
+	rbacMu.RLock()
+	localLM := rbacLastModified
+	rbacMu.RUnlock()
+
+	if remoteLM.After(localLM) {
+		ClearCache()
+		rbacMu.Lock()
+		rbacLastModified = remoteLM
+		rbacMu.Unlock()
+	}
+
 	rbCache.mu.RLock()
 	if rbCache.valid {
 		res := rbCache.rbs

@@ -354,7 +354,7 @@ func (m *ExportManager) runExport(ctx context.Context, task *ExportTask, e *mode
 	}
 	task.mu.Unlock()
 	m.saveTasks()
-	}
+}
 
 func updateTaskError(t *ExportTask, msg string) {
 	t.mu.Lock()

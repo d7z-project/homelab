@@ -343,7 +343,7 @@ export class SiteComponent implements OnInit, OnDestroy {
     this.dialog.open(PreviewExportDialogComponent, {
       width: '900px',
       maxWidth: '95vw',
-      data: { type: 'site', rule: '', groupIds: [] }
+      data: { type: 'site', rule: '', groupIds: [] },
     });
   }
 
