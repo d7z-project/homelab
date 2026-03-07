@@ -2,6 +2,7 @@ package intelligence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
@@ -9,7 +10,6 @@ import (
 	repo "homelab/pkg/repositories/intelligence"
 	"homelab/pkg/services/ip"
 	"io"
-	"log"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -21,61 +21,96 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 		return err
 	}
 
-	if source.Status == "Downloading" {
-		lockKey := "network:intelligence:sync:" + id
-		if release := common.Locker.TryLock(ctx, lockKey); release != nil {
-			// 能拿到锁，说明之前的状态已僵死
-			release()
-		} else {
-			return fmt.Errorf("sync is already in progress for source: %s", source.Name)
+	// 使用框架校验并处理并发
+	existingTask, ok := s.tasks.GetTask(id)
+	if ok {
+		status := existingTask.GetStatus()
+		if status == "Pending" || status == "Running" {
+			lockKey := "action:intelligence_sync:" + id
+			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				// 僵尸任务
+				s.tasks.CancelTask(id)
+				release()
+			} else {
+				return fmt.Errorf("sync is already in progress for source: %s", source.Name)
+			}
 		}
 	}
+
+	task := &SyncTask{
+		ID:        id, // 这里使用 sourceID 作为 TaskID，确保同源唯一性
+		Status:    "Pending",
+		CreatedAt: time.Now(),
+	}
+	s.tasks.AddTask(task)
 
 	source.Status = "Downloading"
 	source.ErrorMessage = ""
 	_ = repo.SaveSource(ctx, source)
 
-	go s.runDownload(id)
-
 	commonaudit.FromContext(ctx).Log("SyncIntelligence", source.Name, "Started", true)
+
+	go s.runDownload(context.Background(), id)
 	return nil
 }
 
-func (s *IntelligenceService) lockSync(ctx context.Context, id string) (func(), error) {
-	return common.LockWithTimeout(ctx, "network:intelligence:sync:"+id, 0)
+func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
+	s.tasks.RunTask(bgCtx, id, func(taskCtx context.Context, task *SyncTask) error {
+		var finalErr error
+		defer func() {
+			// 这里必须使用 Background 因为 taskCtx 已经被 Cancel 了，如果用 taskCtx 会导致 DB 操作失败
+			source, _ := repo.GetSource(context.Background(), id)
+			if source == nil {
+				return
+			}
+			if errors.Is(taskCtx.Err(), context.Canceled) {
+				source.Status = "Cancelled"
+				source.ErrorMessage = "Task cancelled manually"
+			} else if finalErr != nil {
+				source.Status = "Error"
+				source.ErrorMessage = finalErr.Error()
+			} else {
+				source.Status = "Ready"
+				source.ErrorMessage = ""
+				source.LastUpdatedAt = time.Now()
+			}
+			_ = repo.SaveSource(context.Background(), source)
+		}()
+
+		source, err := repo.GetSource(taskCtx, id)
+		if err != nil || source == nil {
+			finalErr = fmt.Errorf("source not found")
+			return finalErr
+		}
+
+		// SSRF 校验
+		allowPrivate := false
+		if source.Config != nil && source.Config["allowPrivate"] == "true" {
+			allowPrivate = true
+		}
+		if err := common.ValidateURL(source.URL, allowPrivate); err != nil {
+			finalErr = err
+			return finalErr
+		}
+
+		finalErr = s.downloadFile(taskCtx, source)
+
+		if finalErr == nil {
+			common.UpdateGlobalVersion(taskCtx, "network/intelligence/mmdb")
+			common.NotifyCluster(taskCtx, "mmdb_update", source.Type)
+		}
+		return finalErr
+	})
 }
 
-func (s *IntelligenceService) runDownload(id string) {
-	ctx := context.Background()
-	release, err := s.lockSync(ctx, id)
+func (s *IntelligenceService) downloadFile(ctx context.Context, source *models.IntelligenceSource) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", source.URL, nil)
 	if err != nil {
-		log.Printf("IntelligenceService: failed to acquire lock for %s: %v", id, err)
-		return
-	}
-	defer release()
-
-	source, _ := repo.GetSource(ctx, id)
-	if source == nil {
-		return
+		return err
 	}
 
-	err = s.downloadFile(source)
-	if err != nil {
-		source.Status = "Error"
-		source.ErrorMessage = err.Error()
-	} else {
-		source.Status = "Ready"
-		source.ErrorMessage = ""
-		source.LastUpdatedAt = time.Now()
-		common.UpdateGlobalVersion(ctx, "network/intelligence/mmdb")
-		common.NotifyCluster(ctx, "mmdb_update", source.Type)
-	}
-
-	_ = repo.SaveSource(ctx, source)
-}
-
-func (s *IntelligenceService) downloadFile(source *models.IntelligenceSource) error {
-	resp, err := http.Get(source.URL)
+	client := &http.Client{Timeout: 300 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -98,13 +133,21 @@ func (s *IntelligenceService) downloadFile(source *models.IntelligenceSource) er
 	}
 
 	_ = common.FS.MkdirAll(filepath.Dir(targetPath), 0755)
-	f, err := common.FS.Create(targetPath)
+
+	// 这里也可以做成先写临时文件，成功后再重命名，避免写一半被 Cancel 导致源文件损坏
+	tempPath := targetPath + ".tmp"
+	f, err := common.FS.Create(tempPath)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
 	_, err = io.Copy(f, resp.Body)
-	return err
-}
+	f.Close()
 
+	if err != nil {
+		_ = common.FS.Remove(tempPath)
+		return err
+	}
+
+	return common.FS.Rename(tempPath, targetPath)
+}

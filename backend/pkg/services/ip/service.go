@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"homelab/pkg/common/task"
+
 	"github.com/robfig/cron/v3"
 )
 
@@ -74,13 +76,43 @@ type IPPoolService struct {
 	cronLock       sync.Mutex
 	exportManager  *ExportManager
 	analysisEngine *AnalysisEngine
+	syncTasks      *task.Manager[*SyncTask]
 }
+
+type SyncTask struct {
+	ID        string    `json:"ID"`
+	Status    string    `json:"Status"`
+	Error     string    `json:"Error"`
+	CreatedAt time.Time `json:"CreatedAt"`
+	mu        sync.Mutex
+}
+
+func (t *SyncTask) GetID() string { return t.ID }
+func (t *SyncTask) GetStatus() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Status
+}
+func (t *SyncTask) SetStatus(status string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Status = status
+}
+func (t *SyncTask) SetError(msg string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Error = msg
+}
+func (t *SyncTask) GetCreatedAt() time.Time { return t.CreatedAt }
+
+var _ models.TaskInfo = (*SyncTask)(nil)
 
 func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 	svc := &IPPoolService{
-		mmdb:    mmdb,
-		cron:    cron.New(),
-		cronIDs: make(map[string]cron.EntryID),
+		mmdb:      mmdb,
+		cron:      cron.New(),
+		cronIDs:   make(map[string]cron.EntryID),
+		syncTasks: task.NewManager[*SyncTask]("action:ip_sync", "sync_tasks", "network", "ip"),
 	}
 
 	// 集群事件: 其他节点更新了同步策略时，本节点刷新 cron 调度
@@ -103,14 +135,6 @@ func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 
 	// 集群事件: 异步触发同步
 	common.RegisterEventHandler("ip_sync_run", func(ctx context.Context, policyID string) {
-		// 使用分布式锁确保同一策略只被一个节点执行
-		lockKey := "action:ip_sync:" + policyID
-		release := common.Locker.TryLock(ctx, lockKey)
-		if release == nil {
-			return
-		}
-		defer release()
-
 		// 注入系统权限
 		sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
 			Type: "sa",
@@ -118,12 +142,8 @@ func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
 		})
 		sysCtx = commonauth.WithPermissions(sysCtx, &models.ResourcePermissions{AllowedAll: true})
 
-		policy, err := repo.GetSyncPolicy(sysCtx, policyID)
-		if err != nil || !policy.Enabled {
-			return
-		}
-
-		_ = svc.doSync(sysCtx, policy)
+		// 由于我们迁移到了 task.Manager，它天然具备防重和分布式同步能力
+		go svc.doSync(sysCtx, policyID)
 	})
 
 	return svc
@@ -152,6 +172,10 @@ func (s *IPPoolService) SetAnalysisEngine(ae *AnalysisEngine) {
 	s.analysisEngine = ae
 }
 
+func (s *IPPoolService) GetSyncTasks() *task.Manager[*SyncTask] {
+	return s.syncTasks
+}
+
 func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 	s.cron.Start()
 	// 加载所有启用的策略
@@ -162,21 +186,12 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 	})
 	sysCtx = commonauth.WithPermissions(sysCtx, &models.ResourcePermissions{AllowedAll: true})
 
-	// 1. 状态自愈 (Reconciliation)
-	// 扫描所有运行中的策略，如果能拿到对应的分布式锁，说明该任务已僵死，需要重置
+	// 1. 状态自愈 (Reconciliation) 使用全新框架接管
+	s.syncTasks.Reconcile(sysCtx)
+
+	// 然后调度启用的策略
 	policies, _, _ := repo.ListSyncPolicies(sysCtx, 1, 10000, "")
 	for _, p := range policies {
-		if p.LastStatus == "running" || p.LastStatus == "pending" {
-			lockKey := "action:ip_sync:" + p.ID
-			if release := common.Locker.TryLock(sysCtx, lockKey); release != nil {
-				// 任务僵死：更新状态并释放锁
-				p.LastStatus = "failed"
-				p.ErrorMessage = "interrupted by system restart"
-				_ = repo.SaveSyncPolicy(sysCtx, &p)
-				release()
-			}
-		}
-
 		if p.Enabled {
 			s.addCronJob(p)
 		}

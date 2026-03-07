@@ -122,13 +122,25 @@ func TestIPService(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Test Group", g.Name)
 
-	// 3. 列表
+	// 3. 更新 Group
+	g.Name = "New Name"
+	err = service.UpdateGroup(ctx, g)
+	assert.NoError(t, err)
+	g2, _ := service.GetGroup(ctx, "test_group")
+	assert.Equal(t, "New Name", g2.Name)
+
+	// 4. 列表
 	list, total, err := service.ListGroups(ctx, 1, 10, "")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, total)
 	assert.Equal(t, "test_group", list[0].ID)
 
-	// 4. 删除
+	// 5. Lookup (Discovery)
+	lg, err := service.LookupGroup(ctx, "test_group")
+	assert.NoError(t, err)
+	assert.NotNil(t, lg)
+
+	// 6. 删除
 	err = service.DeleteGroup(ctx, "test_group")
 	assert.NoError(t, err)
 

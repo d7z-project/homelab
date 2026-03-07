@@ -10,6 +10,9 @@ import (
 	"homelab/pkg/services/rbac"
 	"log"
 	"sync"
+	"time"
+
+	"homelab/pkg/common/task"
 
 	"github.com/robfig/cron/v3"
 )
@@ -29,13 +32,43 @@ type IntelligenceService struct {
 	cron    *cron.Cron
 	entries map[string]cron.EntryID
 	mu      sync.Mutex
+	tasks   *task.Manager[*SyncTask]
 }
+
+type SyncTask struct {
+	ID        string    `json:"ID"`
+	Status    string    `json:"Status"`
+	Error     string    `json:"Error"`
+	CreatedAt time.Time `json:"CreatedAt"`
+	mu        sync.Mutex
+}
+
+func (t *SyncTask) GetID() string { return t.ID }
+func (t *SyncTask) GetStatus() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Status
+}
+func (t *SyncTask) SetStatus(status string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Status = status
+}
+func (t *SyncTask) SetError(msg string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Error = msg
+}
+func (t *SyncTask) GetCreatedAt() time.Time { return t.CreatedAt }
+
+var _ models.TaskInfo = (*SyncTask)(nil)
 
 func NewIntelligenceService(mmdb *ip.MMDBManager) *IntelligenceService {
 	s := &IntelligenceService{
 		mmdb:    mmdb,
 		cron:    cron.New(),
 		entries: make(map[string]cron.EntryID),
+		tasks:   task.NewManager[*SyncTask]("action:intelligence_sync", "sync_tasks", "network", "intelligence"),
 	}
 	s.cron.Start()
 
@@ -65,24 +98,19 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.tasks.Reconcile(ctx)
+
 	for i := range sources {
 		src := &sources[i]
-		// Reset "Downloading" status if stuck from previous run
-		if src.Status == "Downloading" {
-			// 健壮性：仅当该同步任务对应的分布式锁未被占有时才重置
-			lockKey := "network:intelligence:sync:" + src.ID
-			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
-				src.Status = "Error"
-				src.ErrorMessage = "Interrupted by system restart or node failure"
-				_ = repo.SaveSource(ctx, src)
-				release()
-			}
-		}
-
 		if src.AutoUpdate && src.UpdateCron != "" {
 			s.addCronJob(*src)
 		}
 	}
-	log.Printf("IntelligenceService: initialized and cleaned up stuck tasks")
+
+	log.Printf("IntelligenceService: initialized and scheduled tasks")
 	return nil
+}
+
+func (s *IntelligenceService) GetTasks() *task.Manager[*SyncTask] {
+	return s.tasks
 }

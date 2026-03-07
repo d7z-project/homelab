@@ -74,3 +74,14 @@ func GetEventHandlers(event string) []EventHandler {
 	defer eventHandlersMu.RUnlock()
 	return eventHandlers[event]
 }
+
+// ResetEventHandlers clears all registered handlers (used for testing initialization).
+func ResetEventHandlers() {
+	eventHandlersMu.Lock()
+	defer eventHandlersMu.Unlock()
+	eventHandlers = make(map[string][]EventHandler)
+
+	eventLoopMu.Lock()
+	defer eventLoopMu.Unlock()
+	eventLoopStarted = false
+}

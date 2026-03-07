@@ -1,6 +1,7 @@
 package intelligence
 
 import (
+	"context"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"log"
@@ -11,7 +12,10 @@ func (s *IntelligenceService) addCronJob(src models.IntelligenceSource) {
 	lockKey := "intelligence_sync_" + src.ID
 	entryID, err := common.AddDistributedCronJob(s.cron, src.UpdateCron, lockKey, func() {
 		log.Printf("IntelligenceService: running scheduled update for %s (%s)", src.Name, src.ID)
-		s.runDownload(id)
+
+		// The original flow did not populate this task in the tasks engine, let's trigger it properly
+		// so it goes through the proper locking and state tracking mechanism
+		s.SyncSource(context.Background(), id)
 	})
 	if err != nil {
 		log.Printf("IntelligenceService: failed to schedule job for %s: %v", src.Name, err)

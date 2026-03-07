@@ -26,7 +26,7 @@ func (m *MockIPSubscriber) Publish(ctx context.Context, topic string, message st
 	return nil
 }
 func (m *MockIPSubscriber) Child(topic ...string) subscribe.Subscriber { return m }
-func (m *MockIPSubscriber) Close() error                              { return nil }
+func (m *MockIPSubscriber) Close() error                               { return nil }
 
 func TestIPSyncAsyncDecoupling(t *testing.T) {
 	cleanup := tests.SetupTestDB()
@@ -87,6 +87,9 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 			t.Fatal("No handlers registered for ip_sync_run")
 		}
 
+		// 先触发以便建立 pending 状态和 Task 注册（模拟集群）
+		_ = service.Sync(ctx, policy.ID)
+
 		// 此时数据库状态应该是 pending
 		p, _ := repo.GetSyncPolicy(ctx, policy.ID)
 		if p.LastStatus != "pending" {
@@ -96,14 +99,24 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 		// 执行 Handler
 		// 注意：doSync 内部会尝试下载，这里会因为 URL 无效而失败，
 		// 但这恰恰能验证异步更新状态的逻辑（从 pending 变为 failed）
-		handlers[0](ctx, policy.ID)
+		handlers[0](context.Background(), policy.ID)
+
+		// 稍微等等框架底层的 goroutine 和 Mutex 完成落盘 (框架包含网络拨号等)
+		// 循环等待因为它是被发配到后台执行的 goroutine
+		for i := 0; i < 20; i++ {
+			p, _ = repo.GetSyncPolicy(ctx, policy.ID)
+			if p.LastStatus != "pending" && p.LastStatus != "running" {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
 
 		// 验证状态已更新（异步完成）
 		p, _ = repo.GetSyncPolicy(ctx, policy.ID)
 		if p.LastStatus == "pending" {
 			t.Error("Status should have changed from pending after execution")
 		}
-		
+
 		// 验证最后运行时间已更新
 		if p.LastRunAt.IsZero() {
 			t.Error("LastRunAt should be set")

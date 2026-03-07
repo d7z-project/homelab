@@ -13,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"bytes"
+	"net/netip"
+
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -173,5 +176,135 @@ func TestIPSyncLogic(t *testing.T) {
 		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
 		assert.Contains(t, res.Entries[0].Tags, "tag_b")
 		assert.NotContains(t, res.Entries[0].Tags, "tag_a")
+	})
+
+	t.Run("Sync CSV and GeoIP Formats", func(t *testing.T) {
+		// CSV
+		serverCSV := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, "ip,tag")
+			fmt.Fprintln(w, "1.2.3.4,test-tag")
+		}))
+		defer serverCSV.Close()
+
+		policyCSV := &models.IPSyncPolicy{
+			ID: "csv_policy", Name: "CSV", SourceURL: serverCSV.URL, Format: "csv", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true", "ipColumn": "0", "tagColumn": "1"},
+		}
+		_ = service.CreateSyncPolicy(ctx, policyCSV)
+		syncAndWait("csv_policy")
+
+		res, _ := service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
+		assert.Contains(t, res.Entries[0].Tags, "test-tag")
+
+		// GeoIP-DAT
+		var buf bytes.Buffer
+		groups := map[string][]netip.Prefix{"CN": {netip.MustParsePrefix("114.114.114.114/32")}}
+		_ = ip.BuildV2RayGeoIP(&buf, groups)
+		serverDat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write(buf.Bytes())
+		}))
+		defer serverDat.Close()
+
+		policyDat := &models.IPSyncPolicy{
+			ID: "v2ray_policy", Name: "V2Ray", SourceURL: serverDat.URL, Format: "geoip-dat", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true", "code": "CN"},
+		}
+		_ = service.CreateSyncPolicy(ctx, policyDat)
+		syncAndWait("v2ray_policy")
+
+		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "114.114.114.114")
+		assert.Contains(t, res.Entries[0].Tags, "cn")
+	})
+
+	t.Run("SSRF Protection", func(t *testing.T) {
+		ssrfPolicy := &models.IPSyncPolicy{
+			ID: "ssrf", Name: "SSRF", SourceURL: "http://192.168.1.1/ips.txt",
+			TargetGroupID: "test_pool", Format: "text",
+		}
+		_ = service.CreateSyncPolicy(ctx, ssrfPolicy)
+		_ = service.Sync(ctx, "ssrf")
+
+		// 稍微等等异步执行报错
+		time.Sleep(200 * time.Millisecond)
+		p, _ := service.GetSyncPolicy(ctx, "ssrf")
+		assert.Equal(t, "failed", p.LastStatus)
+		assert.Contains(t, p.ErrorMessage, "SSRF detected")
+	})
+}
+
+func TestIPSyncFrameworkIntegration(t *testing.T) {
+	cleanup := tests.SetupTestDB()
+	defer cleanup()
+	ctx := tests.SetupMockRootContext()
+	mmdb := ip.NewMMDBManager()
+	service := ip.NewIPPoolService(mmdb)
+
+	t.Run("Reconcile Zombie Sync Task", func(t *testing.T) {
+		policy := &models.IPSyncPolicy{ID: "zombie_p", Name: "Zombie"}
+		_ = service.CreateSyncPolicy(ctx, policy)
+
+		// 模拟一个假装正在跑的任务（通过 TaskManager 直接注入）
+		task := &ip.SyncTask{ID: "zombie_p", Status: "Running", CreatedAt: time.Now()}
+		service.GetSyncTasks().AddTask(task)
+
+		// 执行自愈
+		service.GetSyncTasks().Reconcile(ctx)
+
+		retrieved, _ := service.GetSyncTasks().GetTask("zombie_p")
+		assert.Equal(t, "Failed", retrieved.GetStatus())
+		assert.Contains(t, retrieved.Error, "node failure")
+	})
+
+	t.Run("Cancellation of Sync Task", func(t *testing.T) {
+		// 起一个一直在下载的 Mock HTTP 服务器
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ticker := time.NewTicker(10 * time.Millisecond)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-r.Context().Done():
+					return
+				case <-ticker.C:
+					w.Write([]byte("data\n"))
+				}
+			}
+		}))
+		defer server.Close()
+
+		group := &models.IPGroup{ID: "p_cancel", Name: "Cancel Pool"}
+		_ = service.CreateGroup(ctx, group)
+
+		policy := &models.IPSyncPolicy{
+			ID: "cancel_p", Name: "Cancel", SourceURL: server.URL,
+			TargetGroupID: "p_cancel", Format: "text",
+			Config: map[string]string{"allowPrivate": "true"},
+		}
+		_ = service.CreateSyncPolicy(ctx, policy)
+
+		// 触发同步（由于是 localhost，通过 config 允许）
+		_ = service.Sync(ctx, "cancel_p")
+
+		// 等待进入 Running 状态
+		for i := 0; i < 50; i++ {
+			p, _ := service.GetSyncPolicy(ctx, "cancel_p")
+			if p.LastStatus == "running" {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		// 执行取消
+		service.GetSyncTasks().CancelTask("cancel_p")
+
+		// 验证状态变为已取消
+		var pFinal *models.IPSyncPolicy
+		for i := 0; i < 50; i++ {
+			pFinal, _ = service.GetSyncPolicy(ctx, "cancel_p")
+			if pFinal.LastStatus == "cancelled" || pFinal.LastStatus == "failed" {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+		assert.Equal(t, "cancelled", pFinal.LastStatus)
 	})
 }

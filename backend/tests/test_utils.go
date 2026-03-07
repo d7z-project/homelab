@@ -50,6 +50,7 @@ func SetupTestDB() func() {
 	common.TempDir = temp
 
 	actions.Init()
+	common.ResetEventHandlers()
 
 	return func() {
 		db.Close()

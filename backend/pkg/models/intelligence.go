@@ -8,16 +8,17 @@ import (
 )
 
 type IntelligenceSource struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Type          string    `json:"type"` // asn, city, country
-	URL           string    `json:"url"`
-	Enabled       bool      `json:"enabled"`
-	AutoUpdate    bool      `json:"autoUpdate"`
-	UpdateCron    string    `json:"cron"`
-	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
-	Status        string    `json:"status"` // Ready, Downloading, Error
-	ErrorMessage  string    `json:"errorMessage"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Type          string            `json:"type"` // asn, city, country
+	URL           string            `json:"url"`
+	Enabled       bool              `json:"enabled"`
+	AutoUpdate    bool              `json:"autoUpdate"`
+	UpdateCron    string            `json:"cron"`
+	LastUpdatedAt time.Time         `json:"lastUpdatedAt"`
+	Status        string            `json:"status"` // Ready, Downloading, Error
+	ErrorMessage  string            `json:"errorMessage"`
+	Config        map[string]string `json:"config"`
 }
 
 func (s *IntelligenceSource) Bind(r *http.Request) error {
