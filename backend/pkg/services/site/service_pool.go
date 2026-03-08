@@ -13,6 +13,7 @@ import (
 	"io"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -171,8 +172,10 @@ func notifySitePoolChanged(ctx context.Context, groupID string) {
 	common.NotifyCluster(ctx, common.EventSitePoolChanged, groupID)
 }
 
-func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, cursor int64, limit int, search string) (*models.SitePoolPreviewResponse, error) {
+func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, cursorStr string, limit int, search string) (*models.SitePoolPreviewResponse, error) {
+	cursor, _ := strconv.ParseInt(cursorStr, 10, 64)
 	resource := "network/site/" + groupID
+
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) && !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -235,9 +238,9 @@ func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, curso
 	if seeker, ok := f.(io.Seeker); ok {
 		next, _ := seeker.Seek(0, io.SeekCurrent)
 		if matched < limit {
-			res.NextCursor = 0
+			res.NextCursor = ""
 		} else {
-			res.NextCursor = next
+			res.NextCursor = strconv.FormatInt(next, 10)
 		}
 	}
 	return res, nil

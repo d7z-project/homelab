@@ -21,8 +21,8 @@
 - [x] Phase 6: API Documentation & Client SDK
   - [x] Update Swagger/OpenAPI annotations across all controllers.
   - [x] Run `make backend-gen` to sync `client-go` and frontend models.
-- [ ] Phase 7: Frontend Migration
-  - [ ] Update Angular services to track `nextCursor`.
-  - [ ] Modify UI tables to support "Load More" or "Next Page" via cursors.
+- [x] Phase 7: Frontend Migration
+  - [x] Update Angular services to track `nextCursor`.
+  - [x] Modify UI tables to support "Load More" or "Next Page" via cursors.
 - [x] Phase 8: Validation
   - [x] Verify no `page`/`pageSize` parameters remain in the entire `backend/` codebase.

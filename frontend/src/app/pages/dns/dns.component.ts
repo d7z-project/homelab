@@ -83,8 +83,11 @@ export class DnsComponent implements OnInit, OnDestroy {
   domainTotal = signal(0);
   recordTotal = signal(0);
 
-  domainPage = signal(1);
-  recordPage = signal(1);
+  domainNextCursor = signal('');
+  recordNextCursor = signal('');
+
+  hasMoreDomains = signal(false);
+  hasMoreRecords = signal(false);
 
   pageSize = signal(20);
 
@@ -152,9 +155,6 @@ export class DnsComponent implements OnInit, OnDestroy {
     return '';
   });
 
-  hasMoreDomains = computed(() => this.domains().length < this.domainTotal());
-  hasMoreRecords = computed(() => this.records().length < this.recordTotal());
-
   fabConfig = computed(() => {
     switch (this.selectedTabIndex()) {
       case 0:
@@ -210,10 +210,8 @@ export class DnsComponent implements OnInit, OnDestroy {
       if (atBottom && !this.loadingMore() && !this.loading()) {
         const tab = this.selectedTabIndex();
         if (tab === 0 && this.hasMoreDomains()) {
-          this.domainPage.update((p) => p + 1);
           this.loadMore('domain');
         } else if (tab === 1 && this.hasMoreRecords()) {
-          this.recordPage.update((p) => p + 1);
           this.loadMore('record');
         }
       }
@@ -249,10 +247,8 @@ export class DnsComponent implements OnInit, OnDestroy {
 
     // Refresh data for the selected tab
     if (index === 0) {
-      this.domainPage.set(1);
       this.loadDomains(true);
     } else if (index === 1) {
-      this.recordPage.set(1);
       this.loadRecords(true);
     }
   }
@@ -260,8 +256,6 @@ export class DnsComponent implements OnInit, OnDestroy {
   async refreshAll() {
     this.loading.set(true);
     try {
-      this.domainPage.set(1);
-      this.recordPage.set(1);
       await Promise.all([this.loadDomains(true), this.loadRecords(true)]);
     } catch (err) {
       this.snackBar
@@ -274,9 +268,12 @@ export class DnsComponent implements OnInit, OnDestroy {
   }
 
   async loadDomains(reset = false) {
+    if (reset) {
+      this.domainNextCursor.set('');
+    }
     const data = (await firstValueFrom(
       this.networkDnsService.networkDnsDomainsGet(
-        this.domainPage(),
+        this.domainNextCursor(),
         this.pageSize(),
         this.domainSearch(),
       ),
@@ -284,17 +281,24 @@ export class DnsComponent implements OnInit, OnDestroy {
     if (reset) this.domains.set(data.items || []);
     else {
       const current = this.domains();
-      const newItems = (data.items || []).filter((n) => !current.some((e) => e.id === n.id));
+      const newItems = (data.items || []).filter(
+        (n: ModelsDomain) => !current.some((e: ModelsDomain) => e.id === n.id),
+      );
       this.domains.update((prev) => [...prev, ...newItems]);
     }
     this.domainTotal.set(data.total || 0);
+    this.domainNextCursor.set(data.nextCursor || '');
+    this.hasMoreDomains.set(data.hasMore || false);
   }
 
   async loadRecords(reset = false) {
+    if (reset) {
+      this.recordNextCursor.set('');
+    }
     const data = (await firstValueFrom(
       this.networkDnsService.networkDnsRecordsGet(
         this.selectedDomainId(),
-        this.recordPage(),
+        this.recordNextCursor(),
         this.pageSize(),
         this.recordSearch(),
       ),
@@ -302,10 +306,14 @@ export class DnsComponent implements OnInit, OnDestroy {
     if (reset) this.records.set(data.items || []);
     else {
       const current = this.records();
-      const newItems = (data.items || []).filter((n) => !current.some((e) => e.id === n.id));
+      const newItems = (data.items || []).filter(
+        (n: ModelsRecord) => !current.some((e: ModelsRecord) => e.id === n.id),
+      );
       this.records.update((prev) => [...prev, ...newItems]);
     }
     this.recordTotal.set(data.total || 0);
+    this.recordNextCursor.set(data.nextCursor || '');
+    this.hasMoreRecords.set(data.hasMore || false);
   }
 
   async loadMore(type: 'domain' | 'record') {
@@ -320,19 +328,16 @@ export class DnsComponent implements OnInit, OnDestroy {
 
   onDomainSearch(term: string) {
     this.domainSearch.set(term);
-    this.domainPage.set(1);
     this.loadDomains(true);
   }
 
   onRecordSearch(term: string) {
     this.recordSearch.set(term);
-    this.recordPage.set(1);
     this.loadRecords(true);
   }
 
   onDomainFilterChange(domainId: string) {
     this.selectedDomainId.set(domainId);
-    this.recordPage.set(1);
     this.updateQueryParams();
     this.loadRecords(true);
   }

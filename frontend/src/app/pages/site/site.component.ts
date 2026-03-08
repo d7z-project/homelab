@@ -111,21 +111,19 @@ export class SiteComponent implements OnInit, OnDestroy {
     { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
-  selectedTabIndex = signal(0);
-  loading = signal(false);
-  showScrollTop = signal(false);
-
   // Pools state
   pools = signal<ModelsSiteGroup[]>([]);
   poolTotal = signal(0);
-  poolPage = signal(1);
+  poolNextCursor = signal('');
   poolSearch = signal('');
+  hasMorePools = signal(false);
 
   // Exports state
   exports = signal<ModelsSiteExport[]>([]);
   exportTotal = signal(0);
-  exportPage = signal(1);
+  exportNextCursor = signal('');
   exportSearch = signal('');
+  hasMoreExports = signal(false);
 
   // Analysis state
   analysisDomain = signal('');
@@ -148,6 +146,11 @@ export class SiteComponent implements OnInit, OnDestroy {
     return false;
   });
 
+  loading = signal(false);
+  loadingMore = signal(false);
+  selectedTabIndex = signal(0);
+  showScrollTop = signal(false);
+
   fabConfig = computed(() => {
     const tab = this.selectedTabIndex();
     if (tab === 0) return { icon: 'add', label: '新建域名池', action: () => this.createPool() };
@@ -167,14 +170,44 @@ export class SiteComponent implements OnInit, OnDestroy {
       else if (params['tab'] === 'analysis') this.selectedTabIndex.set(2);
       this.loadData();
     });
+    this.setupScrollListener();
   }
 
   ngOnDestroy() {
     this.uiService.closeSearch();
+    if (this.scrollListener) {
+      const scrollElement = document.querySelector('mat-sidenav-content');
+      scrollElement?.removeEventListener('scroll', this.scrollListener);
+    }
+  }
+
+  private scrollListener?: any;
+  private setupScrollListener() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (!scrollElement) return;
+
+    this.scrollListener = () => {
+      this.showScrollTop.set(scrollElement.scrollTop > 300);
+      const atBottom =
+        scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
+
+      if (atBottom && !this.loadingMore() && !this.loading()) {
+        const tab = this.selectedTabIndex();
+        if (tab === 0 && this.hasMorePools()) {
+          this.loadPools(false);
+        } else if (tab === 1 && this.hasMoreExports()) {
+          this.loadExports(false);
+        }
+      }
+    };
+    scrollElement.addEventListener('scroll', this.scrollListener);
   }
 
   scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (scrollElement) {
+      scrollElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   onTabChange(index: number) {
@@ -200,48 +233,82 @@ export class SiteComponent implements OnInit, OnDestroy {
 
   onPoolSearch(val: string) {
     this.poolSearch.set(val);
-    this.poolPage.set(1);
-    this.loadPools();
+    this.loadPools(true);
   }
 
   onExportSearch(val: string) {
     this.exportSearch.set(val);
-    this.exportPage.set(1);
-    this.loadExports();
+    this.loadExports(true);
   }
 
   loadData() {
     if (this.selectedTabIndex() === 0) {
-      this.loadPools();
+      this.loadPools(true);
     } else if (this.selectedTabIndex() === 1) {
-      this.loadExports();
+      this.loadExports(true);
     }
   }
 
   loadPools(reset = false) {
-    if (reset) this.poolPage.set(1);
-    this.loading.set(true);
-    this.siteService.networkSitePoolsGet(this.poolPage(), 20, this.poolSearch()).subscribe({
+    if (reset) {
+      this.poolNextCursor.set('');
+      this.loading.set(true);
+    } else {
+      this.loadingMore.set(true);
+    }
+
+    this.siteService.networkSitePoolsGet(this.poolNextCursor(), 20, this.poolSearch()).subscribe({
       next: (res) => {
-        this.pools.set(res.items || []);
+        if (reset) {
+          this.pools.set(res.items || []);
+        } else {
+          const current = this.pools();
+          const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+          this.pools.update((prev) => [...prev, ...newItems]);
+        }
         this.poolTotal.set(res.total || 0);
+        this.poolNextCursor.set(res.nextCursor || '');
+        this.hasMorePools.set(res.hasMore || false);
         this.loading.set(false);
+        this.loadingMore.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.loadingMore.set(false);
+      },
     });
   }
 
   loadExports(reset = false) {
-    if (reset) this.exportPage.set(1);
-    this.loading.set(true);
-    this.siteService.networkSiteExportsGet(this.exportPage(), 20, this.exportSearch()).subscribe({
-      next: (res) => {
-        this.exports.set(res.items || []);
-        this.exportTotal.set(res.total || 0);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    if (reset) {
+      this.exportNextCursor.set('');
+      this.loading.set(true);
+    } else {
+      this.loadingMore.set(true);
+    }
+
+    this.siteService
+      .networkSiteExportsGet(this.exportNextCursor(), 20, this.exportSearch())
+      .subscribe({
+        next: (res) => {
+          if (reset) {
+            this.exports.set(res.items || []);
+          } else {
+            const current = this.exports();
+            const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+            this.exports.update((prev) => [...prev, ...newItems]);
+          }
+          this.exportTotal.set(res.total || 0);
+          this.exportNextCursor.set(res.nextCursor || '');
+          this.hasMoreExports.set(res.hasMore || false);
+          this.loading.set(false);
+          this.loadingMore.set(false);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.loadingMore.set(false);
+        },
+      });
   }
 
   createPool() {

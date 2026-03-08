@@ -10,8 +10,8 @@
 import { ModelsAuditLog } from './modelsAuditLog';
 
 export interface AuditLogsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsAuditLog>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

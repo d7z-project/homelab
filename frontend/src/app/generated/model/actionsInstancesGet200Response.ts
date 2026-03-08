@@ -7,11 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsSiteGroup } from './modelsSiteGroup';
+import { ModelsTaskInstance } from './modelsTaskInstance';
 
-export interface NetworkSitePoolsGet200Response {
+export interface ActionsInstancesGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsSiteGroup>;
+  items?: Array<ModelsTaskInstance>;
   nextCursor?: string;
   total?: number;
 }

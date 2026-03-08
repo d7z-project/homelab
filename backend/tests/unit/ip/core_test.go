@@ -174,10 +174,10 @@ func TestIPPreviewCursor(t *testing.T) {
 	f.Close()
 
 	// 2. Test Preview with limit
-	res, err := service.PreviewPool(ctx, "cursor_pool", 0, 3, "")
+	res, err := service.PreviewPool(ctx, "cursor_pool", "", 3, "")
 	assert.NoError(t, err)
 	assert.Len(t, res.Entries, 3)
-	assert.True(t, res.NextCursor > 0)
+	assert.True(t, res.NextCursor != "")
 
 	// 3. Use cursor to get next page
 	res2, err := service.PreviewPool(ctx, "cursor_pool", res.NextCursor, 3, "")

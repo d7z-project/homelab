@@ -25,6 +25,8 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
 import { ModelsIntelligenceSource } from '../model/modelsIntelligenceSource';
+// @ts-ignore
+import { NetworkIntelligenceSourcesGet200Response } from '../model/networkIntelligenceSourcesGet200Response';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -46,11 +48,17 @@ export class NetworkIntelligenceService extends BaseService {
   /**
    * List intelligence sources
    * @endpoint get /network/intelligence/sources
+   * @param cursor Cursor
+   * @param limit Limit
+   * @param search Search
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public networkIntelligenceSourcesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -58,8 +66,11 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<ModelsIntelligenceSource>>;
+  ): Observable<NetworkIntelligenceSourcesGet200Response>;
   public networkIntelligenceSourcesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -67,8 +78,11 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<ModelsIntelligenceSource>>>;
+  ): Observable<HttpResponse<NetworkIntelligenceSourcesGet200Response>>;
   public networkIntelligenceSourcesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -76,8 +90,11 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<ModelsIntelligenceSource>>>;
+  ): Observable<HttpEvent<NetworkIntelligenceSourcesGet200Response>>;
   public networkIntelligenceSourcesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -86,6 +103,32 @@ export class NetworkIntelligenceService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<any> {
+    let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'cursor',
+      <any>cursor,
+      QueryParamStyle.Form,
+      false,
+    );
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'limit',
+      <any>limit,
+      QueryParamStyle.Form,
+      false,
+    );
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'search',
+      <any>search,
+      QueryParamStyle.Form,
+      false,
+    );
+
     let localVarHeaders = this.defaultHeaders;
 
     // authentication (ApiKeyAuth) required
@@ -118,11 +161,12 @@ export class NetworkIntelligenceService extends BaseService {
 
     let localVarPath = `/network/intelligence/sources`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<ModelsIntelligenceSource>>(
+    return this.httpClient.request<NetworkIntelligenceSourcesGet200Response>(
       'get',
       `${basePath}${localVarPath}`,
       {
         context: localVarHttpContext,
+        params: localVarQueryParameters.toHttpParams(),
         responseType: <any>responseType_,
         ...(withCredentials ? { withCredentials } : {}),
         headers: localVarHeaders,

@@ -10,8 +10,8 @@
 import { ModelsDomain } from './modelsDomain';
 
 export interface NetworkDnsDomainsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsDomain>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

@@ -12,9 +12,9 @@ import { ModelsIPPoolEntry } from './modelsIPPoolEntry';
 export interface ModelsIPPoolPreviewResponse {
   entries?: Array<ModelsIPPoolEntry>;
   /**
-   * 下一个 Byte Offset
+   * 下一个 Byte Offset (作为字符串传递)
    */
-  nextCursor?: number;
+  nextCursor?: string;
   /**
    * 总条数
    */

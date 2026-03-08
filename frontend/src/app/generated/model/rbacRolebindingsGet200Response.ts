@@ -10,8 +10,8 @@
 import { ModelsRoleBinding } from './modelsRoleBinding';
 
 export interface RbacRolebindingsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsRoleBinding>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

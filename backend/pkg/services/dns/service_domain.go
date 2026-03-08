@@ -41,6 +41,10 @@ func ScanDomains(ctx context.Context, cursor string, limit int, search string) (
 	return resp, nil
 }
 
+func GetDomain(ctx context.Context, id string) (*models.Domain, error) {
+	return dnsrepo.GetDomain(ctx, id)
+}
+
 func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, error) {
 	if err := domain.Bind(nil); err != nil {
 		return nil, err

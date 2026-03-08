@@ -169,7 +169,7 @@ type IPPoolEntry struct {
 // IPPoolPreviewResponse 游标分页预览响应
 type IPPoolPreviewResponse struct {
 	Entries    []IPPoolEntry `json:"entries"`
-	NextCursor int64         `json:"nextCursor"` // 下一个 Byte Offset
+	NextCursor string        `json:"nextCursor"` // 下一个 Byte Offset (作为字符串传递)
 	Total      int64         `json:"total"`      // 总条数
 }
 

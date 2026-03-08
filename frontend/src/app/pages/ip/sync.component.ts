@@ -85,9 +85,10 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   policies = signal<ModelsIPSyncPolicy[]>([]);
   groups = signal<Map<string, string>>(new Map()); // ID -> Name
   search = signal('');
-  page = signal(1);
+  nextCursor = signal('');
   pageSize = signal(20);
   total = signal(0);
+  hasMore = signal(false);
   showScrollTop = signal(false);
 
   displayedColumns = computed(() =>
@@ -97,7 +98,6 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   );
 
   hasSearchContent = computed(() => this.search().length > 0);
-  hasMore = computed(() => this.policies().length < this.total());
 
   // 是否有任何策略正在同步中
   anySyncing = computed(() =>
@@ -149,7 +149,6 @@ export class IpSyncComponent implements OnInit, OnDestroy {
         scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
 
       if (atBottom && !this.loadingMore() && !this.loading() && this.hasMore()) {
-        this.page.update((p) => p + 1);
         this.loadPolicies(false);
       }
     };
@@ -164,7 +163,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   }
 
   loadGroups() {
-    this.ipService.networkIpPoolsGet(1, 1000).subscribe({
+    this.ipService.networkIpPoolsGet('', 1000).subscribe({
       next: (res) => {
         const m = new Map<string, string>();
         (res.items || []).forEach((g) => m.set(g.id || '', g.name || ''));
@@ -195,7 +194,6 @@ export class IpSyncComponent implements OnInit, OnDestroy {
       value: this.search(),
       onSearch: (val) => {
         this.search.set(val);
-        this.page.set(1);
         this.loadPolicies(true);
       },
     });
@@ -204,14 +202,14 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   async loadPolicies(reset = false) {
     if (reset) {
       this.loading.set(true);
-      this.page.set(1);
+      this.nextCursor.set('');
     } else {
       this.loadingMore.set(true);
     }
 
     try {
       const res = await firstValueFrom(
-        this.ipService.networkIpSyncGet(this.page(), this.pageSize(), this.search()),
+        this.ipService.networkIpSyncGet(this.nextCursor(), this.pageSize(), this.search()),
       );
       if (reset) {
         this.policies.set(res.items || []);
@@ -221,6 +219,8 @@ export class IpSyncComponent implements OnInit, OnDestroy {
         this.policies.update((prev) => [...prev, ...newItems]);
       }
       this.total.set(res.total || 0);
+      this.nextCursor.set(res.nextCursor || '');
+      this.hasMore.set(res.hasMore || false);
     } catch (err) {
       console.error(err);
     } finally {

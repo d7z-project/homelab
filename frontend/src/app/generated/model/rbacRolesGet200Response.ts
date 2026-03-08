@@ -10,8 +10,8 @@
 import { ModelsRole } from './modelsRole';
 
 export interface RbacRolesGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsRole>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

@@ -7,10 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsLookupItem } from './modelsLookupItem';
 
-export interface CommonPaginatedResponse {
-  items?: object;
-  page?: number;
-  pageSize?: number;
+export interface DiscoveryLookupGet200Response {
+  hasMore?: boolean;
+  items?: Array<ModelsLookupItem>;
+  nextCursor?: string;
   total?: number;
 }

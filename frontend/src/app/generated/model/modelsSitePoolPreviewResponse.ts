@@ -11,6 +11,12 @@ import { ModelsSitePoolEntry } from './modelsSitePoolEntry';
 
 export interface ModelsSitePoolPreviewResponse {
   entries?: Array<ModelsSitePoolEntry>;
-  nextCursor?: number;
+  /**
+   * 下一个 Byte Offset (作为字符串传递)
+   */
+  nextCursor?: string;
+  /**
+   * 总条数
+   */
   total?: number;
 }

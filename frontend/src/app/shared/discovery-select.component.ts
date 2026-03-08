@@ -234,7 +234,7 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
           if (!this.code) return of({ items: [], total: 0 });
           this.isLoading.set(true);
           this.lastSearch.set(search);
-          return this.discoveryService.discoveryLookupGet(this.code, search, 0, 20).pipe(
+          return this.discoveryService.discoveryLookupGet(this.code, search, '', 20).pipe(
             catchError(() => of({ items: [], total: 0 })),
             finalize(() => this.isLoading.set(false)),
           );
@@ -247,7 +247,7 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     // Initial load
     if (this.code) {
       this.discoveryService
-        .discoveryLookupGet(this.code, '', 0, 20)
+        .discoveryLookupGet(this.code, '', '', 20)
         .subscribe((res) => this.items.set(res.items || []));
     }
   }
@@ -327,7 +327,7 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     if (!this.code) return;
     this.isLoading.set(true);
     const lookups = ids.map((id) =>
-      this.discoveryService.discoveryLookupGet(this.code, id, 0, 1).pipe(
+      this.discoveryService.discoveryLookupGet(this.code, id, '', 1).pipe(
         catchError(() => of({ items: [] })),
         switchMap((res) => {
           const item = res.items?.find((i) => i.id === id);

@@ -334,7 +334,7 @@ export class ManageEntriesDialogComponent implements OnInit {
   submitting = signal(false);
   isEditMode = signal(false);
 
-  nextCursor = 0;
+  nextCursor = '';
   hasMore = signal(true);
 
   searchQuery = '';
@@ -379,7 +379,7 @@ export class ManageEntriesDialogComponent implements OnInit {
 
   loadEntries(reset = false) {
     if (reset) {
-      this.nextCursor = 0;
+      this.nextCursor = '';
       this.hasMore.set(true);
       this.entries.set([]);
       this.loading.set(true);
@@ -411,8 +411,8 @@ export class ManageEntriesDialogComponent implements OnInit {
             this.entries.update((v) => [...v, ...newEntries]);
           }
 
-          this.nextCursor = res.nextCursor || 0;
-          this.hasMore.set(this.nextCursor > 0 && newEntries.length > 0);
+          this.nextCursor = res.nextCursor || '';
+          this.hasMore.set(!!this.nextCursor && newEntries.length > 0);
 
           this.loading.set(false);
           this.loadingMore.set(false);

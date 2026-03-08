@@ -168,16 +168,16 @@ export class RbacService extends BaseService {
   /**
    * List all role bindings
    * @endpoint get /rbac/rolebindings
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name or id
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public rbacRolebindingsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -188,8 +188,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<RbacRolebindingsGet200Response>;
   public rbacRolebindingsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -200,8 +200,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<HttpResponse<RbacRolebindingsGet200Response>>;
   public rbacRolebindingsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -212,8 +212,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<HttpEvent<RbacRolebindingsGet200Response>>;
   public rbacRolebindingsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -227,16 +227,16 @@ export class RbacService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );
@@ -619,16 +619,16 @@ export class RbacService extends BaseService {
   /**
    * List all roles
    * @endpoint get /rbac/roles
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name or id
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public rbacRolesGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -639,8 +639,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<RbacRolesGet200Response>;
   public rbacRolesGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -651,8 +651,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<HttpResponse<RbacRolesGet200Response>>;
   public rbacRolesGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -663,8 +663,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<HttpEvent<RbacRolesGet200Response>>;
   public rbacRolesGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -678,16 +678,16 @@ export class RbacService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );
@@ -1060,16 +1060,16 @@ export class RbacService extends BaseService {
   /**
    * List all service accounts
    * @endpoint get /rbac/serviceaccounts
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name or id
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public rbacServiceaccountsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -1080,8 +1080,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<RbacServiceaccountsGet200Response>;
   public rbacServiceaccountsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -1092,8 +1092,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<HttpResponse<RbacServiceaccountsGet200Response>>;
   public rbacServiceaccountsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -1104,8 +1104,8 @@ export class RbacService extends BaseService {
     },
   ): Observable<HttpEvent<RbacServiceaccountsGet200Response>>;
   public rbacServiceaccountsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -1119,16 +1119,16 @@ export class RbacService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );

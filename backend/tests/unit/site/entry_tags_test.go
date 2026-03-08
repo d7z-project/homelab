@@ -50,7 +50,7 @@ func TestSiteEntryTagsGranularUpdate(t *testing.T) {
 			Type: 2, Value: "a.com", NewTags: []string{"_src_intel", "user_tag_1"},
 		}, "add")
 
-		preview, _ := service.PreviewPool(ctx, group.ID, 0, 10, "")
+		preview, _ := service.PreviewPool(ctx, group.ID, "", 10, "")
 		assert.ElementsMatch(t, []string{"_src_intel", "user_tag_1"}, preview.Entries[0].Tags)
 
 		// 2. Update user_tag_1 to user_tag_2 using OldTags/NewTags
@@ -62,7 +62,7 @@ func TestSiteEntryTagsGranularUpdate(t *testing.T) {
 		}, "update")
 		assert.NoError(t, err)
 
-		preview, _ = service.PreviewPool(ctx, group.ID, 0, 10, "")
+		preview, _ = service.PreviewPool(ctx, group.ID, "", 10, "")
 		// Should have: _src_intel (preserved), user_tag_2 (added)
 		// user_tag_1 should be gone because it was in OldTags
 		assert.ElementsMatch(t, []string{"_src_intel", "user_tag_2"}, preview.Entries[0].Tags)
@@ -75,7 +75,7 @@ func TestSiteEntryTagsGranularUpdate(t *testing.T) {
 		}, "update")
 		assert.NoError(t, err)
 
-		preview, _ = service.PreviewPool(ctx, group.ID, 0, 10, "")
+		preview, _ = service.PreviewPool(ctx, group.ID, "", 10, "")
 		// Should have: _src_intel (preserved), user_tag_3 (fully replaced user_tag_2)
 		assert.ElementsMatch(t, []string{"_src_intel", "user_tag_3"}, preview.Entries[0].Tags)
 	})
@@ -85,7 +85,7 @@ func TestSiteEntryTagsGranularUpdate(t *testing.T) {
 			Type: 2, Value: "sort.com", NewTags: []string{"z_tag", "_a_internal", "m_tag", "_z_internal"},
 		}, "add")
 
-		preview, _ := service.PreviewPool(ctx, group.ID, 0, 10, "sort.com")
+		preview, _ := service.PreviewPool(ctx, group.ID, "", 10, "sort.com")
 		// The PreviewPool logic now sorts tags: internal first, then alphabetically
 		// _a_internal, _z_internal, m_tag, z_tag
 		assert.Equal(t, []string{"_a_internal", "_z_internal", "m_tag", "z_tag"}, preview.Entries[0].Tags)

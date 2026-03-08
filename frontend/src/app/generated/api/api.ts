@@ -16,6 +16,8 @@ export * from './networkSite.service';
 import { NetworkSiteService } from './networkSite.service';
 export * from './rbac.service';
 import { RbacService } from './rbac.service';
+export * from './system.service';
+import { SystemService } from './system.service';
 export const APIS = [
   ActionsService,
   AuditService,
@@ -26,4 +28,5 @@ export const APIS = [
   NetworkIpService,
   NetworkSiteService,
   RbacService,
+  SystemService,
 ];

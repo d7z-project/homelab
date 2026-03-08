@@ -265,8 +265,8 @@ definitions:
           $ref: '#/definitions/models.IPPoolEntry'
         type: array
       nextCursor:
-        description: 下一个 Byte Offset
-        type: integer
+        description: 下一个 Byte Offset (作为字符串传递)
+        type: string
       total:
         description: 总条数
         type: integer
@@ -650,8 +650,10 @@ definitions:
           $ref: '#/definitions/models.SitePoolEntry'
         type: array
       nextCursor:
-        type: integer
+        description: 下一个 Byte Offset (作为字符串传递)
+        type: string
       total:
+        description: 总条数
         type: integer
     type: object
   models.Step:
@@ -1703,48 +1705,6 @@ paths:
       summary: Discovery lookup
       tags:
       - discovery
-  /dns/domains:
-    get:
-      parameters:
-      - description: Cursor
-        in: query
-        name: cursor
-        type: string
-      - description: Limit
-        in: query
-        name: limit
-        type: integer
-      - description: Search by name
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.CursorResponse'
-            - properties:
-                items:
-                  items:
-                    $ref: '#/definitions/models.Domain'
-                  type: array
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: List all DNS domains
-      tags:
-      - dns
   /info:
     get:
       produces:
@@ -1807,6 +1767,47 @@ paths:
       tags:
       - auth
   /network/dns/domains:
+    get:
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.CursorResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.Domain'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: List all DNS domains
+      tags:
+      - network/dns
     post:
       consumes:
       - application/json
@@ -2919,7 +2920,7 @@ paths:
       - description: Byte offset cursor
         in: query
         name: cursor
-        type: integer
+        type: string
       - description: Number of entries to return
         in: query
         name: limit
@@ -3528,7 +3529,7 @@ paths:
       - description: Byte offset cursor
         in: query
         name: cursor
-        type: integer
+        type: string
       - description: Number of entries to return
         in: query
         name: limit
@@ -3547,6 +3548,19 @@ paths:
       summary: Preview site pool data (cursor-based)
       tags:
       - network/site
+  /ping:
+    get:
+      description: Returns pong if the server is alive
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+      summary: Ping the server
+      tags:
+      - system
   /rbac/resources/suggest:
     get:
       parameters:

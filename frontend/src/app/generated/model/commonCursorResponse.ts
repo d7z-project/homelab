@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsSiteGroup } from './modelsSiteGroup';
 
-export interface NetworkSitePoolsGet200Response {
+export interface CommonCursorResponse {
   hasMore?: boolean;
-  items?: Array<ModelsSiteGroup>;
+  items?: object;
   nextCursor?: string;
   total?: number;
 }

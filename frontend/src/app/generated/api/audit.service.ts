@@ -160,16 +160,16 @@ export class AuditService extends BaseService {
   /**
    * List audit logs
    * @endpoint get /audit/logs
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search query
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -180,8 +180,8 @@ export class AuditService extends BaseService {
     },
   ): Observable<AuditLogsGet200Response>;
   public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -192,8 +192,8 @@ export class AuditService extends BaseService {
     },
   ): Observable<HttpResponse<AuditLogsGet200Response>>;
   public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -204,8 +204,8 @@ export class AuditService extends BaseService {
     },
   ): Observable<HttpEvent<AuditLogsGet200Response>>;
   public auditLogsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -219,16 +219,16 @@ export class AuditService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );

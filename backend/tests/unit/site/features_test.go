@@ -200,7 +200,7 @@ func TestSiteImportProcessor(t *testing.T) {
 	g, _ := service.GetGroup(ctx, group.ID)
 	assert.Equal(t, int64(4), g.EntryCount)
 
-	preview, _ := service.PreviewPool(ctx, group.ID, 0, 10, "")
+	preview, _ := service.PreviewPool(ctx, group.ID, "", 10, "")
 	assert.Len(t, preview.Entries, 4)
 }
 
@@ -219,16 +219,16 @@ func TestSitePreviewSearch(t *testing.T) {
 	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "github.com", NewTags: []string{"dev"}}, "add")
 
 	// 1. Search by Value
-	res, _ := service.PreviewPool(ctx, group.ID, 0, 10, "git")
+	res, _ := service.PreviewPool(ctx, group.ID, "", 10, "git")
 	assert.Len(t, res.Entries, 1)
 	assert.Equal(t, "github.com", res.Entries[0].Value)
 
 	// 2. Search by Tag
-	res, _ = service.PreviewPool(ctx, group.ID, 0, 10, "work")
+	res, _ = service.PreviewPool(ctx, group.ID, "", 10, "work")
 	assert.Len(t, res.Entries, 1)
 	assert.Equal(t, "microsoft.com", res.Entries[0].Value)
 
 	// 3. Search Miss
-	res, _ = service.PreviewPool(ctx, group.ID, 0, 10, "apple")
+	res, _ = service.PreviewPool(ctx, group.ID, "", 10, "apple")
 	assert.Len(t, res.Entries, 0)
 }

@@ -10,8 +10,8 @@
 import { ModelsIPSyncPolicy } from './modelsIPSyncPolicy';
 
 export interface NetworkIpSyncGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsIPSyncPolicy>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

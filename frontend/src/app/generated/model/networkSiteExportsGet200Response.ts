@@ -10,8 +10,8 @@
 import { ModelsSiteExport } from './modelsSiteExport';
 
 export interface NetworkSiteExportsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsSiteExport>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

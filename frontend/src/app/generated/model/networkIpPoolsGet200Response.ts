@@ -10,8 +10,8 @@
 import { ModelsIPGroup } from './modelsIPGroup';
 
 export interface NetworkIpPoolsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsIPGroup>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"fmt"
 	"homelab/pkg/common"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	dnsservice "homelab/pkg/services/dns"
@@ -12,7 +14,7 @@ import (
 )
 // ListDomainsHandler godoc
 // @Summary List all DNS domains
-// @Tags dns
+// @Tags network/dns
 // @Produce json
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
@@ -21,7 +23,7 @@ import (
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
-// @Router /dns/domains [get]
+// @Router /network/dns/domains [get]
 func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
@@ -77,13 +79,21 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/domains/{id} [put]
 func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var domain models.Domain
-	if err := render.Bind(r, &domain); err != nil {
+	domain, err := dnsservice.GetDomain(r.Context(), id)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/" + domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+		return
+	}
+	var updated models.Domain
+	if err := render.Bind(r, &updated); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	res, err := dnsservice.UpdateDomain(r.Context(), id, &domain)
+	res, err := dnsservice.UpdateDomain(r.Context(), id, &updated)
 	if err != nil {
 		HandleError(w, r, err)
 		return
@@ -104,6 +114,15 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/domains/{id} [delete]
 func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	domain, err := dnsservice.GetDomain(r.Context(), id)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/" + domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+		return
+	}
 	if err := dnsservice.DeleteDomain(r.Context(), id); err != nil {
 		HandleError(w, r, err)
 		return
@@ -125,6 +144,15 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/records [get]
 func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	domainID := r.URL.Query().Get("domainId")
+	if domainID != "" {
+		domain, err := dnsservice.GetDomain(r.Context(), domainID)
+		if err == nil {
+			if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+				HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+				return
+			}
+		}
+	}
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
@@ -154,7 +182,13 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
+	domain, err := dnsservice.GetDomain(r.Context(), record.DomainID)
+	if err == nil {
+		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+			return
+		}
+	}
 	res, err := dnsservice.CreateRecord(r.Context(), &record)
 	if err != nil {
 		HandleError(w, r, err)
@@ -179,13 +213,24 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/records/{id} [put]
 func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var record models.Record
-	if err := render.Bind(r, &record); err != nil {
+	record, err := dnsservice.GetRecord(r.Context(), id)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	domain, err := dnsservice.GetDomain(r.Context(), record.DomainID)
+	if err == nil {
+		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+			return
+		}
+	}
+	var updated models.Record
+	if err := render.Bind(r, &updated); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	res, err := dnsservice.UpdateRecord(r.Context(), id, &record)
+	res, err := dnsservice.UpdateRecord(r.Context(), id, &updated)
 	if err != nil {
 		HandleError(w, r, err)
 		return
@@ -206,6 +251,18 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/records/{id} [delete]
 func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	record, err := dnsservice.GetRecord(r.Context(), id)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	domain, err := dnsservice.GetDomain(r.Context(), record.DomainID)
+	if err == nil {
+		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+			return
+		}
+	}
 	if err := dnsservice.DeleteRecord(r.Context(), id); err != nil {
 		HandleError(w, r, err)
 		return
@@ -238,13 +295,13 @@ func DNSRouter(r chi.Router) {
 		r.With(middlewares.RequirePermission("get", "network/dns")).Get("/export", ExportHandler)
 
 		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/domains", ListDomainsHandler)
-		r.With(middlewares.RequirePermission("create", "network/dns/*")).Post("/domains", CreateDomainHandler)
-		r.With(middlewares.RequirePermission("update", "network/dns/*")).Put("/domains/{id}", UpdateDomainHandler)
-		r.With(middlewares.RequirePermission("delete", "network/dns/*")).Delete("/domains/{id}", DeleteDomainHandler)
+		r.With(middlewares.RequirePermission("create", "network/dns")).Post("/domains", CreateDomainHandler)
+		r.With(middlewares.RequirePermission("update", "network/dns")).Put("/domains/{id}", UpdateDomainHandler)
+		r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/domains/{id}", DeleteDomainHandler)
 
 		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/records", ListRecordsHandler)
-		r.With(middlewares.RequirePermission("create", "network/dns/*")).Post("/records", CreateRecordHandler)
-		r.With(middlewares.RequirePermission("update", "network/dns/*")).Put("/records/{id}", UpdateRecordHandler)
-		r.With(middlewares.RequirePermission("delete", "network/dns/*")).Delete("/records/{id}", DeleteRecordHandler)
+		r.With(middlewares.RequirePermission("create", "network/dns")).Post("/records", CreateRecordHandler)
+		r.With(middlewares.RequirePermission("update", "network/dns")).Put("/records/{id}", UpdateRecordHandler)
+		r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/records/{id}", DeleteRecordHandler)
 	})
 }

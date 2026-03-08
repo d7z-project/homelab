@@ -375,8 +375,8 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
     // Async fetch workflow name for display if available, but don't block
     try {
-      const workflows = await firstValueFrom(this.orchService.actionsWorkflowsGet());
-      const wf = workflows.find((w) => w.id === inst.workflowId);
+      const res = await firstValueFrom(this.orchService.actionsWorkflowsGet('', 100));
+      const wf = (res.items || []).find((w: any) => w.id === inst.workflowId);
       if (wf) this.workflowName.set(wf.name || wf.id || '');
     } catch (e) {}
   }
@@ -405,8 +405,8 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   async refresh() {
     if (!this.pollingActive) return;
     try {
-      const insts = await firstValueFrom(this.orchService.actionsInstancesGet());
-      const updated = insts.find((i) => i.id === this.instance().id);
+      const res = await firstValueFrom(this.orchService.actionsInstancesGet('', 100));
+      const updated = (res.items || []).find((i: any) => i.id === this.instance().id);
       if (updated) {
         this.instance.set(updated);
         const expanded = this.stepStates().filter((s) => s.expanded);

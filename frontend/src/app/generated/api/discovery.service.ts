@@ -24,7 +24,7 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { ModelsLookupResponse } from '../model/modelsLookupResponse';
+import { DiscoveryLookupGet200Response } from '../model/discoveryLookupGet200Response';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -136,7 +136,7 @@ export class DiscoveryService extends BaseService {
    * @endpoint get /discovery/lookup
    * @param code Discovery code
    * @param search Search string
-   * @param offset Offset
+   * @param cursor Cursor
    * @param limit Limit
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
@@ -145,7 +145,7 @@ export class DiscoveryService extends BaseService {
   public discoveryLookupGet(
     code: string,
     search?: string,
-    offset?: number,
+    cursor?: string,
     limit?: number,
     observe?: 'body',
     reportProgress?: boolean,
@@ -154,11 +154,11 @@ export class DiscoveryService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsLookupResponse>;
+  ): Observable<DiscoveryLookupGet200Response>;
   public discoveryLookupGet(
     code: string,
     search?: string,
-    offset?: number,
+    cursor?: string,
     limit?: number,
     observe?: 'response',
     reportProgress?: boolean,
@@ -167,11 +167,11 @@ export class DiscoveryService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsLookupResponse>>;
+  ): Observable<HttpResponse<DiscoveryLookupGet200Response>>;
   public discoveryLookupGet(
     code: string,
     search?: string,
-    offset?: number,
+    cursor?: string,
     limit?: number,
     observe?: 'events',
     reportProgress?: boolean,
@@ -180,11 +180,11 @@ export class DiscoveryService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsLookupResponse>>;
+  ): Observable<HttpEvent<DiscoveryLookupGet200Response>>;
   public discoveryLookupGet(
     code: string,
     search?: string,
-    offset?: number,
+    cursor?: string,
     limit?: number,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -220,8 +220,8 @@ export class DiscoveryService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'offset',
-      <any>offset,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
@@ -266,15 +266,19 @@ export class DiscoveryService extends BaseService {
 
     let localVarPath = `/discovery/lookup`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsLookupResponse>('get', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      params: localVarQueryParameters.toHttpParams(),
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<DiscoveryLookupGet200Response>(
+      'get',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        params: localVarQueryParameters.toHttpParams(),
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 }

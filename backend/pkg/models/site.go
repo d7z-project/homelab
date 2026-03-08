@@ -125,12 +125,13 @@ func (req *SitePoolEntryRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-// SitePoolPreviewResponse 游标分页预览
+// SitePoolPreviewResponse 游标分页预览响应
 type SitePoolPreviewResponse struct {
 	Entries    []SitePoolEntry `json:"entries"`
-	NextCursor int64           `json:"nextCursor"`
-	Total      int64           `json:"total"`
+	NextCursor string          `json:"nextCursor"` // 下一个 Byte Offset (作为字符串传递)
+	Total      int64           `json:"total"`      // 总条数
 }
+
 
 // SiteAnalysisResult 命中推演结果
 type SiteAnalysisResult struct {

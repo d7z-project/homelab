@@ -71,7 +71,7 @@ func TestIPSyncLogic(t *testing.T) {
 		syncAndWait("_p2")
 
 		// Verify Total: 3
-		res, _ := service.PreviewPool(ctx, "test_pool", 0, 10, "")
+		res, _ := service.PreviewPool(ctx, "test_pool", "", 10, "")
 		assert.Equal(t, int64(3), res.Total)
 
 		// Update Policy 1: 1.1.1.1 -> 1.1.1.100 (overwrite old P1 records)
@@ -84,7 +84,7 @@ func TestIPSyncLogic(t *testing.T) {
 		syncAndWait("_p1")
 
 		// Final Result: 1.1.1.100 (from P1) + 2.2.2.2 (from P2) = 2 records
-		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "")
+		res, _ = service.PreviewPool(ctx, "test_pool", "", 10, "")
 		assert.Equal(t, int64(2), res.Total)
 
 		cidrs := []string{}
@@ -118,7 +118,7 @@ func TestIPSyncLogic(t *testing.T) {
 		syncAndWait("_pb")
 
 		// Total should be previous 2 + current 1 = 3
-		res, _ := service.PreviewPool(ctx, "test_pool", 0, 100, "")
+		res, _ := service.PreviewPool(ctx, "test_pool", "", 100, "")
 		assert.Equal(t, int64(3), res.Total)
 
 		for _, e := range res.Entries {
@@ -145,7 +145,7 @@ func TestIPSyncLogic(t *testing.T) {
 		syncAndWait("_papp") // Sync again with same content
 
 		// Total should be previous 3 + current 1 = 4 (not 5, because of deduplication)
-		res, _ := service.PreviewPool(ctx, "test_pool", 0, 100, "")
+		res, _ := service.PreviewPool(ctx, "test_pool", "", 100, "")
 		assert.Equal(t, int64(4), res.Total)
 	})
 
@@ -163,7 +163,7 @@ func TestIPSyncLogic(t *testing.T) {
 		_ = service.CreateSyncPolicy(ctx, policyRem)
 		syncAndWait("_prem")
 
-		res, _ := service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
+		res, _ := service.PreviewPool(ctx, "test_pool", "", 10, "1.2.3.4")
 		assert.Contains(t, res.Entries[0].Tags, "tag_a")
 
 		// 2. 模拟源数据更新：修改配置，将标签改为 tag_b
@@ -172,7 +172,7 @@ func TestIPSyncLogic(t *testing.T) {
 		syncAndWait("_prem")
 
 		// 验证：tag_a 应该消失，只有 tag_b
-		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
+		res, _ = service.PreviewPool(ctx, "test_pool", "", 10, "1.2.3.4")
 		assert.Contains(t, res.Entries[0].Tags, "tag_b")
 		assert.NotContains(t, res.Entries[0].Tags, "tag_a")
 	})
@@ -192,7 +192,7 @@ func TestIPSyncLogic(t *testing.T) {
 		_ = service.CreateSyncPolicy(ctx, policyCSV)
 		syncAndWait("csv_policy")
 
-		res, _ := service.PreviewPool(ctx, "test_pool", 0, 10, "1.2.3.4")
+		res, _ := service.PreviewPool(ctx, "test_pool", "", 10, "1.2.3.4")
 		assert.Contains(t, res.Entries[0].Tags, "test-tag")
 
 		// GeoIP-DAT
@@ -211,7 +211,7 @@ func TestIPSyncLogic(t *testing.T) {
 		_ = service.CreateSyncPolicy(ctx, policyDat)
 		syncAndWait("v2ray_policy")
 
-		res, _ = service.PreviewPool(ctx, "test_pool", 0, 10, "114.114.114.114")
+		res, _ = service.PreviewPool(ctx, "test_pool", "", 10, "114.114.114.114")
 		assert.Contains(t, res.Entries[0].Tags, "cn")
 	})
 

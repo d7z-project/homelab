@@ -486,16 +486,16 @@ func ActionsRouter(r chi.Router) {
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/validate/regex", ValidateRegexHandler)
 
 		// Use Chi's idiomatic With() pattern for cleaner middleware integration
-		r.With(middlewares.RequirePermission("update", "actions/*")).Put("/workflows/{id}", UpdateWorkflowHandler)
-		r.With(middlewares.RequirePermission("delete", "actions/*")).Delete("/workflows/{id}", DeleteWorkflowHandler)
-		r.With(middlewares.RequirePermission("execute", "actions/*")).Post("/workflows/{workflowId}/run", RunWorkflowHandler)
-		r.With(middlewares.RequirePermission("update", "actions/*")).Post("/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
+		r.With(middlewares.RequirePermission("update", "actions")).Put("/workflows/{id}", UpdateWorkflowHandler)
+		r.With(middlewares.RequirePermission("delete", "actions")).Delete("/workflows/{id}", DeleteWorkflowHandler)
+		r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/{workflowId}/run", RunWorkflowHandler)
+		r.With(middlewares.RequirePermission("update", "actions")).Post("/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
 
 		r.With(middlewares.RequirePermission("list", "actions")).Get("/instances", ListInstancesHandler)
-		r.With(middlewares.RequirePermission("delete", "actions/*")).Post("/instances/cleanup", CleanupInstancesHandler)
+		r.With(middlewares.RequirePermission("delete", "actions")).Post("/instances/cleanup", CleanupInstancesHandler)
 		r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}/logs", GetInstanceLogsHandler)
-		r.With(middlewares.RequirePermission("delete", "actions/*")).Delete("/instances/{id}", DeleteInstanceHandler)
-		r.With(middlewares.RequirePermission("execute", "actions/*")).Post("/instances/{id}/cancel", CancelInstanceHandler)
+		r.With(middlewares.RequirePermission("delete", "actions")).Delete("/instances/{id}", DeleteInstanceHandler)
+		r.With(middlewares.RequirePermission("execute", "actions")).Post("/instances/{id}/cancel", CancelInstanceHandler)
 
 		r.With(middlewares.RequirePermission("list", "actions")).Get("/manifests", ListManifestsHandler)
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/probe", ProbeHandler)

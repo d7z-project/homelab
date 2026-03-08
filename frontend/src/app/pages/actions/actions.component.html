@@ -22,7 +22,7 @@
             title="工作流模板"
             subtitle="编排自动化运维任务，支持多触发器和变量注入"
             icon="schema"
-            [total]="workflows().length"
+            [total]="wfTotal()"
             unit="个模板"
             [loading]="loading()"
             (refresh)="refreshAll()"
@@ -50,7 +50,7 @@
           <div
             class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
           >
-            <table mat-table [dataSource]="filteredWorkflows()" class="w-full bg-transparent">
+            <table mat-table [dataSource]="workflows()" class="w-full bg-transparent">
               <!-- Enabled Column (FIRST) -->
               <ng-container matColumnDef="enabled">
                 <th
@@ -278,7 +278,7 @@
             title="运行记录"
             subtitle="追踪任务执行状态，查看实时流水线日志"
             icon="history"
-            [total]="filteredInstances().length"
+            [total]="instTotal()"
             unit="个实例"
             [loading]="loading()"
             (refresh)="refreshAll()"
@@ -335,7 +335,7 @@
           <div
             class="bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm"
           >
-            <table mat-table [dataSource]="filteredInstances()" class="w-full bg-transparent">
+            <table mat-table [dataSource]="instances()" class="w-full bg-transparent">
               <!-- Workflow Name Column -->
               <ng-container matColumnDef="workflowName">
                 <th

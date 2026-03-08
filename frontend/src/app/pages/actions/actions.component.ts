@@ -4,6 +4,7 @@ import {
   inject,
   signal,
   computed,
+  effect,
   OnDestroy,
   HostListener,
 } from '@angular/core';
@@ -76,40 +77,18 @@ export class ActionsComponent implements OnInit, OnDestroy {
   workflows = signal<ModelsWorkflow[]>([]);
   instances = signal<ModelsTaskInstance[]>([]);
 
+  wfTotal = signal(0);
+  wfNextCursor = signal('');
+  wfHasMore = signal(false);
+
+  instTotal = signal(0);
+  instNextCursor = signal('');
+  instHasMore = signal(false);
+
   selectedWorkflowId = signal<string | null>(null);
 
-  filteredWorkflows = computed(() => {
-    const list = this.workflows();
-    const search = this.uiService.searchConfig()?.value?.toLowerCase();
-    if (!search) return list;
-    return list.filter(
-      (w) =>
-        w.name?.toLowerCase().includes(search) || w.description?.toLowerCase().includes(search),
-    );
-  });
-
-  filteredInstances = computed(() => {
-    let list = this.instances();
-    const search = this.uiService.searchConfig()?.value?.toLowerCase();
-    const wfId = this.selectedWorkflowId();
-
-    if (wfId) {
-      list = list.filter((i) => i.workflowId === wfId);
-    }
-
-    if (search) {
-      list = list.filter(
-        (i) =>
-          i.id?.toLowerCase().includes(search) ||
-          this.getWorkflowName(i.workflowId || '')
-            .toLowerCase()
-            .includes(search),
-      );
-    }
-    return list;
-  });
-
   loading = signal(false);
+  loadingMore = signal(false);
   selectedTabIndex = signal(0);
   showScrollTop = signal(false);
 
@@ -159,18 +138,53 @@ export class ActionsComponent implements OnInit, OnDestroy {
     this.showScrollTop.set(window.scrollY > 300);
   }
 
-  scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
   ngOnInit(): void {
     this.uiService.configureToolbar({ shadow: false });
     this.refreshAll();
+    this.setupScrollListener();
+
+    // Listen for search changes
+    effect(() => {
+      const search = this.uiService.searchConfig()?.value;
+      this.refreshAll();
+    });
   }
 
   ngOnDestroy(): void {
     this.uiService.resetToolbar();
     this.stopRefreshTimer();
+    if (this.scrollListener) {
+      const scrollElement = document.querySelector('mat-sidenav-content');
+      scrollElement?.removeEventListener('scroll', this.scrollListener);
+    }
+  }
+
+  private scrollListener?: any;
+  private setupScrollListener() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (!scrollElement) return;
+
+    this.scrollListener = () => {
+      this.showScrollTop.set(scrollElement.scrollTop > 300);
+      const atBottom =
+        scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
+
+      if (atBottom && !this.loadingMore() && !this.loading()) {
+        if (this.selectedTabIndex() === 0 && this.wfHasMore()) {
+          this.loadWorkflows(false);
+        } else if (this.selectedTabIndex() === 1 && this.instHasMore()) {
+          this.loadInstances(false, false);
+        }
+      }
+    };
+    scrollElement.addEventListener('scroll', this.scrollListener);
+  }
+
+  scrollToTop() {
+    const scrollElement = document.querySelector('mat-sidenav-content');
+    if (scrollElement) {
+      scrollElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   private startRefreshTimer() {
@@ -210,7 +224,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
   async refreshAll() {
     this.loading.set(true);
     try {
-      await Promise.all([this.loadWorkflows(), this.loadInstances()]);
+      await Promise.all([this.loadWorkflows(true), this.loadInstances(true, true)]);
     } catch (err) {
       this.snackBar
         .open('加载失败', '重试')
@@ -224,28 +238,74 @@ export class ActionsComponent implements OnInit, OnDestroy {
   async refreshData() {
     this.loading.set(true);
     try {
-      if (this.selectedTabIndex() === 0) await this.loadWorkflows();
-      else await this.loadInstances();
+      if (this.selectedTabIndex() === 0) await this.loadWorkflows(true);
+      else await this.loadInstances(true);
     } finally {
       this.loading.set(false);
     }
   }
 
-  async loadWorkflows() {
-    const data = await firstValueFrom(this.orchService.actionsWorkflowsGet());
-    this.workflows.set(data || []);
+  async loadWorkflows(reset = false) {
+    if (reset) {
+      this.wfNextCursor.set('');
+    } else {
+      this.loadingMore.set(true);
+    }
+
+    try {
+      const res = await firstValueFrom(
+        this.orchService.actionsWorkflowsGet(
+          this.wfNextCursor(),
+          20,
+          this.uiService.searchConfig()?.value,
+        ),
+      );
+      if (reset) {
+        this.workflows.set(res.items || []);
+      } else {
+        const current = this.workflows();
+        const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+        this.workflows.update((prev) => [...prev, ...newItems]);
+      }
+      this.wfTotal.set(res.total || 0);
+      this.wfNextCursor.set(res.nextCursor || '');
+      this.wfHasMore.set(res.hasMore || false);
+    } finally {
+      this.loadingMore.set(false);
+    }
   }
 
-  async loadInstances(silent = false) {
-    if (!silent) this.loading.set(true);
+  async loadInstances(reset = false, silent = false) {
+    if (reset) {
+      this.instNextCursor.set('');
+      if (!silent) this.loading.set(true);
+    } else {
+      this.loadingMore.set(true);
+    }
+
     try {
-      const data = await firstValueFrom(this.orchService.actionsInstancesGet());
-      // Sort by startedAt descending
-      const sorted = (data || []).sort((a, b) => {
-        return new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime();
-      });
-      this.instances.set(sorted);
+      const res = await firstValueFrom(
+        this.orchService.actionsInstancesGet(
+          this.instNextCursor(),
+          20,
+          this.uiService.searchConfig()?.value,
+        ),
+      );
+
+      let newItems = res.items || [];
+      if (reset) {
+        this.instances.set(newItems);
+      } else {
+        const current = this.instances();
+        newItems = newItems.filter((n) => !current.some((e) => e.id === n.id));
+        this.instances.update((prev) => [...prev, ...newItems]);
+      }
+
+      this.instTotal.set(res.total || 0);
+      this.instNextCursor.set(res.nextCursor || '');
+      this.instHasMore.set(res.hasMore || false);
     } finally {
+      this.loadingMore.set(false);
       if (!silent) this.loading.set(false);
     }
   }

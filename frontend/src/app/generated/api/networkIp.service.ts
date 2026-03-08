@@ -368,16 +368,16 @@ export class NetworkIpService extends BaseService {
   /**
    * List all IP exports
    * @endpoint get /network/ip/exports
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public networkIpExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -388,8 +388,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<NetworkIpExportsGet200Response>;
   public networkIpExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -400,8 +400,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<HttpResponse<NetworkIpExportsGet200Response>>;
   public networkIpExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -412,8 +412,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<HttpEvent<NetworkIpExportsGet200Response>>;
   public networkIpExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -427,16 +427,16 @@ export class NetworkIpService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );
@@ -1322,16 +1322,16 @@ export class NetworkIpService extends BaseService {
   /**
    * List all IP groups
    * @endpoint get /network/ip/pools
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public networkIpPoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -1342,8 +1342,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<NetworkIpPoolsGet200Response>;
   public networkIpPoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -1354,8 +1354,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<HttpResponse<NetworkIpPoolsGet200Response>>;
   public networkIpPoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -1366,8 +1366,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<HttpEvent<NetworkIpPoolsGet200Response>>;
   public networkIpPoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -1381,16 +1381,16 @@ export class NetworkIpService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );
@@ -1809,7 +1809,7 @@ export class NetworkIpService extends BaseService {
    */
   public networkIpPoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe?: 'body',
@@ -1822,7 +1822,7 @@ export class NetworkIpService extends BaseService {
   ): Observable<ModelsIPPoolPreviewResponse>;
   public networkIpPoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe?: 'response',
@@ -1835,7 +1835,7 @@ export class NetworkIpService extends BaseService {
   ): Observable<HttpResponse<ModelsIPPoolPreviewResponse>>;
   public networkIpPoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe?: 'events',
@@ -1848,7 +1848,7 @@ export class NetworkIpService extends BaseService {
   ): Observable<HttpEvent<ModelsIPPoolPreviewResponse>>;
   public networkIpPoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe: any = 'body',
@@ -2164,16 +2164,16 @@ export class NetworkIpService extends BaseService {
   /**
    * List all IP sync policies
    * @endpoint get /network/ip/sync
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public networkIpSyncGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -2184,8 +2184,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<NetworkIpSyncGet200Response>;
   public networkIpSyncGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -2196,8 +2196,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<HttpResponse<NetworkIpSyncGet200Response>>;
   public networkIpSyncGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -2208,8 +2208,8 @@ export class NetworkIpService extends BaseService {
     },
   ): Observable<HttpEvent<NetworkIpSyncGet200Response>>;
   public networkIpSyncGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -2223,16 +2223,16 @@ export class NetworkIpService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );

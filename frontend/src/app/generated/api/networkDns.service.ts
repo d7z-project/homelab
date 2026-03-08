@@ -52,18 +52,18 @@ export class NetworkDnsService extends BaseService {
   }
 
   /**
-   * List all domains
+   * List all DNS domains
    * @endpoint get /network/dns/domains
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public networkDnsDomainsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -74,8 +74,8 @@ export class NetworkDnsService extends BaseService {
     },
   ): Observable<NetworkDnsDomainsGet200Response>;
   public networkDnsDomainsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -86,8 +86,8 @@ export class NetworkDnsService extends BaseService {
     },
   ): Observable<HttpResponse<NetworkDnsDomainsGet200Response>>;
   public networkDnsDomainsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -98,8 +98,8 @@ export class NetworkDnsService extends BaseService {
     },
   ): Observable<HttpEvent<NetworkDnsDomainsGet200Response>>;
   public networkDnsDomainsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -113,16 +113,16 @@ export class NetworkDnsService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );
@@ -593,8 +593,8 @@ export class NetworkDnsService extends BaseService {
    * List all records
    * @endpoint get /network/dns/records
    * @param domainId Filter by domain ID
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name or value
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
@@ -602,8 +602,8 @@ export class NetworkDnsService extends BaseService {
    */
   public networkDnsRecordsGet(
     domainId?: string,
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -615,8 +615,8 @@ export class NetworkDnsService extends BaseService {
   ): Observable<NetworkDnsRecordsGet200Response>;
   public networkDnsRecordsGet(
     domainId?: string,
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -628,8 +628,8 @@ export class NetworkDnsService extends BaseService {
   ): Observable<HttpResponse<NetworkDnsRecordsGet200Response>>;
   public networkDnsRecordsGet(
     domainId?: string,
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -641,8 +641,8 @@ export class NetworkDnsService extends BaseService {
   ): Observable<HttpEvent<NetworkDnsRecordsGet200Response>>;
   public networkDnsRecordsGet(
     domainId?: string,
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -664,16 +664,16 @@ export class NetworkDnsService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );

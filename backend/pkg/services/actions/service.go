@@ -58,16 +58,18 @@ func init() {
 	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
 	discovery.Register("actions/workflows", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
-		if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions") {
-			return nil, fmt.Errorf("%w: actions", commonauth.ErrPermissionDenied)
-		}
 		workflows, err := repo.ListWorkflows(ctx)
 		if err != nil {
 			return nil, err
 		}
+		perms := commonauth.PermissionsFromContext(ctx)
+		hasGlobal := perms.IsAllowed("actions")
 		var items []models.LookupItem
 		search = strings.ToLower(search)
 		for _, wf := range workflows {
+			if !hasGlobal && !perms.IsAllowed("actions/"+wf.ID) {
+				continue
+			}
 			if search != "" && !strings.Contains(strings.ToLower(wf.ID), search) && !strings.Contains(strings.ToLower(wf.Name), search) {
 				continue
 			}

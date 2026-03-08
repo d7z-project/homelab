@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"homelab/pkg/common"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	ipservice "homelab/pkg/services/ip"
@@ -89,6 +90,10 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id} [put]
 func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
 	var group models.IPGroup
 	if err := render.Bind(r, &group); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
@@ -107,7 +112,7 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param cursor query int false "Byte offset cursor"
+// @Param cursor query string false "Byte offset cursor"
 // @Param limit query int false "Number of entries to return"
 // @Param search query string false "Search prefix or tag"
 // @Success 200 {object} models.IPPoolPreviewResponse
@@ -117,8 +122,11 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id}/preview [get]
 func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	cursorStr := r.URL.Query().Get("cursor")
-	cursor, _ := strconv.ParseInt(cursorStr, 10, 64)
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
+	cursor := r.URL.Query().Get("cursor")
 	limitStr := r.URL.Query().Get("limit")
 	limit, _ := strconv.Atoi(limitStr)
 	if limit <= 0 {
@@ -147,6 +155,10 @@ func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id} [delete]
 func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
 	if err := ipPoolService.DeleteGroup(r.Context(), id); err != nil {
 		HandleError(w, r, err)
 		return
@@ -445,6 +457,10 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id}/entries [post]
 func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
 	var req models.IPPoolEntryRequest
 	if err := render.Bind(r, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
@@ -478,6 +494,10 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id}/entries [delete]
 func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
 	cidr := r.URL.Query().Get("cidr")
 	tagsStr := r.URL.Query().Get("tags")
 	var tags []string

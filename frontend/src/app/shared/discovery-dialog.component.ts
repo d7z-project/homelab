@@ -169,7 +169,7 @@ export class DiscoveryDialogComponent implements OnInit {
         distinctUntilChanged(),
         switchMap((s) => {
           this.isLoading.set(true);
-          return this.discoveryService.discoveryLookupGet(this.data.code, s, 0, 50).pipe(
+          return this.discoveryService.discoveryLookupGet(this.data.code, s, '', 50).pipe(
             catchError(() => of({ items: [] })),
             finalize(() => this.isLoading.set(false)),
           );

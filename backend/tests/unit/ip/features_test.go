@@ -363,17 +363,17 @@ func TestManagePoolEntry(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify via Preview
-	preview, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "")
+	preview, err := service.PreviewPool(ctx, "pool_entries", "", 10, "")
 	assert.NoError(t, err)
 	assert.Len(t, preview.Entries, 1)
 	assert.ElementsMatch(t, []string{"tag2", "tag3"}, preview.Entries[0].Tags)
 
 	// Verify Search
-	searchPreview, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "tag3")
+	searchPreview, err := service.PreviewPool(ctx, "pool_entries", "", 10, "tag3")
 	assert.NoError(t, err)
 	assert.Len(t, searchPreview.Entries, 1)
 
-	searchPreviewMiss, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "tag_not_exist")
+	searchPreviewMiss, err := service.PreviewPool(ctx, "pool_entries", "", 10, "tag_not_exist")
 	assert.NoError(t, err)
 	assert.Len(t, searchPreviewMiss.Entries, 0)
 
@@ -384,7 +384,7 @@ func TestManagePoolEntry(t *testing.T) {
 	}, "delete")
 	assert.NoError(t, err)
 
-	preview2, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "")
+	preview2, err := service.PreviewPool(ctx, "pool_entries", "", 10, "")
 	assert.NoError(t, err)
 	assert.Len(t, preview2.Entries, 1)
 	assert.ElementsMatch(t, []string{"tag3"}, preview2.Entries[0].Tags)
@@ -395,7 +395,7 @@ func TestManagePoolEntry(t *testing.T) {
 	}, "delete")
 	assert.NoError(t, err)
 
-	preview3, err := service.PreviewPool(ctx, "pool_entries", 0, 10, "")
+	preview3, err := service.PreviewPool(ctx, "pool_entries", "", 10, "")
 	assert.NoError(t, err)
 	assert.Len(t, preview3.Entries, 0)
 }

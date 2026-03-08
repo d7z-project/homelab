@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/site"
 	"homelab/pkg/services/discovery"
@@ -33,13 +34,17 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
+		perms := commonauth.PermissionsFromContext(ctx)
+		hasGlobal := perms.IsAllowed("network/site")
 		var items []models.LookupItem
 		for _, g := range resp.Items {
-			items = append(items, models.LookupItem{
-				ID:          g.ID,
-				Name:        g.Name,
-				Description: g.Description,
-			})
+			if hasGlobal || perms.IsAllowed("network/site/"+g.ID) {
+				items = append(items, models.LookupItem{
+					ID:          g.ID,
+					Name:        g.Name,
+					Description: g.Description,
+				})
+			}
 		}
 		return discovery.Paginate(items, cursor, limit), nil
 	})

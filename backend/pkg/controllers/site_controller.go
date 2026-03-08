@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"homelab/pkg/common"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
 	siteservice "homelab/pkg/services/site"
@@ -77,6 +78,10 @@ func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id} [delete]
 func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
 	if err := sitePoolService.DeleteGroup(r.Context(), id); err != nil {
 		HandleError(w, r, err)
 		return
@@ -89,14 +94,18 @@ func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/site
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param cursor query int false "Byte offset cursor"
+// @Param cursor query string false "Byte offset cursor"
 // @Param limit query int false "Number of entries to return"
 // @Param search query string false "Search prefix or tag"
 // @Success 200 {object} models.SitePoolPreviewResponse
 // @Router /network/site/pools/{id}/preview [get]
 func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	cursor, _ := strconv.ParseInt(r.URL.Query().Get("cursor"), 10, 64)
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
+	cursor := r.URL.Query().Get("cursor")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 {
 		limit = 100
@@ -121,6 +130,10 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id}/entries [post]
 func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
 	var req models.SitePoolEntryRequest
 	if err := render.Bind(r, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
@@ -144,9 +157,14 @@ func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id}/entries [delete]
 func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	val := r.URL.Query().Get("value")
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
+		return
+	}
+	value := r.URL.Query().Get("value")
+
 	t, _ := strconv.Atoi(r.URL.Query().Get("type"))
-	req := models.SitePoolEntryRequest{Type: uint8(t), Value: val}
+	req := models.SitePoolEntryRequest{Type: uint8(t), Value: value}
 	if err := sitePoolService.ManagePoolEntry(r.Context(), id, &req, "delete"); err != nil {
 		HandleError(w, r, err)
 		return

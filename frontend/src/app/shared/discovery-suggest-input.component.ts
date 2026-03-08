@@ -212,7 +212,7 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
           }
 
           this.isLoading.set(true);
-          return this.discoveryService.discoveryLookupGet(this.code, search, 0, 10).pipe(
+          return this.discoveryService.discoveryLookupGet(this.code, search, '', 10).pipe(
             catchError(() => of({ items: [] })),
             finalize(() => this.isLoading.set(false)),
           );

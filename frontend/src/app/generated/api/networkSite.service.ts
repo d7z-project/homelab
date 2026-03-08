@@ -243,16 +243,16 @@ export class NetworkSiteService extends BaseService {
   /**
    * List all site exports
    * @endpoint get /network/site/exports
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public networkSiteExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -263,8 +263,8 @@ export class NetworkSiteService extends BaseService {
     },
   ): Observable<NetworkSiteExportsGet200Response>;
   public networkSiteExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -275,8 +275,8 @@ export class NetworkSiteService extends BaseService {
     },
   ): Observable<HttpResponse<NetworkSiteExportsGet200Response>>;
   public networkSiteExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -287,8 +287,8 @@ export class NetworkSiteService extends BaseService {
     },
   ): Observable<HttpEvent<NetworkSiteExportsGet200Response>>;
   public networkSiteExportsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -302,16 +302,16 @@ export class NetworkSiteService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );
@@ -1166,16 +1166,16 @@ export class NetworkSiteService extends BaseService {
   /**
    * List all site groups
    * @endpoint get /network/site/pools
-   * @param page Page number
-   * @param pageSize Items per page
+   * @param cursor Cursor
+   * @param limit Limit
    * @param search Search by name
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public networkSitePoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'body',
     reportProgress?: boolean,
@@ -1186,8 +1186,8 @@ export class NetworkSiteService extends BaseService {
     },
   ): Observable<NetworkSitePoolsGet200Response>;
   public networkSitePoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'response',
     reportProgress?: boolean,
@@ -1198,8 +1198,8 @@ export class NetworkSiteService extends BaseService {
     },
   ): Observable<HttpResponse<NetworkSitePoolsGet200Response>>;
   public networkSitePoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe?: 'events',
     reportProgress?: boolean,
@@ -1210,8 +1210,8 @@ export class NetworkSiteService extends BaseService {
     },
   ): Observable<HttpEvent<NetworkSitePoolsGet200Response>>;
   public networkSitePoolsGet(
-    page?: number,
-    pageSize?: number,
+    cursor?: string,
+    limit?: number,
     search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -1225,16 +1225,16 @@ export class NetworkSiteService extends BaseService {
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'page',
-      <any>page,
+      'cursor',
+      <any>cursor,
       QueryParamStyle.Form,
       false,
     );
 
     localVarQueryParameters = this.addToHttpParams(
       localVarQueryParameters,
-      'pageSize',
-      <any>pageSize,
+      'limit',
+      <any>limit,
       QueryParamStyle.Form,
       false,
     );
@@ -1629,7 +1629,7 @@ export class NetworkSiteService extends BaseService {
    */
   public networkSitePoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe?: 'body',
@@ -1642,7 +1642,7 @@ export class NetworkSiteService extends BaseService {
   ): Observable<ModelsSitePoolPreviewResponse>;
   public networkSitePoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe?: 'response',
@@ -1655,7 +1655,7 @@ export class NetworkSiteService extends BaseService {
   ): Observable<HttpResponse<ModelsSitePoolPreviewResponse>>;
   public networkSitePoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe?: 'events',
@@ -1668,7 +1668,7 @@ export class NetworkSiteService extends BaseService {
   ): Observable<HttpEvent<ModelsSitePoolPreviewResponse>>;
   public networkSitePoolsIdPreviewGet(
     id: string,
-    cursor?: number,
+    cursor?: string,
     limit?: number,
     search?: string,
     observe: any = 'body',

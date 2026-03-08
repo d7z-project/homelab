@@ -21,6 +21,10 @@ func ScanRecords(ctx context.Context, domainID string, cursor string, limit int,
 	return dnsrepo.ScanRecords(ctx, domainID, cursor, limit, search)
 }
 
+func GetRecord(ctx context.Context, id string) (*models.Record, error) {
+	return dnsrepo.GetRecord(ctx, id)
+}
+
 func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, error) {
 	if err := record.Bind(nil); err != nil {
 		return nil, err

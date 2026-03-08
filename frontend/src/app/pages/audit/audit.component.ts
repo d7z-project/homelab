@@ -53,7 +53,8 @@ export class AuditComponent implements OnInit, OnDestroy {
 
   logs = signal<ModelsAuditLog[]>([]);
   total = signal(0);
-  page = signal(1);
+  nextCursor = signal('');
+  hasMore = signal(false);
   pageSize = signal(20);
   search = signal('');
   loading = signal(false);
@@ -130,12 +131,12 @@ export class AuditComponent implements OnInit, OnDestroy {
   async loadLogs(reset = false) {
     if (reset) {
       this.loading.set(true);
-      this.page.set(1);
+      this.nextCursor.set('');
     }
 
     try {
       const res = await firstValueFrom(
-        this.auditService.auditLogsGet(this.page(), this.pageSize(), this.search()),
+        this.auditService.auditLogsGet(this.nextCursor(), this.pageSize(), this.search()),
       );
       if (reset) {
         this.logs.set(res.items || []);
@@ -147,6 +148,8 @@ export class AuditComponent implements OnInit, OnDestroy {
         this.logs.update((prev) => [...prev, ...newItems]);
       }
       this.total.set(res.total || 0);
+      this.nextCursor.set(res.nextCursor || '');
+      this.hasMore.set(res.hasMore || false);
     } catch (err) {
       this.snackBar
         .open('加载审计日志失败', '重试', { duration: 3000 })
@@ -161,11 +164,8 @@ export class AuditComponent implements OnInit, OnDestroy {
   loadMore() {
     if (this.loadingMore() || !this.hasMore()) return;
     this.loadingMore.set(true);
-    this.page.update((p) => p + 1);
     this.loadLogs();
   }
-
-  hasMore = computed(() => this.logs().length < this.total());
 
   onSearch(term: string) {
     this.search.set(term);

@@ -64,9 +64,9 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
 
   loadSources() {
     this.loading.set(true);
-    this.intService.networkIntelligenceSourcesGet().subscribe({
-      next: (data) => {
-        this.sources.set(data);
+    this.intService.networkIntelligenceSourcesGet('', 100).subscribe({
+      next: (res) => {
+        this.sources.set(res.items || []);
         this.loading.set(false);
       },
       error: (err) => {

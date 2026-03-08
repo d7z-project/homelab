@@ -10,8 +10,8 @@
 import { ModelsRecord } from './modelsRecord';
 
 export interface NetworkDnsRecordsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsRecord>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

@@ -10,8 +10,8 @@
 import { ModelsServiceAccount } from './modelsServiceAccount';
 
 export interface RbacServiceaccountsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsServiceAccount>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

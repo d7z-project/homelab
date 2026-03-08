@@ -10,14 +10,18 @@ api/networkIntelligence.service.ts
 api/networkIp.service.ts
 api/networkSite.service.ts
 api/rbac.service.ts
+api/system.service.ts
 configuration.ts
 encoder.ts
 index.ts
+model/actionsInstancesGet200Response.ts
 model/actionsProbeRequest.ts
+model/actionsWorkflowsGet200Response.ts
 model/auditLogsGet200Response.ts
-model/commonPaginatedResponse.ts
+model/commonCursorResponse.ts
 model/commonResponse.ts
 model/controllersAuthInfo.ts
+model/discoveryLookupGet200Response.ts
 model/ipExportTask.ts
 model/models.ts
 model/modelsAuditCleanupResponse.ts
@@ -42,7 +46,6 @@ model/modelsLogEntry.ts
 model/modelsLoginRequest.ts
 model/modelsLoginResponse.ts
 model/modelsLookupItem.ts
-model/modelsLookupResponse.ts
 model/modelsParamDefinition.ts
 model/modelsPolicyRule.ts
 model/modelsRecord.ts
@@ -72,6 +75,7 @@ model/modelsVarDefinition.ts
 model/modelsWorkflow.ts
 model/networkDnsDomainsGet200Response.ts
 model/networkDnsRecordsGet200Response.ts
+model/networkIntelligenceSourcesGet200Response.ts
 model/networkIpExportsGet200Response.ts
 model/networkIpPoolsGet200Response.ts
 model/networkIpSyncGet200Response.ts

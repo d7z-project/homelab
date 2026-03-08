@@ -10,8 +10,8 @@
 import { ModelsIPExport } from './modelsIPExport';
 
 export interface NetworkIpExportsGet200Response {
+  hasMore?: boolean;
   items?: Array<ModelsIPExport>;
-  page?: number;
-  pageSize?: number;
+  nextCursor?: string;
   total?: number;
 }

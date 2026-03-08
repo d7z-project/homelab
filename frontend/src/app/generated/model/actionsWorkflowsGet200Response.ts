@@ -7,9 +7,11 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsLookupItem } from './modelsLookupItem';
+import { ModelsWorkflow } from './modelsWorkflow';
 
-export interface ModelsLookupResponse {
-  items?: Array<ModelsLookupItem>;
+export interface ActionsWorkflowsGet200Response {
+  hasMore?: boolean;
+  items?: Array<ModelsWorkflow>;
+  nextCursor?: string;
   total?: number;
 }

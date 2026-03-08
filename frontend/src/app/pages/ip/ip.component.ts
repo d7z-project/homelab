@@ -92,14 +92,16 @@ export class IpComponent implements OnInit, OnDestroy {
   // Address Pools
   pools = signal<ModelsIPGroup[]>([]);
   poolSearch = signal('');
-  poolPage = signal(1);
+  poolNextCursor = signal('');
   poolTotal = signal(0);
+  hasMorePools = signal(false);
 
   // Dynamic Exports
   exports = signal<ModelsIPExport[]>([]);
   exportSearch = signal('');
-  exportPage = signal(1);
+  exportNextCursor = signal('');
   exportTotal = signal(0);
+  hasMoreExports = signal(false);
 
   activeTasks = signal<Record<string, any>>({});
 
@@ -164,11 +166,9 @@ export class IpComponent implements OnInit, OnDestroy {
         scrollElement.scrollHeight - scrollElement.scrollTop <= scrollElement.clientHeight + 150;
 
       if (atBottom && !this.loadingMore() && !this.loading()) {
-        if (this.selectedTabIndex() === 0 && this.pools().length < this.poolTotal()) {
-          this.poolPage.update((p) => p + 1);
+        if (this.selectedTabIndex() === 0 && this.hasMorePools()) {
           this.loadPools(false);
-        } else if (this.selectedTabIndex() === 1 && this.exports().length < this.exportTotal()) {
-          this.exportPage.update((p) => p + 1);
+        } else if (this.selectedTabIndex() === 1 && this.hasMoreExports()) {
           this.loadExports(false);
         }
       }
@@ -202,14 +202,14 @@ export class IpComponent implements OnInit, OnDestroy {
   async loadPools(reset = false) {
     if (reset) {
       this.loading.set(true);
-      this.poolPage.set(1);
+      this.poolNextCursor.set('');
     } else {
       this.loadingMore.set(true);
     }
 
     try {
       const res = await firstValueFrom(
-        this.ipService.networkIpPoolsGet(this.poolPage(), 20, this.poolSearch()),
+        this.ipService.networkIpPoolsGet(this.poolNextCursor(), 20, this.poolSearch()),
       );
       if (reset) {
         this.pools.set(res.items || []);
@@ -219,6 +219,8 @@ export class IpComponent implements OnInit, OnDestroy {
         this.pools.update((prev) => [...prev, ...newItems]);
       }
       this.poolTotal.set(res.total || 0);
+      this.poolNextCursor.set(res.nextCursor || '');
+      this.hasMorePools.set(res.hasMore || false);
     } catch (err) {
       console.error(err);
     } finally {
@@ -230,14 +232,14 @@ export class IpComponent implements OnInit, OnDestroy {
   async loadExports(reset = false) {
     if (reset) {
       this.loading.set(true);
-      this.exportPage.set(1);
+      this.exportNextCursor.set('');
     } else {
       this.loadingMore.set(true);
     }
 
     try {
       const res = await firstValueFrom(
-        this.ipService.networkIpExportsGet(this.exportPage(), 20, this.exportSearch()),
+        this.ipService.networkIpExportsGet(this.exportNextCursor(), 20, this.exportSearch()),
       );
       if (reset) {
         this.exports.set(res.items || []);
@@ -247,6 +249,8 @@ export class IpComponent implements OnInit, OnDestroy {
         this.exports.update((prev) => [...prev, ...newItems]);
       }
       this.exportTotal.set(res.total || 0);
+      this.exportNextCursor.set(res.nextCursor || '');
+      this.hasMoreExports.set(res.hasMore || false);
     } catch (err) {
       console.error(err);
     } finally {

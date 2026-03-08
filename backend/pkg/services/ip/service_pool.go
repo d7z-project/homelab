@@ -14,6 +14,7 @@ import (
 	"net/netip"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -215,7 +216,8 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	return err
 }
 
-func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursor int64, limit int, search string) (*models.IPPoolPreviewResponse, error) {
+func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursorStr string, limit int, search string) (*models.IPPoolPreviewResponse, error) {
+	cursor, _ := strconv.ParseInt(cursorStr, 10, 64)
 	resource := "network/ip/" + groupID
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) && !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
@@ -291,9 +293,9 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursor 
 	if seeker, ok := f.(io.Seeker); ok {
 		next, _ := seeker.Seek(0, io.SeekCurrent)
 		if matched < limit {
-			res.NextCursor = 0
+			res.NextCursor = ""
 		} else {
-			res.NextCursor = next
+			res.NextCursor = strconv.FormatInt(next, 10)
 		}
 	}
 

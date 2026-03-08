@@ -22,7 +22,11 @@ import { Observable } from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { ActionsInstancesGet200Response } from '../model/actionsInstancesGet200Response';
+// @ts-ignore
 import { ActionsProbeRequest } from '../model/actionsProbeRequest';
+// @ts-ignore
+import { ActionsWorkflowsGet200Response } from '../model/actionsWorkflowsGet200Response';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
@@ -31,8 +35,6 @@ import { ModelsRunWorkflowRequest } from '../model/modelsRunWorkflowRequest';
 import { ModelsStepManifest } from '../model/modelsStepManifest';
 // @ts-ignore
 import { ModelsTaskCleanupResponse } from '../model/modelsTaskCleanupResponse';
-// @ts-ignore
-import { ModelsTaskInstance } from '../model/modelsTaskInstance';
 // @ts-ignore
 import { ModelsTaskLogResponse } from '../model/modelsTaskLogResponse';
 // @ts-ignore
@@ -154,13 +156,19 @@ export class ActionsService extends BaseService {
 
   /**
    * List all task instances
-   * Retrieves a history of all triggered workflow instances and their current status.
+   * Retrieves a history of triggered workflow instances with cursor-based pagination.
    * @endpoint get /actions/instances
+   * @param cursor Cursor
+   * @param limit Limit
+   * @param search Search
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public actionsInstancesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -168,8 +176,11 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<ModelsTaskInstance>>;
+  ): Observable<ActionsInstancesGet200Response>;
   public actionsInstancesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -177,8 +188,11 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<ModelsTaskInstance>>>;
+  ): Observable<HttpResponse<ActionsInstancesGet200Response>>;
   public actionsInstancesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -186,8 +200,11 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<ModelsTaskInstance>>>;
+  ): Observable<HttpEvent<ActionsInstancesGet200Response>>;
   public actionsInstancesGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -196,6 +213,32 @@ export class ActionsService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<any> {
+    let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'cursor',
+      <any>cursor,
+      QueryParamStyle.Form,
+      false,
+    );
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'limit',
+      <any>limit,
+      QueryParamStyle.Form,
+      false,
+    );
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'search',
+      <any>search,
+      QueryParamStyle.Form,
+      false,
+    );
+
     let localVarHeaders = this.defaultHeaders;
 
     // authentication (ApiKeyAuth) required
@@ -228,15 +271,20 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/instances`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<ModelsTaskInstance>>('get', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<ActionsInstancesGet200Response>(
+      'get',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        params: localVarQueryParameters.toHttpParams(),
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1021,13 +1069,19 @@ export class ActionsService extends BaseService {
 
   /**
    * List all workflows
-   * Retrieves a list of all defined workflow templates.
+   * Retrieves a list of defined workflow templates with cursor-based pagination.
    * @endpoint get /actions/workflows
+   * @param cursor Cursor
+   * @param limit Limit
+   * @param search Search
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
   public actionsWorkflowsGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1035,8 +1089,11 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<ModelsWorkflow>>;
+  ): Observable<ActionsWorkflowsGet200Response>;
   public actionsWorkflowsGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1044,8 +1101,11 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<ModelsWorkflow>>>;
+  ): Observable<HttpResponse<ActionsWorkflowsGet200Response>>;
   public actionsWorkflowsGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1053,8 +1113,11 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<ModelsWorkflow>>>;
+  ): Observable<HttpEvent<ActionsWorkflowsGet200Response>>;
   public actionsWorkflowsGet(
+    cursor?: string,
+    limit?: number,
+    search?: string,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1063,6 +1126,32 @@ export class ActionsService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<any> {
+    let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'cursor',
+      <any>cursor,
+      QueryParamStyle.Form,
+      false,
+    );
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'limit',
+      <any>limit,
+      QueryParamStyle.Form,
+      false,
+    );
+
+    localVarQueryParameters = this.addToHttpParams(
+      localVarQueryParameters,
+      'search',
+      <any>search,
+      QueryParamStyle.Form,
+      false,
+    );
+
     let localVarHeaders = this.defaultHeaders;
 
     // authentication (ApiKeyAuth) required
@@ -1095,15 +1184,20 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/workflows`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<ModelsWorkflow>>('get', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<ActionsWorkflowsGet200Response>(
+      'get',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        params: localVarQueryParameters.toHttpParams(),
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**

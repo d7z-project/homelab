@@ -90,7 +90,7 @@ func TestSiteService(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Preview and verify lowercase
-	res2, _ := service.PreviewPool(ctx, group.ID, 0, 10, "UPPER")
+	res2, _ := service.PreviewPool(ctx, group.ID, "", 10, "UPPER")
 	assert.Len(t, res2.Entries, 1)
 	assert.Equal(t, "uppercase.com", res2.Entries[0].Value)
 	assert.Equal(t, "upper", res2.Entries[0].Tags[0])
