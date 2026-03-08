@@ -180,7 +180,9 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                             : '禁止访问'
                       }}
                     </h2>
-                    <p class="text-sm opacity-70 font-medium">评估结论基于该账号绑定的所有角色策略</p>
+                    <p class="text-sm opacity-70 font-medium">
+                      评估结论基于该账号绑定的所有角色策略
+                    </p>
                   </div>
                 </div>
 
@@ -196,7 +198,9 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                         <mat-icon>policy</mat-icon>
                       </div>
                       <div class="flex-1 min-w-0">
-                        <div class="text-[11px] font-bold uppercase tracking-widest text-secondary/70">
+                        <div
+                          class="text-[11px] font-bold uppercase tracking-widest text-secondary/70"
+                        >
                           最优命中规则
                         </div>
                         <div class="mt-2 flex items-center gap-3 flex-wrap">
@@ -232,42 +236,89 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                       [class.border-outline-variant/50]="!res.allowedAll"
                     >
                       <div class="flex items-center gap-3 mb-3">
-                        <mat-icon [class.text-success]="res.allowedAll" [class.text-outline]="!res.allowedAll">
+                        <mat-icon
+                          [class.text-success]="res.allowedAll"
+                          [class.text-outline]="!res.allowedAll"
+                        >
                           {{ res.allowedAll ? 'check_circle' : 'cancel' }}
                         </mat-icon>
                         <span class="font-bold text-sm">全局授权 (AllowedAll)</span>
                       </div>
-                      <p class="text-[12px] leading-relaxed" [class.text-on-surface]="res.allowedAll" [class.text-outline]="!res.allowedAll">
-                        {{ res.allowedAll ? '拥有该资源路径下的所有子实例、子操作的完全访问权。' : '未获得全局授权，访问将受限于具体实例规则。' }}
+                      <p
+                        class="text-[12px] leading-relaxed"
+                        [class.text-on-surface]="res.allowedAll"
+                        [class.text-outline]="!res.allowedAll"
+                      >
+                        {{
+                          res.allowedAll
+                            ? '拥有该资源路径下的所有子实例、子操作的完全访问权。'
+                            : '未获得全局授权，访问将受限于具体实例规则。'
+                        }}
                       </p>
                     </div>
 
                     <!-- Capability: Specific Instances -->
                     <div
                       class="p-5 rounded-2xl border transition-all duration-300"
-                      [class.bg-warning-container/30]="!res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0"
-                      [class.border-warning/40]="!res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0"
-                      [class.bg-surface-container-low]="res.allowedAll || !res.allowedInstances || res.allowedInstances.length === 0"
-                      [class.border-outline-variant/50]="res.allowedAll || !res.allowedInstances || res.allowedInstances.length === 0"
+                      [class.bg-warning-container/30]="
+                        !res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0
+                      "
+                      [class.border-warning/40]="
+                        !res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0
+                      "
+                      [class.bg-surface-container-low]="
+                        res.allowedAll || !res.allowedInstances || res.allowedInstances.length === 0
+                      "
+                      [class.border-outline-variant/50]="
+                        res.allowedAll || !res.allowedInstances || res.allowedInstances.length === 0
+                      "
                     >
                       <div class="flex items-center gap-3 mb-3">
                         <mat-icon
-                          [class.text-warning]="!res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0"
-                          [class.text-outline]="res.allowedAll || !res.allowedInstances || res.allowedInstances.length === 0"
+                          [class.text-warning]="
+                            !res.allowedAll &&
+                            res.allowedInstances &&
+                            res.allowedInstances.length > 0
+                          "
+                          [class.text-outline]="
+                            res.allowedAll ||
+                            !res.allowedInstances ||
+                            res.allowedInstances.length === 0
+                          "
                         >
-                          {{ (res.allowedInstances && res.allowedInstances.length > 0) ? 'check_circle' : 'cancel' }}
+                          {{
+                            res.allowedInstances && res.allowedInstances.length > 0
+                              ? 'check_circle'
+                              : 'cancel'
+                          }}
                         </mat-icon>
                         <span class="font-bold text-sm">局部授权 (AllowedInstances)</span>
                       </div>
-                      <p class="text-[12px] leading-relaxed" [class.text-on-surface]="(!res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0)" [class.text-outline]="(res.allowedAll || !res.allowedInstances || res.allowedInstances.length === 0)">
-                        {{ (res.allowedInstances && res.allowedInstances.length > 0) ? '仅在下方列出的具体资源实例上拥有操作权限。' : '无特定实例授权或已被全局权限覆盖。' }}
+                      <p
+                        class="text-[12px] leading-relaxed"
+                        [class.text-on-surface]="
+                          !res.allowedAll && res.allowedInstances && res.allowedInstances.length > 0
+                        "
+                        [class.text-outline]="
+                          res.allowedAll ||
+                          !res.allowedInstances ||
+                          res.allowedInstances.length === 0
+                        "
+                      >
+                        {{
+                          res.allowedInstances && res.allowedInstances.length > 0
+                            ? '仅在下方列出的具体资源实例上拥有操作权限。'
+                            : '无特定实例授权或已被全局权限覆盖。'
+                        }}
                       </p>
                     </div>
                   </div>
 
                   @if (res.allowedInstances && res.allowedInstances.length > 0) {
                     <div class="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                      <div class="text-[11px] font-bold uppercase tracking-widest text-outline mb-3 ml-1">
+                      <div
+                        class="text-[11px] font-bold uppercase tracking-widest text-outline mb-3 ml-1"
+                      >
                         允许访问的实例列表
                       </div>
                       <div class="flex flex-wrap gap-2">
@@ -290,7 +341,9 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                   <p>评估说明：</p>
                   <ul class="list-disc ml-4 mt-1 space-y-1">
                     <li>如果您输入的路径包含具体实例 (如 dns/example.com)，系统将执行精确匹配。</li>
-                    <li>如果您仅输入资源分类 (如 dns)，模拟器将展示该账号在整个分类下的权限概览。</li>
+                    <li>
+                      如果您仅输入资源分类 (如 dns)，模拟器将展示该账号在整个分类下的权限概览。
+                    </li>
                     <li>所有评估结果均为实时计算，修改角色规则后请重新点击评估。</li>
                   </ul>
                 </div>

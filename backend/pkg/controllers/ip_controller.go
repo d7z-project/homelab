@@ -27,8 +27,8 @@ func InitIPControllers(service *ipservice.IPPoolService, engine *ipservice.Analy
 	exportManager = em
 }
 
-// ListGroupsHandler godoc
-// @Summary List all IP groups
+// ScanGroupsHandler godoc
+// @Summary Scan all IP groups
 // @Tags network/ip
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -38,7 +38,7 @@ func InitIPControllers(service *ipservice.IPPoolService, engine *ipservice.Analy
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/pools [get]
-func ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := ipPoolService.ScanGroups(r.Context(), cursor, limit, search)
@@ -166,8 +166,8 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "success")
 }
 
-// ListExportsHandler godoc
-// @Summary List all IP exports
+// ScanExportsHandler godoc
+// @Summary Scan all IP exports
 // @Tags network/ip
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -177,7 +177,7 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/exports [get]
-func ListExportsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanExportsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := ipPoolService.ScanExports(r.Context(), cursor, limit, search)
@@ -307,15 +307,15 @@ func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, res)
 }
 
-// ListExportTasksHandler godoc
-// @Summary List all IP export tasks
+// ScanExportTasksHandler godoc
+// @Summary Scan all IP export tasks
 // @Tags network/ip
 // @Produce json
 // @Success 200 {array} ipservice.ExportTask
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/tasks [get]
-func ListExportTasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks := exportManager.ListTasks()
+func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
+	tasks := exportManager.ScanTasks()
 	common.Success(w, r, tasks)
 }
 
@@ -385,6 +385,7 @@ func CancelExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 // PreviewExportHandler godoc
 // @Summary Preview IP export expression
+// @Description Evaluates the export rule and returns matched entries (no pagination).
 // @Tags network/ip
 // @Accept json
 // @Produce json
@@ -516,8 +517,8 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "success")
 }
 
-// ListSyncPoliciesHandler godoc
-// @Summary List all IP sync policies
+// ScanSyncPoliciesHandler godoc
+// @Summary Scan all IP sync policies
 // @Tags network/ip
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -527,7 +528,7 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/sync [get]
-func ListSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
+func ScanSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := ipPoolService.ScanSyncPolicies(r.Context(), cursor, limit, search)
@@ -614,8 +615,8 @@ func DeleteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Trigger manual sync
 // @Tags network/ip
 // @Produce json
-// @Param id path string true "Policy ID"
-// @Success 200 {string} string "success"
+// @Param id path string true "Source ID"
+// @Success 200 {string} string "sync started"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "Policy Not Found"
 // @Security ApiKeyAuth
@@ -626,14 +627,14 @@ func TriggerSyncHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, "success")
+	common.Success(w, r, "sync started")
 }
 
 // IPRouter registers the IP routes
 func IPRouter(r chi.Router) {
 	r.Route("/network/ip", func(r chi.Router) {
 		r.Route("/pools", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ListGroupsHandler)
+			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ScanGroupsHandler)
 			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateGroupHandler)
 			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateGroupHandler)
 			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteGroupHandler)
@@ -646,8 +647,8 @@ func IPRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/info", IPInfoHandler)
 		})
 		r.Route("/exports", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ListExportsHandler)
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/tasks", ListExportTasksHandler)
+			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ScanExportsHandler)
+			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/tasks", ScanExportTasksHandler)
 			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateExportHandler)
 			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateExportHandler)
 			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteExportHandler)
@@ -658,7 +659,7 @@ func IPRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/preview", PreviewExportHandler)
 		})
 		r.Route("/sync", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ListSyncPoliciesHandler)
+			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ScanSyncPoliciesHandler)
 			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateSyncPolicyHandler)
 			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateSyncPolicyHandler)
 			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteSyncPolicyHandler)

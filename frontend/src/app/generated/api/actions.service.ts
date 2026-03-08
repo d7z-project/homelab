@@ -155,8 +155,8 @@ export class ActionsService extends BaseService {
   }
 
   /**
-   * List all task instances
-   * Retrieves a history of triggered workflow instances with cursor-based pagination.
+   * Scan task instances
+   * Retrieves historical execution logs with cursor-based pagination.
    * @endpoint get /actions/instances
    * @param cursor Cursor
    * @param limit Limit
@@ -595,7 +595,7 @@ export class ActionsService extends BaseService {
   }
 
   /**
-   * List all step manifests
+   * Scan all step manifests
    * Returns the specifications (inputs/outputs) for all registered task processors in the system.
    * @endpoint get /actions/manifests
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -1068,7 +1068,7 @@ export class ActionsService extends BaseService {
   }
 
   /**
-   * List all workflows
+   * Scan all workflows
    * Retrieves a list of defined workflow templates with cursor-based pagination.
    * @endpoint get /actions/workflows
    * @param cursor Cursor

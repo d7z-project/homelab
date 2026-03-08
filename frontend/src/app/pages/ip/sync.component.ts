@@ -163,7 +163,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   }
 
   loadGroups() {
-    this.ipService.networkIpPoolsGet('', 1000).subscribe({
+    this.ipService.networkIpPoolsGet('', 100).subscribe({
       next: (res) => {
         const m = new Map<string, string>();
         (res.items || []).forEach((g) => m.set(g.id || '', g.name || ''));

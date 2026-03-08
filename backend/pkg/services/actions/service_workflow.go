@@ -385,22 +385,6 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 	return nil
 }
 
-func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
-	res, err := repo.ScanWorkflows(ctx, "", 1000, "")
-	if err != nil {
-		return nil, err
-	}
-
-	perms := commonauth.PermissionsFromContext(ctx)
-	var filtered []models.Workflow
-	for _, wf := range res.Items {
-		if perms.IsAllowed("actions/" + wf.ID) {
-			filtered = append(filtered, wf)
-		}
-	}
-	return filtered, nil
-}
-
 func ScanWorkflows(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Workflow], error) {
 	res, err := repo.ScanWorkflows(ctx, cursor, limit, search)
 	if err != nil {

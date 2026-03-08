@@ -52,7 +52,7 @@ export class NetworkDnsService extends BaseService {
   }
 
   /**
-   * List all DNS domains
+   * Scan all DNS domains
    * @endpoint get /network/dns/domains
    * @param cursor Cursor
    * @param limit Limit
@@ -590,12 +590,12 @@ export class NetworkDnsService extends BaseService {
   }
 
   /**
-   * List all records
+   * Scan DNS records
    * @endpoint get /network/dns/records
-   * @param domainId Filter by domain ID
+   * @param domainId Domain ID
    * @param cursor Cursor
    * @param limit Limit
-   * @param search Search by name or value
+   * @param search Search by name
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options

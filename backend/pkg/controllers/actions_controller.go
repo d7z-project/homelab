@@ -14,8 +14,8 @@ import (
 	"github.com/go-chi/render"
 )
 
-// ListWorkflowsHandler godoc
-// @Summary List all workflows
+// ScanWorkflowsHandler godoc
+// @Summary Scan all workflows
 // @Description Retrieves a list of defined workflow templates with cursor-based pagination.
 // @Tags actions
 // @Produce json
@@ -27,7 +27,7 @@ import (
 // @Failure 500 {object} common.Response "Internal Server Error"
 // @Security ApiKeyAuth
 // @Router /actions/workflows [get]
-func ListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := actions.ScanWorkflows(r.Context(), cursor, limit, search)
@@ -119,9 +119,9 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "success")
 }
 
-// ListInstancesHandler godoc
-// @Summary List all task instances
-// @Description Retrieves a history of triggered workflow instances with cursor-based pagination.
+// ScanInstancesHandler godoc
+// @Summary Scan task instances
+// @Description Retrieves historical execution logs with cursor-based pagination.
 // @Tags actions
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -131,7 +131,8 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/instances [get]
-func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
+func ScanInstancesHandler(w http.ResponseWriter, r *http.Request) {
+
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := actions.ScanTaskInstances(r.Context(), cursor, limit, search)
@@ -286,7 +287,7 @@ func CancelInstanceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListManifestsHandler godoc
-// @Summary List all step manifests
+// @Summary Scan all step manifests
 // @Description Returns the specifications (inputs/outputs) for all registered task processors in the system.
 // @Tags actions
 // @Produce json
@@ -294,8 +295,8 @@ func CancelInstanceHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/manifests [get]
-func ListManifestsHandler(w http.ResponseWriter, r *http.Request) {
-	res := actions.ListManifests()
+func ScanManifestsHandler(w http.ResponseWriter, r *http.Request) {
+	res := actions.ScanManifests()
 	common.Success(w, r, res)
 }
 
@@ -479,7 +480,7 @@ func ValidateRegexHandler(w http.ResponseWriter, r *http.Request) {
 // ActionsRouter registers the actions routes
 func ActionsRouter(r chi.Router) {
 	r.Route("/actions", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("list", "actions")).Get("/workflows", ListWorkflowsHandler)
+		r.With(middlewares.RequirePermission("list", "actions")).Get("/workflows", ScanWorkflowsHandler)
 		r.With(middlewares.RequirePermission("create", "actions")).Post("/workflows", CreateWorkflowHandler)
 		r.With(middlewares.RequirePermission("get", "actions")).Get("/workflows/schema", GetWorkflowSchemaHandler)
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/validate", ValidateWorkflowHandler)
@@ -491,13 +492,13 @@ func ActionsRouter(r chi.Router) {
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/{workflowId}/run", RunWorkflowHandler)
 		r.With(middlewares.RequirePermission("update", "actions")).Post("/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
 
-		r.With(middlewares.RequirePermission("list", "actions")).Get("/instances", ListInstancesHandler)
+		r.With(middlewares.RequirePermission("list", "actions")).Get("/instances", ScanInstancesHandler)
 		r.With(middlewares.RequirePermission("delete", "actions")).Post("/instances/cleanup", CleanupInstancesHandler)
 		r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}/logs", GetInstanceLogsHandler)
 		r.With(middlewares.RequirePermission("delete", "actions")).Delete("/instances/{id}", DeleteInstanceHandler)
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/instances/{id}/cancel", CancelInstanceHandler)
 
-		r.With(middlewares.RequirePermission("list", "actions")).Get("/manifests", ListManifestsHandler)
+		r.With(middlewares.RequirePermission("list", "actions")).Get("/manifests", ScanManifestsHandler)
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/probe", ProbeHandler)
 	})
 }

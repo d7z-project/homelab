@@ -12,7 +12,7 @@ import (
 )
 
 // ListServiceAccountsHandler godoc
-// @Summary List all service accounts
+// @Summary Scan all service accounts
 // @Tags rbac
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -23,7 +23,7 @@ import (
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [get]
-func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
@@ -113,7 +113,7 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListRolesHandler godoc
-// @Summary List all roles
+// @Summary Scan all roles
 // @Tags rbac
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -124,7 +124,7 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/roles [get]
-func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
+func ScanRolesHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
@@ -214,7 +214,7 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListRoleBindingsHandler godoc
-// @Summary List all role bindings
+// @Summary Scan all role bindings
 // @Tags rbac
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -225,7 +225,7 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings [get]
-func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
@@ -407,18 +407,18 @@ func RBACRouter(r chi.Router) {
 		r.With(middlewares.RequirePermission("list", "rbac")).Get("/verbs/suggest", SuggestVerbsHandler)
 		r.With(middlewares.RequirePermission("simulate", "rbac")).Post("/simulate", SimulatePermissionsHandler)
 
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/serviceaccounts", ListServiceAccountsHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/serviceaccounts", ScanServiceAccountsHandler)
 		r.With(middlewares.RequirePermission("create", "rbac")).Post("/serviceaccounts", CreateServiceAccountHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Put("/serviceaccounts/{id}", UpdateServiceAccountHandler)
 		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/serviceaccounts/{id}", DeleteServiceAccountHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Post("/serviceaccounts/{id}/reset", ResetServiceAccountTokenHandler)
 
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/roles", ListRolesHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/roles", ScanRolesHandler)
 		r.With(middlewares.RequirePermission("create", "rbac")).Post("/roles", CreateRoleHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Put("/roles/{id}", UpdateRoleHandler)
 		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/roles/{id}", DeleteRoleHandler)
 
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/rolebindings", ListRoleBindingsHandler)
+		r.With(middlewares.RequirePermission("list", "rbac")).Get("/rolebindings", ScanRoleBindingsHandler)
 		r.With(middlewares.RequirePermission("create", "rbac")).Post("/rolebindings", CreateRoleBindingHandler)
 		r.With(middlewares.RequirePermission("update", "rbac")).Put("/rolebindings/{id}", UpdateRoleBindingHandler)
 		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/rolebindings/{id}", DeleteRoleBindingHandler)

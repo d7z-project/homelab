@@ -100,8 +100,8 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ListSessionsHandler godoc
-// @Summary List all active root sessions
+// ScanSessionsHandler godoc
+// @Summary Scan all active root sessions
 // @Tags auth
 // @Produce json
 // @Success 200 {array} models.Session
@@ -109,8 +109,8 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /auth/sessions [get]
-func ListSessionsHandler(w http.ResponseWriter, r *http.Request) {
-	res, err := authservice.ListSessions(r.Context())
+func ScanSessionsHandler(w http.ResponseWriter, r *http.Request) {
+	res, err := authservice.ScanSessions(r.Context())
 	if err != nil {
 		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
 		return

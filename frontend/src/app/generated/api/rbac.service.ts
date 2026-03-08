@@ -166,7 +166,7 @@ export class RbacService extends BaseService {
   }
 
   /**
-   * List all role bindings
+   * Scan all role bindings
    * @endpoint get /rbac/rolebindings
    * @param cursor Cursor
    * @param limit Limit
@@ -617,7 +617,7 @@ export class RbacService extends BaseService {
   }
 
   /**
-   * List all roles
+   * Scan all roles
    * @endpoint get /rbac/roles
    * @param cursor Cursor
    * @param limit Limit
@@ -1058,7 +1058,7 @@ export class RbacService extends BaseService {
   }
 
   /**
-   * List all service accounts
+   * Scan all service accounts
    * @endpoint get /rbac/serviceaccounts
    * @param cursor Cursor
    * @param limit Limit

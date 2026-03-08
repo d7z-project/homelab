@@ -58,7 +58,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	}
 
 	// Double-check with DB to prevent distributed concurrent execution
-	instances, err := repo.ListTaskInstances(ctx)
+	instances, err := repo.ScanAllTaskInstances(ctx)
 	if err != nil {
 		e.activeWorkflows.Delete(workflow.ID) // Delete the placeholder if DB query fails
 		return "", fmt.Errorf("failed to check for running instances: %w", err)

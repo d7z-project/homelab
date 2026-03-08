@@ -13,7 +13,7 @@ import (
 
 func BootUpSelfHealing() {
 	ctx := context.Background()
-	instances, err := repo.ListTaskInstances(ctx)
+	instances, err := repo.ScanAllTaskInstances(ctx)
 	if err != nil {
 		log.Printf("Self-healing failed to list instances: %v", err)
 		return

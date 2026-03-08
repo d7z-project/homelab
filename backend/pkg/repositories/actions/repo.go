@@ -39,22 +39,6 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 	return err
 }
 
-func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
-	db := common.DB.Child("system", "actions", "workflows")
-	items, err := db.List(ctx, "")
-	if err != nil {
-		return nil, err
-	}
-	res := make([]models.Workflow, 0, len(items))
-	for _, v := range items {
-		var workflow models.Workflow
-		if err := json.Unmarshal([]byte(v.Value), &workflow); err == nil {
-			res = append(res, workflow)
-		}
-	}
-	return res, nil
-}
-
 func ScanWorkflows(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Workflow], error) {
 	db := common.DB.Child("system", "actions", "workflows")
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
@@ -113,7 +97,23 @@ func SaveTaskInstance(ctx context.Context, instance *models.TaskInstance) error 
 	return db.Put(ctx, instance.ID, string(data), kv.TTLKeep)
 }
 
-func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
+func ScanAllWorkflows(ctx context.Context) ([]models.Workflow, error) {
+	db := common.DB.Child("system", "actions", "workflows")
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	res := make([]models.Workflow, 0, len(items))
+	for _, v := range items {
+		var workflow models.Workflow
+		if err := json.Unmarshal([]byte(v.Value), &workflow); err == nil {
+			res = append(res, workflow)
+		}
+	}
+	return res, nil
+}
+
+func ScanAllTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	db := common.DB.Child("system", "actions", "instances")
 	items, err := db.List(ctx, "")
 	if err != nil {
@@ -121,9 +121,9 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	}
 	res := make([]models.TaskInstance, 0, len(items))
 	for _, v := range items {
-		var instance models.TaskInstance
-		if err := json.Unmarshal([]byte(v.Value), &instance); err == nil {
-			res = append(res, instance)
+		var inst models.TaskInstance
+		if err := json.Unmarshal([]byte(v.Value), &inst); err == nil {
+			res = append(res, inst)
 		}
 	}
 	return res, nil

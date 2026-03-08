@@ -12,8 +12,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
-// ListDomainsHandler godoc
-// @Summary List all DNS domains
+// ScanDomainsHandler godoc
+// @Summary Scan all DNS domains
 // @Tags network/dns
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -24,7 +24,7 @@ import (
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /network/dns/domains [get]
-func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
@@ -130,19 +130,20 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "success")
 }
 
-// ListRecordsHandler godoc
-// @Summary List all records
+// ScanRecordsHandler godoc
+// @Summary Scan DNS records
 // @Tags network/dns
 // @Produce json
-// @Param domainId query string false "Filter by domain ID"
+// @Param domainId query string false "Domain ID"
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
-// @Param search query string false "Search by name or value"
+// @Param search query string false "Search by name"
 // @Success 200 {object} common.CursorResponse{items=[]models.Record}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/dns/records [get]
-func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanRecordsHandler(w http.ResponseWriter, r *http.Request) {
+
 	domainID := r.URL.Query().Get("domainId")
 	if domainID != "" {
 		domain, err := dnsservice.GetDomain(r.Context(), domainID)
@@ -294,12 +295,12 @@ func DNSRouter(r chi.Router) {
 	r.Route("/network/dns", func(r chi.Router) {
 		r.With(middlewares.RequirePermission("get", "network/dns")).Get("/export", ExportHandler)
 
-		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/domains", ListDomainsHandler)
+		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/domains", ScanDomainsHandler)
 		r.With(middlewares.RequirePermission("create", "network/dns")).Post("/domains", CreateDomainHandler)
 		r.With(middlewares.RequirePermission("update", "network/dns")).Put("/domains/{id}", UpdateDomainHandler)
 		r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/domains/{id}", DeleteDomainHandler)
 
-		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/records", ListRecordsHandler)
+		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/records", ScanRecordsHandler)
 		r.With(middlewares.RequirePermission("create", "network/dns")).Post("/records", CreateRecordHandler)
 		r.With(middlewares.RequirePermission("update", "network/dns")).Put("/records/{id}", UpdateRecordHandler)
 		r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/records/{id}", DeleteRecordHandler)

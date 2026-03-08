@@ -94,7 +94,7 @@ func DeleteRole(ctx context.Context, id string) error {
 	}
 
 	// Cascade update/delete RoleBindings
-	rbs, err := rbacrepo.ListRoleBindings(ctx)
+	rbs, err := rbacrepo.ScanAllRoleBindings(ctx)
 	if err == nil {
 		for _, rb := range rbs {
 			newRoleIDs := make([]string, 0)

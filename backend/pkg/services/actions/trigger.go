@@ -72,7 +72,7 @@ func (m *TriggerManager) InitTriggers(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	workflows, err := repo.ListWorkflows(ctx)
+	workflows, err := repo.ScanAllWorkflows(ctx)
 	if err != nil {
 		return err
 	}

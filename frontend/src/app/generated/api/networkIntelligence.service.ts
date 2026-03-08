@@ -46,7 +46,7 @@ export class NetworkIntelligenceService extends BaseService {
   }
 
   /**
-   * List intelligence sources
+   * Scan intelligence sources
    * @endpoint get /network/intelligence/sources
    * @param cursor Cursor
    * @param limit Limit

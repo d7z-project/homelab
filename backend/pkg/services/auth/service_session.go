@@ -136,12 +136,12 @@ func Logout(ctx context.Context, tokenString string) error {
 	return nil
 }
 
-func ListSessions(ctx context.Context) ([]models.Session, error) {
+func ScanSessions(ctx context.Context) ([]models.Session, error) {
 	ac := commonauth.FromContext(ctx)
 	if ac == nil || ac.Type != "root" {
 		return nil, fmt.Errorf("%w: session (root access required)", commonauth.ErrPermissionDenied)
 	}
-	return authrepo.ListSessions(ctx)
+	return authrepo.ScanSessions(ctx)
 }
 
 func RevokeSession(ctx context.Context, sessionID string) error {

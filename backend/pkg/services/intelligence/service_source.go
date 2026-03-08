@@ -58,27 +58,6 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.I
 	return nil
 }
 
-func (s *IntelligenceService) ListSources(ctx context.Context) ([]models.IntelligenceSource, error) {
-	sources, err := repo.ListSources(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// 从内存 `manager` 获取最新运行状态、错误和进度
-	for i := range sources {
-		if t, ok := s.tasks.GetTask(sources[i].ID); ok {
-			status := t.GetStatus()
-			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
-				sources[i].Status = status
-				sources[i].ErrorMessage = t.Error
-				sources[i].Progress = t.GetProgress()
-			}
-		}
-	}
-
-	return sources, nil
-}
-
 func (s *IntelligenceService) ScanSources(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IntelligenceSource], error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/intelligence") {
 		return nil, fmt.Errorf("%w: network/intelligence", commonauth.ErrPermissionDenied)

@@ -1,7 +1,7 @@
 package actions
 
 func GenerateWorkflowSchema() map[string]interface{} {
-	manifests := ListManifests()
+	manifests := ScanManifests()
 	stepDefinitions := make(map[string]interface{})
 
 	for _, m := range manifests {

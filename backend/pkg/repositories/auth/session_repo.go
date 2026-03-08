@@ -33,7 +33,7 @@ func GetSession(ctx context.Context, sessionID string) (userType string, ip stri
 	return userType, ip, ua, nil
 }
 
-func ListSessions(ctx context.Context) ([]models.Session, error) {
+func ScanSessions(ctx context.Context) ([]models.Session, error) {
 	db := common.DB.Child("auth", "sessions")
 	items, err := db.List(ctx, "")
 	if err != nil {

@@ -17,8 +17,8 @@ func InitIntelligenceControllers(service *intservice.IntelligenceService) {
 	intelligenceService = service
 }
 
-// ListIntelligenceSourcesHandler godoc
-// @Summary List intelligence sources
+// ScanIntelligenceSourcesHandler godoc
+// @Summary Scan intelligence sources
 // @Tags network/intelligence
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -29,7 +29,7 @@ func InitIntelligenceControllers(service *intservice.IntelligenceService) {
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sources [get]
-func ListIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
+func ScanIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := intelligenceService.ScanSources(r.Context(), cursor, limit, search)
@@ -155,7 +155,7 @@ func CancelIntelligenceSyncHandler(w http.ResponseWriter, r *http.Request) {
 
 func IntelligenceRouter(r chi.Router) {
 	r.Route("/network/intelligence", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("list", "network/intelligence")).Get("/sources", ListIntelligenceSourcesHandler)
+		r.With(middlewares.RequirePermission("list", "network/intelligence")).Get("/sources", ScanIntelligenceSourcesHandler)
 		r.With(middlewares.RequirePermission("create", "network/intelligence")).Post("/sources", CreateIntelligenceSourceHandler)
 		r.With(middlewares.RequirePermission("update", "network/intelligence")).Put("/sources/{id}", UpdateIntelligenceSourceHandler)
 		r.With(middlewares.RequirePermission("delete", "network/intelligence")).Delete("/sources/{id}", DeleteIntelligenceSourceHandler)

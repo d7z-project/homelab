@@ -50,7 +50,7 @@ export class AuthService extends BaseService {
   }
 
   /**
-   * List all active root sessions
+   * Scan all active root sessions
    * @endpoint get /auth/sessions
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.

@@ -85,6 +85,8 @@ export class ActionsComponent implements OnInit, OnDestroy {
   instNextCursor = signal('');
   instHasMore = signal(false);
 
+  pageSize = signal(20);
+
   selectedWorkflowId = signal<string | null>(null);
 
   loading = signal(false);
@@ -256,7 +258,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       const res = await firstValueFrom(
         this.orchService.actionsWorkflowsGet(
           this.wfNextCursor(),
-          20,
+          this.pageSize(),
           this.uiService.searchConfig()?.value,
         ),
       );
@@ -287,7 +289,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       const res = await firstValueFrom(
         this.orchService.actionsInstancesGet(
           this.instNextCursor(),
-          20,
+          this.pageSize(),
           this.uiService.searchConfig()?.value,
         ),
       );

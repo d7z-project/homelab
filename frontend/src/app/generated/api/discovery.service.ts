@@ -44,7 +44,7 @@ export class DiscoveryService extends BaseService {
   }
 
   /**
-   * List discovery codes
+   * Scan discovery codes
    * Returns all registered discovery codes
    * @endpoint get /discovery/codes
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

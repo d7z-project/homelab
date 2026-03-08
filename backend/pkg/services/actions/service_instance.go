@@ -153,29 +153,6 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 	return inst, nil
 }
 
-func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
-	res, err := repo.ScanTaskInstances(ctx, "", 10000, "")
-	if err != nil {
-		return nil, err
-	}
-
-	perms := commonauth.PermissionsFromContext(ctx)
-	var filtered []models.TaskInstance
-	for _, inst := range res.Items {
-		if perms.IsAllowed("actions/" + inst.WorkflowID) {
-			// Populate logs from all parts
-			logs, _ := ReadAllTaskLogs(inst.WorkflowID, inst.ID)
-			if logs != nil {
-				inst.Logs = logs
-			} else {
-				inst.Logs = []models.LogEntry{}
-			}
-			filtered = append(filtered, inst)
-		}
-	}
-	return filtered, nil
-}
-
 func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.TaskInstance], error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions") {
 		return nil, fmt.Errorf("%w: actions", commonauth.ErrPermissionDenied)
@@ -222,7 +199,7 @@ func DeleteTaskInstance(ctx context.Context, id string) error {
 }
 
 func CleanupTaskInstances(ctx context.Context, days int) (int, error) {
-	all, err := repo.ListTaskInstances(ctx)
+	all, err := repo.ScanAllTaskInstances(ctx)
 	if err != nil {
 		return 0, err
 	}

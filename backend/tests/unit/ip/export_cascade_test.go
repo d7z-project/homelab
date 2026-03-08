@@ -49,7 +49,7 @@ func TestIPExportCascadeDeleteAndCleanup(t *testing.T) {
 	assert.NotNil(t, task)
 
 	// Verify tasks exist
-	tasks := manager.ListTasks()
+	tasks := manager.ScanTasks()
 	assert.Len(t, tasks, 1)
 
 	// Trigger again with different format to avoid cache hit and test multiple tasks
@@ -62,14 +62,14 @@ func TestIPExportCascadeDeleteAndCleanup(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 
-	tasks = manager.ListTasks()
+	tasks = manager.ScanTasks()
 	assert.Len(t, tasks, 2) // One old (success/cancelled) and one new
 
 	// Delete Export - should trigger DeleteTasksByExportID
 	err = service.DeleteExport(ctx, export.ID)
 	assert.NoError(t, err)
 
-	tasks = manager.ListTasks()
+	tasks = manager.ScanTasks()
 	assert.Len(t, tasks, 0) // Should be cascadingly deleted
 
 	// Allow background saveTasks to complete before teardown

@@ -241,7 +241,7 @@ export class NetworkSiteService extends BaseService {
   }
 
   /**
-   * List all site exports
+   * Scan all site exports
    * @endpoint get /network/site/exports
    * @param cursor Cursor
    * @param limit Limit
@@ -781,7 +781,8 @@ export class NetworkSiteService extends BaseService {
   }
 
   /**
-   * Preview Site export expression
+   * Preview site export results
+   * Evaluates the export rule and returns matched entries (no pagination).
    * @endpoint post /network/site/exports/preview
    * @param request Preview Request
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -1078,7 +1079,7 @@ export class NetworkSiteService extends BaseService {
   }
 
   /**
-   * List all site export tasks
+   * Scan all site export tasks
    * @endpoint get /network/site/exports/tasks
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
@@ -1164,7 +1165,7 @@ export class NetworkSiteService extends BaseService {
   }
 
   /**
-   * List all site groups
+   * Scan all site groups
    * @endpoint get /network/site/pools
    * @param cursor Cursor
    * @param limit Limit

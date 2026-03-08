@@ -12,7 +12,7 @@ import (
 // DiscoveryController handles lookups for frontend dropdowns/selectors
 func DiscoveryController(r chi.Router) {
 	r.Get("/lookup", lookupHandler)
-	r.Get("/codes", listCodesHandler)
+	r.Get("/codes", ScanCodesHandler)
 }
 
 // @Summary Discovery lookup
@@ -60,7 +60,7 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 	common.CursorSuccess(w, r, res)
 }
 
-// @Summary List discovery codes
+// @Summary Scan discovery codes
 // @Description Returns all registered discovery codes
 // @Tags discovery
 // @Accept json
@@ -69,7 +69,7 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Router /discovery/codes [get]
 // @Security ApiKeyAuth
-func listCodesHandler(w http.ResponseWriter, r *http.Request) {
-	codes := discovery.GetRegisteredCodes()
+func ScanCodesHandler(w http.ResponseWriter, r *http.Request) {
+	codes := discovery.ScanCodes()
 	common.Success(w, r, codes)
 }

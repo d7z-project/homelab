@@ -32,7 +32,7 @@ func init() {
 			if strings.HasPrefix(prefix, s+"/") {
 				idPrefix := strings.TrimPrefix(prefix, s+"/")
 				if s == "workflows" {
-					workflows, err := repo.ListWorkflows(ctx)
+					workflows, err := repo.ScanAllWorkflows(ctx)
 					if err == nil {
 						for _, wf := range workflows {
 							if idPrefix == "" || strings.HasPrefix(wf.ID, idPrefix) {
@@ -58,7 +58,7 @@ func init() {
 	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
 	discovery.Register("actions/workflows", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
-		workflows, err := repo.ListWorkflows(ctx)
+		workflows, err := repo.ScanAllWorkflows(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func init() {
 	})
 
 	rbac.RegisterSAUsageChecker(func(ctx context.Context, id string) error {
-		workflows, err := repo.ListWorkflows(ctx)
+		workflows, err := repo.ScanAllWorkflows(ctx)
 		if err != nil {
 			return nil
 		}

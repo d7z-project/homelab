@@ -883,8 +883,7 @@ info:
 paths:
   /actions/instances:
     get:
-      description: Retrieves a history of triggered workflow instances with cursor-based
-        pagination.
+      description: Retrieves historical execution logs with cursor-based pagination.
       parameters:
       - description: Cursor
         in: query
@@ -918,7 +917,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all task instances
+      summary: Scan task instances
       tags:
       - actions
   /actions/instances/{id}:
@@ -1067,7 +1066,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all step manifests
+      summary: Scan all step manifests
       tags:
       - actions
   /actions/probe:
@@ -1240,7 +1239,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all workflows
+      summary: Scan all workflows
       tags:
       - actions
     post:
@@ -1537,7 +1536,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List audit logs
+      summary: Scan audit logs
       tags:
       - audit
   /audit/logs/cleanup:
@@ -1593,7 +1592,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all active root sessions
+      summary: Scan all active root sessions
       tags:
       - auth
   /auth/sessions/{id}:
@@ -1648,7 +1647,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List discovery codes
+      summary: Scan discovery codes
       tags:
       - discovery
   /discovery/lookup:
@@ -1805,7 +1804,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all DNS domains
+      summary: Scan all DNS domains
       tags:
       - network/dns
     post:
@@ -1943,7 +1942,7 @@ paths:
   /network/dns/records:
     get:
       parameters:
-      - description: Filter by domain ID
+      - description: Domain ID
         in: query
         name: domainId
         type: string
@@ -1955,7 +1954,7 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: Search by name or value
+      - description: Search by name
         in: query
         name: search
         type: string
@@ -1979,7 +1978,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all records
+      summary: Scan DNS records
       tags:
       - network/dns
     post:
@@ -2130,7 +2129,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List intelligence sources
+      summary: Scan intelligence sources
       tags:
       - network/intelligence
     post:
@@ -2396,7 +2395,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all IP exports
+      summary: Scan all IP exports
       tags:
       - network/ip
     post:
@@ -2566,6 +2565,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Evaluates the export rule and returns matched entries (no pagination).
       parameters:
       - description: Preview Request
         in: body
@@ -2668,7 +2668,7 @@ paths:
             type: array
       security:
       - ApiKeyAuth: []
-      summary: List all IP export tasks
+      summary: Scan all IP export tasks
       tags:
       - network/ip
   /network/ip/pools:
@@ -2706,7 +2706,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all IP groups
+      summary: Scan all IP groups
       tags:
       - network/ip
     post:
@@ -2984,7 +2984,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all IP sync policies
+      summary: Scan all IP sync policies
       tags:
       - network/ip
     post:
@@ -3095,7 +3095,7 @@ paths:
   /network/ip/sync/{id}/trigger:
     post:
       parameters:
-      - description: Policy ID
+      - description: Source ID
         in: path
         name: id
         required: true
@@ -3104,7 +3104,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: success
+          description: sync started
           schema:
             type: string
         "401":
@@ -3170,7 +3170,7 @@ paths:
                     $ref: '#/definitions/models.SiteExport'
                   type: array
               type: object
-      summary: List all site exports
+      summary: Scan all site exports
       tags:
       - network/site
     post:
@@ -3300,6 +3300,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Evaluates the export rule and returns matched entries (no pagination).
       parameters:
       - description: Preview Request
         in: body
@@ -3330,7 +3331,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: Preview Site export expression
+      summary: Preview site export results
       tags:
       - network/site
   /network/site/exports/task/{taskId}:
@@ -3392,7 +3393,7 @@ paths:
             type: array
       security:
       - ApiKeyAuth: []
-      summary: List all site export tasks
+      summary: Scan all site export tasks
       tags:
       - network/site
   /network/site/pools:
@@ -3424,7 +3425,7 @@ paths:
                     $ref: '#/definitions/models.SiteGroup'
                   type: array
               type: object
-      summary: List all site groups
+      summary: Scan all site groups
       tags:
       - network/site
     post:
@@ -3625,7 +3626,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all role bindings
+      summary: Scan all role bindings
       tags:
       - rbac
     post:
@@ -3776,7 +3777,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all roles
+      summary: Scan all roles
       tags:
       - rbac
     post:
@@ -3927,7 +3928,7 @@ paths:
             $ref: '#/definitions/common.Response'
       security:
       - ApiKeyAuth: []
-      summary: List all service accounts
+      summary: Scan all service accounts
       tags:
       - rbac
     post:

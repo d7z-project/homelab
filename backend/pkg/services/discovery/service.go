@@ -27,8 +27,8 @@ func Register(code string, f LookupFunc) {
 	registry[code] = f
 }
 
-// GetRegisteredCodes returns all registered discovery codes
-func GetRegisteredCodes() []string {
+// ScanCodes returns all registered discovery codes
+func ScanCodes() []string {
 	mu.RLock()
 	defer mu.RUnlock()
 	codes := make([]string, 0, len(registry))

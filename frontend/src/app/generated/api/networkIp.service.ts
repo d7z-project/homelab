@@ -366,7 +366,7 @@ export class NetworkIpService extends BaseService {
   }
 
   /**
-   * List all IP exports
+   * Scan all IP exports
    * @endpoint get /network/ip/exports
    * @param cursor Cursor
    * @param limit Limit
@@ -935,6 +935,7 @@ export class NetworkIpService extends BaseService {
 
   /**
    * Preview IP export expression
+   * Evaluates the export rule and returns matched entries (no pagination).
    * @endpoint post /network/ip/exports/preview
    * @param request Preview Request
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -1234,7 +1235,7 @@ export class NetworkIpService extends BaseService {
   }
 
   /**
-   * List all IP export tasks
+   * Scan all IP export tasks
    * @endpoint get /network/ip/exports/tasks
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
@@ -1320,7 +1321,7 @@ export class NetworkIpService extends BaseService {
   }
 
   /**
-   * List all IP groups
+   * Scan all IP groups
    * @endpoint get /network/ip/pools
    * @param cursor Cursor
    * @param limit Limit
@@ -2162,7 +2163,7 @@ export class NetworkIpService extends BaseService {
   }
 
   /**
-   * List all IP sync policies
+   * Scan all IP sync policies
    * @endpoint get /network/ip/sync
    * @param cursor Cursor
    * @param limit Limit
@@ -2509,7 +2510,7 @@ export class NetworkIpService extends BaseService {
   /**
    * Trigger manual sync
    * @endpoint post /network/ip/sync/{id}/trigger
-   * @param id Policy ID
+   * @param id Source ID
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options

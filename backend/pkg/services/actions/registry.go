@@ -23,7 +23,7 @@ func GetProcessor(id string) (StepProcessor, bool) {
 	return p, ok
 }
 
-func ListManifests() []StepManifest {
+func ScanManifests() []StepManifest {
 	mu.RLock()
 	defer mu.RUnlock()
 	res := make([]StepManifest, 0, len(registry))

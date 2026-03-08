@@ -29,7 +29,7 @@ func InitSiteControllers(service *siteservice.SitePoolService, engine *siteservi
 // Site Pools
 
 // ListSiteGroupsHandler godoc
-// @Summary List all site groups
+// @Summary Scan all site groups
 // @Tags network/site
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -37,7 +37,7 @@ func InitSiteControllers(service *siteservice.SitePoolService, engine *siteservi
 // @Param search query string false "Search by name"
 // @Success 200 {object} common.CursorResponse{items=[]models.SiteGroup}
 // @Router /network/site/pools [get]
-func ListSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := sitePoolService.ScanGroups(r.Context(), cursor, limit, search)
@@ -202,7 +202,7 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 // Site Exports
 
 // ListSiteExportsHandler godoc
-// @Summary List all site exports
+// @Summary Scan all site exports
 // @Tags network/site
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -210,7 +210,7 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 // @Param search query string false "Search by name"
 // @Success 200 {object} common.CursorResponse{items=[]models.SiteExport}
 // @Router /network/site/exports [get]
-func ListSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 	res, err := sitePoolService.ScanExports(r.Context(), cursor, limit, search)
@@ -288,14 +288,15 @@ func DeleteSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListSiteExportTasksHandler godoc
-// @Summary List all site export tasks
+// @Summary Scan all site export tasks
 // @Tags network/site
 // @Produce json
 // @Success 200 {array} siteservice.ExportTask
 // @Security ApiKeyAuth
 // @Router /network/site/exports/tasks [get]
-func ListSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks := siteExportManager.ListTasks()
+func ScanSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
+	tasks := siteExportManager.ScanTasks()
+
 	common.Success(w, r, tasks)
 }
 
@@ -358,7 +359,8 @@ func CancelSiteExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // PreviewSiteExportHandler godoc
-// @Summary Preview Site export expression
+// @Summary Preview site export results
+// @Description Evaluates the export rule and returns matched entries (no pagination).
 // @Tags network/site
 // @Accept json
 // @Produce json
@@ -370,6 +372,7 @@ func CancelSiteExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/site/exports/preview [post]
 func PreviewSiteExportHandler(w http.ResponseWriter, r *http.Request) {
+
 	var req models.SiteExportPreviewRequest
 	if err := render.Bind(r, &req); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
@@ -412,7 +415,7 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 func SiteRouter(r chi.Router) {
 	r.Route("/network/site", func(r chi.Router) {
 		r.Route("/pools", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ListSiteGroupsHandler)
+			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ScanSiteGroupsHandler)
 			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteGroupHandler)
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteGroupHandler)
 			r.With(middlewares.RequirePermission("get", "network/site")).Get("/{id}/preview", PreviewSitePoolHandler)
@@ -423,8 +426,8 @@ func SiteRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/hit-test", SiteHitTestHandler)
 		})
 		r.Route("/exports", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ListSiteExportsHandler)
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/tasks", ListSiteExportTasksHandler)
+			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ScanSiteExportsHandler)
+			r.With(middlewares.RequirePermission("list", "network/site")).Get("/tasks", ScanSiteExportTasksHandler)
 			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteExportHandler)
 			r.With(middlewares.RequirePermission("update", "network/site")).Put("/{id}", UpdateSiteExportHandler)
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteExportHandler)

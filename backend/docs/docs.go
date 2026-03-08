@@ -22,14 +22,14 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a history of triggered workflow instances with cursor-based pagination.",
+                "description": "Retrieves historical execution logs with cursor-based pagination.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "actions"
                 ],
-                "summary": "List all task instances",
+                "summary": "Scan task instances",
                 "parameters": [
                     {
                         "type": "string",
@@ -291,7 +291,7 @@ const docTemplate = `{
                 "tags": [
                     "actions"
                 ],
-                "summary": "List all step manifests",
+                "summary": "Scan all step manifests",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -520,7 +520,7 @@ const docTemplate = `{
                 "tags": [
                     "actions"
                 ],
-                "summary": "List all workflows",
+                "summary": "Scan all workflows",
                 "parameters": [
                     {
                         "type": "string",
@@ -982,7 +982,7 @@ const docTemplate = `{
                 "tags": [
                     "audit"
                 ],
-                "summary": "List audit logs",
+                "summary": "Scan audit logs",
                 "parameters": [
                     {
                         "type": "string",
@@ -1104,7 +1104,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "List all active root sessions",
+                "summary": "Scan all active root sessions",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1198,7 +1198,7 @@ const docTemplate = `{
                 "tags": [
                     "discovery"
                 ],
-                "summary": "List discovery codes",
+                "summary": "Scan discovery codes",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1418,7 +1418,7 @@ const docTemplate = `{
                 "tags": [
                     "network/dns"
                 ],
-                "summary": "List all DNS domains",
+                "summary": "Scan all DNS domains",
                 "parameters": [
                     {
                         "type": "string",
@@ -1698,11 +1698,11 @@ const docTemplate = `{
                 "tags": [
                     "network/dns"
                 ],
-                "summary": "List all records",
+                "summary": "Scan DNS records",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by domain ID",
+                        "description": "Domain ID",
                         "name": "domainId",
                         "in": "query"
                     },
@@ -1720,7 +1720,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search by name or value",
+                        "description": "Search by name",
                         "name": "search",
                         "in": "query"
                     }
@@ -1941,7 +1941,7 @@ const docTemplate = `{
                 "tags": [
                     "network/intelligence"
                 ],
-                "summary": "List intelligence sources",
+                "summary": "Scan intelligence sources",
                 "parameters": [
                     {
                         "type": "string",
@@ -2375,7 +2375,7 @@ const docTemplate = `{
                 "tags": [
                     "network/ip"
                 ],
-                "summary": "List all IP exports",
+                "summary": "Scan all IP exports",
                 "parameters": [
                     {
                         "type": "string",
@@ -2522,6 +2522,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Evaluates the export rule and returns matched entries (no pagination).",
                 "consumes": [
                     "application/json"
                 ],
@@ -2677,7 +2678,7 @@ const docTemplate = `{
                 "tags": [
                     "network/ip"
                 ],
-                "summary": "List all IP export tasks",
+                "summary": "Scan all IP export tasks",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2873,7 +2874,7 @@ const docTemplate = `{
                 "tags": [
                     "network/ip"
                 ],
-                "summary": "List all IP groups",
+                "summary": "Scan all IP groups",
                 "parameters": [
                     {
                         "type": "string",
@@ -3311,7 +3312,7 @@ const docTemplate = `{
                 "tags": [
                     "network/ip"
                 ],
-                "summary": "List all IP sync policies",
+                "summary": "Scan all IP sync policies",
                 "parameters": [
                     {
                         "type": "string",
@@ -3546,7 +3547,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Policy ID",
+                        "description": "Source ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3554,7 +3555,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "success",
+                        "description": "sync started",
                         "schema": {
                             "type": "string"
                         }
@@ -3615,7 +3616,7 @@ const docTemplate = `{
                 "tags": [
                     "network/site"
                 ],
-                "summary": "List all site exports",
+                "summary": "Scan all site exports",
                 "parameters": [
                     {
                         "type": "string",
@@ -3727,6 +3728,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Evaluates the export rule and returns matched entries (no pagination).",
                 "consumes": [
                     "application/json"
                 ],
@@ -3736,7 +3738,7 @@ const docTemplate = `{
                 "tags": [
                     "network/site"
                 ],
-                "summary": "Preview Site export expression",
+                "summary": "Preview site export results",
                 "parameters": [
                     {
                         "description": "Preview Request",
@@ -3865,7 +3867,7 @@ const docTemplate = `{
                 "tags": [
                     "network/site"
                 ],
-                "summary": "List all site export tasks",
+                "summary": "Scan all site export tasks",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4019,7 +4021,7 @@ const docTemplate = `{
                 "tags": [
                     "network/site"
                 ],
-                "summary": "List all site groups",
+                "summary": "Scan all site groups",
                 "parameters": [
                     {
                         "type": "string",
@@ -4324,7 +4326,7 @@ const docTemplate = `{
                 "tags": [
                     "rbac"
                 ],
-                "summary": "List all role bindings",
+                "summary": "Scan all role bindings",
                 "parameters": [
                     {
                         "type": "string",
@@ -4567,7 +4569,7 @@ const docTemplate = `{
                 "tags": [
                     "rbac"
                 ],
-                "summary": "List all roles",
+                "summary": "Scan all roles",
                 "parameters": [
                     {
                         "type": "string",
@@ -4810,7 +4812,7 @@ const docTemplate = `{
                 "tags": [
                     "rbac"
                 ],
-                "summary": "List all service accounts",
+                "summary": "Scan all service accounts",
                 "parameters": [
                     {
                         "type": "string",

@@ -121,14 +121,15 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	}
 
 	// Cascade delete RoleBindings
-	rbs, err := rbacrepo.ListRoleBindings(ctx)
+	rbs, err := rbacrepo.ScanAllRoleBindings(ctx)
 	if err == nil {
 		for _, rb := range rbs {
 			if rb.ServiceAccountID == id {
-				rbacrepo.DeleteRoleBinding(ctx, rb.ID)
+				_ = rbacrepo.DeleteRoleBinding(ctx, rb.ID)
 			}
 		}
 	}
+
 
 	message := fmt.Sprintf("Deleted ServiceAccount: %s (name: %s, enabled: %v, comments: '%s')", existing.ID, existing.Name, existing.Enabled, existing.Comments)
 	if err := rbacrepo.DeleteServiceAccount(ctx, id); err != nil {

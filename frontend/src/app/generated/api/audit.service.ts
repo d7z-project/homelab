@@ -158,7 +158,7 @@ export class AuditService extends BaseService {
   }
 
   /**
-   * List audit logs
+   * Scan audit logs
    * @endpoint get /audit/logs
    * @param cursor Cursor
    * @param limit Limit

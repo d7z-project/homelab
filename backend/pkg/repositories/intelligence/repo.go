@@ -32,7 +32,7 @@ func SaveSource(ctx context.Context, source *models.IntelligenceSource) error {
 	return db.Put(ctx, source.ID, string(data), kv.TTLKeep)
 }
 
-func ListSources(ctx context.Context) ([]models.IntelligenceSource, error) {
+func ScanAllSources(ctx context.Context) ([]models.IntelligenceSource, error) {
 	db := common.DB.Child("network", "intelligence", "sources")
 	items, err := db.List(ctx, "")
 	if err != nil {

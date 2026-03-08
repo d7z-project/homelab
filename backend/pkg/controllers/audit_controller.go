@@ -11,8 +11,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// ListAuditLogsHandler godoc
-// @Summary List audit logs
+// ScanAuditLogsHandler godoc
+// @Summary Scan audit logs
 // @Tags audit
 // @Produce json
 // @Param cursor query string false "Cursor"
@@ -23,7 +23,7 @@ import (
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /audit/logs [get]
-func ListAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
+func ScanAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
@@ -67,7 +67,7 @@ func CleanupAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 // AuditRouter registers the audit routes
 func AuditRouter(r chi.Router) {
 	r.Route("/audit", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("list", "audit")).Get("/logs", ListAuditLogsHandler)
+		r.With(middlewares.RequirePermission("list", "audit")).Get("/logs", ScanAuditLogsHandler)
 		r.With(middlewares.RequirePermission("delete", "audit")).Post("/logs/cleanup", CleanupAuditLogsHandler)
 	})
 }

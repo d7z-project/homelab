@@ -42,9 +42,9 @@ func TestRootAuthAndSession(t *testing.T) {
 
 	// 4. List Sessions
 	rootCtx := auth.WithAuth(ctx, &auth.AuthContext{Type: "root"})
-	sessions, err := authservice.ListSessions(rootCtx)
+	sessions, err := authservice.ScanSessions(rootCtx)
 	if err != nil {
-		t.Fatalf("ListSessions failed: %v", err)
+		t.Fatalf("ScanSessions failed: %v", err)
 	}
 	if len(sessions) != 1 {
 		t.Errorf("Expected 1 session, got %d", len(sessions))

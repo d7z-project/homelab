@@ -97,10 +97,11 @@ func NewIntelligenceService(mmdb *ip.MMDBManager) *IntelligenceService {
 }
 
 func (s *IntelligenceService) Init(ctx context.Context) error {
-	sources, err := repo.ListSources(ctx)
+	sources, err := repo.ScanAllSources(ctx)
 	if err != nil {
 		return err
 	}
+
 
 	s.mu.Lock()
 	defer s.mu.Unlock()

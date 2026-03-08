@@ -146,7 +146,7 @@ func TestSiteExportManager(t *testing.T) {
 	// Allow background saveTasks to complete before teardown
 	for i := 0; i < 50; i++ {
 		allDone := true
-		for _, task := range manager.ListTasks() {
+		for _, task := range manager.ScanTasks() {
 			if task.Status == models.TaskStatusRunning || task.Status == models.TaskStatusPending {
 				allDone = false
 				break

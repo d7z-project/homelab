@@ -66,7 +66,7 @@ func TestDiscoveryService(t *testing.T) {
 	})
 
 	t.Run("List Codes", func(t *testing.T) {
-		codes := discovery.GetRegisteredCodes()
+		codes := discovery.ScanCodes()
 		assert.Contains(t, codes, "test/items")
 		assert.Contains(t, codes, "network/dns/domains")
 	})

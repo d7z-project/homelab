@@ -274,7 +274,7 @@ func ScanRoleBindings(ctx context.Context, cursor string, limit int, search stri
 	}, nil
 }
 
-func ListRoleBindings(ctx context.Context) ([]models.RoleBinding, error) {
+func ScanAllRoleBindings(ctx context.Context) ([]models.RoleBinding, error) {
 	db := common.DB.Child("auth", "rolebindings")
 	resp, err := db.List(ctx, "")
 	if err != nil {

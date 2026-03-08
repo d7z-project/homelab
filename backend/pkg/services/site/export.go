@@ -131,7 +131,7 @@ func (m *ExportManager) GetTask(id string) *ExportTaskDTO {
 	}
 }
 
-func (m *ExportManager) ListTasks() []ExportTaskDTO {
+func (m *ExportManager) ScanTasks() []ExportTaskDTO {
 	tasks := m.core.RangeAll()
 	var res []ExportTaskDTO
 	for _, t := range tasks {
