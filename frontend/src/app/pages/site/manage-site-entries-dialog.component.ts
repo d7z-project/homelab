@@ -196,7 +196,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   (click)="editEntry(element)"
                   matTooltip="修改标签"
                 >
-                  <mat-icon class="!text-sm">edit</mat-icon>
+                  <mat-icon class="text-sm!">edit</mat-icon>
                 </button>
                 <button
                   mat-icon-button
@@ -204,7 +204,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   (click)="deleteEntry(element)"
                   matTooltip="删除"
                 >
-                  <mat-icon class="!text-sm">delete</mat-icon>
+                  <mat-icon class="text-sm!">delete</mat-icon>
                 </button>
               </td>
             </ng-container>

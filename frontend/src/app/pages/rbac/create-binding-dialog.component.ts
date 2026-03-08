@@ -35,7 +35,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
     DiscoverySelectComponent,
   ],
   template: `
-    <h2 mat-dialog-title class="!pt-6">{{ isEdit ? '修改权限绑定' : '创建权限绑定' }}</h2>
+    <h2 mat-dialog-title class="pt-6!">{{ isEdit ? '修改权限绑定' : '创建权限绑定' }}</h2>
     <mat-dialog-content style="min-width: 400px; max-width: 600px;">
       <div class="pt-3 space-y-6">
         @if (isEdit) {
@@ -85,7 +85,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="px-6! pb-6!">
       <button mat-button mat-dialog-close>取消</button>
       <button
         mat-flat-button
@@ -97,7 +97,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           !binding.roleIds ||
           binding.roleIds.length === 0
         "
-        class="!ml-2 px-8 rounded-full"
+        class="ml-2! px-8 rounded-full"
       >
         <mat-icon class="mr-1">check</mat-icon>
         {{ isEdit ? '保存修改' : '确认创建' }}

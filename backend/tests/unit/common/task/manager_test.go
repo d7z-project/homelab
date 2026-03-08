@@ -15,6 +15,7 @@ import (
 type MockTask struct {
 	ID        string
 	Status    models.TaskStatus
+	Progress  float64
 	Error     string
 	CreatedAt time.Time
 	mu        sync.Mutex
@@ -37,6 +38,16 @@ func (m *MockTask) SetError(msg string) {
 	m.Error = msg
 }
 func (m *MockTask) GetCreatedAt() time.Time { return m.CreatedAt }
+func (m *MockTask) GetProgress() float64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.Progress
+}
+func (m *MockTask) SetProgress(p float64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Progress = p
+}
 
 func TestTaskManager_Lifecycle_And_Run(t *testing.T) {
 	// 准备真实依赖

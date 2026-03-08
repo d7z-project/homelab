@@ -108,7 +108,7 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                 mat-fab
                 extended
                 color="primary"
-                class="!rounded-2xl !px-12"
+                class="rounded-2xl! px-12!"
                 (click)="simulate()"
                 [disabled]="
                   loading() ||

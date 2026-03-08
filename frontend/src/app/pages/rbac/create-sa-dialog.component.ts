@@ -23,7 +23,7 @@ import { ModelsServiceAccount } from '../../generated';
     FormsModule,
   ],
   template: `
-    <h2 mat-dialog-title class="!pt-6">
+    <h2 mat-dialog-title class="pt-6!">
       <mat-icon class="mr-2 align-middle text-primary">person_outline</mat-icon>
       {{ isEdit ? '修改 ServiceAccount' : '创建 ServiceAccount' }}
     </h2>
@@ -83,14 +83,14 @@ import { ModelsServiceAccount } from '../../generated';
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="px-6! pb-6!">
       <button mat-button mat-dialog-close>取消</button>
       <button
         mat-flat-button
         color="primary"
         (click)="confirm()"
         [disabled]="!sa.id?.trim() || (!isEdit && (isDuplicate() || idInput.errors?.['pattern']))"
-        class="!ml-2 px-8 rounded-full"
+        class="ml-2! px-8 rounded-full"
       >
         <mat-icon class="mr-1">check</mat-icon>
         {{ isEdit ? '保存修改' : '确认创建' }}

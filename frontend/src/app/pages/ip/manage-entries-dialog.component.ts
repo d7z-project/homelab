@@ -67,7 +67,7 @@ import { Router } from '@angular/router';
             class="p-6 bg-surface border border-outline-variant rounded-3xl shadow-sm animate-in slide-in-from-top-4 duration-300"
           >
             <div class="flex items-center gap-2 mb-6 text-primary">
-              <mat-icon class="!w-5 !h-5 !text-[20px]">{{
+              <mat-icon class="w-5! h-5! text-[20px]!">{{
                 isEditMode() ? 'edit' : 'add_circle_outline'
               }}</mat-icon>
               <h3 class="text-sm font-bold uppercase tracking-widest">
@@ -104,7 +104,7 @@ import { Router } from '@angular/router';
                     mat-button
                     type="button"
                     (click)="cancelEdit()"
-                    class="h-full px-6 !rounded-2xl"
+                    class="h-full px-6 rounded-2xl!"
                   >
                     取消
                   </button>
@@ -112,7 +112,7 @@ import { Router } from '@angular/router';
                 <button
                   mat-flat-button
                   color="primary"
-                  class="h-full px-8 !rounded-2xl shadow-sm"
+                  class="h-full px-8 rounded-2xl! shadow-sm"
                   [disabled]="form.invalid || submitting()"
                   (click)="submit()"
                 >
@@ -181,7 +181,7 @@ import { Router } from '@angular/router';
                       (click)="goToAnalysis(element.cidr)"
                       matTooltip="点击在统一研判实验室中分析此地址"
                     >
-                      <mat-icon class="!w-3 !h-3 !text-[12px]">biotech</mat-icon>
+                      <mat-icon class="w-3! h-3! text-[12px]!">biotech</mat-icon>
                       {{ element.cidr }}
                     </a>
                   </td>
@@ -233,7 +233,7 @@ import { Router } from '@angular/router';
                         (click)="editEntry(element)"
                         matTooltip="修改标签内容"
                       >
-                        <mat-icon class="!text-[18px]">edit_note</mat-icon>
+                        <mat-icon class="text-[18px]!">edit_note</mat-icon>
                       </button>
                       <button
                         mat-icon-button
@@ -242,7 +242,7 @@ import { Router } from '@angular/router';
                         matTooltip="永久删除 (含内部标签记录不可删除)"
                         [disabled]="hasInternalTags(element)"
                       >
-                        <mat-icon class="!text-[18px]">delete_sweep</mat-icon>
+                        <mat-icon class="text-[18px]!">delete_sweep</mat-icon>
                       </button>
                     </div>
                   </td>
@@ -265,7 +265,7 @@ import { Router } from '@angular/router';
                     colspan="3"
                   >
                     <div class="flex flex-col items-center gap-2">
-                      <mat-icon class="!text-6xl mb-2">inventory_2</mat-icon>
+                      <mat-icon class="text-6xl! mb-2">inventory_2</mat-icon>
                       <span>暂无匹配的 IP 记录数据</span>
                     </div>
                   </td>
@@ -284,7 +284,7 @@ import { Router } from '@angular/router';
                   <div
                     class="flex items-center justify-center gap-2 text-[11px] text-outline font-bold uppercase tracking-widest"
                   >
-                    <mat-icon class="!w-4 !h-4 !text-[14px]">done_all</mat-icon>
+                    <mat-icon class="w-4! h-4! text-[14px]!">done_all</mat-icon>
                     已加载全部 {{ entries().length }} 条数据
                   </div>
                 </div>

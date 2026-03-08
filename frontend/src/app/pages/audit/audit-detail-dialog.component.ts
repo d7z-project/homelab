@@ -10,7 +10,7 @@ import { ModelsAuditLog } from '../../generated';
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title class="!pt-6">
+    <h2 mat-dialog-title class="pt-6!">
       <mat-icon class="mr-2 align-middle text-primary">history</mat-icon>
       审计日志详情
     </h2>
@@ -97,7 +97,7 @@ import { ModelsAuditLog } from '../../generated';
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="px-6! pb-6!">
       <button mat-flat-button color="primary" mat-dialog-close class="px-8 rounded-full">
         关闭
       </button>

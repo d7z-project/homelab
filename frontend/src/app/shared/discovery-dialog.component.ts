@@ -34,13 +34,13 @@ import {
     FormsModule,
   ],
   template: `
-    <h2 mat-dialog-title class="!pt-6">
+    <h2 mat-dialog-title class="pt-6!">
       <mat-icon class="mr-2 align-middle text-primary">filter_list</mat-icon>
       {{ data.title || '选择资源' }}
     </h2>
 
     <mat-dialog-content
-      class="flex flex-col !pb-4"
+      class="flex flex-col pb-4!"
       style="min-width: 350px; max-width: 600px; height: 500px;"
     >
       <!-- Search Field -->
@@ -64,7 +64,7 @@ import {
         [style.height]="isLoading() ? '2px' : '0px'"
         [style.opacity]="isLoading() ? 1 : 0"
       >
-        <mat-progress-bar mode="indeterminate" class="!h-[2px]"></mat-progress-bar>
+        <mat-progress-bar mode="indeterminate" class="h-[2px]!"></mat-progress-bar>
       </div>
 
       <!-- Result List -->
@@ -75,7 +75,7 @@ import {
               [value]="{ id: '', name: data.allOptionLabel || '全部' }"
               [selected]="data.currentId === ''"
               (click)="onSelect({ id: '', name: data.allOptionLabel || '全部' })"
-              class="mb-0.5 !h-auto"
+              class="mb-0.5 h-auto!"
             >
               <div class="flex items-center gap-3 py-1.5">
                 <mat-icon class="text-secondary opacity-40 shrink-0">all_inclusive</mat-icon>
@@ -99,7 +99,7 @@ import {
               [value]="item"
               [selected]="data.currentId === item.id"
               (click)="onSelect(item)"
-              class="mb-0.5 !h-auto"
+              class="mb-0.5 h-auto!"
             >
               <div class="flex items-center gap-3 py-1.5">
                 <mat-icon class="text-outline opacity-40 shrink-0">{{
@@ -130,7 +130,7 @@ import {
       </div>
     </mat-dialog-content>
 
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="px-6! pb-6!">
       <button mat-button mat-dialog-close>取消</button>
     </mat-dialog-actions>
   `,

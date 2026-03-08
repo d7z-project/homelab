@@ -71,7 +71,7 @@ import {
       @if (multiple) {
         <mat-chip-grid #chipGrid>
           @for (item of selectedItems(); track item.id) {
-            <mat-chip-row (removed)="removeItem(item)" class="!bg-secondary-container">
+            <mat-chip-row (removed)="removeItem(item)" class="bg-secondary-container!">
               <div class="flex flex-col leading-tight py-0.5">
                 <span class="text-[10px] font-bold">{{ item.name }}</span>
                 @if (item.description) {
@@ -111,7 +111,7 @@ import {
         [style.height]="isLoading() ? '2px' : '0px'"
         [style.opacity]="isLoading() ? 1 : 0"
       >
-        <mat-progress-bar mode="indeterminate" class="!h-[2px]"></mat-progress-bar>
+        <mat-progress-bar mode="indeterminate" class="h-[2px]!"></mat-progress-bar>
       </div>
 
       <mat-autocomplete
@@ -120,13 +120,13 @@ import {
         (optionSelected)="onSelected($event)"
       >
         @if (showAllOption) {
-          <mat-option [value]="{ id: '', name: allOptionLabel }" class="!h-auto !py-3">
+          <mat-option [value]="{ id: '', name: allOptionLabel }" class="h-auto! py-3!">
             <div class="flex items-center gap-4">
               <div
                 class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"
               >
                 <mat-icon
-                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-primary"
+                  class="m-0! text-[24px]! w-6! h-6! leading-none! flex items-center justify-center text-primary"
                   >all_inclusive</mat-icon
                 >
               </div>
@@ -135,14 +135,14 @@ import {
           </mat-option>
         }
         @for (item of items(); track item.id) {
-          <mat-option [value]="item" class="!h-auto !py-3">
+          <mat-option [value]="item" class="h-auto! py-3!">
             <div class="flex items-start gap-4">
               <!-- Optimized Icon Container with absolute centering -->
               <div
                 class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5"
               >
                 <mat-icon
-                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70"
+                  class="m-0! text-[24px]! w-6! h-6! leading-none! flex items-center justify-center opacity-70"
                   >{{ item.icon || 'label' }}</mat-icon
                 >
               </div>

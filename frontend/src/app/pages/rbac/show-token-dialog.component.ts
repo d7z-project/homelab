@@ -10,7 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title class="!pt-6">ServiceAccount 已就绪</h2>
+    <h2 mat-dialog-title class="pt-6!">ServiceAccount 已就绪</h2>
     <mat-dialog-content style="min-width: 350px; max-width: 550px;">
       <div class="space-y-4 pt-2">
         <div class="flex flex-col gap-1 text-on-surface opacity-80">
@@ -26,7 +26,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         >
           <div class="flex items-start gap-3 text-error">
             <mat-icon
-              class="!w-[20px] !h-[20px] !text-[20px] !flex !items-center !justify-center shrink-0"
+              class="w-[20px]! h-[20px]! text-[20px]! flex! items-center! justify-center! shrink-0"
               >warning</mat-icon
             >
             <div class="space-y-1">
@@ -47,7 +47,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
               (click)="copyToken()"
               class="text-error flex items-center justify-center hover:bg-error/10 transition-colors"
             >
-              <mat-icon class="!w-[20px] !h-[20px] !text-[20px] !flex !items-center !justify-center"
+              <mat-icon class="w-[20px]! h-[20px]! text-[20px]! flex! items-center! justify-center!"
                 >content_copy</mat-icon
               >
             </button>
@@ -55,7 +55,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="px-6! pb-6!">
       <button mat-flat-button color="primary" mat-dialog-close>已安全保存</button>
     </mat-dialog-actions>
   `,

@@ -361,7 +361,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     if (!domain.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...domain, enabled: !domain.enabled };
+      const updated = { ...domain, enabled: domain.enabled! };
       await firstValueFrom(this.networkDnsService.networkDnsDomainsIdPut(domain.id, updated));
       this.snackBar.open(`域名已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
       await this.loadDomains(true);
@@ -376,7 +376,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     if (!record.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...record, enabled: !record.enabled };
+      const updated = { ...record, enabled: record.enabled! };
       await firstValueFrom(this.networkDnsService.networkDnsRecordsIdPut(record.id, updated));
       this.snackBar.open(`记录已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
       await this.loadRecords(true);

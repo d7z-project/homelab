@@ -11,6 +11,7 @@ import (
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
+	taskpkg "homelab/pkg/common/task"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/ip"
 	"io"
@@ -95,7 +96,23 @@ func (s *IPPoolService) GetSyncPolicy(ctx context.Context, id string) (*models.I
 }
 
 func (s *IPPoolService) ListSyncPolicies(ctx context.Context, page, pageSize int, search string) ([]models.IPSyncPolicy, int, error) {
-	return repo.ListSyncPolicies(ctx, page, pageSize, search)
+	list, total, err := repo.ListSyncPolicies(ctx, page, pageSize, search)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 从内存 `manager` 获取最新运行状态、错误和进度
+	for i := range list {
+		if t, ok := s.syncTasks.GetTask(list[i].ID); ok {
+			status := t.GetStatus()
+			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
+				list[i].LastStatus = status
+				list[i].ErrorMessage = t.Error
+				list[i].Progress = t.GetProgress()
+			}
+		}
+	}
+	return list, total, nil
 }
 
 func (s *IPPoolService) Sync(ctx context.Context, id string) error {
@@ -228,7 +245,9 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 		defer os.Remove(tempSrc.Name())
 		defer tempSrc.Close()
 
-		if _, err := io.Copy(tempSrc, resp.Body); err != nil {
+		reader := taskpkg.NewProgressReader[*SyncTask](resp.Body, resp.ContentLength, task, s.syncTasks)
+
+		if _, err := io.Copy(tempSrc, reader); err != nil {
 			finalErr = err
 			return err
 		}

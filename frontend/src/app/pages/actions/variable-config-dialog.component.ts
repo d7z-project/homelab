@@ -32,7 +32,7 @@ import { firstValueFrom } from 'rxjs';
         <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
       </header>
 
-      <mat-dialog-content class="p-6 !m-0">
+      <mat-dialog-content class="p-6 m-0!">
         <form [formGroup]="form" class="flex flex-col gap-6 pt-2">
           <p class="text-sm text-outline mb-2">
             为该变量设置校验规则。前端正则用于 UI 实时反馈，后端正则用于执行前最终校验。
@@ -58,7 +58,7 @@ import { firstValueFrom } from 'rxjs';
         </form>
       </mat-dialog-content>
 
-      <mat-dialog-actions align="end" class="px-6 py-4 border-t border-outline-variant/10 !m-0">
+      <mat-dialog-actions align="end" class="px-6 py-4 border-t border-outline-variant/10 m-0!">
         <button mat-button mat-dialog-close>取消</button>
         <button mat-flat-button color="primary" [disabled]="loading" (click)="save()">
           {{ loading ? '校验中...' : '确定并保存' }}

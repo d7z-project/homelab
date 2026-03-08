@@ -53,7 +53,7 @@ interface StepState {
       >
         <div class="flex items-center gap-4 min-w-0">
           <mat-icon
-            class="!w-6 !h-6 !text-[24px] shrink-0"
+            class="w-6! h-6! text-[24px]! shrink-0"
             [style.color]="getStatusColor(instance().status)"
           >
             {{ getStatusIcon(instance().status) }}
@@ -74,12 +74,12 @@ interface StepState {
 
         <div class="flex items-center gap-2">
           @if (instance().status === 'Running' || instance().status === 'Pending') {
-            <button mat-button color="warn" (click)="cancel()" class="!rounded-full font-bold">
+            <button mat-button color="warn" (click)="cancel()" class="rounded-full! font-bold">
               停止执行
             </button>
           }
-          <button mat-icon-button (click)="dialogRef.close()" class="!w-10 !h-10 text-outline">
-            <mat-icon class="!text-[24px]">close</mat-icon>
+          <button mat-icon-button (click)="dialogRef.close()" class="w-10! h-10! text-outline">
+            <mat-icon class="text-[24px]!">close</mat-icon>
           </button>
         </div>
       </header>
@@ -96,7 +96,7 @@ interface StepState {
               class="px-6 py-3 flex items-center gap-4 cursor-pointer hover:bg-outline/5 transition-all relative group"
             >
               <mat-icon
-                class="!w-4 !h-4 !text-[18px] shrink-0"
+                class="w-4! h-4! text-[18px]! shrink-0"
                 [style.color]="getStepStatusColor(s.index)"
               >
                 {{ getStepStatusIcon(s.index) }}
@@ -134,12 +134,12 @@ interface StepState {
                   (opened)="onPanelOpened(s.index)"
                   (closed)="s.expanded = false"
                   [class.is-expanded]="s.expanded"
-                  class="pill-step-panel !shadow-none !bg-transparent !rounded-none !border-none"
+                  class="pill-step-panel shadow-none! bg-transparent! rounded-none! border-none!"
                 >
-                  <mat-expansion-panel-header class="!h-14 !px-6 transition-colors duration-200">
-                    <mat-panel-title class="flex items-center gap-4 !mr-0">
+                  <mat-expansion-panel-header class="h-14! px-6! transition-colors duration-200">
+                    <mat-panel-title class="flex items-center gap-4 mr-0!">
                       <mat-icon
-                        class="!w-5 !h-5 !text-[20px] shrink-0"
+                        class="w-5! h-5! text-[20px]! shrink-0"
                         [class.animate-spin-slow]="
                           currentRunningStep() === s.index &&
                           getStepStatusIcon(s.index) === 'pending'
@@ -195,7 +195,7 @@ interface StepState {
           (click)="toggleAutoScroll()"
           [class.!bg-primary]="autoScroll()"
           [class.!bg-surface-container-highest]="!autoScroll()"
-          class="!text-white shadow-lg"
+          class="text-white! shadow-lg"
           matTooltip="自动跟随"
         >
           <mat-icon>{{ autoScroll() ? 'sync' : 'sync_disabled' }}</mat-icon>
@@ -203,7 +203,7 @@ interface StepState {
         <button
           mat-mini-fab
           (click)="scrollToBottom()"
-          class="!bg-surface-container-highest !text-on-surface shadow-lg"
+          class="bg-surface-container-highest! text-on-surface! shadow-lg"
           matTooltip="到底部"
         >
           <mat-icon>vertical_align_bottom</mat-icon>

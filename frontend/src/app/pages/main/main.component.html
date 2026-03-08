@@ -51,21 +51,21 @@
         @if (!item.children) {
           <a
             mat-list-item
-            class="!mx-3 !w-auto"
+            class="mx-3! w-auto!"
             [class.nav-item-active]="currentPath() === item.link"
             (click)="onMenuClick(item, $event)"
           >
-            <mat-icon matListItemIcon class="!mr-4">{{ item.icon }}</mat-icon>
+            <mat-icon matListItemIcon class="mr-4!">{{ item.icon }}</mat-icon>
             <span matListItemTitle class="text-sm font-medium">{{ item.label }}</span>
           </a>
         } @else {
           <mat-expansion-panel
             [expanded]="currentPath().startsWith(item.link)"
-            class="!bg-transparent !shadow-none !border-none !mx-0 no-panel-padding"
+            class="bg-transparent! shadow-none! border-none! mx-0! no-panel-padding"
             togglePosition="after"
           >
             <mat-expansion-panel-header
-              class="!h-14 !px-7 !rounded-r-[28px] !mr-3 hover:!bg-surface-container transition-colors"
+              class="h-14! px-7! rounded-r-[28px]! mr-3! hover:!bg-surface-container transition-colors"
               [class.nav-item-active-parent]="currentPath().startsWith(item.link)"
             >
               <mat-panel-title class="flex items-center gap-4">
@@ -79,14 +79,14 @@
                 @if (!child.children) {
                   <a
                     mat-list-item
-                    class="!h-12 !mx-2 !w-auto"
+                    class="h-12! mx-2! w-auto!"
                     [class.nav-item-active]="
                       currentPath() === child.link &&
                       (!child.queryParams || currentTab() === child.queryParams['tab'])
                     "
                     (click)="onMenuClick(child, $event)"
                   >
-                    <mat-icon matListItemIcon class="!mr-3 !text-[18px] opacity-70">{{
+                    <mat-icon matListItemIcon class="mr-3! text-[18px]! opacity-70">{{
                       child.icon
                     }}</mat-icon>
                     <span matListItemTitle class="text-sm font-medium">{{ child.label }}</span>
@@ -95,14 +95,14 @@
                   <!-- Third Level Nesting -->
                   <mat-expansion-panel
                     [expanded]="currentPath().startsWith(child.link)"
-                    class="!bg-transparent !shadow-none !border-none !mx-0 level-3-panel"
+                    class="bg-transparent! shadow-none! border-none! mx-0! level-3-panel"
                     togglePosition="after"
                   >
                     <mat-expansion-panel-header
-                      class="!h-12 !pl-10 !pr-4 !rounded-r-[24px] !mr-3 hover:!bg-surface-container-high transition-colors"
+                      class="h-12! pl-10! pr-4! rounded-r-[24px]! mr-3! hover:!bg-surface-container-high transition-colors"
                     >
                       <mat-panel-title class="flex items-center gap-3">
-                        <mat-icon class="!text-[18px] opacity-70">{{ child.icon }}</mat-icon>
+                        <mat-icon class="text-[18px]! opacity-70">{{ child.icon }}</mat-icon>
                         <span class="text-sm font-medium">{{ child.label }}</span>
                       </mat-panel-title>
                     </mat-expansion-panel-header>
@@ -110,14 +110,14 @@
                       @for (subChild of child.children; track subChild.label) {
                         <a
                           mat-list-item
-                          class="!h-10 !mx-2 !w-auto !pl-12"
+                          class="h-10! mx-2! w-auto! pl-12!"
                           [class.nav-item-active]="
                             currentPath() === subChild.link &&
                             (!subChild.queryParams || currentTab() === subChild.queryParams['tab'])
                           "
                           (click)="onMenuClick(subChild, $event)"
                         >
-                          <mat-icon matListItemIcon class="!mr-2 !text-[16px] opacity-50">{{
+                          <mat-icon matListItemIcon class="mr-2! text-[16px]! opacity-50">{{
                             subChild.icon
                           }}</mat-icon>
                           <span matListItemTitle class="text-xs font-medium">{{
@@ -158,7 +158,7 @@
             <button
               mat-icon-button
               (click)="uiService.toggleSidenav()"
-              class="!mr-4 text-on-surface"
+              class="mr-4! text-on-surface"
             >
               <mat-icon>menu</mat-icon>
             </button>
@@ -175,7 +175,7 @@
             <div
               class="hidden sm:flex items-center mr-4 px-3 py-1.5 bg-surface-container-high rounded-full border border-outline-variant/30 shadow-sm"
             >
-              <mat-icon class="!w-4 !h-4 !text-[16px] text-primary mr-2">account_circle</mat-icon>
+              <mat-icon class="w-4! h-4! text-[16px]! text-primary mr-2">account_circle</mat-icon>
               <span class="text-xs font-medium text-on-surface-variant tracking-wide"
                 >Administrator</span
               >
@@ -184,10 +184,10 @@
             <button
               mat-icon-button
               (click)="logout()"
-              class="!text-on-surface-variant hover:!bg-error/10 hover:!text-error transition-all duration-300"
+              class="text-on-surface-variant! hover:!bg-error/10 hover:!text-error transition-all duration-300"
               matTooltip="退出登录"
             >
-              <mat-icon class="!text-[22px]">logout</mat-icon>
+              <mat-icon class="text-[22px]!">logout</mat-icon>
             </button>
           </div>
         </div>

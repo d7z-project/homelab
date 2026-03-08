@@ -257,7 +257,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     if (!policy.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...policy, enabled: !policy.enabled };
+      const updated = { ...policy, enabled: policy.enabled! };
       await firstValueFrom(this.ipService.networkIpSyncIdPut(policy.id, updated));
       this.snackBar.open(updated.enabled ? '策略已启用' : '策略已禁用', '关闭', { duration: 2000 });
       await this.loadPolicies(true);

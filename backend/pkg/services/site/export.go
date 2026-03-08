@@ -46,6 +46,16 @@ func (t *ExportTask) SetError(msg string) {
 	t.Error = msg
 }
 func (t *ExportTask) GetCreatedAt() time.Time { return t.CreatedAt }
+func (t *ExportTask) GetProgress() float64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Progress
+}
+func (t *ExportTask) SetProgress(p float64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Progress = p
+}
 
 func (t *ExportTask) MarshalJSON() ([]byte, error) {
 	t.mu.Lock()

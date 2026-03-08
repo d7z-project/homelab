@@ -62,19 +62,19 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
         [style.height]="isLoading() ? '2px' : '0px'"
         [style.opacity]="isLoading() ? 1 : 0"
       >
-        <mat-progress-bar mode="indeterminate" class="!h-[2px]"></mat-progress-bar>
+        <mat-progress-bar mode="indeterminate" class="h-[2px]!"></mat-progress-bar>
       </div>
 
       <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSelected($event)">
         <!-- Variable/Ref Suggestions (Priority) -->
         @for (ref of staticSuggestions; track ref) {
-          <mat-option [value]="ref" class="!h-auto !py-3">
+          <mat-option [value]="ref" class="h-auto! py-3!">
             <div class="flex items-center gap-4">
               <div
                 class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0"
               >
                 <mat-icon
-                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center text-secondary/70"
+                  class="m-0! text-[24px]! w-6! h-6! leading-none! flex items-center justify-center text-secondary/70"
                   >data_object</mat-icon
                 >
               </div>
@@ -85,13 +85,13 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
 
         <!-- RBAC Discovery Results -->
         @for (ref of rbacSuggestions; track ref.fullId) {
-          <mat-option [value]="ref" class="!h-auto !py-3">
+          <mat-option [value]="ref" class="h-auto! py-3!">
             <div class="flex items-start gap-4">
               <div
                 class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5"
               >
                 <mat-icon
-                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70"
+                  class="m-0! text-[24px]! w-6! h-6! leading-none! flex items-center justify-center opacity-70"
                   >{{ ref.final ? 'description' : 'folder' }}</mat-icon
                 >
               </div>
@@ -107,13 +107,13 @@ import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize
 
         <!-- Discovery Results -->
         @for (item of items(); track item.id) {
-          <mat-option [value]="item.id" class="!h-auto !py-3">
+          <mat-option [value]="item.id" class="h-auto! py-3!">
             <div class="flex items-start gap-4">
               <div
                 class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5"
               >
                 <mat-icon
-                  class="!m-0 !text-[24px] !w-6 !h-6 !leading-none flex items-center justify-center opacity-70"
+                  class="m-0! text-[24px]! w-6! h-6! leading-none! flex items-center justify-center opacity-70"
                   >{{ item.icon || 'label' }}</mat-icon
                 >
               </div>

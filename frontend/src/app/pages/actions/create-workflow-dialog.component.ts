@@ -96,7 +96,7 @@ import * as yaml from 'js-yaml';
   template: `
     <div class="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
       <mat-toolbar
-        class="!bg-surface !border-b !border-outline-variant/30 flex justify-between shrink-0 h-16"
+        class="bg-surface! border-b! !border-outline-variant/30 flex justify-between shrink-0 h-16"
       >
         <div class="flex items-center">
           <button mat-icon-button icon-button-center (click)="dialogRef.close()" matTooltip="返回">
@@ -116,14 +116,14 @@ import * as yaml from 'js-yaml';
               <button
                 mat-flat-button
                 color="primary"
-                class="!rounded-full !h-8 !min-w-[60px] sm:!min-w-[100px] !shadow-none !text-xs sm:!text-sm"
+                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] shadow-none! text-xs! sm:!text-sm"
               >
                 图形化
               </button>
               <button
                 mat-button
                 (click)="switchMode('yaml')"
-                class="!rounded-full !h-8 !min-w-[60px] sm:!min-w-[100px] !text-xs sm:!text-sm"
+                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] text-xs! sm:!text-sm"
               >
                 YAML
               </button>
@@ -131,14 +131,14 @@ import * as yaml from 'js-yaml';
               <button
                 mat-button
                 (click)="switchMode('visual')"
-                class="!rounded-full !h-8 !min-w-[60px] sm:!min-w-[100px] !text-xs sm:!text-sm"
+                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] text-xs! sm:!text-sm"
               >
                 图形化
               </button>
               <button
                 mat-flat-button
                 color="primary"
-                class="!rounded-full !h-8 !min-w-[60px] sm:!min-w-[100px] !shadow-none !text-xs sm:!text-sm"
+                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] shadow-none! text-xs! sm:!text-sm"
               >
                 YAML
               </button>
@@ -150,7 +150,7 @@ import * as yaml from 'js-yaml';
             color="primary"
             (click)="submit()"
             [disabled]="!isValid()"
-            class="!rounded-full font-bold !min-w-[50px] sm:!min-w-[80px]"
+            class="rounded-full! font-bold min-w-[50px]! sm:!min-w-[80px]"
           >
             保存
           </button>
@@ -166,7 +166,7 @@ import * as yaml from 'js-yaml';
           <div
             class="max-w-4xl mx-auto w-full h-full overflow-y-auto animate-in fade-in duration-300"
           >
-            <mat-stepper orientation="vertical" #stepper class="!bg-transparent">
+            <mat-stepper orientation="vertical" #stepper class="bg-transparent!">
               <mat-step [stepControl]="infoForm">
                 <ng-template matStepLabel>基本信息</ng-template>
                 <form
@@ -282,9 +282,9 @@ import * as yaml from 'js-yaml';
                           mat-button
                           type="button"
                           (click)="openVarExtra(vIndex)"
-                          class="!text-xs"
+                          class="text-xs!"
                         >
-                          <mat-icon class="mr-1 !text-sm">{{
+                          <mat-icon class="mr-1 text-sm!">{{
                             hasRegex(vIndex) ? 'verified_user' : 'tune'
                           }}</mat-icon>
                           {{ hasRegex(vIndex) ? '已配置正则' : '配置正则' }}
@@ -338,7 +338,7 @@ import * as yaml from 'js-yaml';
                             cdkDragHandle
                             class="cursor-grab p-1 hover:bg-outline/5 rounded-full transition-colors"
                           >
-                            <mat-icon class="text-outline/60 !text-lg">drag_indicator</mat-icon>
+                            <mat-icon class="text-outline/60 text-lg!">drag_indicator</mat-icon>
                           </div>
                           <div class="flex flex-col">
                             <span
@@ -360,7 +360,7 @@ import * as yaml from 'js-yaml';
                           type="button"
                           class="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <mat-icon class="!text-xl">delete_outline</mat-icon>
+                          <mat-icon class="text-xl!">delete_outline</mat-icon>
                         </button>
                       </div>
 
@@ -408,10 +408,10 @@ import * as yaml from 'js-yaml';
                             mat-button
                             type="button"
                             (click)="openProcessorSelector(sIndex)"
-                            class="w-full !h-full !min-h-[80px] sm:!min-h-[120px] !rounded-xl sm:!rounded-2xl border-2 border-dashed border-outline-variant/50 hover:border-primary/50 hover:bg-primary/5 transition-all flex lg:flex-col items-center justify-center gap-3 sm:gap-2 group/btn"
+                            class="w-full h-full! min-h-[80px]! sm:!min-h-[120px] rounded-xl! sm:!rounded-2xl border-2 border-dashed border-outline-variant/50 hover:border-primary/50 hover:bg-primary/5 transition-all flex lg:flex-col items-center justify-center gap-3 sm:gap-2 group/btn"
                           >
                             <mat-icon
-                              class="!w-8 !h-8 sm:!w-10 sm:!h-10 !text-[32px] sm:!text-[40px] text-outline/30 group-hover/btn:text-primary/50 transition-colors"
+                              class="w-8! h-8! sm:!w-10 sm:!h-10 text-[32px]! sm:!text-[40px] text-outline/30 group-hover/btn:text-primary/50 transition-colors"
                             >
                               {{
                                 getStepManifest(sIndex)?.id?.startsWith('core/') ? 'memory' : 'api'
@@ -433,7 +433,7 @@ import * as yaml from 'js-yaml';
                         class="bg-surface-container-low p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-outline-variant/20"
                       >
                         <div class="flex items-center gap-2 mb-3 sm:mb-4">
-                          <mat-icon class="!text-xs sm:!text-sm text-outline/40"
+                          <mat-icon class="text-xs! sm:!text-sm text-outline/40"
                             >settings_input_component</mat-icon
                           >
                           <span
@@ -472,7 +472,7 @@ import * as yaml from 'js-yaml';
                             <div
                               class="col-span-1 sm:col-span-2 py-4 flex flex-col items-center justify-center opacity-30"
                             >
-                              <mat-icon class="!text-lg">auto_awesome</mat-icon>
+                              <mat-icon class="text-lg!">auto_awesome</mat-icon>
                               <p class="text-[10px] italic mt-1">无需额外配置</p>
                             </div>
                           }
@@ -486,7 +486,7 @@ import * as yaml from 'js-yaml';
                     color="primary"
                     (click)="addStep()"
                     type="button"
-                    class="!rounded-2xl mx-auto scale-90 sm:scale-100"
+                    class="rounded-2xl! mx-auto scale-90 sm:scale-100"
                   >
                     <mat-icon>add</mat-icon>添加任务步骤
                   </button>

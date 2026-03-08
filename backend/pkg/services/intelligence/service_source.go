@@ -41,7 +41,24 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.I
 }
 
 func (s *IntelligenceService) ListSources(ctx context.Context) ([]models.IntelligenceSource, error) {
-	return repo.ListSources(ctx)
+	sources, err := repo.ListSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// 从内存 `manager` 获取最新运行状态、错误和进度
+	for i := range sources {
+		if t, ok := s.tasks.GetTask(sources[i].ID); ok {
+			status := t.GetStatus()
+			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
+				sources[i].Status = status
+				sources[i].ErrorMessage = t.Error
+				sources[i].Progress = t.GetProgress()
+			}
+		}
+	}
+
+	return sources, nil
 }
 
 func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error {

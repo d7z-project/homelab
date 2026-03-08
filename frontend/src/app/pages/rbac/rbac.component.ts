@@ -111,7 +111,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     if (!sa.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...sa, enabled: !sa.enabled };
+      const updated = { ...sa, enabled: sa.enabled! };
       await firstValueFrom(this.rbacService.rbacServiceaccountsIdPut(sa.id, updated));
       this.snackBar.open(`账号已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
       // Keep silent refresh or just update local state if preferred, but list reload is safer
@@ -136,7 +136,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     if (!rb.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...rb, enabled: !rb.enabled };
+      const updated = { ...rb, enabled: rb.enabled! };
       await firstValueFrom(this.rbacService.rbacRolebindingsIdPut(rb.id, updated));
       this.snackBar.open(`绑定已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
       await this.loadRoleBindings(true);

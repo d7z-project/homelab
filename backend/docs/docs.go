@@ -5508,6 +5508,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "progress": {
+                    "type": "number"
+                },
                 "sourceUrl": {
                     "type": "string"
                 },
@@ -5548,6 +5551,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "progress": {
+                    "type": "number"
                 },
                 "status": {
                     "description": "Ready, Downloading, Error",

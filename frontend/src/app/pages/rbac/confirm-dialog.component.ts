@@ -17,24 +17,24 @@ export interface ConfirmDialogData {
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title class="!pt-6">{{ data.title }}</h2>
+    <h2 mat-dialog-title class="pt-6!">{{ data.title }}</h2>
     <mat-dialog-content style="min-width: 300px; max-width: 450px;">
       <p class="py-3 text-on-surface opacity-80 leading-relaxed">{{ data.message }}</p>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6 !gap-2">
-      <button mat-button [mat-dialog-close]="false" class="!rounded-full px-4">
+    <mat-dialog-actions align="end" class="px-6! pb-6! gap-2!">
+      <button mat-button [mat-dialog-close]="false" class="rounded-full! px-4">
         {{ data.cancelText || '取消' }}
       </button>
       <button
         mat-flat-button
-        [color]="data.color === 'warn' || !data.color ? null : data.color"
-        [class.bg-error]="data.color === 'warn' || !data.color"
-        [class.text-on-error]="data.color === 'warn' || !data.color"
+        [color]="data.color === 'warn' || data.color! ? null : data.color"
+        [class.bg-error]="data.color === 'warn' || data.color!"
+        [class.text-on-error]="data.color === 'warn' || data.color!"
         [mat-dialog-close]="true"
-        class="!rounded-full px-6"
+        class="rounded-full! px-6"
       >
         @if (data.color !== 'primary') {
-          <mat-icon class="mr-1.5 !w-5 !h-5 !text-[20px] !text-inherit">delete_outline</mat-icon>
+          <mat-icon class="mr-1.5 w-5! h-5! text-[20px]! text-inherit!">delete_outline</mat-icon>
         }
         {{ data.confirmText || '确定删除' }}
       </button>

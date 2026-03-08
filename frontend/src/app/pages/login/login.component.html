@@ -3,7 +3,7 @@
     <!-- 左侧简约品牌区域 -->
     <div class="brand-content text-center p-10 animate-in fade-in duration-700">
       <div class="mb-10">
-        <mat-icon class="brand-logo-icon !text-[100px] !w-28 !h-28">home_work</mat-icon>
+        <mat-icon class="brand-logo-icon text-[100px]! w-28! h-28!">home_work</mat-icon>
       </div>
       <h1 class="text-white text-5xl font-light tracking-widest uppercase mb-4">HOMELAB</h1>
       <p class="text-slate-400 text-sm tracking-[0.3em] uppercase font-light">云基础设施管理系统</p>
@@ -49,9 +49,9 @@
               type="button"
               mat-button
               (click)="resetLogin()"
-              class="-ml-3 !text-primary !font-normal"
+              class="-ml-3 text-primary! font-normal!"
             >
-              <mat-icon class="!mr-1">arrow_back</mat-icon>
+              <mat-icon class="mr-1!">arrow_back</mat-icon>
               返回修改密码
             </button>
 
@@ -73,7 +73,7 @@
               <mat-progress-bar
                 mode="determinate"
                 [value]="totpProgress"
-                class="!h-1 rounded-full opacity-60"
+                class="h-1! rounded-full opacity-60"
               ></mat-progress-bar>
               <div class="flex justify-between mt-1 px-0.5">
                 <span class="text-[10px] text-outline uppercase tracking-tighter"
@@ -91,12 +91,12 @@
           <button
             mat-flat-button
             color="primary"
-            class="w-full !h-14 !text-base !rounded-2xl"
+            class="w-full h-14! text-base! rounded-2xl!"
             [disabled]="loading"
           >
             @if (loading) {
               <span class="flex items-center gap-3">
-                <mat-icon class="animate-spin !w-5 !h-5 !text-[20px]">refresh</mat-icon>
+                <mat-icon class="animate-spin w-5! h-5! text-[20px]!">refresh</mat-icon>
                 正在验证安全凭据...
               </span>
             } @else {

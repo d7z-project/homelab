@@ -28,7 +28,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
     DiscoverySelectComponent,
   ],
   template: `
-    <h2 mat-dialog-title class="!pt-6">
+    <h2 mat-dialog-title class="pt-6!">
       <mat-icon class="mr-2 align-middle text-primary">layers</mat-icon>
       {{ isEdit ? '修改解析记录' : '新增解析记录' }}
     </h2>
@@ -306,14 +306,14 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
         }
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="px-6! pb-6!">
       <button mat-button mat-dialog-close>取消</button>
       <button
         mat-flat-button
         color="primary"
         (click)="confirm()"
         [disabled]="!isValid()"
-        class="!ml-2 px-6 rounded-full"
+        class="ml-2! px-6 rounded-full"
       >
         <mat-icon class="mr-1">check</mat-icon>
         {{ isEdit ? '保存更改' : '确定添加' }}
@@ -476,12 +476,12 @@ export class CreateRecordDialogComponent implements AfterViewInit {
 
   isValid(): boolean {
     const name = this.record.name?.trim();
-    if (!name || !this.record.domainId || !this.record.type) return false;
+    if (!name || this.record.domainId! || !this.record.type) return false;
     if (this.record.ttl === undefined || this.record.ttl < 1) return false;
 
     // Value must exist (either directly or via parts)
     if (
-      !this.record.value &&
+      this.record.value! &&
       this.record.type !== 'SOA' &&
       this.record.type !== 'SRV' &&
       this.record.type !== 'CAA'

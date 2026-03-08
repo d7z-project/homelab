@@ -41,13 +41,13 @@ export interface PreviewExportData {
   template: `
     <h2
       mat-dialog-title
-      class="!flex items-center justify-between !p-6 !mb-0 !bg-surface text-on-surface"
+      class="flex! items-center justify-between p-6! mb-0! bg-surface! text-on-surface"
     >
       <div class="flex items-center gap-4">
         <div
           class="w-12 h-12 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm"
         >
-          <mat-icon class="!w-6 !h-6 !text-[24px]">science</mat-icon>
+          <mat-icon class="w-6! h-6! text-[24px]!">science</mat-icon>
         </div>
         <div class="flex flex-col">
           <span class="text-xl font-bold tracking-tight">表达式预览与计算</span>
@@ -66,7 +66,7 @@ export interface PreviewExportData {
     </h2>
 
     <mat-dialog-content
-      class="!p-0 !max-h-[75vh] flex flex-col relative bg-surface-container-lowest overflow-hidden"
+      class="p-0! max-h-[75vh]! flex flex-col relative bg-surface-container-lowest overflow-hidden"
     >
       <!-- Input Section - Card Style -->
       <div class="px-6 py-6 border-b border-outline-variant/10 bg-surface">
@@ -99,17 +99,17 @@ export interface PreviewExportData {
               <button
                 mat-flat-button
                 color="primary"
-                class="w-full h-full lg:max-h-[110px] min-h-[50px] !rounded-2xl shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 transition-all duration-300 active:scale-95 group"
+                class="w-full h-full lg:max-h-[110px] min-h-[50px] rounded-2xl! shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 transition-all duration-300 active:scale-95 group"
                 [disabled]="loading() || form.invalid"
                 (click)="calculate()"
               >
                 <div class="flex lg:flex-col items-center justify-center gap-2 px-2 py-1 lg:py-4">
                   @if (loading()) {
-                    <mat-spinner diameter="24" color="accent" class="!opacity-80"></mat-spinner>
+                    <mat-spinner diameter="24" color="accent" class="opacity-80!"></mat-spinner>
                     <span class="font-bold tracking-wider text-xs">执行中</span>
                   } @else {
                     <mat-icon
-                      class="!w-6 !h-6 !text-[24px] group-hover:rotate-12 transition-transform duration-300"
+                      class="w-6! h-6! text-[24px]! group-hover:rotate-12 transition-transform duration-300"
                       >play_circle</mat-icon
                     >
                     <span class="font-bold tracking-wider text-xs">测试预览</span>
@@ -140,7 +140,7 @@ export interface PreviewExportData {
             class="p-12 flex flex-col items-center justify-center text-error animate-in fade-in zoom-in-95 duration-300"
           >
             <div class="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mb-4">
-              <mat-icon class="!w-8 !h-8 !text-[32px]">error_outline</mat-icon>
+              <mat-icon class="w-8! h-8! text-[32px]!">error_outline</mat-icon>
             </div>
             <span class="font-bold text-lg mb-2">计算执行失败</span>
             <span class="text-sm opacity-80 text-center max-w-[400px] leading-relaxed">{{
@@ -243,7 +243,7 @@ export interface PreviewExportData {
                   <div
                     class="w-20 h-20 rounded-full bg-surface-container-high flex items-center justify-center text-outline/30 mb-4"
                   >
-                    <mat-icon class="!w-10 !h-10 !text-[40px]">manage_search</mat-icon>
+                    <mat-icon class="w-10! h-10! text-[40px]!">manage_search</mat-icon>
                   </div>
                   <p class="text-on-surface text-sm font-bold tracking-wide">暂无匹配数据</p>
                   <p class="text-[11px] text-outline opacity-60 mt-2 max-w-[240px] leading-relaxed">
@@ -261,14 +261,14 @@ export interface PreviewExportData {
       class="px-6 py-4 bg-surface border-t border-outline-variant/10 flex justify-between items-center text-[10px] text-outline font-medium"
     >
       <div class="flex items-center gap-2 uppercase tracking-tight opacity-70">
-        <mat-icon class="!w-4 !h-4 !text-[14px]">bolt</mat-icon>
+        <mat-icon class="w-4! h-4! text-[14px]!">bolt</mat-icon>
         <span>REAL-TIME PREVIEW ENGINE (Limit: 50 Records)</span>
       </div>
       <button
         mat-flat-button
         color="secondary"
         mat-dialog-close
-        class="!rounded-xl px-8 !h-10 text-xs font-bold shadow-none"
+        class="rounded-xl! px-8 h-10! text-xs font-bold shadow-none"
       >
         关闭窗口
       </button>

@@ -22,4 +22,6 @@ type TaskInfo interface {
 	SetStatus(status TaskStatus)
 	SetError(msg string)
 	GetCreatedAt() time.Time
+	GetProgress() float64
+	SetProgress(progress float64)
 }

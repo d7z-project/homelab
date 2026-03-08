@@ -82,6 +82,7 @@ type IPPoolService struct {
 type SyncTask struct {
 	ID        string            `json:"id"`
 	Status    models.TaskStatus `json:"status"`
+	Progress  float64           `json:"progress"`
 	Error     string            `json:"error"`
 	CreatedAt time.Time         `json:"createdAt"`
 	mu        sync.Mutex
@@ -104,6 +105,16 @@ func (t *SyncTask) SetError(msg string) {
 	t.Error = msg
 }
 func (t *SyncTask) GetCreatedAt() time.Time { return t.CreatedAt }
+func (t *SyncTask) GetProgress() float64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Progress
+}
+func (t *SyncTask) SetProgress(progress float64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Progress = progress
+}
 
 var _ models.TaskInfo = (*SyncTask)(nil)
 

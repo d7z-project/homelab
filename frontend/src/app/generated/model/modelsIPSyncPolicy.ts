@@ -34,6 +34,7 @@ export interface ModelsIPSyncPolicy {
    */
   mode?: string;
   name?: string;
+  progress?: number;
   sourceUrl?: string;
   targetGroupId?: string;
   updatedAt?: string;

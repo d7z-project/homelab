@@ -18,6 +18,7 @@ export interface ModelsIntelligenceSource {
   id?: string;
   lastUpdatedAt?: string;
   name?: string;
+  progress?: number;
   /**
    * Ready, Downloading, Error
    */

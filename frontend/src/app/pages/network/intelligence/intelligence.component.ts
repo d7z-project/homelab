@@ -8,6 +8,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NetworkIntelligenceService, ModelsIntelligenceSource } from '../../../generated';
 import { PageHeaderComponent } from '../../../shared/page-header.component';
 import { CreateSourceDialogComponent } from './create-source-dialog.component';
@@ -25,6 +26,7 @@ import { ConfirmDialogComponent } from '../../rbac/confirm-dialog.component';
     MatDialogModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     PageHeaderComponent,
   ],
   templateUrl: './intelligence.component.html',
@@ -42,7 +44,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadSources();
-    // Poll status every 5 seconds if any is downloading
+    // Poll status every 3 seconds if any is downloading
     this.pollInterval = setInterval(() => {
       const data = this.sources();
       if (
@@ -51,7 +53,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
       ) {
         this.loadSources();
       }
-    }, 5000);
+    }, 3000);
   }
 
   ngOnDestroy() {

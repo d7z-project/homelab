@@ -30,6 +30,7 @@
   - **框架集成**: 后端长时间运行的任务（如导出、同步）必须继承自 `pkg/common/task` 框架，利用 `Manager` 进行状态追踪与并发限制。
   - **任务取消**: 必须在循环处理逻辑中显式监听 `taskCtx.Done()`，确保用户取消或系统重启时能及时释放资源并更新状态至 `Cancelled`。
   - **状态自愈 (Reconcile)**: 服务重启时必须调用 `manager.Reconcile(ctx)`，将由于进程崩溃导致的 `Running` 任务自动标记为 `Failed` (Node Failure)。
+  - **任务进度 (Progress Tracking)**: 涉及进度评估的任务模型须实现 `models.TaskInfo` 的 `Get/SetProgress` 接口。对于长文件流下载任务，应使用 `task.NewProgressReader` 对 `io.Reader` 进行包装封装，它会自动通过 `Manager.Save()` 周期性汇报最新进度，供 API 和前端读取展示。
 - **标签管理逻辑 (Tagging System)**:
   - **增量更新模式 (Incremental)**: 对于大规模数据条目的标签修改，应采用 `OldTags` (需要移除的旧标签) 与 `NewTags` (需要添加的新标签) 结合的方案，避免全量覆盖导致的并发数据丢失。
   - **系统标签防护**: 严禁用户在 UI 或 API 层面添加、修改或删除以下划线 `_` 开头的系统保留标签。

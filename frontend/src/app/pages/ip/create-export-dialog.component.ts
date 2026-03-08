@@ -56,11 +56,11 @@ import { NetworkIpService, ModelsIPExport } from '../../generated';
         </mat-form-field>
 
         <mat-expansion-panel
-          class="!bg-surface-container-low !rounded-xl overflow-hidden border border-outline-variant/30"
+          class="bg-surface-container-low! rounded-xl! overflow-hidden border border-outline-variant/30"
         >
-          <mat-expansion-panel-header class="!h-10">
+          <mat-expansion-panel-header class="h-10!">
             <mat-panel-title class="flex items-center gap-2 text-xs font-bold text-primary">
-              <mat-icon class="!w-4 !h-4 !text-[16px] flex items-center justify-center"
+              <mat-icon class="w-4! h-4! text-[16px]! flex items-center justify-center"
                 >help_outline</mat-icon
               >
               过滤规则编写指南 (go-expr)
@@ -80,7 +80,7 @@ import { NetworkIpService, ModelsIPExport } from '../../generated';
 
             <div class="space-y-1.5">
               <div class="font-bold text-on-surface flex items-center gap-1">
-                <mat-icon class="!w-3 !h-3 !text-[12px]">variable</mat-icon>
+                <mat-icon class="w-3! h-3! text-[12px]!">variable</mat-icon>
                 可用变量
               </div>
               <div class="grid grid-cols-1 gap-1 pl-4">
@@ -92,7 +92,7 @@ import { NetworkIpService, ModelsIPExport } from '../../generated';
 
             <div class="space-y-1.5">
               <div class="font-bold text-on-surface flex items-center gap-1">
-                <mat-icon class="!w-3 !h-3 !text-[12px]">lightbulb</mat-icon>
+                <mat-icon class="w-3! h-3! text-[12px]!">lightbulb</mat-icon>
                 常用示例
               </div>
               <div class="space-y-2 pl-4">

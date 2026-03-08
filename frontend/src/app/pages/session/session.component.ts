@@ -64,14 +64,14 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!pl-8 bg-surface-container-low font-bold text-on-surface-variant uppercase tracking-wider text-[11px]"
+                  class="pl-8! bg-surface-container-low font-bold text-on-surface-variant uppercase tracking-wider text-[11px]"
                 >
                   IP 地址
                 </th>
                 <td
                   mat-cell
                   *matCellDef="let element"
-                  class="!pl-8 py-4 font-mono text-sm text-primary"
+                  class="pl-8! py-4 font-mono text-sm text-primary"
                 >
                   {{ element.ip || 'Unknown' }}
                   @if (element.id === uiService.sessionId()) {
@@ -121,9 +121,9 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!pr-8 bg-surface-container-low text-right"
+                  class="pr-8! bg-surface-container-low text-right"
                 ></th>
-                <td mat-cell *matCellDef="let element" class="!pr-8 text-right">
+                <td mat-cell *matCellDef="let element" class="pr-8! text-right">
                   <button
                     mat-icon-button
                     color="warn"
@@ -135,7 +135,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
                     class="hover:bg-error/10 transition-colors"
                   >
                     <mat-icon
-                      class="!text-[20px] !w-5 !h-5 !flex !items-center !justify-center"
+                      class="text-[20px]! w-5! h-5! flex! items-center! justify-center!"
                       [class.opacity-20]="element.id === uiService.sessionId()"
                       >logout</mat-icon
                     >
@@ -158,7 +158,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
                   [attr.colspan]="displayedColumns().length"
                 >
                   <div class="flex flex-col items-center gap-3 opacity-30">
-                    <mat-icon class="!w-16 !h-16 !text-[64px]">no_accounts</mat-icon>
+                    <mat-icon class="w-16! h-16! text-[64px]!">no_accounts</mat-icon>
                     <span class="text-lg font-medium italic">暂无活跃会话记录</span>
                   </div>
                 </td>
@@ -171,7 +171,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
       <!-- FAB for Scroll Top -->
       @if (showScrollTop()) {
         <div class="fixed bottom-8 right-8 z-50 animate-in slide-in-from-bottom-4">
-          <button mat-fab color="tertiary" (click)="scrollToTop()" class="!rounded-2xl shadow-lg">
+          <button mat-fab color="tertiary" (click)="scrollToTop()" class="rounded-2xl! shadow-lg">
             <mat-icon>arrow_upward</mat-icon>
           </button>
         </div>

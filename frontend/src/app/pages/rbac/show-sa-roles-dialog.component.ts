@@ -19,7 +19,7 @@ import { ModelsRole } from '../../generated';
     MatDividerModule,
   ],
   template: `
-    <h2 mat-dialog-title class="!pt-6">生效权限详情</h2>
+    <h2 mat-dialog-title class="pt-6!">生效权限详情</h2>
     <mat-dialog-content>
       <div class="py-2">
         <p class="text-sm text-outline mb-4">
@@ -34,7 +34,7 @@ import { ModelsRole } from '../../generated';
               >
                 <div class="bg-surface-container px-4 py-2 flex items-center gap-2">
                   <mat-icon
-                    class="!text-secondary !w-[18px] !h-[18px] !text-[18px] !flex !items-center !justify-center"
+                    class="text-secondary! w-[18px]! h-[18px]! text-[18px]! flex! items-center! justify-center!"
                     >shield</mat-icon
                   >
                   <span class="font-bold text-sm text-on-surface">{{ role.name }}</span>
@@ -52,7 +52,7 @@ import { ModelsRole } from '../../generated';
                         >
                       </div>
                       <mat-icon
-                        class="!w-[12px] !h-[12px] !text-[12px] text-outline opacity-50 !flex !items-center !justify-center"
+                        class="w-[12px]! h-[12px]! text-[12px]! text-outline opacity-50 flex! items-center! justify-center!"
                         >east</mat-icon
                       >
                       <div class="flex gap-1">
@@ -74,7 +74,7 @@ import { ModelsRole } from '../../generated';
             class="flex flex-col items-center justify-center py-10 bg-surface-container rounded-xl border border-dashed border-outline-variant"
           >
             <mat-icon
-              class="text-outline opacity-20 !w-[48px] !h-[48px] !text-[48px] !flex !items-center !justify-center mb-2"
+              class="text-outline opacity-20 w-[48px]! h-[48px]! text-[48px]! flex! items-center! justify-center! mb-2"
               >block</mat-icon
             >
             <p class="text-xs text-outline italic">该账号目前没有任何生效的角色绑定</p>
@@ -82,7 +82,7 @@ import { ModelsRole } from '../../generated';
         }
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6">
+    <mat-dialog-actions align="end" class="px-6! pb-6!">
       <button mat-button mat-dialog-close color="primary">关闭</button>
     </mat-dialog-actions>
   `,

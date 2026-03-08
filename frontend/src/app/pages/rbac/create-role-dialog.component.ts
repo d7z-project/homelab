@@ -51,12 +51,12 @@ interface RuleWithUI extends ModelsPolicyRule {
     DiscoverySuggestInputComponent,
   ],
   template: `
-    <h2 mat-dialog-title class="!pt-6">
+    <h2 mat-dialog-title class="pt-6!">
       <mat-icon class="mr-2 align-middle text-primary">shield_person</mat-icon>
       {{ isEdit ? '编辑角色配置' : '创建新角色' }}
     </h2>
     <mat-dialog-content
-      class="flex flex-col gap-6 !pb-4"
+      class="flex flex-col gap-6 pb-4!"
       style="min-width: 350px; max-width: 800px;"
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -98,10 +98,10 @@ interface RuleWithUI extends ModelsPolicyRule {
           <button
             mat-stroked-button
             color="primary"
-            class="!rounded-xl scale-90"
+            class="rounded-xl! scale-90"
             (click)="addRule()"
           >
-            <mat-icon class="!w-4 !h-4 !text-[16px]">add</mat-icon>
+            <mat-icon class="w-4! h-4! text-[16px]!">add</mat-icon>
             添加规则
           </button>
         </div>
@@ -116,11 +116,11 @@ interface RuleWithUI extends ModelsPolicyRule {
                 <button
                   mat-icon-button
                   color="warn"
-                  class="absolute top-1 right-1 !w-8 !h-8 scale-75 sm:opacity-0 group-hover:opacity-100 transition-opacity icon-button-center"
+                  class="absolute top-1 right-1 w-8! h-8! scale-75 sm:opacity-0 group-hover:opacity-100 transition-opacity icon-button-center"
                   (click)="removeRule(i)"
                   matTooltip="删除此规则"
                 >
-                  <mat-icon class="!text-[20px]">delete_outline</mat-icon>
+                  <mat-icon class="text-[20px]!">delete_outline</mat-icon>
                 </button>
               }
 
@@ -145,7 +145,7 @@ interface RuleWithUI extends ModelsPolicyRule {
                     @for (v of rule.verbs; track v) {
                       <mat-chip-row
                         (removed)="removeVerb(rule, v)"
-                        class="!bg-secondary-container !text-on-secondary-container"
+                        class="bg-secondary-container! text-on-secondary-container!"
                       >
                         {{ v }}
                         <button matChipRemove><mat-icon>cancel</mat-icon></button>
@@ -178,14 +178,14 @@ interface RuleWithUI extends ModelsPolicyRule {
         </div>
       </div>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-6 !pt-2">
+    <mat-dialog-actions align="end" class="px-6! pb-6! pt-2!">
       <button mat-button mat-dialog-close>取消</button>
       <button
         mat-flat-button
         color="primary"
         (click)="confirm()"
         [disabled]="!formValid()"
-        class="!ml-2 px-8 rounded-full"
+        class="ml-2! px-8 rounded-full"
       >
         <mat-icon class="mr-1">check</mat-icon>
         {{ isEdit ? '保存更改' : '立即创建' }}

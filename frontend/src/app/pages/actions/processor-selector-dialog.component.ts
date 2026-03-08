@@ -63,7 +63,7 @@ import { ModelsStepManifest } from '../../generated';
                 <div
                   class="w-10 h-10 rounded-full bg-primary/5 text-primary flex items-center justify-center shrink-0 border border-primary/10"
                 >
-                  <mat-icon class="!text-[20px]">extension</mat-icon>
+                  <mat-icon class="text-[20px]!">extension</mat-icon>
                 </div>
                 <div class="flex flex-col min-w-0">
                   <div class="flex items-baseline gap-2">

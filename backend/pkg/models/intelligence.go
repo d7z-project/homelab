@@ -17,6 +17,7 @@ type IntelligenceSource struct {
 	UpdateCron    string            `json:"cron"`
 	LastUpdatedAt time.Time         `json:"lastUpdatedAt"`
 	Status        TaskStatus        `json:"status"` // Ready, Downloading, Error
+	Progress      float64           `json:"progress"`
 	ErrorMessage  string            `json:"errorMessage"`
 	Config        map[string]string `json:"config"`
 }

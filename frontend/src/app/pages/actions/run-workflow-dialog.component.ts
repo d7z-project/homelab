@@ -51,7 +51,7 @@ import { ModelsWorkflow } from '../../generated';
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" [disabled]="!form.valid" (click)="submit()">
+      <button mat-flat-button color="primary" [disabled]="form.valid!" (click)="submit()">
         立即运行
       </button>
     </mat-dialog-actions>

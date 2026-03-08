@@ -13,7 +13,7 @@
         class="flex flex-col md:flex-row gap-4 items-stretch animate-in slide-in-from-top-4 duration-500"
       >
         <mat-card
-          class="flex-1 !rounded-full border border-outline-variant shadow-sm bg-surface p-1"
+          class="flex-1 rounded-full! border border-outline-variant shadow-sm bg-surface p-1"
         >
           <div class="flex items-center gap-2 pl-4 pr-1">
             <mat-form-field appearance="fill" class="flex-1 search-field-m3">
@@ -29,7 +29,7 @@
             <button
               mat-flat-button
               color="primary"
-              class="!rounded-full h-[48px] px-8 font-bold"
+              class="rounded-full! h-[48px] px-8 font-bold"
               [disabled]="!query() || loading()"
               (click)="runAnalysis()"
             >
@@ -53,7 +53,7 @@
           <!-- Matching Result (Private Pools) -->
           <div class="lg:col-span-1 space-y-6">
             <mat-card
-              class="!rounded-[32px] border overflow-hidden shadow-md relative min-h-[280px]"
+              class="rounded-[32px]! border overflow-hidden shadow-md relative min-h-[280px]"
               [class.border-green-500]="
                 (ipResult()?.matched || siteResult()?.matched) && !hitTestLoading()
               "
@@ -86,7 +86,7 @@
                   <mat-icon
                     [class.text-green-600]="ipResult()?.matched || siteResult()?.matched"
                     [class.text-red-600]="!(ipResult()?.matched || siteResult()?.matched)"
-                    class="!text-5xl !w-12 !h-12"
+                    class="text-5xl! w-12! h-12!"
                   >
                     {{ ipResult()?.matched || siteResult()?.matched ? 'verified_user' : 'gpp_bad' }}
                   </mat-icon>
@@ -150,7 +150,7 @@
             <!-- Tags Section -->
             @if (ipResult()?.matched || siteResult()?.matched || hitTestLoading()) {
               <mat-card
-                class="!rounded-[32px] bg-surface-container-high border-none shadow-sm overflow-hidden relative min-h-[120px]"
+                class="rounded-[32px]! bg-surface-container-high border-none shadow-sm overflow-hidden relative min-h-[120px]"
               >
                 @if (hitTestLoading()) {
                   <div
@@ -169,7 +169,7 @@
                 }
                 <div class="p-6" [class.opacity-20]="hitTestLoading()">
                   <div class="flex items-center gap-2 mb-4 text-primary">
-                    <mat-icon class="!w-5 !h-5 !text-[20px]">local_offer</mat-icon>
+                    <mat-icon class="w-5! h-5! text-[20px]!">local_offer</mat-icon>
                     <span class="text-sm font-bold uppercase tracking-widest">研判属性标签</span>
                   </div>
                   <div class="flex flex-wrap gap-2">
@@ -189,7 +189,7 @@
           <div class="lg:col-span-2 space-y-6">
             @if (ipInfo()) {
               <mat-card
-                class="!rounded-[32px] bg-surface border border-outline-variant shadow-sm overflow-hidden"
+                class="rounded-[32px]! bg-surface border border-outline-variant shadow-sm overflow-hidden"
               >
                 <div
                   class="bg-surface-container-low px-8 py-4 border-b border-outline-variant flex items-center justify-between"
@@ -246,7 +246,7 @@
                         <div
                           class="text-xs text-outline opacity-60 flex items-center gap-1 uppercase tracking-tighter mt-1"
                         >
-                          <mat-icon class="!w-4 !h-4 !text-[14px]">verified</mat-icon>
+                          <mat-icon class="w-4! h-4! text-[14px]!">verified</mat-icon>
                           MaxMind Verified Data
                         </div>
                       </div>
@@ -403,7 +403,7 @@
                                 <div
                                   class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3 group"
                                 >
-                                  <mat-icon class="text-secondary !w-4 !h-4 !text-[16px]"
+                                  <mat-icon class="text-secondary w-4! h-4! text-[16px]!"
                                     >link</mat-icon
                                   >
                                   <span
@@ -428,7 +428,7 @@
                                 <div
                                   class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3"
                                 >
-                                  <mat-icon class="text-primary !w-4 !h-4 !text-[16px]"
+                                  <mat-icon class="text-primary w-4! h-4! text-[16px]!"
                                     >verified_user</mat-icon
                                   >
                                   <span
@@ -480,7 +480,7 @@
         </div>
       } @else if (!loading() && query()) {
         <div class="py-20 flex flex-col items-center text-outline opacity-30 gap-2">
-          <mat-icon class="!text-6xl">travel_explore</mat-icon>
+          <mat-icon class="text-6xl!">travel_explore</mat-icon>
           <p class="font-medium tracking-widest">输入 IP 或域名开启全网溯源探测</p>
         </div>
       }

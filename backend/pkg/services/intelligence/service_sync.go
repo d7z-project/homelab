@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
+	taskpkg "homelab/pkg/common/task"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/intelligence"
 	"homelab/pkg/services/ip"
@@ -93,7 +94,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 			return finalErr
 		}
 
-		finalErr = s.downloadFile(taskCtx, source)
+		finalErr = s.downloadFile(taskCtx, source, task)
 
 		if finalErr == nil {
 			common.UpdateGlobalVersion(taskCtx, "network/intelligence/mmdb")
@@ -107,7 +108,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 	})
 }
 
-func (s *IntelligenceService) downloadFile(ctx context.Context, source *models.IntelligenceSource) error {
+func (s *IntelligenceService) downloadFile(ctx context.Context, source *models.IntelligenceSource, task *SyncTask) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", source.URL, nil)
 	if err != nil {
 		return err
@@ -147,7 +148,9 @@ func (s *IntelligenceService) downloadFile(ctx context.Context, source *models.I
 		return err
 	}
 
-	_, err = io.Copy(f, resp.Body)
+	reader := taskpkg.NewProgressReader[*SyncTask](resp.Body, resp.ContentLength, task, s.tasks)
+
+	_, err = io.Copy(f, reader)
 	f.Close()
 
 	if err != nil {

@@ -143,7 +143,7 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
                 标签映射 (Tag Mapping)
               </div>
               <button mat-icon-button (click)="addMapping()" type="button" matTooltip="添加映射">
-                <mat-icon class="!w-4 !h-4 !text-sm">add</mat-icon>
+                <mat-icon class="w-4! h-4! text-sm!">add</mat-icon>
               </button>
             </div>
 
@@ -152,7 +152,7 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
                 <div [formGroupName]="i" class="flex gap-2 items-center">
                   <mat-form-field
                     appearance="outline"
-                    class="flex-1 !pb-0"
+                    class="flex-1 pb-0!"
                     subscriptSizing="dynamic"
                   >
                     <mat-label>原始值</mat-label>
@@ -161,14 +161,14 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
                   <mat-icon class="text-outline opacity-40">arrow_forward</mat-icon>
                   <mat-form-field
                     appearance="outline"
-                    class="flex-1 !pb-0"
+                    class="flex-1 pb-0!"
                     subscriptSizing="dynamic"
                   >
                     <mat-label>目标标签</mat-label>
                     <input matInput formControlName="target" placeholder="China" />
                   </mat-form-field>
                   <button mat-icon-button color="warn" (click)="removeMapping(i)" type="button">
-                    <mat-icon class="!w-4 !h-4 !text-sm">remove_circle_outline</mat-icon>
+                    <mat-icon class="w-4! h-4! text-sm!">remove_circle_outline</mat-icon>
                   </button>
                 </div>
               }
