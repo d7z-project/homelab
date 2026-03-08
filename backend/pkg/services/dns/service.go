@@ -20,15 +20,17 @@ func init() {
 		}
 
 		for _, d := range resp.Items {
-			if strings.HasPrefix(d.Name, prefix) {
+			// 如果 prefix 为空或正在匹配域名本身
+			if prefix == "" || strings.HasPrefix(d.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: d.Name,
 					Name:   d.Name,
-					Final:  true,
+					Final:  false, // 可以进一步探索记录
 				})
 			}
 
-			if d.Name == prefix || strings.HasPrefix(prefix, d.Name+"/") {
+			// 如果 prefix 已经精确匹配了域名或其子路径
+			if prefix != "" && (d.Name == prefix || strings.HasPrefix(prefix, d.Name+"/")) {
 				idPrefix := ""
 				if strings.HasPrefix(prefix, d.Name+"/") {
 					idPrefix = strings.TrimPrefix(prefix, d.Name+"/")
@@ -38,11 +40,12 @@ func init() {
 				if err == nil {
 					seen := make(map[string]bool)
 					for _, r := range recordsResp.Items {
+						// 记录发现：FullID = domain/record/type
 						if strings.HasPrefix(r.Name, idPrefix) && !seen[r.Name+"/"+r.Type] {
 							seen[r.Name+"/"+r.Type] = true
 							res = append(res, models.DiscoverResult{
 								FullID: d.Name + "/" + r.Name + "/" + r.Type,
-								Name:   r.Type,
+								Name:   r.Name + " (" + r.Type + ")",
 								Final:  true,
 							})
 						}

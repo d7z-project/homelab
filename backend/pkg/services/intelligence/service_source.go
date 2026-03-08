@@ -30,9 +30,23 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.I
 	if err != nil {
 		return ErrSourceNotFound
 	}
-	source.Status = existing.Status
+
+	// 优先保留内存中的运行状态，防止更新元数据时覆盖正在进行的同步进度
+	if t, ok := s.tasks.GetTask(source.ID); ok {
+		status := t.GetStatus()
+		if status == models.TaskStatusRunning || status == models.TaskStatusPending {
+			source.Status = status
+			source.ErrorMessage = t.Error
+			source.Progress = t.GetProgress()
+		} else {
+			source.Status = existing.Status
+			source.ErrorMessage = existing.ErrorMessage
+		}
+	} else {
+		source.Status = existing.Status
+		source.ErrorMessage = existing.ErrorMessage
+	}
 	source.LastUpdatedAt = existing.LastUpdatedAt
-	source.ErrorMessage = existing.ErrorMessage
 
 	if err := repo.SaveSource(ctx, source); err != nil {
 		return err

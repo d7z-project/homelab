@@ -263,15 +263,14 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
       }
 
       // If not an exact match, check if it's a prefix of any suggestion
-      const isPrefix = this.rbacSuggestions.some((s) => s.fullId && s.fullId.startsWith(val));
+      const isPrefix = this.rbacSuggestions.some((s) => s.fullId && s.fullId.startsWith(val + '/'));
       if (isPrefix) {
         return { notFinal: true };
       }
 
-      // Neither exact match nor a prefix, and we are not loading -> Definitely invalid
-      if (!this.loading) {
-        return { invalidPath: true };
-      }
+      // Custom path or non-matching path: allow it
+      // This enables simulators to test hypothetical resource paths
+      return null;
     }
 
     return null;

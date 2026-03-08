@@ -18,7 +18,7 @@ func init() {
 			return nil, err
 		}
 		for _, g := range resp.Items {
-			if strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Name, prefix) {
+			if prefix == "" || strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: g.ID,
 					Name:   g.Name,

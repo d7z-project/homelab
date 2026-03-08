@@ -18,11 +18,11 @@ func init() {
 		subs := []string{"workflows", "instances", "manifests", "probe"}
 		res := make([]models.DiscoverResult, 0)
 		for _, s := range subs {
-			if strings.HasPrefix(s, prefix) {
+			if prefix == "" || strings.HasPrefix(s, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: s,
 					Name:   s,
-					Final:  true,
+					Final:  false, // can have instances like workflows/ID
 				})
 			}
 		}
@@ -35,7 +35,7 @@ func init() {
 					workflows, err := repo.ListWorkflows(ctx)
 					if err == nil {
 						for _, wf := range workflows {
-							if strings.HasPrefix(wf.ID, idPrefix) {
+							if idPrefix == "" || strings.HasPrefix(wf.ID, idPrefix) {
 								res = append(res, models.DiscoverResult{
 									FullID: "workflows/" + wf.ID,
 									Name:   "Workflow: " + wf.Name,
