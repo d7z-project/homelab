@@ -6,8 +6,8 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/intelligence"
+	"homelab/pkg/services/discovery"
 	"homelab/pkg/services/ip"
-	"homelab/pkg/services/rbac"
 	"log"
 	"sync"
 	"time"
@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	rbac.RegisterResourceWithVerbs("network/intelligence", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	discovery.RegisterResourceWithVerbs("network/intelligence", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		return []models.DiscoverResult{}, nil
 	}, []string{"list", "create", "update", "delete", "execute", "*"})
 }

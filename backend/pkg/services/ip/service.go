@@ -7,8 +7,8 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/ip"
 	"homelab/pkg/services/discovery"
-	"homelab/pkg/services/rbac"
 	"strings"
+
 	"sync"
 	"time"
 
@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	rbac.RegisterResourceWithVerbs("network/ip", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	discovery.RegisterResourceWithVerbs("network/ip", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
 		groupsRes, err := repo.ScanGroups(ctx, "", 1000, "")
 		if err != nil {

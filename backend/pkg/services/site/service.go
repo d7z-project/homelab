@@ -6,12 +6,11 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/site"
 	"homelab/pkg/services/discovery"
-	"homelab/pkg/services/rbac"
 	"strings"
 )
 
 func init() {
-	rbac.RegisterResourceWithVerbs("network/site", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	discovery.RegisterResourceWithVerbs("network/site", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
 		resp, err := repo.ScanGroups(ctx, "", 1000, "")
 		if err != nil {

@@ -5,6 +5,7 @@ import (
 	"homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	"homelab/pkg/services/discovery"
+	dnsservice "homelab/pkg/services/dns"
 	"homelab/tests"
 	"testing"
 
@@ -69,6 +70,80 @@ func TestDiscoveryService(t *testing.T) {
 		codes := discovery.ScanCodes()
 		assert.Contains(t, codes, "test/items")
 		assert.Contains(t, codes, "network/dns/domains")
+	})
+}
+
+func TestSuggestResources(t *testing.T) {
+	cleanup := tests.SetupTestDB()
+	defer cleanup()
+
+	// 1. Test root level suggestions
+	t.Run("Root level", func(t *testing.T) {
+		res, err := discovery.SuggestResources(context.Background(), "net")
+		assert.NoError(t, err)
+		// Should contain network/dns, network/ip, network/site
+		var ids []string
+		for _, r := range res {
+			ids = append(ids, r.FullID)
+		}
+		assert.Contains(t, ids, "network/dns")
+		assert.Contains(t, ids, "network/ip")
+		assert.Contains(t, ids, "network/site")
+	})
+
+	// 2. Test specific module level (with trailing slash)
+	t.Run("Module level with slash", func(t *testing.T) {
+		// Prepare a domain for DNS discovery
+		ctxRoot := tests.SetupMockRootContext()
+		_, _ = dnsservice.CreateDomain(ctxRoot, &models.Domain{Name: "example.com"})
+
+		res, err := discovery.SuggestResources(ctxRoot, "network/dns/")
+		assert.NoError(t, err)
+		
+		var ids []string
+		for _, r := range res {
+			ids = append(ids, r.FullID)
+		}
+		// Should contain the domain and wildcards
+		assert.Contains(t, ids, "network/dns/example.com")
+		assert.Contains(t, ids, "network/dns/*")
+		assert.Contains(t, ids, "network/dns/**")
+	})
+
+	// 3. Test exact match suggestions (should still offer sub-paths and wildcards)
+	t.Run("Exact match", func(t *testing.T) {
+		res, err := discovery.SuggestResources(context.Background(), "actions")
+		assert.NoError(t, err)
+		var ids []string
+		for _, r := range res {
+			ids = append(ids, r.FullID)
+		}
+		assert.Contains(t, ids, "actions")
+	})
+}
+
+func TestSuggestVerbs(t *testing.T) {
+	cleanup := tests.SetupTestDB()
+	defer cleanup()
+
+	t.Run("Known resource", func(t *testing.T) {
+		verbs, err := discovery.SuggestVerbs(context.Background(), "network/dns")
+		assert.NoError(t, err)
+		assert.Contains(t, verbs, "get")
+		assert.Contains(t, verbs, "list")
+		assert.NotContains(t, verbs, "execute") // DNS should only have CRUD
+	})
+
+	t.Run("Sub-resource match", func(t *testing.T) {
+		verbs, err := discovery.SuggestVerbs(context.Background(), "network/dns/example.com")
+		assert.NoError(t, err)
+		assert.Contains(t, verbs, "get")
+	})
+
+	t.Run("Unknown resource", func(t *testing.T) {
+		verbs, err := discovery.SuggestVerbs(context.Background(), "unknown/path")
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"*"}, verbs)
 	})
 }
 

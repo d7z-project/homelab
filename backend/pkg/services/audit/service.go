@@ -8,12 +8,13 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	auditrepo "homelab/pkg/repositories/audit"
-	"homelab/pkg/services/rbac"
+	"homelab/pkg/services/discovery"
 	"strings"
 )
 
 func init() {
-	rbac.RegisterResourceWithVerbs("audit", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	discovery.RegisterResourceWithVerbs("audit", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+
 		subs := []string{"logs"}
 		res := make([]models.DiscoverResult, 0)
 		for _, s := range subs {

@@ -124,7 +124,7 @@ func main() {
 	// Initialize Actions Scoped FS
 	actions.Init()
 	// Initialize IP Services
-	mmdbSources, _ := intrepo.ListSources(ctx)
+	mmdbSources, _ := intrepo.ScanAllSources(ctx)
 	mmdbManager := ip.NewMMDBManager(mmdbSources)
 	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
 	exportManager := ip.NewExportManager(analysisEngine)

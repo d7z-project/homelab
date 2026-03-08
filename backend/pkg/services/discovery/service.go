@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"homelab/pkg/models"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -122,4 +124,147 @@ func Paginate(items []models.LookupItem, cursor string, limit int) *models.Pagin
 		HasMore:    hasMore,
 		Total:      int64(total),
 	}
+}
+
+// --- Resource Discovery (RBAC Help) ---
+
+type resourceInfo struct {
+	discover DiscoverFunc
+	verbs    []string
+}
+
+// DiscoverFunc returns a list of matching resource paths based on the remaining prefix
+type DiscoverFunc func(ctx context.Context, prefix string) ([]models.DiscoverResult, error)
+
+var (
+	discoveredResources = make(map[string]resourceInfo)
+	discoveryMu         sync.RWMutex
+)
+
+// RegisterResource allows modules to register their resource types
+func RegisterResource(name string, f DiscoverFunc) {
+	RegisterResourceWithVerbs(name, f, []string{"*"})
+}
+
+// RegisterResourceWithVerbs allows modules to register their resource types and supported verbs
+func RegisterResourceWithVerbs(name string, f DiscoverFunc, verbs []string) {
+	discoveryMu.Lock()
+	defer discoveryMu.Unlock()
+	discoveredResources[name] = resourceInfo{
+		discover: f,
+		verbs:    verbs,
+	}
+}
+
+// SuggestResources returns a list of resource paths matching the prefix
+func SuggestResources(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	discoveryMu.RLock()
+	defer discoveryMu.RUnlock()
+
+	suggestions := make([]models.DiscoverResult, 0)
+	seen := make(map[string]struct{})
+	prefixLower := strings.ToLower(prefix)
+
+	// 1. 匹配根资源 (Root Resources)
+	for name := range discoveredResources {
+		if strings.HasPrefix(name, prefixLower) {
+			if _, exists := seen[name]; !exists {
+				suggestions = append(suggestions, models.DiscoverResult{
+					FullID: name,
+					Name:   name,
+					Final:  false,
+				})
+				seen[name] = struct{}{}
+			}
+		}
+	}
+
+	// 2. 匹配子资源 (Sub-resources)
+	for baseRes, info := range discoveredResources {
+		if strings.HasPrefix(prefixLower, baseRes+"/") {
+			remaining := prefix[len(baseRes)+1:]
+			matches, err := info.discover(ctx, remaining)
+			if err == nil {
+				for _, m := range matches {
+					fullID := baseRes + "/" + m.FullID
+					if _, exists := seen[fullID]; !exists {
+						m.FullID = fullID
+						suggestions = append(suggestions, m)
+						seen[fullID] = struct{}{}
+					}
+				}
+			}
+
+			// 为当前已确定的根资源添加通配符建议
+			wildcards := []string{"*", "**"}
+			for _, w := range wildcards {
+				if remaining == "" || strings.HasPrefix(w, strings.ToLower(remaining)) {
+					fullPath := baseRes + "/" + w
+					if _, exists := seen[fullPath]; !exists {
+						suggestions = append(suggestions, models.DiscoverResult{
+							FullID: fullPath,
+							Name:   w,
+							Final:  true,
+						})
+						seen[fullPath] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+
+	sort.Slice(suggestions, func(i, j int) bool {
+		return suggestions[i].FullID < suggestions[j].FullID
+	})
+	return suggestions, nil
+}
+
+// SuggestVerbs returns supported verbs for a given resource prefix
+func SuggestVerbs(ctx context.Context, resourcePrefix string) ([]string, error) {
+	discoveryMu.RLock()
+	defer discoveryMu.RUnlock()
+
+	if resourcePrefix == "" {
+		return []string{"*"}, nil
+	}
+
+	resourcePrefixLower := strings.ToLower(resourcePrefix)
+
+	var bestMatch *resourceInfo
+	longestKey := 0
+
+	for name, info := range discoveredResources {
+		if resourcePrefixLower == name || strings.HasPrefix(resourcePrefixLower, name+"/") {
+			if len(name) > longestKey {
+				infoCopy := info
+				bestMatch = &infoCopy
+				longestKey = len(name)
+			}
+		}
+	}
+
+	if bestMatch != nil {
+		return bestMatch.verbs, nil
+	}
+
+	return []string{"*"}, nil
+}
+
+// --- Service Account Usage Checking ---
+
+var saUsageCheckers []func(ctx context.Context, id string) error
+
+// RegisterSAUsageChecker allows other services to register functions that check if an SA is in use.
+func RegisterSAUsageChecker(f func(ctx context.Context, id string) error) {
+	saUsageCheckers = append(saUsageCheckers, f)
+}
+
+// CheckSAUsage runs all registered checkers to see if a ServiceAccount is being used.
+func CheckSAUsage(ctx context.Context, id string) error {
+	for _, check := range saUsageCheckers {
+		if err := check(ctx, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }

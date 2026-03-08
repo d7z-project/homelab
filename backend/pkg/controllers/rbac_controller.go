@@ -4,6 +4,7 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/controllers/middlewares"
 	"homelab/pkg/models"
+	"homelab/pkg/services/discovery"
 	rbacservice "homelab/pkg/services/rbac"
 	"net/http"
 
@@ -373,7 +374,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/resources/suggest [get]
 func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 	prefix := r.URL.Query().Get("prefix")
-	suggestions, err := rbacservice.SuggestResources(r.Context(), prefix)
+	suggestions, err := discovery.SuggestResources(r.Context(), prefix)
 	if err != nil {
 		HandleError(w, r, err)
 		return
@@ -392,7 +393,7 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/verbs/suggest [get]
 func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
 	resource := r.URL.Query().Get("resource")
-	verbs, err := rbacservice.SuggestVerbs(r.Context(), resource)
+	verbs, err := discovery.SuggestVerbs(r.Context(), resource)
 	if err != nil {
 		HandleError(w, r, err)
 		return

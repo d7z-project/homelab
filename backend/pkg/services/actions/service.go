@@ -7,12 +7,11 @@ import (
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/actions"
 	"homelab/pkg/services/discovery"
-	"homelab/pkg/services/rbac"
 	"strings"
 )
 
 func init() {
-	rbac.RegisterResourceWithVerbs("actions", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	discovery.RegisterResourceWithVerbs("actions", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 
 		// prefix is everything after "actions/"
 		subs := []string{"workflows", "instances", "manifests", "probe"}
@@ -82,7 +81,7 @@ func init() {
 		return discovery.Paginate(items, cursor, limit), nil
 	})
 
-	rbac.RegisterSAUsageChecker(func(ctx context.Context, id string) error {
+	discovery.RegisterSAUsageChecker(func(ctx context.Context, id string) error {
 		workflows, err := repo.ScanAllWorkflows(ctx)
 		if err != nil {
 			return nil

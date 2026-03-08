@@ -7,12 +7,11 @@ import (
 	"homelab/pkg/models"
 	dnsrepo "homelab/pkg/repositories/dns"
 	"homelab/pkg/services/discovery"
-	"homelab/pkg/services/rbac"
 	"strings"
 )
 
 func init() {
-	rbac.RegisterResourceWithVerbs("network/dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
+	discovery.RegisterResourceWithVerbs("network/dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
 		resp, err := dnsrepo.ScanDomains(ctx, "", 10000, "")
 		if err != nil {

@@ -9,6 +9,7 @@ import (
 	"homelab/pkg/models"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
+	"homelab/pkg/services/discovery"
 	"strings"
 )
 
@@ -91,12 +92,6 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 	return sa, nil
 }
 
-var saUsageCheckers []func(ctx context.Context, id string) error
-
-func RegisterSAUsageChecker(f func(ctx context.Context, id string) error) {
-	saUsageCheckers = append(saUsageCheckers, f)
-}
-
 func DeleteServiceAccount(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
@@ -114,10 +109,8 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	}
 
 	// Usage Check
-	for _, check := range saUsageCheckers {
-		if err := check(ctx, id); err != nil {
-			return err
-		}
+	if err := discovery.CheckSAUsage(ctx, id); err != nil {
+		return err
 	}
 
 	// Cascade delete RoleBindings
