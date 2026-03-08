@@ -81,8 +81,8 @@ type UnderscoreDiscoveryLookupGet200Response struct {
 	Total      *int                `json:"total,omitempty"`
 }
 
-// UnderscoreDnsDomainsGet200Response defines model for _dns_domains_get_200_response.
-type UnderscoreDnsDomainsGet200Response struct {
+// UnderscoreNetworkDnsDomainsGet200Response defines model for _network_dns_domains_get_200_response.
+type UnderscoreNetworkDnsDomainsGet200Response struct {
 	HasMore    *bool           `json:"hasMore,omitempty"`
 	Items      *[]ModelsDomain `json:"items,omitempty"`
 	NextCursor *string         `json:"nextCursor,omitempty"`
@@ -372,8 +372,8 @@ type ModelsIPPoolEntryRequest struct {
 type ModelsIPPoolPreviewResponse struct {
 	Entries *[]ModelsIPPoolEntry `json:"entries,omitempty"`
 
-	// NextCursor 下一个 Byte Offset
-	NextCursor *int `json:"nextCursor,omitempty"`
+	// NextCursor 下一个 Byte Offset (作为字符串传递)
+	NextCursor *string `json:"nextCursor,omitempty"`
 
 	// Total 总条数
 	Total *int `json:"total,omitempty"`
@@ -646,9 +646,13 @@ type ModelsSitePoolEntryRequest struct {
 
 // ModelsSitePoolPreviewResponse defines model for models.SitePoolPreviewResponse.
 type ModelsSitePoolPreviewResponse struct {
-	Entries    *[]ModelsSitePoolEntry `json:"entries,omitempty"`
-	NextCursor *int                   `json:"nextCursor,omitempty"`
-	Total      *int                   `json:"total,omitempty"`
+	Entries *[]ModelsSitePoolEntry `json:"entries,omitempty"`
+
+	// NextCursor 下一个 Byte Offset (作为字符串传递)
+	NextCursor *string `json:"nextCursor,omitempty"`
+
+	// Total 总条数
+	Total *int `json:"total,omitempty"`
 }
 
 // ModelsStep defines model for models.Step.
@@ -825,6 +829,9 @@ type GetActionsInstancesParams struct {
 
 	// Search Search
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// WorkflowId Workflow ID filter
+	WorkflowId *string `form:"workflowId,omitempty" json:"workflowId,omitempty"`
 }
 
 // PostActionsInstancesCleanupParams defines parameters for PostActionsInstancesCleanup.
@@ -893,8 +900,8 @@ type GetDiscoveryLookupParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// GetDnsDomainsParams defines parameters for GetDnsDomains.
-type GetDnsDomainsParams struct {
+// GetNetworkDnsDomainsParams defines parameters for GetNetworkDnsDomains.
+type GetNetworkDnsDomainsParams struct {
 	// Cursor Cursor
 	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -907,7 +914,7 @@ type GetDnsDomainsParams struct {
 
 // GetNetworkDnsRecordsParams defines parameters for GetNetworkDnsRecords.
 type GetNetworkDnsRecordsParams struct {
-	// DomainId Filter by domain ID
+	// DomainId Domain ID
 	DomainId *string `form:"domainId,omitempty" json:"domainId,omitempty"`
 
 	// Cursor Cursor
@@ -916,7 +923,7 @@ type GetNetworkDnsRecordsParams struct {
 	// Limit Limit
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
-	// Search Search by name or value
+	// Search Search by name
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
 
@@ -980,7 +987,7 @@ type DeleteNetworkIpPoolsIdEntriesParams struct {
 // GetNetworkIpPoolsIdPreviewParams defines parameters for GetNetworkIpPoolsIdPreview.
 type GetNetworkIpPoolsIdPreviewParams struct {
 	// Cursor Byte offset cursor
-	Cursor *int `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Number of entries to return
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1046,7 +1053,7 @@ type DeleteNetworkSitePoolsIdEntriesParams struct {
 // GetNetworkSitePoolsIdPreviewParams defines parameters for GetNetworkSitePoolsIdPreview.
 type GetNetworkSitePoolsIdPreviewParams struct {
 	// Cursor Byte offset cursor
-	Cursor *int `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Number of entries to return
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1287,6 +1294,9 @@ type ClientInterface interface {
 	// DeleteActionsInstancesId request
 	DeleteActionsInstancesId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetActionsInstancesId request
+	GetActionsInstancesId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostActionsInstancesIdCancel request
 	PostActionsInstancesIdCancel(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1329,6 +1339,9 @@ type ClientInterface interface {
 	// DeleteActionsWorkflowsId request
 	DeleteActionsWorkflowsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetActionsWorkflowsId request
+	GetActionsWorkflowsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PutActionsWorkflowsIdWithBody request with any body
 	PutActionsWorkflowsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1360,9 +1373,6 @@ type ClientInterface interface {
 	// GetDiscoveryLookup request
 	GetDiscoveryLookup(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetDnsDomains request
-	GetDnsDomains(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetInfo request
 	GetInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1373,6 +1383,9 @@ type ClientInterface interface {
 
 	// PostLogout request
 	PostLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworkDnsDomains request
+	GetNetworkDnsDomains(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PostNetworkDnsDomainsWithBody request with any body
 	PostNetworkDnsDomainsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1581,6 +1594,9 @@ type ClientInterface interface {
 	// GetNetworkSitePoolsIdPreview request
 	GetNetworkSitePoolsIdPreview(ctx context.Context, id string, params *GetNetworkSitePoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetPing request
+	GetPing(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetRbacResourcesSuggest request
 	GetRbacResourcesSuggest(ctx context.Context, params *GetRbacResourcesSuggestParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1670,6 +1686,18 @@ func (c *Client) PostActionsInstancesCleanup(ctx context.Context, params *PostAc
 
 func (c *Client) DeleteActionsInstancesId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteActionsInstancesIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetActionsInstancesId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetActionsInstancesIdRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1860,6 +1888,18 @@ func (c *Client) DeleteActionsWorkflowsId(ctx context.Context, id string, reqEdi
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetActionsWorkflowsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetActionsWorkflowsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) PutActionsWorkflowsIdWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutActionsWorkflowsIdRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
@@ -1992,18 +2032,6 @@ func (c *Client) GetDiscoveryLookup(ctx context.Context, params *GetDiscoveryLoo
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetDnsDomains(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetDnsDomainsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) GetInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetInfoRequest(c.Server)
 	if err != nil {
@@ -2042,6 +2070,18 @@ func (c *Client) PostLogin(ctx context.Context, body PostLoginJSONRequestBody, r
 
 func (c *Client) PostLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostLogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworkDnsDomains(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworkDnsDomainsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2964,6 +3004,18 @@ func (c *Client) GetNetworkSitePoolsIdPreview(ctx context.Context, id string, pa
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetPing(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPingRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetRbacResourcesSuggest(ctx context.Context, params *GetRbacResourcesSuggestParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRbacResourcesSuggestRequest(c.Server, params)
 	if err != nil {
@@ -3310,6 +3362,22 @@ func NewGetActionsInstancesRequest(server string, params *GetActionsInstancesPar
 
 		}
 
+		if params.WorkflowId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "workflowId", *params.WorkflowId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -3393,6 +3461,40 @@ func NewDeleteActionsInstancesIdRequest(server string, id string) (*http.Request
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetActionsInstancesIdRequest generates requests for GetActionsInstancesId
+func NewGetActionsInstancesIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/actions/instances/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -3908,6 +4010,40 @@ func NewDeleteActionsWorkflowsIdRequest(server string, id string) (*http.Request
 	return req, nil
 }
 
+// NewGetActionsWorkflowsIdRequest generates requests for GetActionsWorkflowsId
+func NewGetActionsWorkflowsIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/actions/workflows/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPutActionsWorkflowsIdRequest calls the generic PutActionsWorkflowsId builder with application/json body
 func NewPutActionsWorkflowsIdRequest(server string, id string, body PutActionsWorkflowsIdJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -4343,87 +4479,6 @@ func NewGetDiscoveryLookupRequest(server string, params *GetDiscoveryLookupParam
 	return req, nil
 }
 
-// NewGetDnsDomainsRequest generates requests for GetDnsDomains
-func NewGetDnsDomainsRequest(server string, params *GetDnsDomainsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/dns/domains")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.Cursor != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Search != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewGetInfoRequest generates requests for GetInfo
 func NewGetInfoRequest(server string) (*http.Request, error) {
 	var err error
@@ -4511,6 +4566,87 @@ func NewPostLogoutRequest(server string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetNetworkDnsDomainsRequest generates requests for GetNetworkDnsDomains
+func NewGetNetworkDnsDomainsRequest(server string, params *GetNetworkDnsDomainsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/network/dns/domains")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Search != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6014,7 +6150,7 @@ func NewGetNetworkIpPoolsIdPreviewRequest(server string, id string, params *GetN
 
 		if params.Cursor != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7071,7 +7207,7 @@ func NewGetNetworkSitePoolsIdPreviewRequest(server string, id string, params *Ge
 
 		if params.Cursor != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7118,6 +7254,33 @@ func NewGetNetworkSitePoolsIdPreviewRequest(server string, id string, params *Ge
 		}
 
 		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetPingRequest generates requests for GetPing
+func NewGetPingRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/ping")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -7958,6 +8121,9 @@ type ClientWithResponsesInterface interface {
 	// DeleteActionsInstancesIdWithResponse request
 	DeleteActionsInstancesIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteActionsInstancesIdResponse, error)
 
+	// GetActionsInstancesIdWithResponse request
+	GetActionsInstancesIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetActionsInstancesIdResponse, error)
+
 	// PostActionsInstancesIdCancelWithResponse request
 	PostActionsInstancesIdCancelWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*PostActionsInstancesIdCancelResponse, error)
 
@@ -8000,6 +8166,9 @@ type ClientWithResponsesInterface interface {
 	// DeleteActionsWorkflowsIdWithResponse request
 	DeleteActionsWorkflowsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteActionsWorkflowsIdResponse, error)
 
+	// GetActionsWorkflowsIdWithResponse request
+	GetActionsWorkflowsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetActionsWorkflowsIdResponse, error)
+
 	// PutActionsWorkflowsIdWithBodyWithResponse request with any body
 	PutActionsWorkflowsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutActionsWorkflowsIdResponse, error)
 
@@ -8031,9 +8200,6 @@ type ClientWithResponsesInterface interface {
 	// GetDiscoveryLookupWithResponse request
 	GetDiscoveryLookupWithResponse(ctx context.Context, params *GetDiscoveryLookupParams, reqEditors ...RequestEditorFn) (*GetDiscoveryLookupResponse, error)
 
-	// GetDnsDomainsWithResponse request
-	GetDnsDomainsWithResponse(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetDnsDomainsResponse, error)
-
 	// GetInfoWithResponse request
 	GetInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInfoResponse, error)
 
@@ -8044,6 +8210,9 @@ type ClientWithResponsesInterface interface {
 
 	// PostLogoutWithResponse request
 	PostLogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLogoutResponse, error)
+
+	// GetNetworkDnsDomainsWithResponse request
+	GetNetworkDnsDomainsWithResponse(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetNetworkDnsDomainsResponse, error)
 
 	// PostNetworkDnsDomainsWithBodyWithResponse request with any body
 	PostNetworkDnsDomainsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostNetworkDnsDomainsResponse, error)
@@ -8252,6 +8421,9 @@ type ClientWithResponsesInterface interface {
 	// GetNetworkSitePoolsIdPreviewWithResponse request
 	GetNetworkSitePoolsIdPreviewWithResponse(ctx context.Context, id string, params *GetNetworkSitePoolsIdPreviewParams, reqEditors ...RequestEditorFn) (*GetNetworkSitePoolsIdPreviewResponse, error)
 
+	// GetPingWithResponse request
+	GetPingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetPingResponse, error)
+
 	// GetRbacResourcesSuggestWithResponse request
 	GetRbacResourcesSuggestWithResponse(ctx context.Context, params *GetRbacResourcesSuggestParams, reqEditors ...RequestEditorFn) (*GetRbacResourcesSuggestResponse, error)
 
@@ -8374,6 +8546,31 @@ func (r DeleteActionsInstancesIdResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteActionsInstancesIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetActionsInstancesIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsTaskInstance
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetActionsInstancesIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetActionsInstancesIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8668,6 +8865,31 @@ func (r DeleteActionsWorkflowsIdResponse) StatusCode() int {
 	return 0
 }
 
+type GetActionsWorkflowsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsWorkflow
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+	JSON404      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetActionsWorkflowsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetActionsWorkflowsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PutActionsWorkflowsIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8892,30 +9114,6 @@ func (r GetDiscoveryLookupResponse) StatusCode() int {
 	return 0
 }
 
-type GetDnsDomainsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *UnderscoreDnsDomainsGet200Response
-	JSON401      *CommonResponse
-	JSON403      *CommonResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetDnsDomainsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetDnsDomainsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type GetInfoResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8979,6 +9177,30 @@ func (r PostLogoutResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostLogoutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworkDnsDomainsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnderscoreNetworkDnsDomainsGet200Response
+	JSON401      *CommonResponse
+	JSON403      *CommonResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworkDnsDomainsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworkDnsDomainsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10299,6 +10521,28 @@ func (r GetNetworkSitePoolsIdPreviewResponse) StatusCode() int {
 	return 0
 }
 
+type GetPingResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPingResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetRbacResourcesSuggestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10722,6 +10966,15 @@ func (c *ClientWithResponses) DeleteActionsInstancesIdWithResponse(ctx context.C
 	return ParseDeleteActionsInstancesIdResponse(rsp)
 }
 
+// GetActionsInstancesIdWithResponse request returning *GetActionsInstancesIdResponse
+func (c *ClientWithResponses) GetActionsInstancesIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetActionsInstancesIdResponse, error) {
+	rsp, err := c.GetActionsInstancesId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetActionsInstancesIdResponse(rsp)
+}
+
 // PostActionsInstancesIdCancelWithResponse request returning *PostActionsInstancesIdCancelResponse
 func (c *ClientWithResponses) PostActionsInstancesIdCancelWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*PostActionsInstancesIdCancelResponse, error) {
 	rsp, err := c.PostActionsInstancesIdCancel(ctx, id, reqEditors...)
@@ -10854,6 +11107,15 @@ func (c *ClientWithResponses) DeleteActionsWorkflowsIdWithResponse(ctx context.C
 	return ParseDeleteActionsWorkflowsIdResponse(rsp)
 }
 
+// GetActionsWorkflowsIdWithResponse request returning *GetActionsWorkflowsIdResponse
+func (c *ClientWithResponses) GetActionsWorkflowsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetActionsWorkflowsIdResponse, error) {
+	rsp, err := c.GetActionsWorkflowsId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetActionsWorkflowsIdResponse(rsp)
+}
+
 // PutActionsWorkflowsIdWithBodyWithResponse request with arbitrary body returning *PutActionsWorkflowsIdResponse
 func (c *ClientWithResponses) PutActionsWorkflowsIdWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutActionsWorkflowsIdResponse, error) {
 	rsp, err := c.PutActionsWorkflowsIdWithBody(ctx, id, contentType, body, reqEditors...)
@@ -10951,15 +11213,6 @@ func (c *ClientWithResponses) GetDiscoveryLookupWithResponse(ctx context.Context
 	return ParseGetDiscoveryLookupResponse(rsp)
 }
 
-// GetDnsDomainsWithResponse request returning *GetDnsDomainsResponse
-func (c *ClientWithResponses) GetDnsDomainsWithResponse(ctx context.Context, params *GetDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetDnsDomainsResponse, error) {
-	rsp, err := c.GetDnsDomains(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetDnsDomainsResponse(rsp)
-}
-
 // GetInfoWithResponse request returning *GetInfoResponse
 func (c *ClientWithResponses) GetInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInfoResponse, error) {
 	rsp, err := c.GetInfo(ctx, reqEditors...)
@@ -10993,6 +11246,15 @@ func (c *ClientWithResponses) PostLogoutWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParsePostLogoutResponse(rsp)
+}
+
+// GetNetworkDnsDomainsWithResponse request returning *GetNetworkDnsDomainsResponse
+func (c *ClientWithResponses) GetNetworkDnsDomainsWithResponse(ctx context.Context, params *GetNetworkDnsDomainsParams, reqEditors ...RequestEditorFn) (*GetNetworkDnsDomainsResponse, error) {
+	rsp, err := c.GetNetworkDnsDomains(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworkDnsDomainsResponse(rsp)
 }
 
 // PostNetworkDnsDomainsWithBodyWithResponse request with arbitrary body returning *PostNetworkDnsDomainsResponse
@@ -11658,6 +11920,15 @@ func (c *ClientWithResponses) GetNetworkSitePoolsIdPreviewWithResponse(ctx conte
 	return ParseGetNetworkSitePoolsIdPreviewResponse(rsp)
 }
 
+// GetPingWithResponse request returning *GetPingResponse
+func (c *ClientWithResponses) GetPingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetPingResponse, error) {
+	rsp, err := c.GetPing(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPingResponse(rsp)
+}
+
 // GetRbacResourcesSuggestWithResponse request returning *GetRbacResourcesSuggestResponse
 func (c *ClientWithResponses) GetRbacResourcesSuggestWithResponse(ctx context.Context, params *GetRbacResourcesSuggestParams, reqEditors ...RequestEditorFn) (*GetRbacResourcesSuggestResponse, error) {
 	rsp, err := c.GetRbacResourcesSuggest(ctx, params, reqEditors...)
@@ -11918,6 +12189,53 @@ func ParseDeleteActionsInstancesIdResponse(rsp *http.Response) (*DeleteActionsIn
 	response := &DeleteActionsInstancesIdResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetActionsInstancesIdResponse parses an HTTP response from a GetActionsInstancesIdWithResponse call
+func ParseGetActionsInstancesIdResponse(rsp *http.Response) (*GetActionsInstancesIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetActionsInstancesIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsTaskInstance
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -12400,6 +12718,53 @@ func ParseDeleteActionsWorkflowsIdResponse(rsp *http.Response) (*DeleteActionsWo
 	return response, nil
 }
 
+// ParseGetActionsWorkflowsIdResponse parses an HTTP response from a GetActionsWorkflowsIdWithResponse call
+func ParseGetActionsWorkflowsIdResponse(rsp *http.Response) (*GetActionsWorkflowsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetActionsWorkflowsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsWorkflow
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParsePutActionsWorkflowsIdResponse parses an HTTP response from a PutActionsWorkflowsIdWithResponse call
 func ParsePutActionsWorkflowsIdResponse(rsp *http.Response) (*PutActionsWorkflowsIdResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -12816,46 +13181,6 @@ func ParseGetDiscoveryLookupResponse(rsp *http.Response) (*GetDiscoveryLookupRes
 	return response, nil
 }
 
-// ParseGetDnsDomainsResponse parses an HTTP response from a GetDnsDomainsWithResponse call
-func ParseGetDnsDomainsResponse(rsp *http.Response) (*GetDnsDomainsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetDnsDomainsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest UnderscoreDnsDomainsGet200Response
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest CommonResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest CommonResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseGetInfoResponse parses an HTTP response from a GetInfoWithResponse call
 func ParseGetInfoResponse(rsp *http.Response) (*GetInfoResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -12949,6 +13274,46 @@ func ParsePostLogoutResponse(rsp *http.Response) (*PostLogoutResponse, error) {
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworkDnsDomainsResponse parses an HTTP response from a GetNetworkDnsDomainsWithResponse call
+func ParseGetNetworkDnsDomainsResponse(rsp *http.Response) (*GetNetworkDnsDomainsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworkDnsDomainsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnderscoreNetworkDnsDomainsGet200Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest CommonResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
@@ -15107,6 +15472,32 @@ func ParseGetNetworkSitePoolsIdPreviewResponse(rsp *http.Response) (*GetNetworkS
 	return response, nil
 }
 
+// ParseGetPingResponse parses an HTTP response from a GetPingWithResponse call
+func ParseGetPingResponse(rsp *http.Response) (*GetPingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetRbacResourcesSuggestResponse parses an HTTP response from a GetRbacResourcesSuggestWithResponse call
 func ParseGetRbacResourcesSuggestResponse(rsp *http.Response) (*GetRbacResourcesSuggestResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -15833,7 +16224,7 @@ func ParseGetRbacVerbsSuggestResponse(rsp *http.Response) (*GetRbacVerbsSuggestR
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// List all task instances
+	// Scan task instances
 	// (GET /actions/instances)
 	GetActionsInstances(w http.ResponseWriter, r *http.Request, params GetActionsInstancesParams)
 	// Cleanup old task instances
@@ -15842,13 +16233,16 @@ type ServerInterface interface {
 	// Delete a task instance
 	// (DELETE /actions/instances/{id})
 	DeleteActionsInstancesId(w http.ResponseWriter, r *http.Request, id string)
+	// Get a task instance
+	// (GET /actions/instances/{id})
+	GetActionsInstancesId(w http.ResponseWriter, r *http.Request, id string)
 	// Cancel a task instance
 	// (POST /actions/instances/{id}/cancel)
 	PostActionsInstancesIdCancel(w http.ResponseWriter, r *http.Request, id string)
 	// Get task instance logs
 	// (GET /actions/instances/{id}/logs)
 	GetActionsInstancesIdLogs(w http.ResponseWriter, r *http.Request, id string, params GetActionsInstancesIdLogsParams)
-	// List all step manifests
+	// Scan all step manifests
 	// (GET /actions/manifests)
 	GetActionsManifests(w http.ResponseWriter, r *http.Request)
 	// Test a single processor
@@ -15863,7 +16257,7 @@ type ServerInterface interface {
 	// Trigger a workflow via webhook
 	// (POST /actions/webhooks/{token})
 	PostActionsWebhooksToken(w http.ResponseWriter, r *http.Request, token string)
-	// List all workflows
+	// Scan all workflows
 	// (GET /actions/workflows)
 	GetActionsWorkflows(w http.ResponseWriter, r *http.Request, params GetActionsWorkflowsParams)
 	// Create a workflow
@@ -15878,6 +16272,9 @@ type ServerInterface interface {
 	// Delete a workflow
 	// (DELETE /actions/workflows/{id})
 	DeleteActionsWorkflowsId(w http.ResponseWriter, r *http.Request, id string)
+	// Get a workflow
+	// (GET /actions/workflows/{id})
+	GetActionsWorkflowsId(w http.ResponseWriter, r *http.Request, id string)
 	// Update a workflow
 	// (PUT /actions/workflows/{id})
 	PutActionsWorkflowsId(w http.ResponseWriter, r *http.Request, id string)
@@ -15887,27 +16284,24 @@ type ServerInterface interface {
 	// Run a workflow manually
 	// (POST /actions/workflows/{workflowId}/run)
 	PostActionsWorkflowsWorkflowIdRun(w http.ResponseWriter, r *http.Request, workflowId string)
-	// List audit logs
+	// Scan audit logs
 	// (GET /audit/logs)
 	GetAuditLogs(w http.ResponseWriter, r *http.Request, params GetAuditLogsParams)
 	// Cleanup old audit logs
 	// (POST /audit/logs/cleanup)
 	PostAuditLogsCleanup(w http.ResponseWriter, r *http.Request, params PostAuditLogsCleanupParams)
-	// List all active root sessions
+	// Scan all active root sessions
 	// (GET /auth/sessions)
 	GetAuthSessions(w http.ResponseWriter, r *http.Request)
 	// Revoke a session
 	// (DELETE /auth/sessions/{id})
 	DeleteAuthSessionsId(w http.ResponseWriter, r *http.Request, id string)
-	// List discovery codes
+	// Scan discovery codes
 	// (GET /discovery/codes)
 	GetDiscoveryCodes(w http.ResponseWriter, r *http.Request)
 	// Discovery lookup
 	// (GET /discovery/lookup)
 	GetDiscoveryLookup(w http.ResponseWriter, r *http.Request, params GetDiscoveryLookupParams)
-	// List all DNS domains
-	// (GET /dns/domains)
-	GetDnsDomains(w http.ResponseWriter, r *http.Request, params GetDnsDomainsParams)
 	// Get current user info
 	// (GET /info)
 	GetInfo(w http.ResponseWriter, r *http.Request)
@@ -15917,6 +16311,9 @@ type ServerInterface interface {
 	// Logout
 	// (POST /logout)
 	PostLogout(w http.ResponseWriter, r *http.Request)
+	// Scan all DNS domains
+	// (GET /network/dns/domains)
+	GetNetworkDnsDomains(w http.ResponseWriter, r *http.Request, params GetNetworkDnsDomainsParams)
 	// Create a domain
 	// (POST /network/dns/domains)
 	PostNetworkDnsDomains(w http.ResponseWriter, r *http.Request)
@@ -15929,7 +16326,7 @@ type ServerInterface interface {
 	// Export all DNS configurations
 	// (GET /network/dns/export)
 	GetNetworkDnsExport(w http.ResponseWriter, r *http.Request)
-	// List all records
+	// Scan DNS records
 	// (GET /network/dns/records)
 	GetNetworkDnsRecords(w http.ResponseWriter, r *http.Request, params GetNetworkDnsRecordsParams)
 	// Create a record
@@ -15941,7 +16338,7 @@ type ServerInterface interface {
 	// Update a record
 	// (PUT /network/dns/records/{id})
 	PutNetworkDnsRecordsId(w http.ResponseWriter, r *http.Request, id string)
-	// List intelligence sources
+	// Scan intelligence sources
 	// (GET /network/intelligence/sources)
 	GetNetworkIntelligenceSources(w http.ResponseWriter, r *http.Request, params GetNetworkIntelligenceSourcesParams)
 	// Create intelligence source
@@ -15965,7 +16362,7 @@ type ServerInterface interface {
 	// Get IP intelligence info
 	// (GET /network/ip/analysis/info)
 	GetNetworkIpAnalysisInfo(w http.ResponseWriter, r *http.Request, params GetNetworkIpAnalysisInfoParams)
-	// List all IP exports
+	// Scan all IP exports
 	// (GET /network/ip/exports)
 	GetNetworkIpExports(w http.ResponseWriter, r *http.Request, params GetNetworkIpExportsParams)
 	// Create an IP export
@@ -15983,7 +16380,7 @@ type ServerInterface interface {
 	// Cancel an IP export task
 	// (POST /network/ip/exports/task/{taskId}/cancel)
 	PostNetworkIpExportsTaskTaskIdCancel(w http.ResponseWriter, r *http.Request, taskId string)
-	// List all IP export tasks
+	// Scan all IP export tasks
 	// (GET /network/ip/exports/tasks)
 	GetNetworkIpExportsTasks(w http.ResponseWriter, r *http.Request)
 	// Delete an IP export
@@ -15995,7 +16392,7 @@ type ServerInterface interface {
 	// Trigger dynamic export
 	// (POST /network/ip/exports/{id}/trigger)
 	PostNetworkIpExportsIdTrigger(w http.ResponseWriter, r *http.Request, id string, params PostNetworkIpExportsIdTriggerParams)
-	// List all IP groups
+	// Scan all IP groups
 	// (GET /network/ip/pools)
 	GetNetworkIpPools(w http.ResponseWriter, r *http.Request, params GetNetworkIpPoolsParams)
 	// Create an IP group
@@ -16016,7 +16413,7 @@ type ServerInterface interface {
 	// Preview IP pool data (cursor-based)
 	// (GET /network/ip/pools/{id}/preview)
 	GetNetworkIpPoolsIdPreview(w http.ResponseWriter, r *http.Request, id string, params GetNetworkIpPoolsIdPreviewParams)
-	// List all IP sync policies
+	// Scan all IP sync policies
 	// (GET /network/ip/sync)
 	GetNetworkIpSync(w http.ResponseWriter, r *http.Request, params GetNetworkIpSyncParams)
 	// Create an IP sync policy
@@ -16034,7 +16431,7 @@ type ServerInterface interface {
 	// Perform site hit test
 	// (POST /network/site/analysis/hit-test)
 	PostNetworkSiteAnalysisHitTest(w http.ResponseWriter, r *http.Request)
-	// List all site exports
+	// Scan all site exports
 	// (GET /network/site/exports)
 	GetNetworkSiteExports(w http.ResponseWriter, r *http.Request, params GetNetworkSiteExportsParams)
 	// Create a site export
@@ -16043,7 +16440,7 @@ type ServerInterface interface {
 	// Download site export result
 	// (GET /network/site/exports/download/{taskId})
 	GetNetworkSiteExportsDownloadTaskId(w http.ResponseWriter, r *http.Request, taskId string)
-	// Preview Site export expression
+	// Preview site export results
 	// (POST /network/site/exports/preview)
 	PostNetworkSiteExportsPreview(w http.ResponseWriter, r *http.Request)
 	// Get site export task status
@@ -16052,7 +16449,7 @@ type ServerInterface interface {
 	// Cancel a site export task
 	// (POST /network/site/exports/task/{taskId}/cancel)
 	PostNetworkSiteExportsTaskTaskIdCancel(w http.ResponseWriter, r *http.Request, taskId string)
-	// List all site export tasks
+	// Scan all site export tasks
 	// (GET /network/site/exports/tasks)
 	GetNetworkSiteExportsTasks(w http.ResponseWriter, r *http.Request)
 	// Delete a site export
@@ -16064,7 +16461,7 @@ type ServerInterface interface {
 	// Trigger site export
 	// (POST /network/site/exports/{id}/trigger)
 	PostNetworkSiteExportsIdTrigger(w http.ResponseWriter, r *http.Request, id string, params PostNetworkSiteExportsIdTriggerParams)
-	// List all site groups
+	// Scan all site groups
 	// (GET /network/site/pools)
 	GetNetworkSitePools(w http.ResponseWriter, r *http.Request, params GetNetworkSitePoolsParams)
 	// Create a site group
@@ -16082,10 +16479,13 @@ type ServerInterface interface {
 	// Preview site pool data (cursor-based)
 	// (GET /network/site/pools/{id}/preview)
 	GetNetworkSitePoolsIdPreview(w http.ResponseWriter, r *http.Request, id string, params GetNetworkSitePoolsIdPreviewParams)
+	// Ping the server
+	// (GET /ping)
+	GetPing(w http.ResponseWriter, r *http.Request)
 	// Suggest RBAC resources
 	// (GET /rbac/resources/suggest)
 	GetRbacResourcesSuggest(w http.ResponseWriter, r *http.Request, params GetRbacResourcesSuggestParams)
-	// List all role bindings
+	// Scan all role bindings
 	// (GET /rbac/rolebindings)
 	GetRbacRolebindings(w http.ResponseWriter, r *http.Request, params GetRbacRolebindingsParams)
 	// Create a role binding
@@ -16097,7 +16497,7 @@ type ServerInterface interface {
 	// Update a role binding
 	// (PUT /rbac/rolebindings/{id})
 	PutRbacRolebindingsId(w http.ResponseWriter, r *http.Request, id string)
-	// List all roles
+	// Scan all roles
 	// (GET /rbac/roles)
 	GetRbacRoles(w http.ResponseWriter, r *http.Request, params GetRbacRolesParams)
 	// Create a role
@@ -16109,7 +16509,7 @@ type ServerInterface interface {
 	// Update a role
 	// (PUT /rbac/roles/{id})
 	PutRbacRolesId(w http.ResponseWriter, r *http.Request, id string)
-	// List all service accounts
+	// Scan all service accounts
 	// (GET /rbac/serviceaccounts)
 	GetRbacServiceaccounts(w http.ResponseWriter, r *http.Request, params GetRbacServiceaccountsParams)
 	// Create a service account
@@ -16176,6 +16576,14 @@ func (siw *ServerInterfaceWrapper) GetActionsInstances(w http.ResponseWriter, r 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "workflowId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "workflowId", r.URL.Query(), &params.WorkflowId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
 		return
 	}
 
@@ -16252,6 +16660,37 @@ func (siw *ServerInterfaceWrapper) DeleteActionsInstancesId(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteActionsInstancesId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetActionsInstancesId operation middleware
+func (siw *ServerInterfaceWrapper) GetActionsInstancesId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetActionsInstancesId(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -16612,6 +17051,37 @@ func (siw *ServerInterfaceWrapper) DeleteActionsWorkflowsId(w http.ResponseWrite
 	handler.ServeHTTP(w, r)
 }
 
+// GetActionsWorkflowsId operation middleware
+func (siw *ServerInterfaceWrapper) GetActionsWorkflowsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetActionsWorkflowsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // PutActionsWorkflowsId operation middleware
 func (siw *ServerInterfaceWrapper) PutActionsWorkflowsId(w http.ResponseWriter, r *http.Request) {
 
@@ -16929,55 +17399,6 @@ func (siw *ServerInterfaceWrapper) GetDiscoveryLookup(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
-// GetDnsDomains operation middleware
-func (siw *ServerInterfaceWrapper) GetDnsDomains(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDnsDomainsParams
-
-	// ------------- Optional query parameter "cursor" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "search" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDnsDomains(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // GetInfo operation middleware
 func (siw *ServerInterfaceWrapper) GetInfo(w http.ResponseWriter, r *http.Request) {
 
@@ -17023,6 +17444,55 @@ func (siw *ServerInterfaceWrapper) PostLogout(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostLogout(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetworkDnsDomains operation middleware
+func (siw *ServerInterfaceWrapper) GetNetworkDnsDomains(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetworkDnsDomainsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetworkDnsDomains(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18070,7 +18540,7 @@ func (siw *ServerInterfaceWrapper) GetNetworkIpPoolsIdPreview(w http.ResponseWri
 
 	// ------------- Optional query parameter "cursor" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
 		return
@@ -18733,7 +19203,7 @@ func (siw *ServerInterfaceWrapper) GetNetworkSitePoolsIdPreview(w http.ResponseW
 
 	// ------------- Optional query parameter "cursor" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
 		return
@@ -18757,6 +19227,20 @@ func (siw *ServerInterfaceWrapper) GetNetworkSitePoolsIdPreview(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetNetworkSitePoolsIdPreview(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPing operation middleware
+func (siw *ServerInterfaceWrapper) GetPing(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPing(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19399,6 +19883,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/actions/instances", wrapper.GetActionsInstances)
 	m.HandleFunc("POST "+options.BaseURL+"/actions/instances/cleanup", wrapper.PostActionsInstancesCleanup)
 	m.HandleFunc("DELETE "+options.BaseURL+"/actions/instances/{id}", wrapper.DeleteActionsInstancesId)
+	m.HandleFunc("GET "+options.BaseURL+"/actions/instances/{id}", wrapper.GetActionsInstancesId)
 	m.HandleFunc("POST "+options.BaseURL+"/actions/instances/{id}/cancel", wrapper.PostActionsInstancesIdCancel)
 	m.HandleFunc("GET "+options.BaseURL+"/actions/instances/{id}/logs", wrapper.GetActionsInstancesIdLogs)
 	m.HandleFunc("GET "+options.BaseURL+"/actions/manifests", wrapper.GetActionsManifests)
@@ -19411,6 +19896,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/actions/workflows/schema", wrapper.GetActionsWorkflowsSchema)
 	m.HandleFunc("POST "+options.BaseURL+"/actions/workflows/validate", wrapper.PostActionsWorkflowsValidate)
 	m.HandleFunc("DELETE "+options.BaseURL+"/actions/workflows/{id}", wrapper.DeleteActionsWorkflowsId)
+	m.HandleFunc("GET "+options.BaseURL+"/actions/workflows/{id}", wrapper.GetActionsWorkflowsId)
 	m.HandleFunc("PUT "+options.BaseURL+"/actions/workflows/{id}", wrapper.PutActionsWorkflowsId)
 	m.HandleFunc("POST "+options.BaseURL+"/actions/workflows/{id}/webhook/reset", wrapper.PostActionsWorkflowsIdWebhookReset)
 	m.HandleFunc("POST "+options.BaseURL+"/actions/workflows/{workflowId}/run", wrapper.PostActionsWorkflowsWorkflowIdRun)
@@ -19420,10 +19906,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/auth/sessions/{id}", wrapper.DeleteAuthSessionsId)
 	m.HandleFunc("GET "+options.BaseURL+"/discovery/codes", wrapper.GetDiscoveryCodes)
 	m.HandleFunc("GET "+options.BaseURL+"/discovery/lookup", wrapper.GetDiscoveryLookup)
-	m.HandleFunc("GET "+options.BaseURL+"/dns/domains", wrapper.GetDnsDomains)
 	m.HandleFunc("GET "+options.BaseURL+"/info", wrapper.GetInfo)
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.PostLogin)
 	m.HandleFunc("POST "+options.BaseURL+"/logout", wrapper.PostLogout)
+	m.HandleFunc("GET "+options.BaseURL+"/network/dns/domains", wrapper.GetNetworkDnsDomains)
 	m.HandleFunc("POST "+options.BaseURL+"/network/dns/domains", wrapper.PostNetworkDnsDomains)
 	m.HandleFunc("DELETE "+options.BaseURL+"/network/dns/domains/{id}", wrapper.DeleteNetworkDnsDomainsId)
 	m.HandleFunc("PUT "+options.BaseURL+"/network/dns/domains/{id}", wrapper.PutNetworkDnsDomainsId)
@@ -19479,6 +19965,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/network/site/pools/{id}/entries", wrapper.DeleteNetworkSitePoolsIdEntries)
 	m.HandleFunc("POST "+options.BaseURL+"/network/site/pools/{id}/entries", wrapper.PostNetworkSitePoolsIdEntries)
 	m.HandleFunc("GET "+options.BaseURL+"/network/site/pools/{id}/preview", wrapper.GetNetworkSitePoolsIdPreview)
+	m.HandleFunc("GET "+options.BaseURL+"/ping", wrapper.GetPing)
 	m.HandleFunc("GET "+options.BaseURL+"/rbac/resources/suggest", wrapper.GetRbacResourcesSuggest)
 	m.HandleFunc("GET "+options.BaseURL+"/rbac/rolebindings", wrapper.GetRbacRolebindings)
 	m.HandleFunc("POST "+options.BaseURL+"/rbac/rolebindings", wrapper.PostRbacRolebindings)

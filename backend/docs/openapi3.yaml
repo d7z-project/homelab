@@ -9,8 +9,7 @@ servers:
 paths:
   /actions/instances:
     get:
-      description: Retrieves a history of triggered workflow instances with cursor-based
-        pagination.
+      description: Retrieves historical execution logs with cursor-based pagination.
       parameters:
       - description: Cursor
         in: query
@@ -25,6 +24,11 @@ paths:
       - description: Search
         in: query
         name: search
+        schema:
+          type: string
+      - description: Workflow ID filter
+        in: query
+        name: workflowId
         schema:
           type: string
       responses:
@@ -42,7 +46,7 @@ paths:
           description: Unauthorized
       security:
       - ApiKeyAuth: []
-      summary: List all task instances
+      summary: Scan task instances
       tags:
       - actions
   /actions/instances/cleanup:
@@ -124,6 +128,45 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Delete a task instance
+      tags:
+      - actions
+    get:
+      description: Retrieves a specific task instance by its ID.
+      parameters:
+      - description: Task Instance ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.TaskInstance"
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Instance Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Get a task instance
       tags:
       - actions
   /actions/instances/{id}/cancel:
@@ -221,7 +264,7 @@ paths:
           description: Unauthorized
       security:
       - ApiKeyAuth: []
-      summary: List all step manifests
+      summary: Scan all step manifests
       tags:
       - actions
   /actions/probe:
@@ -420,7 +463,7 @@ paths:
           description: Internal Server Error
       security:
       - ApiKeyAuth: []
-      summary: List all workflows
+      summary: Scan all workflows
       tags:
       - actions
     post:
@@ -567,6 +610,45 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Delete a workflow
+      tags:
+      - actions
+    get:
+      description: Retrieves a specific workflow template by its ID.
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.Workflow"
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Workflow Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Get a workflow
       tags:
       - actions
     put:
@@ -764,7 +846,7 @@ paths:
           description: Forbidden
       security:
       - ApiKeyAuth: []
-      summary: List audit logs
+      summary: Scan audit logs
       tags:
       - audit
   /audit/logs/cleanup:
@@ -831,7 +913,7 @@ paths:
           description: Forbidden
       security:
       - ApiKeyAuth: []
-      summary: List all active root sessions
+      summary: Scan all active root sessions
       tags:
       - auth
   /auth/sessions/{id}:
@@ -893,7 +975,7 @@ paths:
           description: Unauthorized
       security:
       - ApiKeyAuth: []
-      summary: List discovery codes
+      summary: Scan discovery codes
       tags:
       - discovery
   /discovery/lookup:
@@ -951,48 +1033,6 @@ paths:
       summary: Discovery lookup
       tags:
       - discovery
-  /dns/domains:
-    get:
-      parameters:
-      - description: Cursor
-        in: query
-        name: cursor
-        schema:
-          type: string
-      - description: Limit
-        in: query
-        name: limit
-        schema:
-          type: integer
-      - description: Search by name
-        in: query
-        name: search
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/_dns_domains_get_200_response"
-          description: OK
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/common.Response"
-          description: Unauthorized
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/common.Response"
-          description: Forbidden
-      security:
-      - ApiKeyAuth: []
-      summary: List all DNS domains
-      tags:
-      - dns
   /info:
     get:
       responses:
@@ -1060,6 +1100,47 @@ paths:
       tags:
       - auth
   /network/dns/domains:
+    get:
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: Limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_dns_domains_get_200_response"
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
+      summary: Scan all DNS domains
+      tags:
+      - network/dns
     post:
       requestBody:
         content:
@@ -1220,7 +1301,7 @@ paths:
   /network/dns/records:
     get:
       parameters:
-      - description: Filter by domain ID
+      - description: Domain ID
         in: query
         name: domainId
         schema:
@@ -1235,7 +1316,7 @@ paths:
         name: limit
         schema:
           type: integer
-      - description: Search by name or value
+      - description: Search by name
         in: query
         name: search
         schema:
@@ -1255,7 +1336,7 @@ paths:
           description: Unauthorized
       security:
       - ApiKeyAuth: []
-      summary: List all records
+      summary: Scan DNS records
       tags:
       - network/dns
     post:
@@ -1427,7 +1508,7 @@ paths:
           description: Forbidden
       security:
       - ApiKeyAuth: []
-      summary: List intelligence sources
+      summary: Scan intelligence sources
       tags:
       - network/intelligence
     post:
@@ -1732,7 +1813,7 @@ paths:
           description: Unauthorized
       security:
       - ApiKeyAuth: []
-      summary: List all IP exports
+      summary: Scan all IP exports
       tags:
       - network/ip
     post:
@@ -1802,6 +1883,7 @@ paths:
       - network/ip
   /network/ip/exports/preview:
     post:
+      description: Evaluates the export rule and returns matched entries (no pagination).
       requestBody:
         content:
           application/json:
@@ -1921,7 +2003,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: List all IP export tasks
+      summary: Scan all IP export tasks
       tags:
       - network/ip
   /network/ip/exports/{id}:
@@ -2086,7 +2168,7 @@ paths:
           description: Unauthorized
       security:
       - ApiKeyAuth: []
-      summary: List all IP groups
+      summary: Scan all IP groups
       tags:
       - network/ip
     post:
@@ -2343,7 +2425,7 @@ paths:
         in: query
         name: cursor
         schema:
-          type: integer
+          type: string
       - description: Number of entries to return
         in: query
         name: limit
@@ -2411,7 +2493,7 @@ paths:
           description: Unauthorized
       security:
       - ApiKeyAuth: []
-      summary: List all IP sync policies
+      summary: Scan all IP sync policies
       tags:
       - network/ip
     post:
@@ -2541,7 +2623,7 @@ paths:
   /network/ip/sync/{id}/trigger:
     post:
       parameters:
-      - description: Policy ID
+      - description: Source ID
         in: path
         name: id
         required: true
@@ -2553,7 +2635,7 @@ paths:
             application/json:
               schema:
                 type: string
-          description: success
+          description: sync started
         "401":
           content:
             application/json:
@@ -2616,7 +2698,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/_network_site_exports_get_200_response"
           description: OK
-      summary: List all site exports
+      summary: Scan all site exports
       tags:
       - network/site
     post:
@@ -2660,6 +2742,7 @@ paths:
       - network/site
   /network/site/exports/preview:
     post:
+      description: Evaluates the export rule and returns matched entries (no pagination).
       requestBody:
         content:
           application/json:
@@ -2696,7 +2779,7 @@ paths:
           description: Forbidden
       security:
       - ApiKeyAuth: []
-      summary: Preview Site export expression
+      summary: Preview site export results
       tags:
       - network/site
       x-codegen-request-body-name: request
@@ -2765,7 +2848,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: List all site export tasks
+      summary: Scan all site export tasks
       tags:
       - network/site
   /network/site/exports/{id}:
@@ -2890,7 +2973,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/_network_site_pools_get_200_response"
           description: OK
-      summary: List all site groups
+      summary: Scan all site groups
       tags:
       - network/site
     post:
@@ -3001,7 +3084,7 @@ paths:
         in: query
         name: cursor
         schema:
-          type: integer
+          type: string
       - description: Number of entries to return
         in: query
         name: limit
@@ -3022,6 +3105,19 @@ paths:
       summary: Preview site pool data (cursor-based)
       tags:
       - network/site
+  /ping:
+    get:
+      description: Returns pong if the server is alive
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: pong
+      summary: Ping the server
+      tags:
+      - system
   /rbac/resources/suggest:
     get:
       parameters:
@@ -3089,7 +3185,7 @@ paths:
           description: Forbidden
       security:
       - ApiKeyAuth: []
-      summary: List all role bindings
+      summary: Scan all role bindings
       tags:
       - rbac
     post:
@@ -3261,7 +3357,7 @@ paths:
           description: Forbidden
       security:
       - ApiKeyAuth: []
-      summary: List all roles
+      summary: Scan all roles
       tags:
       - rbac
     post:
@@ -3433,7 +3529,7 @@ paths:
           description: Forbidden
       security:
       - ApiKeyAuth: []
-      summary: List all service accounts
+      summary: Scan all service accounts
       tags:
       - rbac
     post:
@@ -4033,7 +4129,7 @@ components:
       type: object
     models.IPPoolPreviewResponse:
       example:
-        nextCursor: 0
+        nextCursor: nextCursor
         entries:
         - cidr: cidr
           tags:
@@ -4043,15 +4139,15 @@ components:
           tags:
           - tags
           - tags
-        total: 6
+        total: 0
       properties:
         entries:
           items:
             $ref: "#/components/schemas/models.IPPoolEntry"
           type: array
         nextCursor:
-          description: 下一个 Byte Offset
-          type: integer
+          description: 下一个 Byte Offset (作为字符串传递)
+          type: string
         total:
           description: 总条数
           type: integer
@@ -4571,7 +4667,7 @@ components:
       type: object
     models.SitePoolPreviewResponse:
       example:
-        nextCursor: 0
+        nextCursor: nextCursor
         entries:
         - type: 0
           value: value
@@ -4583,15 +4679,17 @@ components:
           tags:
           - tags
           - tags
-        total: 6
+        total: 0
       properties:
         entries:
           items:
             $ref: "#/components/schemas/models.SitePoolEntry"
           type: array
         nextCursor:
-          type: integer
+          description: 下一个 Byte Offset (作为字符串传递)
+          type: string
         total:
+          description: 总条数
           type: integer
       type: object
     models.Step:
@@ -5194,7 +5292,7 @@ components:
           name: name
           description: description
           id: id
-    _dns_domains_get_200_response:
+    _network_dns_domains_get_200_response:
       allOf:
       - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
