@@ -5,6 +5,10 @@
 @import '@xterm/xterm/css/xterm.css';
 
 /* 1.2 Full-screen Dialog Overrides */
+.full-screen-dialog {
+  max-width: none !important;
+  max-height: none !important;
+}
 .full-screen-dialog .mat-mdc-dialog-container .mdc-dialog__surface {
   border-radius: 0 !important;
 }

@@ -375,20 +375,31 @@
                   </div>
                 </td>
               </ng-container>
+<ng-container matColumnDef="status">
+  <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+    状态
+  </th>
+  <td mat-cell *matCellDef="let inst">
+    <span
+      class="px-2 py-0.5 rounded text-[10px] font-bold font-mono border"
+      [class]="getStatusClass(inst.status)"
+    >
+      {{ inst.status | uppercase }}
+    </span>
+  </td>
+</ng-container>
 
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
-                  状态
-                </th>
-                <td mat-cell *matCellDef="let inst">
-                  <span
-                    class="px-2 py-0.5 rounded text-[10px] font-bold font-mono border"
-                    [class]="getStatusClass(inst.status)"
-                  >
-                    {{ inst.status | uppercase }}
-                  </span>
-                </td>
-              </ng-container>
+<!-- Instance ID Column -->
+<ng-container matColumnDef="id">
+  <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
+    实例 ID
+  </th>
+  <td mat-cell *matCellDef="let inst" class="text-xs text-outline font-mono">
+    {{ inst.id }}
+  </td>
+</ng-container>
+
+<!-- Workflow Name Column -->
 
               <ng-container matColumnDef="startedAt">
                 <th mat-header-cell *matHeaderCellDef class="bg-surface-container-low font-bold">
@@ -502,15 +513,15 @@
         mat-fab
         [extended]="!isHandset()"
         [color]="showScrollTop() ? 'tertiary' : 'primary'"
-        (click)="showScrollTop() ? scrollToTop() : fabConfig()?.action()"
+        (click)="showScrollTop() ? scrollToTop() : fabConfig().action()"
         [disabled]="loading()"
         class="rounded-2xl! shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-bottom-4"
         [matTooltip]="showScrollTop() ? '回到顶部' : ''"
       >
-        <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig()?.icon }}</mat-icon>
+        <mat-icon>{{ showScrollTop() ? 'arrow_upward' : fabConfig().icon }}</mat-icon>
         @if (!isHandset()) {
           <span class="ml-2 font-medium">{{
-            showScrollTop() ? '回到顶部' : fabConfig()?.label
+            showScrollTop() ? '回到顶部' : fabConfig().label
           }}</span>
         }
       </button>

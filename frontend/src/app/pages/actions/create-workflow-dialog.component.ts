@@ -1,12 +1,14 @@
 import {
   Component,
-  Inject,
   OnInit,
+  Inject,
   inject,
   signal,
   ChangeDetectorRef,
   computed,
   effect,
+  Optional,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -16,9 +18,7 @@ import {
   FormGroup,
   Validators,
   FormArray,
-  ValidatorFn,
   AbstractControl,
-  ValidationErrors,
 } from '@angular/forms';
 import {
   MatDialog,
@@ -47,12 +47,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import {
   ActionsService,
-  RbacService,
   ModelsWorkflow,
   ModelsStep,
   ModelsStepManifest,
-  ModelsParamDefinition,
-  ModelsServiceAccount,
   ModelsVarDefinition,
 } from '../../generated';
 import { firstValueFrom } from 'rxjs';
@@ -93,464 +90,7 @@ import * as yaml from 'js-yaml';
     DiscoverySuggestInputComponent,
     MonacoEditorModule,
   ],
-  template: `
-    <div class="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
-      <mat-toolbar
-        class="bg-surface! border-b! !border-outline-variant/30 flex justify-between shrink-0 h-16"
-      >
-        <div class="flex items-center">
-          <button mat-icon-button icon-button-center (click)="dialogRef.close()" matTooltip="返回">
-            <mat-icon>close</mat-icon>
-          </button>
-          <span
-            class="ml-1 sm:ml-2 text-base sm:text-lg font-medium tracking-tight truncate max-w-[120px] sm:max-w-none"
-            >{{ data.workflow ? '编辑工作流' : '创建新工作流' }}</span
-          >
-        </div>
-
-        <div class="flex items-center gap-2 sm:gap-4">
-          <div
-            class="bg-surface-container-high p-1 rounded-full flex items-center shrink-0 scale-90 sm:scale-100"
-          >
-            @if (editMode() === 'visual') {
-              <button
-                mat-flat-button
-                color="primary"
-                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] shadow-none! text-xs! sm:!text-sm"
-              >
-                图形化
-              </button>
-              <button
-                mat-button
-                (click)="switchMode('yaml')"
-                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] text-xs! sm:!text-sm"
-              >
-                YAML
-              </button>
-            } @else {
-              <button
-                mat-button
-                (click)="switchMode('visual')"
-                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] text-xs! sm:!text-sm"
-              >
-                图形化
-              </button>
-              <button
-                mat-flat-button
-                color="primary"
-                class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[100px] shadow-none! text-xs! sm:!text-sm"
-              >
-                YAML
-              </button>
-            }
-          </div>
-
-          <button
-            mat-button
-            color="primary"
-            (click)="submit()"
-            [disabled]="!isValid()"
-            class="rounded-full! font-bold min-w-[50px]! sm:!min-w-[80px]"
-          >
-            保存
-          </button>
-        </div>
-      </mat-toolbar>
-
-      <div
-        class="flex-1 flex flex-col min-h-0 relative"
-        [class.p-3]="editMode() === 'visual'"
-        [class.sm:p-8]="editMode() === 'visual'"
-      >
-        @if (editMode() === 'visual') {
-          <div
-            class="max-w-4xl mx-auto w-full h-full overflow-y-auto animate-in fade-in duration-300"
-          >
-            <mat-stepper orientation="vertical" #stepper class="bg-transparent!">
-              <mat-step [stepControl]="infoForm">
-                <ng-template matStepLabel>基本信息</ng-template>
-                <form
-                  [formGroup]="infoForm"
-                  class="flex flex-col gap-4 mt-4 sm:mt-6 max-w-2xl pb-10"
-                >
-                  <mat-form-field appearance="outline">
-                    <mat-label>工作流名称</mat-label>
-                    <input matInput formControlName="name" placeholder="例如：每日数据备份" />
-                    <mat-error>名称必填</mat-error>
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>描述</mat-label>
-                    <textarea
-                      matInput
-                      formControlName="description"
-                      rows="2"
-                      placeholder="对该工作流的简要说明"
-                    ></textarea>
-                  </mat-form-field>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <app-discovery-select
-                      code="rbac/serviceaccounts"
-                      label="执行身份"
-                      placeholder="搜索账号..."
-                      formControlName="serviceAccountId"
-                    ></app-discovery-select>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>超时时间 (秒)</mat-label>
-                      <input matInput type="number" formControlName="timeout" />
-                    </mat-form-field>
-                  </div>
-
-                  <div
-                    class="bg-surface-container-low p-4 sm:p-6 rounded-2xl border border-outline-variant/30 space-y-4"
-                  >
-                    <div class="flex justify-between items-center">
-                      <p class="text-[10px] font-bold uppercase tracking-wider text-outline">
-                        触发器配置
-                      </p>
-                      <mat-checkbox formControlName="enabled">启用此工作流</mat-checkbox>
-                    </div>
-                    <div class="flex flex-col gap-4">
-                      <mat-checkbox formControlName="cronEnabled">启用定时任务 (Cron)</mat-checkbox>
-                      @if (infoForm.get('cronEnabled')?.value) {
-                        <mat-form-field appearance="outline" class="sm:ml-8">
-                          <mat-label>Cron 表达式</mat-label>
-                          <input
-                            matInput
-                            formControlName="cronExpr"
-                            placeholder="例如：0 0 * * *"
-                          />
-                        </mat-form-field>
-                      }
-                      <mat-checkbox formControlName="webhookEnabled"
-                        >启用 Webhook 触发</mat-checkbox
-                      >
-                    </div>
-                  </div>
-                  <div class="mt-2 flex gap-2">
-                    <button
-                      mat-flat-button
-                      matStepperNext
-                      type="button"
-                      color="primary"
-                      class="w-full sm:w-auto"
-                    >
-                      下一步
-                    </button>
-                  </div>
-                </form>
-              </mat-step>
-
-              <mat-step>
-                <ng-template matStepLabel>运行变量配置</ng-template>
-                <div class="flex flex-col gap-4 mt-4 sm:mt-6 max-w-3xl pb-20">
-                  @for (v of vars.controls; track $index) {
-                    @let vIndex = $index;
-                    <div
-                      [formGroup]="getVarGroup(vIndex)"
-                      class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/30 flex flex-col gap-4 relative"
-                    >
-                      <div class="flex justify-between items-start">
-                        <span
-                          class="text-[10px] font-bold uppercase tracking-widest text-outline bg-outline/5 px-2 py-0.5 rounded"
-                          >变量 #{{ vIndex + 1 }}</span
-                        >
-                        <button
-                          mat-icon-button
-                          color="warn"
-                          (click)="removeVar(vIndex)"
-                          type="button"
-                        >
-                          <mat-icon>delete_outline</mat-icon>
-                        </button>
-                      </div>
-                      <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                        <mat-form-field appearance="outline" class="sm:col-span-3"
-                          ><mat-label>键名</mat-label><input matInput formControlName="key"
-                        /></mat-form-field>
-                        <mat-form-field appearance="outline" class="sm:col-span-4"
-                          ><mat-label>描述</mat-label><input matInput formControlName="description"
-                        /></mat-form-field>
-                        <mat-form-field appearance="outline" class="sm:col-span-5"
-                          ><mat-label>默认值</mat-label><input matInput formControlName="default"
-                        /></mat-form-field>
-                      </div>
-                      <div class="flex flex-wrap items-center gap-4">
-                        <mat-checkbox formControlName="required">必填</mat-checkbox>
-                        <button
-                          mat-button
-                          type="button"
-                          (click)="openVarExtra(vIndex)"
-                          class="text-xs!"
-                        >
-                          <mat-icon class="mr-1 text-sm!">{{
-                            hasRegex(vIndex) ? 'verified_user' : 'tune'
-                          }}</mat-icon>
-                          {{ hasRegex(vIndex) ? '已配置正则' : '配置正则' }}
-                        </button>
-                      </div>
-                    </div>
-                  }
-                  <button
-                    mat-stroked-button
-                    color="primary"
-                    (click)="addVar()"
-                    type="button"
-                    class="border-dashed inline-flex items-center gap-2"
-                  >
-                    <mat-icon>add</mat-icon><span>添加变量</span>
-                  </button>
-                  <div class="mt-4 flex gap-2">
-                    <button mat-button matStepperPrevious type="button" class="flex-1 sm:flex-none">
-                      上一步
-                    </button>
-                    <button
-                      mat-flat-button
-                      matStepperNext
-                      type="button"
-                      color="primary"
-                      class="flex-1 sm:flex-none"
-                    >
-                      下一步
-                    </button>
-                  </div>
-                </div>
-              </mat-step>
-
-              <mat-step>
-                <ng-template matStepLabel>任务执行步骤</ng-template>
-                <div
-                  class="flex flex-col gap-6 sm:gap-8 mt-4 sm:mt-6 pb-32"
-                  cdkDropList
-                  (cdkDropListDropped)="onStepDropped($event)"
-                >
-                  @for (step of steps.controls; track $index) {
-                    @let sIndex = $index;
-                    <div
-                      [formGroup]="getStepGroup(sIndex)"
-                      cdkDrag
-                      class="bg-surface p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-outline-variant/30 shadow-sm flex flex-col gap-4 sm:gap-6 relative group"
-                    >
-                      <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3 sm:gap-4">
-                          <div
-                            cdkDragHandle
-                            class="cursor-grab p-1 hover:bg-outline/5 rounded-full transition-colors"
-                          >
-                            <mat-icon class="text-outline/60 text-lg!">drag_indicator</mat-icon>
-                          </div>
-                          <div class="flex flex-col">
-                            <span
-                              class="text-[9px] font-bold uppercase tracking-widest text-primary bg-primary/5 px-2 py-0.5 rounded-full w-fit"
-                              >步骤 #{{ sIndex + 1 }}</span
-                            >
-                            <h3
-                              class="text-sm sm:text-base font-bold mt-0.5 tracking-tight truncate max-w-[180px] sm:max-w-none"
-                            >
-                              {{ getStepManifest(sIndex)?.name || '未配置处理器' }}
-                            </h3>
-                          </div>
-                        </div>
-                        <button
-                          mat-icon-button
-                          color="warn"
-                          size="small"
-                          (click)="removeStep(sIndex)"
-                          type="button"
-                          class="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <mat-icon class="text-xl!">delete_outline</mat-icon>
-                        </button>
-                      </div>
-
-                      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-                        <div class="lg:col-span-8 space-y-4">
-                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <mat-form-field appearance="outline" class="w-full">
-                              <mat-label>步骤 ID</mat-label>
-                              <input matInput formControlName="id" />
-                            </mat-form-field>
-                            <mat-form-field appearance="outline" class="w-full">
-                              <mat-label>显示名称</mat-label>
-                              <input matInput formControlName="name" />
-                            </mat-form-field>
-                          </div>
-
-                          <div
-                            class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4"
-                          >
-                            <mat-form-field appearance="outline" class="flex-1 w-full">
-                              <mat-label>执行条件 (If)</mat-label>
-                              <input matInput formControlName="if" [matAutocomplete]="refAuto" />
-                              <mat-autocomplete #refAuto="matAutocomplete">
-                                @for (ref of getOutputReferences(sIndex); track ref) {
-                                  <mat-option [value]="ref">{{ ref }}</mat-option>
-                                }
-                              </mat-autocomplete>
-                            </mat-form-field>
-                            <div
-                              class="flex items-center justify-between sm:justify-start gap-3 px-2 h-auto sm:h-[56px] shrink-0 bg-outline/5 sm:bg-transparent p-2 sm:p-0 rounded-lg sm:rounded-none"
-                            >
-                              <span class="text-xs sm:text-sm font-medium text-outline"
-                                >允许失败</span
-                              >
-                              <mat-slide-toggle
-                                formControlName="fail"
-                                class="scale-75"
-                              ></mat-slide-toggle>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="lg:col-span-4">
-                          <button
-                            mat-button
-                            type="button"
-                            (click)="openProcessorSelector(sIndex)"
-                            class="w-full h-full! min-h-[80px]! sm:!min-h-[120px] rounded-xl! sm:!rounded-2xl border-2 border-dashed border-outline-variant/50 hover:border-primary/50 hover:bg-primary/5 transition-all flex lg:flex-col items-center justify-center gap-3 sm:gap-2 group/btn"
-                          >
-                            <mat-icon
-                              class="w-8! h-8! sm:!w-10 sm:!h-10 text-[32px]! sm:!text-[40px] text-outline/30 group-hover/btn:text-primary/50 transition-colors"
-                            >
-                              {{
-                                getStepManifest(sIndex)?.id?.startsWith('core/') ? 'memory' : 'api'
-                              }}
-                            </mat-icon>
-                            <div class="text-left lg:text-center">
-                              <p class="text-[10px] text-outline/60 leading-none">更换处理器</p>
-                              <p
-                                class="text-xs sm:text-sm font-bold text-outline group-hover/btn:text-primary transition-colors"
-                              >
-                                {{ getStepManifest(sIndex)?.name || '点此选择' }}
-                              </p>
-                            </div>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div
-                        class="bg-surface-container-low p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-outline-variant/20"
-                      >
-                        <div class="flex items-center gap-2 mb-3 sm:mb-4">
-                          <mat-icon class="text-xs! sm:!text-sm text-outline/40"
-                            >settings_input_component</mat-icon
-                          >
-                          <span
-                            class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-outline/60"
-                            >参数配置 (Parameters)</span
-                          >
-                        </div>
-
-                        <div
-                          formGroupName="params"
-                          class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1"
-                        >
-                          @for (
-                            p of getProcessorParams(getStepGroup(sIndex).get('type')?.value);
-                            track p.name
-                          ) {
-                            @if (p.lookupCode) {
-                              <app-discovery-suggest-input
-                                [code]="p.lookupCode"
-                                [formControlName]="p.name!"
-                                [label]="p.description || p.name || ''"
-                                appearance="outline"
-                                class="w-full block"
-                              />
-                            } @else {
-                              <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>{{ p.description || p.name }}</mat-label>
-                                <input
-                                  matInput
-                                  [formControlName]="p.name!"
-                                  [matAutocomplete]="refAuto"
-                                />
-                              </mat-form-field>
-                            }
-                          } @empty {
-                            <div
-                              class="col-span-1 sm:col-span-2 py-4 flex flex-col items-center justify-center opacity-30"
-                            >
-                              <mat-icon class="text-lg!">auto_awesome</mat-icon>
-                              <p class="text-[10px] italic mt-1">无需额外配置</p>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  }
-                  <button
-                    mat-fab
-                    extended
-                    color="primary"
-                    (click)="addStep()"
-                    type="button"
-                    class="rounded-2xl! mx-auto scale-90 sm:scale-100"
-                  >
-                    <mat-icon>add</mat-icon>添加任务步骤
-                  </button>
-                  <div class="mt-4 flex gap-2">
-                    <button mat-button matStepperPrevious type="button" class="flex-1 sm:flex-none">
-                      上一步</button
-                    ><button
-                      mat-flat-button
-                      matStepperNext
-                      type="button"
-                      color="primary"
-                      class="flex-1 sm:flex-none"
-                    >
-                      下一步
-                    </button>
-                  </div>
-                </div>
-              </mat-step>
-
-              <mat-step>
-                <ng-template matStepLabel>确认保存</ng-template>
-                <div
-                  class="mt-8 p-6 sm:p-8 bg-surface border border-outline-variant rounded-2xl text-center max-w-2xl mx-auto"
-                >
-                  <mat-icon class="text-4xl sm:text-5xl h-auto w-auto text-primary opacity-20 mb-4"
-                    >verified</mat-icon
-                  >
-                  <h3 class="text-lg sm:text-xl font-bold mb-2">准备就绪</h3>
-                  <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                    <button mat-button matStepperPrevious type="button">返回修改</button>
-                    <button
-                      mat-flat-button
-                      color="primary"
-                      (click)="submit()"
-                      [disabled]="!isValid()"
-                    >
-                      立即保存
-                    </button>
-                  </div>
-                </div>
-              </mat-step>
-            </mat-stepper>
-          </div>
-        } @else {
-          <div
-            class="flex-1 flex flex-col relative overflow-hidden animate-in fade-in duration-300 bg-[#1e1e1e]"
-          >
-            @if (isEditorLoading()) {
-              <div class="absolute inset-0 z-10 flex items-center justify-center bg-[#1e1e1e]">
-                <mat-spinner diameter="48" strokeWidth="4"></mat-spinner>
-              </div>
-            }
-            <ngx-monaco-editor
-              class="h-full w-full"
-              style="height: 100%; width: 100%"
-              [options]="monacoOptions"
-              [(ngModel)]="yamlCode"
-              (onInit)="onEditorInit($event)"
-            ></ngx-monaco-editor>
-          </div>
-        }
-      </div>
-    </div>
-  `,
+  templateUrl: './create-workflow-dialog.component.html',
   styles: [
     `
       :host {
@@ -561,21 +101,45 @@ import * as yaml from 'js-yaml';
         height: 100% !important;
         width: 100% !important;
       }
-      ::ng-deep .mat-stepper-vertical {
-        background: transparent !important;
+      ::ng-deep .horizontal-stepper-full {
+        height: 100%;
+      }
+      ::ng-deep .horizontal-stepper-full .mat-horizontal-stepper-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      ::ng-deep .horizontal-stepper-full .mat-horizontal-content-container {
+        flex: 1;
+        padding: 0 !important;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      ::ng-deep .horizontal-stepper-full .mat-horizontal-stepper-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        outline: none !important;
       }
       ::ng-deep .mat-step-header {
-        border-radius: 12px !important;
-        margin-bottom: 8px !important;
+        padding: 16px 24px !important;
+        height: 72px !important;
+      }
+      ::ng-deep .mat-step-label {
+        font-weight: 900 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 12px !important;
       }
       @media (max-width: 600px) {
-        ::ng-deep .mat-step-label {
-          font-size: 13px !important;
+        ::ng-deep .mat-step-header {
+          padding: 8px 12px !important;
         }
-        ::ng-deep .mat-step-icon {
-          width: 20px !important;
-          height: 20px !important;
-          font-size: 12px !important;
+        ::ng-deep .mat-step-label {
+          display: none; /* Hide labels on mobile to save space */
         }
       }
     `,
@@ -638,14 +202,30 @@ export class CreateWorkflowDialogComponent implements OnInit {
   vars: FormArray = this.fb.array([]);
   steps: FormArray = this.fb.array([]);
 
+  activeStepIndex = signal(0);
+  totalSteps = computed(() => 4); // Fixed steps in visual mode
+
+  // Pre-calculate step manifests to avoid function calls in template (NG0100 fix)
+  stepsData = computed(() => {
+    const s = this.steps.value as any[];
+    return s.map(step => {
+      const manifest = this.manifestMap().get(step.type);
+      return {
+        manifest,
+        icon: manifest?.id?.startsWith('core/') ? 'memory' : 'api',
+        params: manifest?.params || []
+      };
+    });
+  });
+
   constructor(
     public dialogRef: MatDialogRef<CreateWorkflowDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { workflow: ModelsWorkflow | null },
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: { workflow: ModelsWorkflow | null } | null,
   ) {
     effect(() => {
       const s = this.schema();
       if (s) {
-        this.applySchemaToMonaco(s);
+        untracked(() => this.applySchemaToMonaco(s));
       }
     });
   }
@@ -658,7 +238,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
       ]);
       this.manifests.set(manifests || []);
       this.schema.set(schema);
-      if (this.data.workflow) {
+      if (this.data?.workflow) {
         this.applyWorkflowToForms(this.data.workflow);
       }
     } catch (e) {
@@ -849,7 +429,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
       ...workflowValue,
       vars: Object.keys(varsMap).length > 0 ? varsMap : undefined,
       steps: steps,
-      id: this.data.workflow?.id,
+      id: this.data?.workflow?.id,
     };
 
     return this.cleanObject(workflow);
@@ -1035,18 +615,6 @@ export class CreateWorkflowDialogComponent implements OnInit {
       manifest.params.forEach((p) => {
         if (p.name) {
           const validators = p.optional ? [] : [Validators.required];
-          if (p.regexFrontend) {
-            validators.push((c: AbstractControl) => {
-              const v = c.value;
-              if (!v || v.includes('${{')) return null;
-              try {
-                if (!new RegExp(p.regexFrontend!).test(v)) return { regexMatch: true };
-              } catch {
-                return null;
-              }
-              return null;
-            });
-          }
           paramsGroup.addControl(
             p.name,
             this.fb.control(initialParams?.[p.name] || '', validators),
