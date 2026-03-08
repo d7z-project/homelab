@@ -17,7 +17,7 @@ func (s *IntelligenceService) CreateSource(ctx context.Context, source *models.I
 		return err
 	}
 	s.updateCronJob(*source)
-	common.NotifyCluster(ctx, "intelligence_source_update", source.ID)
+	common.NotifyCluster(ctx, common.EventIntelligenceSourceUpdate, source.ID)
 	return nil
 }
 
@@ -35,7 +35,7 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.I
 	}
 
 	s.updateCronJob(*source)
-	common.NotifyCluster(ctx, "intelligence_source_update", source.ID)
+	common.NotifyCluster(ctx, common.EventIntelligenceSourceUpdate, source.ID)
 	commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Name, "Success", true)
 	return nil
 }
@@ -66,6 +66,6 @@ func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error
 		return err
 	}
 	s.removeCronJob(id)
-	common.NotifyCluster(ctx, "intelligence_source_delete", id)
+	common.NotifyCluster(ctx, common.EventIntelligenceSourceDelete, id)
 	return nil
 }

@@ -44,7 +44,7 @@ func NewAnalysisEngine(mmdb *MMDBManager) *AnalysisEngine {
 		mmdb:      mmdb,
 	}
 
-	common.RegisterEventHandler("ip_pool_update", func(ctx context.Context, payload string) {
+	common.RegisterEventHandler(common.EventIPPoolUpdate, func(ctx context.Context, payload string) {
 		groupID := payload
 		engine.RemoveCache(groupID)
 	})

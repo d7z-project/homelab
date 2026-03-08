@@ -168,7 +168,7 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 
 func notifySitePoolUpdate(ctx context.Context, groupID string) {
 	common.UpdateGlobalVersion(ctx, "network/site/pool/"+groupID)
-	common.NotifyCluster(ctx, "site_pool_update", groupID)
+	common.NotifyCluster(ctx, common.EventSitePoolUpdate, groupID)
 }
 
 func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, cursor int64, limit int, search string) (*models.SitePoolPreviewResponse, error) {

@@ -34,7 +34,7 @@ func NewMMDBManager(provider SourceProvider) *MMDBManager {
 	_ = m.Reload() // 尝试初始加载
 
 	// 注册集群事件: 当任意节点更新了 MMDB 文件时，所有节点重新加载
-	common.RegisterEventHandler("mmdb_update", func(ctx context.Context, payload string) {
+	common.RegisterEventHandler(common.EventMMDBUpdate, func(ctx context.Context, payload string) {
 		_ = m.Reload()
 	})
 

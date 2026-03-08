@@ -232,7 +232,7 @@ func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Wor
 	}
 	commonaudit.FromContext(ctx).Log("CreateWorkflow", workflow.ID, message, true)
 	GlobalTriggerManager.UpdateTriggers(*workflow)
-	common.NotifyCluster(ctx, "workflow_trigger_update", workflow.ID)
+	common.NotifyCluster(ctx, common.EventWorkflowTriggerUpdate, workflow.ID)
 	return workflow, nil
 }
 
@@ -312,7 +312,7 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *models.Workflow) (
 	}
 	commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, true)
 	GlobalTriggerManager.UpdateTriggers(*workflow)
-	common.NotifyCluster(ctx, "workflow_trigger_update", workflow.ID)
+	common.NotifyCluster(ctx, common.EventWorkflowTriggerUpdate, workflow.ID)
 	return workflow, nil
 }
 
@@ -381,7 +381,7 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 		return err
 	}
 	commonaudit.FromContext(ctx).Log("DeleteWorkflow", id, message, true)
-	common.NotifyCluster(ctx, "workflow_trigger_delete", id)
+	common.NotifyCluster(ctx, common.EventWorkflowTriggerDelete, id)
 	return nil
 }
 

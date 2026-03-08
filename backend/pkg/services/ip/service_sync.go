@@ -48,7 +48,7 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPS
 	err := repo.SaveSyncPolicy(ctx, policy)
 	if err == nil && policy.Enabled {
 		s.addCronJob(*policy)
-		common.NotifyCluster(ctx, "ip_sync_policy_update", policy.ID)
+		common.NotifyCluster(ctx, common.EventIPSyncPolicyUpdate, policy.ID)
 	}
 	commonaudit.FromContext(ctx).Log("CreateIPSyncPolicy", policy.Name, "Created", err == nil)
 	return err
@@ -71,7 +71,7 @@ func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *models.IPS
 		} else {
 			s.removeCronJob(policy.ID)
 		}
-		common.NotifyCluster(ctx, "ip_sync_policy_update", policy.ID)
+		common.NotifyCluster(ctx, common.EventIPSyncPolicyUpdate, policy.ID)
 	}
 	commonaudit.FromContext(ctx).Log("UpdateIPSyncPolicy", policy.Name, "Updated", err == nil)
 	return err
@@ -85,7 +85,7 @@ func (s *IPPoolService) DeleteSyncPolicy(ctx context.Context, id string) error {
 	err = repo.DeleteSyncPolicy(ctx, id)
 	if err == nil {
 		s.removeCronJob(id)
-		common.NotifyCluster(ctx, "ip_sync_policy_delete", id)
+		common.NotifyCluster(ctx, common.EventIPSyncPolicyDelete, id)
 	}
 	commonaudit.FromContext(ctx).Log("DeleteIPSyncPolicy", old.Name, "Deleted", err == nil)
 	return err
@@ -153,7 +153,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 	_ = repo.SaveSyncPolicy(ctx, policy)
 
 	if common.Subscriber != nil {
-		common.NotifyCluster(ctx, "ip_sync_run", id)
+		common.NotifyCluster(ctx, common.EventIPSyncRun, id)
 	} else {
 		// Standalone/Test mode fallback: execute locally in background
 		go func() {

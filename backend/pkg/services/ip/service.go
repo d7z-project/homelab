@@ -127,7 +127,7 @@ func NewIPPoolService(ae *AnalysisEngine, em *ExportManager) *IPPoolService {
 	}
 
 	// 集群事件: 其他节点更新了同步策略时，本节点刷新 cron 调度
-	common.RegisterEventHandler("ip_sync_policy_update", func(ctx context.Context, policyID string) {
+	common.RegisterEventHandler(common.EventIPSyncPolicyUpdate, func(ctx context.Context, policyID string) {
 		policy, err := repo.GetSyncPolicy(ctx, policyID)
 		if err != nil {
 			svc.removeCronJob(policyID)
@@ -140,12 +140,12 @@ func NewIPPoolService(ae *AnalysisEngine, em *ExportManager) *IPPoolService {
 		}
 	})
 
-	common.RegisterEventHandler("ip_sync_policy_delete", func(ctx context.Context, policyID string) {
+	common.RegisterEventHandler(common.EventIPSyncPolicyDelete, func(ctx context.Context, policyID string) {
 		svc.removeCronJob(policyID)
 	})
 
 	// 集群事件: 异步触发同步
-	common.RegisterEventHandler("ip_sync_run", func(ctx context.Context, policyID string) {
+	common.RegisterEventHandler(common.EventIPSyncRun, func(ctx context.Context, policyID string) {
 		// 注入系统权限
 		sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
 			Type: "sa",

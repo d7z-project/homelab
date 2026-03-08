@@ -7,6 +7,23 @@ import (
 	"sync"
 )
 
+const (
+	EventIPPoolUpdate       = "ip_pool_update"
+	EventIPSyncPolicyUpdate = "ip_sync_policy_update"
+	EventIPSyncPolicyDelete = "ip_sync_policy_delete"
+	EventIPSyncRun          = "ip_sync_run"
+
+	EventSitePoolUpdate = "site_pool_update"
+
+	EventMMDBUpdate               = "mmdb_update"
+	EventIntelligenceSourceUpdate = "intelligence_source_update"
+	EventIntelligenceSourceDelete = "intelligence_source_delete"
+
+	EventWorkflowExecute       = "workflow_execute"
+	EventWorkflowTriggerUpdate = "workflow_trigger_update"
+	EventWorkflowTriggerDelete = "workflow_trigger_delete"
+)
+
 type EventHandler func(ctx context.Context, payload string)
 
 var (

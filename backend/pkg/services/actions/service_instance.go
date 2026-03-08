@@ -86,7 +86,7 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 			Inputs:     finalInputs,
 		}
 		b, _ := json.Marshal(payload)
-		common.NotifyCluster(ctx, "workflow_execute", string(b))
+		common.NotifyCluster(ctx, common.EventWorkflowExecute, string(b))
 	} else {
 		// Standalone/Test mode fallback: execute locally
 		_, _ = GlobalExecutor.Execute(ctx, userID, workflow, triggerSource, finalInputs, instanceID)

@@ -32,7 +32,7 @@ func (m *TriggerManager) Start() {
 
 func (m *TriggerManager) registerClusterHandlers() {
 	// 当其他节点创建/更新了工作流时，本节点也需要刷新 cron 调度
-	common.RegisterEventHandler("workflow_trigger_update", func(ctx context.Context, workflowID string) {
+	common.RegisterEventHandler(common.EventWorkflowTriggerUpdate, func(ctx context.Context, workflowID string) {
 		wf, err := repo.GetWorkflow(ctx, workflowID)
 		if err != nil {
 			return
@@ -41,15 +41,15 @@ func (m *TriggerManager) registerClusterHandlers() {
 	})
 
 	// 当其他节点删除了工作流时，本节点也需要移除 cron 调度
-	common.RegisterEventHandler("workflow_trigger_delete", func(ctx context.Context, workflowID string) {
+	common.RegisterEventHandler(common.EventWorkflowTriggerDelete, func(ctx context.Context, workflowID string) {
 		m.RemoveTriggers(workflowID)
 	})
 
 	// 异步执行工作流事件
-	common.RegisterEventHandler("workflow_execute", func(ctx context.Context, payload string) {
+	common.RegisterEventHandler(common.EventWorkflowExecute, func(ctx context.Context, payload string) {
 		var req models.WorkflowExecutePayload
 		if err := json.Unmarshal([]byte(payload), &req); err != nil {
-			log.Printf("TriggerManager: failed to unmarshal workflow_execute payload: %v", err)
+			log.Printf("TriggerManager: failed to unmarshal "+common.EventWorkflowExecute+" payload: %v", err)
 			return
 		}
 
