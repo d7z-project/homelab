@@ -102,7 +102,10 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 			// 因为 taskCtx 在任务完成后会被 cancel，使用已取消的 ctx 发布事件
 			// 会导致 MemorySubscriber.Publish 的 select 直接走 ctx.Done() 分支，
 			// 消息被静默丢弃，MMDB Reload 永远无法被触发。
-			common.NotifyCluster(context.Background(), common.EventMMDBUpdate, source.ID)
+			common.NotifyCluster(context.Background(), common.EventMMDBUpdate, models.MMDBUpdatePayload{
+				ID:   source.ID,
+				Type: source.Type,
+			})
 		}
 		return finalErr
 	})

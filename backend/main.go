@@ -9,7 +9,7 @@ import (
 	"homelab/assets"
 	"homelab/pkg/common"
 	"homelab/pkg/controllers"
-	"homelab/pkg/models"
+
 	intrepo "homelab/pkg/repositories/intelligence"
 	"homelab/pkg/services/intelligence"
 	"homelab/pkg/services/ip"
@@ -124,8 +124,8 @@ func main() {
 	// Initialize Actions Scoped FS
 	actions.Init()
 	// Initialize IP Services
-	mmdbProvider := &mmdbSourceProvider{}
-	mmdbManager := ip.NewMMDBManager(mmdbProvider)
+	mmdbSources, _ := intrepo.ListSources(ctx)
+	mmdbManager := ip.NewMMDBManager(mmdbSources)
 	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
 	exportManager := ip.NewExportManager(analysisEngine)
 	exportManager.Reconcile(ctx)
@@ -227,14 +227,4 @@ func main() {
 		log.Printf("Server forced to shutdown: %v", err)
 	}
 	log.Println("Server exiting")
-}
-
-type mmdbSourceProvider struct{}
-
-func (p *mmdbSourceProvider) ListSources(ctx context.Context) ([]models.IntelligenceSource, error) {
-	return intrepo.ListSources(ctx)
-}
-
-func (p *mmdbSourceProvider) GetSource(ctx context.Context, id string) (*models.IntelligenceSource, error) {
-	return intrepo.GetSource(ctx, id)
 }

@@ -39,3 +39,9 @@ func (s *IntelligenceSource) Bind(r *http.Request) error {
 	}
 	return nil
 }
+
+// MMDBUpdatePayload defines the structured payload for cluster-wide MMDB reload events.
+type MMDBUpdatePayload struct {
+	Type string `json:"type"` // asn, city, country (mandatory)
+	ID   string `json:"id"`   // source id (mandatory)
+}

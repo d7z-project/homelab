@@ -1,6 +1,8 @@
 package ip_test
 
 import (
+	"context"
+	"encoding/json"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/ip"
@@ -8,17 +10,11 @@ import (
 	"net"
 	"testing"
 
-	"context"
-
 	"github.com/maxmind/mmdbwriter"
 	"github.com/maxmind/mmdbwriter/mmdbtype"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
-
-type mockProvider struct {
-	sources []models.IntelligenceSource
-}
 
 func createASNMMDB(t *testing.T, id string, asn uint32, org string) {
 	tree, _ := mmdbwriter.New(mmdbwriter.Options{DatabaseType: "GeoLite2-ASN"})
@@ -59,20 +55,16 @@ func TestMMDBIncrementalReload(t *testing.T) {
 	defer cleanup()
 	common.FS = afero.NewMemMapFs()
 
-	// 1. 准备初始库：ASN1=100(Google), ASN2=300(Cloudflare), City=London
+	// 1. 准备初始库：ASN1=100(Google), ASN2=300(Cloudflare), City=伦敦
 	createASNMMDB(t, "src-asn-1", 100, "Google")
 	createASNMMDB(t, "src-asn-2", 300, "Cloudflare")
 	createCityMMDB(t, "src-city", "伦敦")
 
-	provider := &mockProvider{
-		sources: []models.IntelligenceSource{
-			{ID: "src-asn-1", Type: "asn", Enabled: true},
-			{ID: "src-asn-2", Type: "asn", Enabled: true},
-			{ID: "src-city", Type: "city", Enabled: true},
-		},
-	}
-
-	manager := ip.NewMMDBManager(provider)
+	manager := ip.NewMMDBManager([]models.IntelligenceSource{
+		{ID: "src-asn-1", Type: "asn", Enabled: true},
+		{ID: "src-asn-2", Type: "asn", Enabled: true},
+		{ID: "src-city", Type: "city", Enabled: true},
+	})
 	ctx := context.Background()
 
 	// 验证初始加载
@@ -80,35 +72,27 @@ func TestMMDBIncrementalReload(t *testing.T) {
 	assert.Contains(t, []uint32{100, 300}, uint32(res.ASN))
 	assert.Equal(t, "伦敦", res.City)
 
-	// 2. 更新文件
+	// 2. 更新 ASN 文件并通过集群事件触发重载
 	createASNMMDB(t, "src-asn-1", 200, "Meta")
-	createASNMMDB(t, "src-asn-2", 400, "Fastly")
-	createCityMMDB(t, "src-city", "巴黎")
+	payloadJSON, _ := json.Marshal(models.MMDBUpdatePayload{ID: "src-asn-1", Type: "asn"})
+	common.TriggerEvent(ctx, common.EventMMDBUpdate, string(payloadJSON))
 
-	// 3. 仅触发 src-asn-1 (ID) 重载
-	err := manager.ReloadID(ctx, "src-asn-1")
-	assert.NoError(t, err)
-
-	// 验证
 	res, _ = manager.Lookup("8.8.8.8")
 	assert.Equal(t, "伦敦", res.City, "City should NOT be reloaded")
 
-	// 4. 触发类型重载 "city"
-	err = manager.ReloadType(ctx, "city")
-	assert.NoError(t, err)
+	// 3. 更新 City 文件并通过集群事件触发重载
+	createCityMMDB(t, "src-city", "巴黎")
+	payloadJSON, _ = json.Marshal(models.MMDBUpdatePayload{ID: "src-city", Type: "city"})
+	common.TriggerEvent(ctx, common.EventMMDBUpdate, string(payloadJSON))
+
 	res, _ = manager.Lookup("8.8.8.8")
-	assert.Equal(t, "巴黎", res.City, "City should now be updated")
-}
+	assert.Equal(t, "巴黎", res.City, "City should now be updated via event")
 
-func (m *mockProvider) ListSources(ctx context.Context) ([]models.IntelligenceSource, error) {
-	return m.sources, nil
-}
+	// 4. 再次更新并验证
+	createCityMMDB(t, "src-city", "北京")
+	payloadJSON, _ = json.Marshal(models.MMDBUpdatePayload{ID: "src-city", Type: "city"})
+	common.TriggerEvent(ctx, common.EventMMDBUpdate, string(payloadJSON))
 
-func (m *mockProvider) GetSource(ctx context.Context, id string) (*models.IntelligenceSource, error) {
-	for _, s := range m.sources {
-		if s.ID == id {
-			return &s, nil
-		}
-	}
-	return nil, nil
+	res, _ = manager.Lookup("8.8.8.8")
+	assert.Equal(t, "北京", res.City, "City should be updated via cluster event")
 }

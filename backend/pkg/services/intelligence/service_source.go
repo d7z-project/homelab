@@ -6,6 +6,8 @@ import (
 	commonaudit "homelab/pkg/common/audit"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/intelligence"
+	"homelab/pkg/services/ip"
+	"path/filepath"
 
 	"github.com/google/uuid"
 )
@@ -62,10 +64,23 @@ func (s *IntelligenceService) ListSources(ctx context.Context) ([]models.Intelli
 }
 
 func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error {
+	src, _ := repo.GetSource(ctx, id)
 	if err := repo.DeleteSource(ctx, id); err != nil {
 		return err
 	}
 	s.removeCronJob(id)
+
+	// 物理删除文件
+	path := filepath.Join(ip.MMDBDir, id+".mmdb")
+	_ = common.FS.Remove(path)
+
+	// 通知集群：配置已变且库需卸载
 	common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, id)
+	if src != nil {
+		common.NotifyCluster(ctx, common.EventMMDBUpdate, models.MMDBUpdatePayload{
+			ID:   id,
+			Type: src.Type,
+		})
+	}
 	return nil
 }

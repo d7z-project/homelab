@@ -17,148 +17,45 @@ const (
 	MMDBDir = "network/ip/mmdb"
 )
 
-type SourceProvider interface {
-	ListSources(ctx context.Context) ([]models.IntelligenceSource, error)
-	GetSource(ctx context.Context, id string) (*models.IntelligenceSource, error)
-}
-
 type MMDBManager struct {
-	mu       sync.RWMutex
-	asn      map[string]*geoip2.Reader
-	city     map[string]*geoip2.Reader
-	country  map[string]*geoip2.Reader
-	provider SourceProvider
+	mu      sync.RWMutex
+	asn     map[string]*geoip2.Reader
+	city    map[string]*geoip2.Reader
+	country map[string]*geoip2.Reader
 }
 
-func NewMMDBManager(provider SourceProvider) *MMDBManager {
+func NewMMDBManager(sources []models.IntelligenceSource) *MMDBManager {
 	m := &MMDBManager{
-		provider: provider,
-		asn:      make(map[string]*geoip2.Reader),
-		city:     make(map[string]*geoip2.Reader),
-		country:  make(map[string]*geoip2.Reader),
+		asn:     make(map[string]*geoip2.Reader),
+		city:    make(map[string]*geoip2.Reader),
+		country: make(map[string]*geoip2.Reader),
 	}
-	_ = m.ReloadAll(context.Background()) // 首次全量加载
 
-	// 注册集群事件: 当任意节点更新了 MMDB 文件时，特定数据库增量重新加载
-	common.RegisterEventHandler(common.EventMMDBUpdate, func(ctx context.Context, payload string) {
-		// 判断 payload 是类型还是 ID
-		switch payload {
-		case "asn", "city", "country":
-			_ = m.ReloadType(ctx, payload)
-		default:
-			_ = m.ReloadID(ctx, payload)
+	// 首次全量加载 (在注册事件之前，由调用方查询 DB 传入)
+	for _, src := range sources {
+		if src.Enabled {
+			m.reloadOne(src)
 		}
+	}
+
+	// 注册集群事件: 当任意节点更新了 MMDB 文件时，增量重新加载
+	common.RegisterEventHandler(common.EventMMDBUpdate, func(ctx context.Context, payload models.MMDBUpdatePayload) {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		m.reloadOne(models.IntelligenceSource{
+			ID:   payload.ID,
+			Type: payload.Type,
+		})
 	})
 
 	return m
 }
 
-// ReloadAll 全量刷新所有库，并清理已删除的库
-func (m *MMDBManager) ReloadAll(ctx context.Context) error {
-	if m.provider == nil {
-		return nil
-	}
-	sources, err := m.provider.ListSources(ctx)
-	if err != nil {
-		log.Printf("[MMDB] failed to list sources: %v", err)
-		return err
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// 记录当前存在的 ID，用于后续清理
-	existingIDs := make(map[string]bool)
-	for _, src := range sources {
-		existingIDs[src.ID] = true
-		if src.Enabled {
-			m.reloadOne(src)
-		} else {
-			m.remove(src.ID)
-		}
-	}
-
-	// 清理已在数据库中消失的库
-	for id, r := range m.asn {
-		if !existingIDs[id] {
-			_ = r.Close()
-			delete(m.asn, id)
-		}
-	}
-	for id, r := range m.city {
-		if !existingIDs[id] {
-			_ = r.Close()
-			delete(m.city, id)
-		}
-	}
-	for id, r := range m.country {
-		if !existingIDs[id] {
-			_ = r.Close()
-			delete(m.country, id)
-		}
-	}
-
-	return nil
-}
-
-// ReloadType 刷新特定类型的所有库 (asn, city, country)
-func (m *MMDBManager) ReloadType(ctx context.Context, tp string) error {
-	if m.provider == nil {
-		return nil
-	}
-	sources, err := m.provider.ListSources(ctx)
-	if err != nil {
-		log.Printf("[MMDB] failed to list sources: %v", err)
-		return err
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	for _, src := range sources {
-		if src.Type == tp {
-			if src.Enabled {
-				m.reloadOne(src)
-			} else {
-				m.remove(src.ID)
-			}
-		}
-	}
-	return nil
-}
-
-// ReloadID 精准刷新特定 ID 的库
-func (m *MMDBManager) ReloadID(ctx context.Context, id string) error {
-	if m.provider == nil {
-		return nil
-	}
-	src, err := m.provider.GetSource(ctx, id)
-	if err != nil {
-		log.Printf("[MMDB] failed to get source %q: %v", id, err)
-		return err
-	}
-	if src == nil {
-		m.mu.Lock()
-		m.remove(id)
-		m.mu.Unlock()
-		return nil
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if src.Enabled {
-		m.reloadOne(*src)
-	} else {
-		m.remove(src.ID)
-	}
-	return nil
-}
-
 func (m *MMDBManager) reloadOne(src models.IntelligenceSource) {
+	m.remove(src.ID)
 	path := fmt.Sprintf("%s/%s.mmdb", MMDBDir, src.ID)
 	reader := m.loadReader(path)
 	if reader != nil {
-		m.remove(src.ID) // 先确保移除并关闭旧的
 		switch src.Type {
 		case "asn":
 			m.asn[src.ID] = reader
