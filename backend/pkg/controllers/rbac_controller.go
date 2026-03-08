@@ -15,24 +15,24 @@ import (
 // @Summary List all service accounts
 // @Tags rbac
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name or id"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.ServiceAccount}
+// @Success 200 {object} common.CursorResponse{items=[]models.ServiceAccount}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [get]
 func ListServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
-	res, err := rbacservice.ListServiceAccounts(r.Context(), page, pageSize, search)
+	res, err := rbacservice.ScanServiceAccounts(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateServiceAccountHandler godoc
@@ -116,24 +116,24 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary List all roles
 // @Tags rbac
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name or id"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.Role}
+// @Success 200 {object} common.CursorResponse{items=[]models.Role}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/roles [get]
 func ListRolesHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
-	res, err := rbacservice.ListRoles(r.Context(), page, pageSize, search)
+	res, err := rbacservice.ScanRoles(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateRoleHandler godoc
@@ -217,24 +217,24 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary List all role bindings
 // @Tags rbac
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name or id"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.RoleBinding}
+// @Success 200 {object} common.CursorResponse{items=[]models.RoleBinding}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings [get]
 func ListRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
-	res, err := rbacservice.ListRoleBindings(r.Context(), page, pageSize, search)
+	res, err := rbacservice.ScanRoleBindings(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateRoleBindingHandler godoc

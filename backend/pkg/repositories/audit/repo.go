@@ -53,7 +53,7 @@ func SaveLog(ctx context.Context, log *models.AuditLog) error {
 	return db.Put(ctx, key, string(data), kv.TTLKeep)
 }
 
-func ListLogs(ctx context.Context, page, pageSize int, search string) ([]models.AuditLog, int, error) {
+func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.AuditLog], error) {
 	indexDB := common.DB.Child("system", "audit", "index")
 	indexItems, _ := indexDB.List(ctx, "")
 
@@ -63,74 +63,85 @@ func ListLogs(ctx context.Context, page, pageSize int, search string) ([]models.
 	}
 	sort.Strings(yearMonths)
 
-	var allItems []kv.Pair
-	// Iterate year-months descending
-	for i := len(yearMonths) - 1; i >= 0; i-- {
-		parts := strings.Split(yearMonths[i], "-")
-		if len(parts) == 2 {
-			db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
-			items, _ := db.List(ctx, "")
-			allItems = append(allItems, items...)
+	// 游标格式: YYYY-MM|InternalKey
+	targetYearMonth := ""
+	internalCursor := ""
+	if cursor != "" {
+		parts := strings.SplitN(cursor, "|", 2)
+		targetYearMonth = parts[0]
+		if len(parts) > 1 {
+			internalCursor = parts[1]
 		}
 	}
 
 	logs := make([]models.AuditLog, 0)
 	searchLower := strings.ToLower(search)
+	nextCursor := ""
+	hasMore := false
 
-	// Iterate backwards through gathered items for newest first
-	// Note: inside a single month, items are sorted ascending by timestamp key.
-	// We need to reverse them. Since we append months descending, and items within month ascending,
-	// we actually need to reverse the items *within* the month before appending, or just collect all
-	// and reverse the whole list if we want strictly descending by time across all.
-	// Actually, a simpler way is just to collect all, then sort or reverse.
-	// Let's just collect all, and since we need them descending, we will reverse the whole slice.
-	// Wait, allItems is constructed by appending month by month (newest month first).
-	// Within a month, items are ascending. So we must reverse items WITHIN the month.
-
-	var properlySortedItems []kv.Pair
+	// 从最新月份开始逆序查找
 	for i := len(yearMonths) - 1; i >= 0; i-- {
-		parts := strings.Split(yearMonths[i], "-")
-		if len(parts) == 2 {
-			db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
-			items, _ := db.List(ctx, "")
-			for j := len(items) - 1; j >= 0; j-- {
-				properlySortedItems = append(properlySortedItems, items[j])
-			}
+		ym := yearMonths[i]
+		if targetYearMonth != "" && ym > targetYearMonth {
+			continue // 跳过比游标月份更新的数据
 		}
-	}
 
-	for _, item := range properlySortedItems {
-		var log models.AuditLog
-		if err := json.Unmarshal([]byte(item.Value), &log); err != nil {
+		parts := strings.Split(ym, "-")
+		if len(parts) != 2 {
 			continue
 		}
 
-		if search != "" {
-			match := strings.Contains(strings.ToLower(log.Subject), searchLower) ||
-				strings.Contains(strings.ToLower(log.Action), searchLower) ||
-				strings.Contains(strings.ToLower(log.Resource), searchLower) ||
-				strings.Contains(strings.ToLower(log.TargetID), searchLower) ||
-				strings.Contains(strings.ToLower(log.Message), searchLower)
-			if !match {
+		db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
+		
+		// 注意：Audit 存入时 Key 是 "Timestamp-UUID"，List 默认升序。
+		// 但审计日志通常需要倒序（最新在前）。
+		// 因为 KV.ListCursor 暂不支持逆序，我们仍然需要获取该月数据并内存倒序。
+		// 优化：如果该月数据巨大，这仍然有压力。但由于是按月分片，通常可控。
+		items, _ := db.List(ctx, "")
+		
+		// 内存倒序处理
+		for j := len(items) - 1; j >= 0; j-- {
+			item := items[j]
+			if ym == targetYearMonth && internalCursor != "" && item.Key >= internalCursor {
+				continue // 跳过已读数据（Key 是 Timestamp-UUID，倒序时 Key 越小越旧）
+			}
+
+			var log models.AuditLog
+			if err := json.Unmarshal([]byte(item.Value), &log); err != nil {
 				continue
 			}
+
+			if search != "" {
+				match := strings.Contains(strings.ToLower(log.Subject), searchLower) ||
+					strings.Contains(strings.ToLower(log.Action), searchLower) ||
+					strings.Contains(strings.ToLower(log.Resource), searchLower) ||
+					strings.Contains(strings.ToLower(log.TargetID), searchLower) ||
+					strings.Contains(strings.ToLower(log.Message), searchLower)
+				if !match {
+					continue
+				}
+			}
+
+			logs = append(logs, log)
+			if len(logs) >= limit {
+				nextCursor = fmt.Sprintf("%s|%s", ym, item.Key)
+				hasMore = true
+				break
+			}
 		}
-		logs = append(logs, log)
+
+		if len(logs) >= limit {
+			break
+		}
+		// 如果还没满，重置 targetYearMonth 以便继续扫描下一个（更旧的）月份
+		targetYearMonth = ""
 	}
 
-	total := len(logs)
-	start := (page - 1) * pageSize
-	if start < 0 {
-		start = 0
-	}
-	if start >= total {
-		return []models.AuditLog{}, total, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-	return logs[start:end], total, nil
+	return &models.PaginationResponse[models.AuditLog]{
+		Items:      logs,
+		NextCursor: nextCursor,
+		HasMore:    hasMore,
+	}, nil
 }
 
 func CleanupLogs(ctx context.Context, days int) (int, error) {

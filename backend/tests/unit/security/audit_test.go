@@ -1,7 +1,6 @@
 package security_test
 
 import (
-	"context"
 	"fmt"
 	"homelab/pkg/models"
 	auditrepo "homelab/pkg/repositories/audit"
@@ -15,7 +14,7 @@ func TestAuditLogsWorkflow(t *testing.T) {
 	teardown := tests.SetupTestDB()
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := tests.SetupMockRootContext()
 
 	// 1. 创建一批测试日志
 	for i := 1; i <= 25; i++ {
@@ -34,35 +33,31 @@ func TestAuditLogsWorkflow(t *testing.T) {
 
 	// 2. 验证分页 (第一页)
 	// 应返回最新的 10 条 (25, 24, ..., 16)
-	resp, err := auditservice.ListLogs(ctx, 1, 10, "")
+	res, err := auditservice.ScanLogs(ctx, "", 10, "")
 	if err != nil {
-		t.Fatalf("ListLogs Page 1 failed: %v", err)
+		t.Fatalf("ScanLogs failed: %v", err)
 	}
-	items := resp.Items.([]interface{})
-	if len(items) != 10 {
-		t.Errorf("Expected 10 items, got %d", len(items))
-	}
-	if resp.Total != 25 {
-		t.Errorf("Expected total 25, got %d", resp.Total)
+	if len(res.Items) != 10 {
+		t.Errorf("Expected 10 items, got %d", len(res.Items))
 	}
 
 	// 验证顺序 (最新优先)
-	firstLog := items[0].(models.AuditLog)
+	firstLog := res.Items[0]
 	if firstLog.Subject != "user-25" {
 		t.Errorf("Expected first item subject 'user-25', got '%s'", firstLog.Subject)
 	}
 
-	// 3. 验证分页 (第三页)
-	// 应返回最后 5 条 (5, 4, 3, 2, 1)
-	resp3, _ := auditservice.ListLogs(ctx, 3, 10, "")
-	items3 := resp3.Items.([]interface{})
-	if len(items3) != 5 {
-		t.Errorf("Expected 5 items on page 3, got %d", len(items3))
+	// 3. 验证游标分页 (连续获取)
+	// 第一页 10 条，第二页 10 条，第三页应剩 5 条
+	res2, _ := auditservice.ScanLogs(ctx, res.NextCursor, 10, "")
+	res3, _ := auditservice.ScanLogs(ctx, res2.NextCursor, 10, "")
+	if len(res3.Items) != 5 {
+		t.Errorf("Expected 5 items on the 3rd fetch, got %d", len(res3.Items))
 	}
 
 	// 4. 验证搜索
-	respSearch, _ := auditservice.ListLogs(ctx, 1, 10, "user-05")
-	if respSearch.Total != 1 {
-		t.Errorf("Expected 1 match for 'user-05', got %d", respSearch.Total)
+	resSearch, _ := auditservice.ScanLogs(ctx, "", 10, "user-05")
+	if len(resSearch.Items) != 1 {
+		t.Errorf("Expected 1 match for 'user-05', got %d", len(resSearch.Items))
 	}
 }

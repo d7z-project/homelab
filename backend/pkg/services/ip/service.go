@@ -20,11 +20,11 @@ import (
 func init() {
 	rbac.RegisterResourceWithVerbs("network/ip", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
-		groups, _, err := repo.ListGroups(ctx, 1, 1000, "")
+		groupsRes, err := repo.ScanGroups(ctx, "", 1000, "")
 		if err != nil {
 			return nil, err
 		}
-		for _, g := range groups {
+		for _, g := range groupsRes.Items {
 			if strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: g.ID,
@@ -36,21 +36,20 @@ func init() {
 		return res, nil
 	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
-	discovery.Register("network/ip/pools", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
-		groups, _, err := repo.ListGroups(ctx, 1, 1000, search)
+	discovery.Register("network/ip/pools", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
+		groupsRes, err := repo.ScanGroups(ctx, "", 1000, search)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		var items []models.LookupItem
-		for _, g := range groups {
+		for _, g := range groupsRes.Items {
 			items = append(items, models.LookupItem{
 				ID:          g.ID,
 				Name:        g.Name,
 				Description: g.Description,
 			})
 		}
-		result, total := discovery.Paginate(items, offset, limit)
-		return result, total, nil
+		return discovery.Paginate(items, cursor, limit), nil
 	})
 }
 
@@ -191,10 +190,12 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 	}
 
 	// 然后调度启用的策略
-	policies, _, _ := repo.ListSyncPolicies(sysCtx, 1, 10000, "")
-	for _, p := range policies {
-		if p.Enabled {
-			s.addCronJob(p)
+	policiesRes, err := repo.ScanSyncPolicies(sysCtx, "", 10000, "")
+	if err == nil {
+		for _, p := range policiesRes.Items {
+			if p.Enabled {
+				s.addCronJob(p)
+			}
 		}
 	}
 }

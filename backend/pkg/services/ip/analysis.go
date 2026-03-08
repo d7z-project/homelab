@@ -123,11 +123,11 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 
 	// 如果没有指定 groupIDs，则查询所有
 	if len(groupIDs) == 0 {
-		groups, _, err := repo.ListGroups(ctx, 1, 1000, "")
+		res, err := repo.ScanGroups(ctx, "", 1000, "")
 		if err != nil {
 			return nil, err
 		}
-		for _, g := range groups {
+		for _, g := range res.Items {
 			groupIDs = append(groupIDs, g.ID)
 		}
 	}

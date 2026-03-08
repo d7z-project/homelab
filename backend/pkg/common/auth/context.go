@@ -48,3 +48,11 @@ func PermissionsFromContext(ctx context.Context) *models.ResourcePermissions {
 func WithPermissions(ctx context.Context, perms *models.ResourcePermissions) context.Context {
 	return context.WithValue(ctx, PermissionsContextKey, perms)
 }
+
+// SystemContext returns a background context with root permissions.
+func SystemContext() context.Context {
+	ctx := context.Background()
+	ctx = WithAuth(ctx, &AuthContext{Type: "root"})
+	ctx = WithPermissions(ctx, &models.ResourcePermissions{AllowedAll: true})
+	return ctx
+}

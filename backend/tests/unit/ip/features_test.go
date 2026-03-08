@@ -39,10 +39,10 @@ func TestIPExportCRUD(t *testing.T) {
 	assert.Equal(t, "Test Export", e.Name)
 
 	// List
-	list, total, err := service.ListExports(ctx, 1, 10, "")
+	res, err := service.ScanExports(ctx, "", 10, "")
 	assert.NoError(t, err)
-	assert.Equal(t, 1, total)
-	assert.Equal(t, "test_export", list[0].ID)
+	assert.Len(t, res.Items, 1)
+	assert.Equal(t, "test_export", res.Items[0].ID)
 
 	// Update
 	e.Name = "Updated Export"

@@ -21,18 +21,23 @@ func InitIntelligenceControllers(service *intservice.IntelligenceService) {
 // @Summary List intelligence sources
 // @Tags network/intelligence
 // @Produce json
-// @Success 200 {array} models.IntelligenceSource
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
+// @Param search query string false "Search"
+// @Success 200 {object} common.CursorResponse{items=[]models.IntelligenceSource}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sources [get]
 func ListIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
-	items, err := intelligenceService.ListSources(r.Context())
+	cursor, limit := getCursorParams(r)
+	search := r.URL.Query().Get("search")
+	res, err := intelligenceService.ScanSources(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, items)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateIntelligenceSourceHandler godoc

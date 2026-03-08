@@ -16,7 +16,7 @@ type LookupItem struct {
 type LookupRequest struct {
 	Code   string `json:"code"`
 	Search string `json:"search"`
-	Offset int    `json:"offset"`
+	Cursor string `json:"cursor"`
 	Limit  int    `json:"limit"`
 }
 

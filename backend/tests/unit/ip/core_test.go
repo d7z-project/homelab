@@ -129,10 +129,10 @@ func TestIPService(t *testing.T) {
 	assert.Equal(t, "New Name", g2.Name)
 
 	// 4. 列表
-	list, total, err := service.ListGroups(ctx, 1, 10, "")
+	res, err := service.ScanGroups(ctx, "", 10, "")
 	assert.NoError(t, err)
-	assert.Equal(t, 1, total)
-	assert.Equal(t, "test_group", list[0].ID)
+	assert.Equal(t, int64(0), res.Total) // Scan may not return total
+	assert.Equal(t, "test_group", res.Items[0].ID)
 
 	// 5. Lookup (Discovery)
 	lg, err := service.LookupGroup(ctx, "test_group")

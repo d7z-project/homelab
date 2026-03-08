@@ -42,14 +42,14 @@ func HandleError(w http.ResponseWriter, r *http.Request, err error) {
 	common.InternalServerError(w, r, 500, err.Error())
 }
 
-func getPaginationParams(r *http.Request) (int, int) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
+func getCursorParams(r *http.Request) (string, int) {
+	cursor := r.URL.Query().Get("cursor")
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 {
+		limit = 20
 	}
-	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
-	if pageSize < 1 {
-		pageSize = 15
+	if limit > 100 {
+		limit = 100
 	}
-	return page, pageSize
+	return cursor, limit
 }

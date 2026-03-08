@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
@@ -15,40 +14,11 @@ import (
 	"github.com/google/uuid"
 )
 
-func ListRecords(ctx context.Context, domainID string, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	records, _, err := dnsrepo.ListRecords(ctx, domainID, 0, 10000, search)
-	if err != nil {
-		return nil, err
+func ScanRecords(ctx context.Context, domainID string, cursor string, limit int, search string) (*models.PaginationResponse[models.Record], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/dns") {
+		return nil, fmt.Errorf("%w: network/dns", commonauth.ErrPermissionDenied)
 	}
-	perms := commonauth.PermissionsFromContext(ctx)
-	domainCache := make(map[string]*models.Domain)
-
-	var filtered []models.Record
-	for _, r := range records {
-		dom, ok := domainCache[r.DomainID]
-		if !ok {
-			dom, _ = dnsrepo.GetDomain(ctx, r.DomainID)
-			domainCache[r.DomainID] = dom
-		}
-		if dom != nil && (perms.IsAllowed("network/dns/"+dom.Name) || perms.IsAllowed("network/dns/"+dom.Name+"/"+r.Name+"/"+r.Type)) {
-			filtered = append(filtered, r)
-		}
-	}
-
-	total := len(filtered)
-	start := (page - 1) * pageSize
-	if start >= total {
-		return &common.PaginatedResponse{Items: []interface{}{}, Total: total, Page: page}, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-	var items []interface{}
-	for i := start; i < end; i++ {
-		items = append(items, filtered[i])
-	}
-	return &common.PaginatedResponse{Items: items, Total: total, Page: page}, nil
+	return dnsrepo.ScanRecords(ctx, domainID, cursor, limit, search)
 }
 
 func CreateRecord(ctx context.Context, record *models.Record) (*models.Record, error) {

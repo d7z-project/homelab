@@ -9,16 +9,30 @@ servers:
 paths:
   /actions/instances:
     get:
-      description: Retrieves a history of all triggered workflow instances and their
-        current status.
+      description: Retrieves a history of triggered workflow instances with cursor-based
+        pagination.
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: Limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search
+        in: query
+        name: search
+        schema:
+          type: string
       responses:
         "200":
           content:
             application/json:
               schema:
-                items:
-                  $ref: "#/components/schemas/models.TaskInstance"
-                type: array
+                $ref: "#/components/schemas/_actions_instances_get_200_response"
           description: OK
         "401":
           content:
@@ -367,15 +381,30 @@ paths:
       - actions
   /actions/workflows:
     get:
-      description: Retrieves a list of all defined workflow templates.
+      description: Retrieves a list of defined workflow templates with cursor-based
+        pagination.
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: Limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search
+        in: query
+        name: search
+        schema:
+          type: string
       responses:
         "200":
           content:
             application/json:
               schema:
-                items:
-                  $ref: "#/components/schemas/models.Workflow"
-                type: array
+                $ref: "#/components/schemas/_actions_workflows_get_200_response"
           description: OK
         "401":
           content:
@@ -699,14 +728,14 @@ paths:
   /audit/logs:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search query
@@ -882,11 +911,11 @@ paths:
         name: search
         schema:
           type: string
-      - description: Offset
+      - description: Cursor
         in: query
-        name: offset
+        name: cursor
         schema:
-          type: integer
+          type: string
       - description: Limit
         in: query
         name: limit
@@ -897,7 +926,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/models.LookupResponse"
+                $ref: "#/components/schemas/_discovery_lookup_get_200_response"
           description: OK
         "400":
           content:
@@ -922,6 +951,48 @@ paths:
       summary: Discovery lookup
       tags:
       - discovery
+  /dns/domains:
+    get:
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: Limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_dns_domains_get_200_response"
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Forbidden
+      security:
+      - ApiKeyAuth: []
+      summary: List all DNS domains
+      tags:
+      - dns
   /info:
     get:
       responses:
@@ -989,41 +1060,6 @@ paths:
       tags:
       - auth
   /network/dns/domains:
-    get:
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        schema:
-          type: integer
-      - description: Items per page
-        in: query
-        name: pageSize
-        schema:
-          type: integer
-      - description: Search by name
-        in: query
-        name: search
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/_network_dns_domains_get_200_response"
-          description: OK
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/common.Response"
-          description: Unauthorized
-      security:
-      - ApiKeyAuth: []
-      summary: List all domains
-      tags:
-      - network/dns
     post:
       requestBody:
         content:
@@ -1189,14 +1225,14 @@ paths:
         name: domainId
         schema:
           type: string
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name or value
@@ -1354,14 +1390,28 @@ paths:
       x-codegen-request-body-name: record
   /network/intelligence/sources:
     get:
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: Limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search
+        in: query
+        name: search
+        schema:
+          type: string
       responses:
         "200":
           content:
             application/json:
               schema:
-                items:
-                  $ref: "#/components/schemas/models.IntelligenceSource"
-                type: array
+                $ref: "#/components/schemas/_network_intelligence_sources_get_200_response"
           description: OK
         "401":
           content:
@@ -1549,6 +1599,39 @@ paths:
       summary: Trigger manual sync
       tags:
       - network/intelligence
+  /network/intelligence/sync/{id}/cancel:
+    post:
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Task Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel intelligence sync task
+      tags:
+      - network/intelligence
   /network/ip/analysis/hit-test:
     post:
       requestBody:
@@ -1619,14 +1702,14 @@ paths:
   /network/ip/exports:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name
@@ -1792,6 +1875,39 @@ paths:
       summary: Get export task status
       tags:
       - network/ip
+  /network/ip/exports/task/{taskId}/cancel:
+    post:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Task Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel an IP export task
+      tags:
+      - network/ip
   /network/ip/exports/tasks:
     get:
       responses:
@@ -1940,14 +2056,14 @@ paths:
   /network/ip/pools:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name
@@ -2265,14 +2381,14 @@ paths:
   /network/ip/sync:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name
@@ -2478,14 +2594,14 @@ paths:
   /network/site/exports:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name
@@ -2601,6 +2717,39 @@ paths:
                 $ref: "#/components/schemas/site.ExportTask"
           description: OK
       summary: Get site export task status
+      tags:
+      - network/site
+  /network/site/exports/task/{taskId}/cancel:
+    post:
+      parameters:
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/common.Response"
+          description: Task Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel a site export task
       tags:
       - network/site
   /network/site/exports/tasks:
@@ -2719,14 +2868,14 @@ paths:
   /network/site/pools:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name
@@ -2904,14 +3053,14 @@ paths:
   /rbac/rolebindings:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name or id
@@ -3076,14 +3225,14 @@ paths:
   /rbac/roles:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name or id
@@ -3248,14 +3397,14 @@ paths:
   /rbac/serviceaccounts:
     get:
       parameters:
-      - description: Page number
+      - description: Cursor
         in: query
-        name: page
+        name: cursor
         schema:
-          type: integer
-      - description: Items per page
+          type: string
+      - description: Limit
         in: query
-        name: pageSize
+        name: limit
         schema:
           type: integer
       - description: Search by name or id
@@ -3535,20 +3684,20 @@ components:
         processorId:
           type: string
       type: object
-    common.PaginatedResponse:
+    common.CursorResponse:
       properties:
+        hasMore:
+          type: boolean
         items:
           type: object
-        page:
-          type: integer
-        pageSize:
-          type: integer
+        nextCursor:
+          type: string
         total:
           type: integer
       type: object
     common.Response:
       example:
-        code: 6
+        code: 1
         data: "{}"
         message: message
       properties:
@@ -3576,13 +3725,17 @@ components:
       example:
         createdAt: createdAt
         recordCount: 6
+        checksum: checksum
         format: format
         progress: 0.8008281904610115
-        resultURL: resultURL
+        resultUrl: resultUrl
         id: id
         error: error
-        status: status
+        status: "{}"
       properties:
+        checksum:
+          description: Rule + GroupChecksums + Format
+          type: string
         createdAt:
           type: string
         error:
@@ -3592,16 +3745,16 @@ components:
         id:
           type: string
         progress:
-          format: float64
           type: number
         recordCount:
-          format: int64
           type: integer
-        resultURL:
+        resultUrl:
           type: string
         status:
-          description: "Pending, Running, Success, Failed"
-          type: string
+          allOf:
+          - $ref: "#/components/schemas/models.TaskStatus"
+          description: "Pending, Running, Success, Failed, Cancelled"
+          type: object
       type: object
     models.AuditCleanupResponse:
       example:
@@ -3795,7 +3948,7 @@ components:
     models.IPGroup:
       example:
         createdAt: createdAt
-        entryCount: 5
+        entryCount: 6
         checksum: checksum
         name: name
         description: description
@@ -3915,11 +4068,12 @@ components:
         sourceUrl: sourceUrl
         createdAt: createdAt
         name: name
+        progress: 6.027456183070403
         targetGroupId: targetGroupId
         id: id
         config:
           key: config
-        lastStatus: lastStatus
+        lastStatus: "{}"
         updatedAt: updatedAt
       properties:
         config:
@@ -3945,13 +4099,17 @@ components:
         lastRunAt:
           type: string
         lastStatus:
+          allOf:
+          - $ref: "#/components/schemas/models.TaskStatus"
           description: "\"success\", \"failed\""
-          type: string
+          type: object
         mode:
           description: "\"overwrite\", \"append\""
           type: string
         name:
           type: string
+        progress:
+          type: number
         sourceUrl:
           type: string
         targetGroupId:
@@ -3966,14 +4124,21 @@ components:
         lastUpdatedAt: lastUpdatedAt
         errorMessage: errorMessage
         name: name
+        progress: 6.027456183070403
         id: id
         type: type
+        config:
+          key: config
         enabled: true
         url: url
-        status: status
+        status: "{}"
       properties:
         autoUpdate:
           type: boolean
+        config:
+          additionalProperties:
+            type: string
+          type: object
         cron:
           type: string
         enabled:
@@ -3986,9 +4151,13 @@ components:
           type: string
         name:
           type: string
+        progress:
+          type: number
         status:
+          allOf:
+          - $ref: "#/components/schemas/models.TaskStatus"
           description: "Ready, Downloading, Error"
-          type: string
+          type: object
         type:
           description: "asn, city, country"
           type: string
@@ -4040,26 +4209,6 @@ components:
         name:
           type: string
       type: object
-    models.LookupResponse:
-      example:
-        total: 0
-        items:
-        - icon: icon
-          name: name
-          description: description
-          id: id
-        - icon: icon
-          name: name
-          description: description
-          id: id
-      properties:
-        items:
-          items:
-            $ref: "#/components/schemas/models.LookupItem"
-          type: array
-        total:
-          type: integer
-      type: object
     models.ParamDefinition:
       example:
         lookupCode: lookupCode
@@ -4105,9 +4254,9 @@ components:
         comments: comments
         name: name
         id: id
-        priority: 5
+        priority: 6
         type: type
-        ttl: 5
+        ttl: 1
         value: value
         domainId: domainId
         enabled: true
@@ -4356,7 +4505,7 @@ components:
     models.SiteGroup:
       example:
         createdAt: createdAt
-        entryCount: 5
+        entryCount: 6
         checksum: checksum
         name: name
         description: description
@@ -4400,7 +4549,18 @@ components:
       type: object
     models.SitePoolEntryRequest:
       properties:
+        newTags:
+          description: 新增或更新后的标签
+          items:
+            type: string
+          type: array
+        oldTags:
+          description: 被替换的标签（用于编辑场景）
+          items:
+            type: string
+          type: array
         tags:
+          description: 已废弃，由 NewTags 代替
           items:
             type: string
           type: array
@@ -4566,7 +4726,7 @@ components:
           if: if
         userId: userId
         finishedAt: finishedAt
-        currentStep: 0
+        currentStep: 6
         id: id
         logs:
         - stepId: stepId
@@ -4576,7 +4736,7 @@ components:
           message: message
           timestamp: timestamp
         workflowId: workflowId
-        status: status
+        status: "{}"
       properties:
         currentStep:
           description: "当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)"
@@ -4608,8 +4768,10 @@ components:
         startedAt:
           type: string
         status:
+          allOf:
+          - $ref: "#/components/schemas/models.TaskStatus"
           description: "Pending, Running, Success, Failed, Cancelled"
-          type: string
+          type: object
         stepTimings:
           additionalProperties:
             $ref: "#/components/schemas/models.StepTiming"
@@ -4649,6 +4811,22 @@ components:
         nextOffset:
           type: integer
       type: object
+    models.TaskStatus:
+      description: "任务执行状态: Pending(阻塞), Running(执行), Success(完成), Failed(失败), Cancelled(取\
+        消)"
+      enum:
+      - Pending
+      - Running
+      - Success
+      - Failed
+      - Cancelled
+      type: string
+      x-enum-varnames:
+      - TaskStatusPending
+      - TaskStatusRunning
+      - TaskStatusSuccess
+      - TaskStatusFailed
+      - TaskStatusCancelled
     models.VarDefinition:
       example:
         default: default
@@ -4694,7 +4872,7 @@ components:
           type: type
           if: if
         enabled: true
-        timeout: 0
+        timeout: 6
         cronExpr: cronExpr
         createdAt: createdAt
         webhookEnabled: true
@@ -4757,10 +4935,10 @@ components:
         recordCount: 6
         format: format
         progress: 0.8008281904610115
-        resultURL: resultURL
+        resultUrl: resultUrl
         id: id
         error: error
-        status: status
+        status: "{}"
       properties:
         createdAt:
           type: string
@@ -4771,19 +4949,198 @@ components:
         id:
           type: string
         progress:
-          format: float64
           type: number
         recordCount:
-          format: int64
           type: integer
-        resultURL:
+        resultUrl:
           type: string
         status:
-          type: string
+          allOf:
+          - $ref: "#/components/schemas/models.TaskStatus"
+          description: "Pending, Running, Success, Failed, Cancelled"
+          type: object
       type: object
+    _actions_instances_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.CursorResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.TaskInstance"
+            type: array
+        type: object
+      example:
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
+        items:
+        - outputs:
+            key: outputs
+          serviceAccountId: serviceAccountId
+          workspace: workspace
+          inputs:
+            key: inputs
+          startedAt: startedAt
+          trigger: trigger
+          error: error
+          stepTimings:
+            key:
+              startedAt: startedAt
+              finishedAt: finishedAt
+          steps:
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          userId: userId
+          finishedAt: finishedAt
+          currentStep: 6
+          id: id
+          logs:
+          - stepId: stepId
+            message: message
+            timestamp: timestamp
+          - stepId: stepId
+            message: message
+            timestamp: timestamp
+          workflowId: workflowId
+          status: "{}"
+        - outputs:
+            key: outputs
+          serviceAccountId: serviceAccountId
+          workspace: workspace
+          inputs:
+            key: inputs
+          startedAt: startedAt
+          trigger: trigger
+          error: error
+          stepTimings:
+            key:
+              startedAt: startedAt
+              finishedAt: finishedAt
+          steps:
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          userId: userId
+          finishedAt: finishedAt
+          currentStep: 6
+          id: id
+          logs:
+          - stepId: stepId
+            message: message
+            timestamp: timestamp
+          - stepId: stepId
+            message: message
+            timestamp: timestamp
+          workflowId: workflowId
+          status: "{}"
+    _actions_workflows_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.CursorResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.Workflow"
+            type: array
+        type: object
+      example:
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
+        items:
+        - serviceAccountId: serviceAccountId
+          cronEnabled: true
+          description: description
+          steps:
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          enabled: true
+          timeout: 6
+          cronExpr: cronExpr
+          createdAt: createdAt
+          webhookEnabled: true
+          name: name
+          id: id
+          vars:
+            key:
+              default: default
+              description: description
+              regexBackend: regexBackend
+              regexFrontend: regexFrontend
+              required: true
+          webhookToken: webhookToken
+          updatedAt: updatedAt
+        - serviceAccountId: serviceAccountId
+          cronEnabled: true
+          description: description
+          steps:
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          - fail: true
+            name: name
+            id: id
+            params:
+              key: params
+            type: type
+            if: if
+          enabled: true
+          timeout: 6
+          cronExpr: cronExpr
+          createdAt: createdAt
+          webhookEnabled: true
+          name: name
+          id: id
+          vars:
+            key:
+              default: default
+              description: description
+              regexBackend: regexBackend
+              regexFrontend: regexFrontend
+              required: true
+          webhookToken: webhookToken
+          updatedAt: updatedAt
     _audit_logs_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -4791,9 +5148,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - targetId: targetId
           resource: resource
@@ -4815,9 +5172,31 @@ components:
           message: message
           status: status
           timestamp: timestamp
-    _network_dns_domains_get_200_response:
+    _discovery_lookup_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.LookupItem"
+            type: array
+        type: object
+      example:
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
+        items:
+        - icon: icon
+          name: name
+          description: description
+          id: id
+        - icon: icon
+          name: name
+          description: description
+          id: id
+    _dns_domains_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -4825,9 +5204,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - createdAt: createdAt
           comments: comments
@@ -4843,7 +5222,7 @@ components:
           updatedAt: updatedAt
     _network_dns_records_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -4851,31 +5230,71 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - comments: comments
           name: name
           id: id
-          priority: 5
+          priority: 6
           type: type
-          ttl: 5
+          ttl: 1
           value: value
           domainId: domainId
           enabled: true
         - comments: comments
           name: name
           id: id
-          priority: 5
+          priority: 6
           type: type
-          ttl: 5
+          ttl: 1
           value: value
           domainId: domainId
           enabled: true
+    _network_intelligence_sources_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.CursorResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.IntelligenceSource"
+            type: array
+        type: object
+      example:
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
+        items:
+        - cron: cron
+          autoUpdate: true
+          lastUpdatedAt: lastUpdatedAt
+          errorMessage: errorMessage
+          name: name
+          progress: 6.027456183070403
+          id: id
+          type: type
+          config:
+            key: config
+          enabled: true
+          url: url
+          status: "{}"
+        - cron: cron
+          autoUpdate: true
+          lastUpdatedAt: lastUpdatedAt
+          errorMessage: errorMessage
+          name: name
+          progress: 6.027456183070403
+          id: id
+          type: type
+          config:
+            key: config
+          enabled: true
+          url: url
+          status: "{}"
     _network_ip_exports_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -4883,9 +5302,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - createdAt: createdAt
           groupIds:
@@ -4907,7 +5326,7 @@ components:
           updatedAt: updatedAt
     _network_ip_pools_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -4915,19 +5334,19 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - createdAt: createdAt
-          entryCount: 5
+          entryCount: 6
           checksum: checksum
           name: name
           description: description
           id: id
           updatedAt: updatedAt
         - createdAt: createdAt
-          entryCount: 5
+          entryCount: 6
           checksum: checksum
           name: name
           description: description
@@ -4935,7 +5354,7 @@ components:
           updatedAt: updatedAt
     _network_ip_sync_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -4943,9 +5362,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - cron: cron
           lastRunAt: lastRunAt
@@ -4957,11 +5376,12 @@ components:
           sourceUrl: sourceUrl
           createdAt: createdAt
           name: name
+          progress: 6.027456183070403
           targetGroupId: targetGroupId
           id: id
           config:
             key: config
-          lastStatus: lastStatus
+          lastStatus: "{}"
           updatedAt: updatedAt
         - cron: cron
           lastRunAt: lastRunAt
@@ -4973,15 +5393,16 @@ components:
           sourceUrl: sourceUrl
           createdAt: createdAt
           name: name
+          progress: 6.027456183070403
           targetGroupId: targetGroupId
           id: id
           config:
             key: config
-          lastStatus: lastStatus
+          lastStatus: "{}"
           updatedAt: updatedAt
     _network_site_exports_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -4989,9 +5410,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - createdAt: createdAt
           groupIds:
@@ -5013,7 +5434,7 @@ components:
           updatedAt: updatedAt
     _network_site_pools_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -5021,19 +5442,19 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - createdAt: createdAt
-          entryCount: 5
+          entryCount: 6
           checksum: checksum
           name: name
           description: description
           id: id
           updatedAt: updatedAt
         - createdAt: createdAt
-          entryCount: 5
+          entryCount: 6
           checksum: checksum
           name: name
           description: description
@@ -5041,7 +5462,7 @@ components:
           updatedAt: updatedAt
     _rbac_rolebindings_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -5049,9 +5470,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - serviceAccountId: serviceAccountId
           roleIds:
@@ -5069,7 +5490,7 @@ components:
           enabled: true
     _rbac_roles_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -5077,9 +5498,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - comments: comments
           name: name
@@ -5107,7 +5528,7 @@ components:
           id: id
     _rbac_serviceaccounts_get_200_response:
       allOf:
-      - $ref: "#/components/schemas/common.PaginatedResponse"
+      - $ref: "#/components/schemas/common.CursorResponse"
       - properties:
           items:
             items:
@@ -5115,9 +5536,9 @@ components:
             type: array
         type: object
       example:
-        total: 1
-        pageSize: 6
-        page: 0
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
         items:
         - comments: comments
           lastUsedAt: lastUsedAt

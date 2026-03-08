@@ -292,7 +292,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		})
 
 		// Register a test lookup
-		discovery.Register("test/colors", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+		discovery.Register("test/colors", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
 			items := []models.LookupItem{
 				{ID: "red", Name: "Red"},
 				{ID: "blue", Name: "Blue"},
@@ -303,7 +303,7 @@ func TestActionsRegexValidation(t *testing.T) {
 					filtered = append(filtered, item)
 				}
 			}
-			return filtered, len(filtered), nil
+			return discovery.Paginate(filtered, cursor, limit), nil
 		})
 
 		// Define a processor that uses this lookup

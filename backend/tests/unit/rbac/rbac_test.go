@@ -137,8 +137,8 @@ func TestRBACFullWorkflow(t *testing.T) {
 		t.Fatalf("DeleteRole failed: %v", err)
 	}
 	// RoleBinding 应该被删除 (因为它是唯一的 Role)
-	rbResp, _ := rbacservice.ListRoleBindings(adminCtx, 1, 10, "")
-	if rbResp.Total > 0 {
+	rbResp, _ := rbacservice.ScanRoleBindings(adminCtx, "", 10, "")
+	if len(rbResp.Items) > 0 {
 		t.Error("RoleBinding should be deleted after its only role is removed")
 	}
 }

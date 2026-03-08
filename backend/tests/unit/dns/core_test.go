@@ -45,11 +45,10 @@ func TestDNSCacheInvalidationAndAudit(t *testing.T) {
 
 	// 5. Verify Audit Log was created
 	time.Sleep(50 * time.Millisecond) // Wait for async audit log goroutine
-	logs, _ := auditservice.ListLogs(adminCtx, 1, 10, "cache-test.com")
+	res, _ := auditservice.ScanLogs(adminCtx, "", 10, "cache-test.com")
 	foundUpdate := false
-	if items, ok := logs.Items.([]interface{}); ok {
-		for _, item := range items {
-			l := item.(models.AuditLog)
+	if res != nil {
+		for _, l := range res.Items {
 			if l.Action == "UpdateDomain" {
 				foundUpdate = true
 				break
@@ -120,14 +119,14 @@ func TestDNSFullWorkflow(t *testing.T) {
 		t.Errorf("Expected updated value 5.6.7.8, got %s", updated.Value)
 	}
 
-	// Test List
-	resp, err := dnsservice.ListRecords(ctx, domain.ID, 1, 10, "")
+	// Test Scan
+	resResp, err := dnsservice.ScanRecords(ctx, domain.ID, "", 10, "")
 	if err != nil {
-		t.Fatalf("ListRecords failed: %v", err)
+		t.Fatalf("ScanRecords failed: %v", err)
 	}
 	// Items includes SOA + A record
-	if resp.Total < 2 {
-		t.Errorf("Expected at least 2 records (SOA + A), got %d", resp.Total)
+	if len(resResp.Items) < 2 {
+		t.Errorf("Expected at least 2 records (SOA + A), got %d", len(resResp.Items))
 	}
 
 	// Test Delete Record

@@ -57,11 +57,11 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 	defer release()
 
 	old, _ := repo.GetGroup(ctx, id)
-	exports, _, err := repo.ListExports(ctx, 1, 1000, "")
+	exportsResp, err := repo.ScanExports(ctx, "", 1000, "")
 	if err != nil {
 		return err
 	}
-	for _, e := range exports {
+	for _, e := range exportsResp.Items {
 		if slices.Contains(e.GroupIDs, id) {
 			return fmt.Errorf("cannot delete group %s: referenced by export %s", id, e.Name)
 		}
@@ -91,29 +91,9 @@ func (s *SitePoolService) GetGroup(ctx context.Context, id string) (*models.Site
 	return repo.GetGroup(ctx, id)
 }
 
-func (s *SitePoolService) ListGroups(ctx context.Context, page, pageSize int, search string) ([]models.SiteGroup, int, error) {
-	groups, _, err := repo.ListGroups(ctx, 1, 10000, search)
-	if err != nil {
-		return nil, 0, err
+func (s *SitePoolService) ScanGroups(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteGroup], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
+		return nil, fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
 	}
-	var filtered []models.SiteGroup
-	perms := commonauth.PermissionsFromContext(ctx)
-	for _, g := range groups {
-		if perms.IsAllowed("network/site") || perms.IsAllowed("network/site/"+g.ID) {
-			filtered = append(filtered, g)
-		}
-	}
-	total := len(filtered)
-	start := (page - 1) * pageSize
-	if start < 0 {
-		start = 0
-	}
-	if start >= total {
-		return []models.SiteGroup{}, total, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-	return filtered[start:end], total, nil
+	return repo.ScanGroups(ctx, cursor, limit, search)
 }

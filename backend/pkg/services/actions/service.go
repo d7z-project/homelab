@@ -57,13 +57,13 @@ func init() {
 		return res, nil
 	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
-	discovery.Register("actions/workflows", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+	discovery.Register("actions/workflows", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions") {
-			return nil, 0, fmt.Errorf("%w: actions", commonauth.ErrPermissionDenied)
+			return nil, fmt.Errorf("%w: actions", commonauth.ErrPermissionDenied)
 		}
 		workflows, err := repo.ListWorkflows(ctx)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		var items []models.LookupItem
 		search = strings.ToLower(search)
@@ -77,7 +77,19 @@ func init() {
 				Description: wf.Description,
 			})
 		}
-		result, total := discovery.Paginate(items, offset, limit)
-		return result, total, nil
+		return discovery.Paginate(items, cursor, limit), nil
+	})
+
+	rbac.RegisterSAUsageChecker(func(ctx context.Context, id string) error {
+		workflows, err := repo.ListWorkflows(ctx)
+		if err != nil {
+			return nil
+		}
+		for _, wf := range workflows {
+			if wf.ServiceAccountID == id {
+				return fmt.Errorf("ServiceAccount '%s' is used by workflow '%s'", id, wf.Name)
+			}
+		}
+		return nil
 	})
 }

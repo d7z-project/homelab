@@ -105,13 +105,10 @@ func TestPaginationRobustness(t *testing.T) {
 		_, _ = rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{ID: "sa-" + string(rune('a'+i))})
 	}
 
-	// Test: Page out of range
-	resp, _ := rbacservice.ListServiceAccounts(adminCtx, 10, 10, "")
-	if resp.Total != 5 {
-		t.Errorf("Total count should be 5, got %d", resp.Total)
-	}
-	// Items should be an empty slice, not nil or error
-	if resp.Items == nil {
-		t.Error("Items should be empty slice, not nil")
+	// Test: Large cursor or limit
+	res, _ := rbacservice.ScanServiceAccounts(adminCtx, "non-existent-cursor", 10, "")
+	// Items should be an empty slice, not nil
+	if res == nil || res.Items == nil {
+		t.Error("Result and Items should not be nil even with invalid cursor")
 	}
 }

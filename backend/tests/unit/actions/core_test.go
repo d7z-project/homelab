@@ -26,6 +26,8 @@ func TestActionsEngine(t *testing.T) {
 	actions.Register(mock)
 
 	t.Run("Basic Execution and Parameter Mapping", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			if ctx.InstanceID == "probe" {
 				return nil, nil
@@ -80,6 +82,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("If Condition Evaluation", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		step1Executed := false
 		step2Executed := false
 		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
@@ -136,6 +140,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Concurrency Control", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			time.Sleep(1 * time.Second)
 			return nil, nil
@@ -166,6 +172,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Timeout Mechanism", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			select {
 			case <-ctx.Context.Done():
@@ -207,6 +215,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Variable Interpolation", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			return map[string]string{"result": inputs["input_val"] + "-ok"}, nil
 		}
@@ -252,6 +262,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Optional Variable Syntax", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		var receivedInput string
 		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			receivedInput = inputs["input_val"]
@@ -293,6 +305,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Panic Recovery", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		mock.ExecuteFunc = func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
 			panic("intentional panic for testing")
 		}
@@ -331,6 +345,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Status Trigger Control", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		workflow := &models.Workflow{
 			ID:               "status-wf",
 			Name:             "Status Workflow",
@@ -346,7 +362,7 @@ func TestActionsEngine(t *testing.T) {
 		}
 
 		// 2. RunWorkflow (Manual) should ALSO fail if disabled (as per new requirements)
-		ctx := tests.SetupMockRootContext()
+		ctx = tests.SetupMockRootContext()
 		_, err = actions.TriggerWorkflow(ctx, workflow, "root", "Manual", nil)
 		if err == nil {
 			t.Error("Expected Manual trigger to fail for disabled workflow")
@@ -355,6 +371,7 @@ func TestActionsEngine(t *testing.T) {
 
 	t.Run("ID and Key Validation", func(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 
 		// Invalid Var Key (contains capitals)
 		wf1 := &models.Workflow{
@@ -420,9 +437,9 @@ func TestActionsEngine(t *testing.T) {
 		})
 
 		// ListWorkflows should only return wf1
-		list, _ := actions.ListWorkflows(userCtx)
-		if len(list) != 1 || list[0].ID != wf1.ID {
-			t.Errorf("Expected 1 workflow (wf1), got %d", len(list))
+		listResp, _ := actions.ScanWorkflows(userCtx, "", 100, "")
+		if len(listResp.Items) != 1 || listResp.Items[0].ID != wf1.ID {
+			t.Errorf("Expected 1 workflow (wf1), got %d", len(listResp.Items))
 		}
 
 		// GetWorkflow wf2 should fail
@@ -433,6 +450,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Webhook Token Reset", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		wf := &models.Workflow{
 			ID:               "webhook-wf",
 			Name:             "Webhook WF",
@@ -470,6 +489,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Log Persistence and Querying", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		workflow := &models.Workflow{
 			ID:               "log-wf",
 			Name:             "Log Workflow",
@@ -484,8 +505,6 @@ func TestActionsEngine(t *testing.T) {
 				},
 			},
 		}
-
-		ctx := tests.SetupMockRootContext()
 		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
@@ -539,6 +558,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Large Log Entry", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		largeMessage := strings.Repeat("A", 128*1024) // 128KB
 		workflow := &models.Workflow{
 			ID:               "large-log-wf",
@@ -553,8 +574,6 @@ func TestActionsEngine(t *testing.T) {
 				},
 			},
 		}
-
-		ctx := tests.SetupMockRootContext()
 		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
@@ -588,6 +607,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("GetTaskInstance Log Population", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		workflow := &models.Workflow{
 			ID:               "pop-wf",
 			Name:             "Pop Workflow",
@@ -601,8 +622,6 @@ func TestActionsEngine(t *testing.T) {
 				},
 			},
 		}
-
-		ctx := tests.SetupMockRootContext()
 		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
@@ -631,6 +650,8 @@ func TestActionsEngine(t *testing.T) {
 	})
 
 	t.Run("Task Instance Deletion and Cleanup", func(t *testing.T) {
+		ctx := tests.SetupMockRootContext()
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 		workflow := &models.Workflow{
 			ID:               "del-wf",
 			Name:             "Delete Workflow",
@@ -638,8 +659,6 @@ func TestActionsEngine(t *testing.T) {
 			ServiceAccountID: "sa",
 			Steps:            []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "test"}}},
 		}
-
-		ctx := tests.SetupMockRootContext()
 		id, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		// Wait for completion

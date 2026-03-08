@@ -31,20 +31,20 @@ func InitSiteControllers(service *siteservice.SitePoolService, engine *siteservi
 // @Summary List all site groups
 // @Tags network/site
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.SiteGroup}
+// @Success 200 {object} common.CursorResponse{items=[]models.SiteGroup}
 // @Router /network/site/pools [get]
 func ListSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
-	items, total, err := sitePoolService.ListGroups(r.Context(), page, pageSize, search)
+	res, err := sitePoolService.ScanGroups(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateSiteGroupHandler godoc
@@ -187,20 +187,20 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary List all site exports
 // @Tags network/site
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.SiteExport}
+// @Success 200 {object} common.CursorResponse{items=[]models.SiteExport}
 // @Router /network/site/exports [get]
 func ListSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
-	items, total, err := sitePoolService.ListExports(r.Context(), page, pageSize, search)
+	res, err := sitePoolService.ScanExports(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateSiteExportHandler godoc

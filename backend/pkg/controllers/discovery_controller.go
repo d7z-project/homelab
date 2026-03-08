@@ -5,7 +5,6 @@ import (
 	"homelab/pkg/models"
 	"homelab/pkg/services/discovery"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -23,9 +22,9 @@ func DiscoveryController(r chi.Router) {
 // @Produce json
 // @Param code query string true "Discovery code"
 // @Param search query string false "Search string"
-// @Param offset query int false "Offset"
+// @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
-// @Success 200 {object} models.LookupResponse
+// @Success 200 {object} common.CursorResponse{items=[]models.LookupItem}
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "Code Not Found"
@@ -34,13 +33,12 @@ func DiscoveryController(r chi.Router) {
 func lookupHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	search := r.URL.Query().Get("search")
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	cursor, limit := getCursorParams(r)
 
 	req := models.LookupRequest{
 		Code:   code,
 		Search: search,
-		Offset: offset,
+		Cursor: cursor,
 		Limit:  limit,
 	}
 
@@ -49,7 +47,7 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, total, err := discovery.Lookup(r.Context(), req)
+	res, err := discovery.Lookup(r.Context(), req)
 	if err != nil {
 		if err == discovery.ErrCodeNotFound {
 			common.Error(w, r, http.StatusNotFound, http.StatusNotFound, err.Error())
@@ -59,10 +57,7 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	common.Success(w, r, &models.LookupResponse{
-		Items: items,
-		Total: total,
-	})
+	common.CursorSuccess(w, r, res)
 }
 
 // @Summary List discovery codes

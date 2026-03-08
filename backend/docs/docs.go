@@ -22,7 +22,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a history of all triggered workflow instances and their current status.",
+                "description": "Retrieves a history of triggered workflow instances with cursor-based pagination.",
                 "produces": [
                     "application/json"
                 ],
@@ -30,14 +30,46 @@ const docTemplate = `{
                     "actions"
                 ],
                 "summary": "List all task instances",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.TaskInstance"
-                            }
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.CursorResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.TaskInstance"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -481,7 +513,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a list of all defined workflow templates.",
+                "description": "Retrieves a list of defined workflow templates with cursor-based pagination.",
                 "produces": [
                     "application/json"
                 ],
@@ -489,14 +521,46 @@ const docTemplate = `{
                     "actions"
                 ],
                 "summary": "List all workflows",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Workflow"
-                            }
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.CursorResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Workflow"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -921,15 +985,15 @@ const docTemplate = `{
                 "summary": "List audit logs",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -945,7 +1009,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -1187,9 +1251,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "Offset",
-                        "name": "offset",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
@@ -1203,7 +1267,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.LookupResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.CursorResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.LookupItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1220,6 +1299,77 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Code Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dns/domains": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dns"
+                ],
+                "summary": "List all DNS domains",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.CursorResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Domain"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
@@ -1327,69 +1477,6 @@ const docTemplate = `{
             }
         },
         "/network/dns/domains": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "network/dns"
-                ],
-                "summary": "List all domains",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search by name",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "items": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/models.Domain"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -1622,15 +1709,15 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -1646,7 +1733,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -1857,14 +1944,46 @@ const docTemplate = `{
                     "network/intelligence"
                 ],
                 "summary": "List intelligence sources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.IntelligenceSource"
-                            }
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.CursorResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.IntelligenceSource"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -2261,15 +2380,15 @@ const docTemplate = `{
                 "summary": "List all IP exports",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -2285,7 +2404,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -2759,15 +2878,15 @@ const docTemplate = `{
                 "summary": "List all IP groups",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -2783,7 +2902,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -3197,15 +3316,15 @@ const docTemplate = `{
                 "summary": "List all IP sync policies",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -3221,7 +3340,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -3501,15 +3620,15 @@ const docTemplate = `{
                 "summary": "List all site exports",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -3525,7 +3644,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -3905,15 +4024,15 @@ const docTemplate = `{
                 "summary": "List all site groups",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -3929,7 +4048,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -4190,15 +4309,15 @@ const docTemplate = `{
                 "summary": "List all role bindings",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -4214,7 +4333,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -4433,15 +4552,15 @@ const docTemplate = `{
                 "summary": "List all roles",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -4457,7 +4576,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -4676,15 +4795,15 @@ const docTemplate = `{
                 "summary": "List all service accounts",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
+                        "type": "string",
+                        "description": "Cursor",
+                        "name": "cursor",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page",
-                        "name": "pageSize",
+                        "description": "Limit",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -4700,7 +4819,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/common.PaginatedResponse"
+                                    "$ref": "#/definitions/common.CursorResponse"
                                 },
                                 {
                                     "type": "object",
@@ -5067,15 +5186,15 @@ const docTemplate = `{
                 }
             }
         },
-        "common.PaginatedResponse": {
+        "common.CursorResponse": {
             "type": "object",
             "properties": {
-                "items": {},
-                "page": {
-                    "type": "integer"
+                "hasMore": {
+                    "type": "boolean"
                 },
-                "pageSize": {
-                    "type": "integer"
+                "items": {},
+                "nextCursor": {
+                    "type": "string"
                 },
                 "total": {
                     "type": "integer"
@@ -5621,20 +5740,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "models.LookupResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.LookupItem"
-                    }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },

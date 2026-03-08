@@ -12,11 +12,11 @@ import (
 func init() {
 	rbac.RegisterResourceWithVerbs("network/site", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
-		groups, _, err := repo.ListGroups(ctx, 1, 1000, "")
+		resp, err := repo.ScanGroups(ctx, "", 1000, "")
 		if err != nil {
 			return nil, err
 		}
-		for _, g := range groups {
+		for _, g := range resp.Items {
 			if strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: g.ID,
@@ -28,21 +28,20 @@ func init() {
 		return res, nil
 	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
-	discovery.Register("network/site/pools", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
-		groups, _, err := repo.ListGroups(ctx, 1, 1000, search)
+	discovery.Register("network/site/pools", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
+		resp, err := repo.ScanGroups(ctx, "", 1000, search)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		var items []models.LookupItem
-		for _, g := range groups {
+		for _, g := range resp.Items {
 			items = append(items, models.LookupItem{
 				ID:          g.ID,
 				Name:        g.Name,
 				Description: g.Description,
 			})
 		}
-		result, total := discovery.Paginate(items, offset, limit)
-		return result, total, nil
+		return discovery.Paginate(items, cursor, limit), nil
 	})
 }
 

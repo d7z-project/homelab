@@ -154,14 +154,14 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 }
 
 func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
-	all, err := repo.ListTaskInstances(ctx)
+	res, err := repo.ScanTaskInstances(ctx, "", 10000, "")
 	if err != nil {
 		return nil, err
 	}
 
 	perms := commonauth.PermissionsFromContext(ctx)
 	var filtered []models.TaskInstance
-	for _, inst := range all {
+	for _, inst := range res.Items {
 		if perms.IsAllowed("actions/" + inst.WorkflowID) {
 			// Populate logs from all parts
 			logs, _ := ReadAllTaskLogs(inst.WorkflowID, inst.ID)
@@ -174,6 +174,26 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 		}
 	}
 	return filtered, nil
+}
+
+func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.TaskInstance], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions") {
+		return nil, fmt.Errorf("%w: actions", commonauth.ErrPermissionDenied)
+	}
+	res, err := repo.ScanTaskInstances(ctx, cursor, limit, search)
+	if err != nil {
+		return nil, err
+	}
+	for i := range res.Items {
+		// Populate logs from all parts
+		logs, _ := ReadAllTaskLogs(res.Items[i].WorkflowID, res.Items[i].ID)
+		if logs != nil {
+			res.Items[i].Logs = logs
+		} else {
+			res.Items[i].Logs = []models.LogEntry{}
+		}
+	}
+	return res, nil
 }
 
 func DeleteTaskInstance(ctx context.Context, id string) error {

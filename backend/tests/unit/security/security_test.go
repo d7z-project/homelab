@@ -27,18 +27,17 @@ func TestDNSListPermissionFiltering(t *testing.T) {
 	})
 
 	// List domains
-	resp, err := dnsservice.ListDomains(userCtx, 1, 10, "")
+	res, err := dnsservice.ScanDomains(userCtx, "", 10, "")
 	if err != nil {
-		t.Fatalf("ListDomains failed: %v", err)
+		t.Fatalf("ScanDomains failed: %v", err)
 	}
 
-	if resp.Total != 1 {
-		t.Errorf("Expected 1 domain in filtered list, got %d", resp.Total)
+	if len(res.Items) != 1 {
+		t.Errorf("Expected 1 domain in filtered list, got %d", len(res.Items))
 	}
 
 	foundPublic := false
-	for _, item := range resp.Items.([]interface{}) {
-		d := item.(models.Domain)
+	for _, d := range res.Items {
 		if d.Name == "private.com" {
 			t.Error("User saw private.com without permission")
 		}
@@ -85,7 +84,7 @@ func TestRBACServicePermissionChecks(t *testing.T) {
 	userCtx := auth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: false})
 
 	// Try to list service accounts
-	_, err := rbacservice.ListServiceAccounts(userCtx, 1, 10, "")
+	_, err := rbacservice.ScanServiceAccounts(userCtx, "", 10, "")
 	if err == nil {
 		t.Error("Expected error when listing SAs without rbac permission")
 	}
@@ -101,7 +100,7 @@ func TestRBACServicePermissionChecks(t *testing.T) {
 		AllowedInstances: []string{"rbac"},
 	})
 
-	_, err = rbacservice.ListServiceAccounts(adminCtx, 1, 10, "")
+	_, err = rbacservice.ScanServiceAccounts(adminCtx, "", 10, "")
 	if err != nil {
 		t.Errorf("Expected success with rbac permission, got error: %v", err)
 	}

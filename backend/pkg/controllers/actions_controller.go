@@ -16,21 +16,26 @@ import (
 
 // ListWorkflowsHandler godoc
 // @Summary List all workflows
-// @Description Retrieves a list of all defined workflow templates.
+// @Description Retrieves a list of defined workflow templates with cursor-based pagination.
 // @Tags actions
 // @Produce json
-// @Success 200 {array} models.Workflow
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
+// @Param search query string false "Search"
+// @Success 200 {object} common.CursorResponse{items=[]models.Workflow}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 500 {object} common.Response "Internal Server Error"
 // @Security ApiKeyAuth
 // @Router /actions/workflows [get]
 func ListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
-	res, err := actions.ListWorkflows(r.Context())
+	cursor, limit := getCursorParams(r)
+	search := r.URL.Query().Get("search")
+	res, err := actions.ScanWorkflows(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateWorkflowHandler godoc
@@ -116,20 +121,25 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 
 // ListInstancesHandler godoc
 // @Summary List all task instances
-// @Description Retrieves a history of all triggered workflow instances and their current status.
+// @Description Retrieves a history of triggered workflow instances with cursor-based pagination.
 // @Tags actions
 // @Produce json
-// @Success 200 {array} models.TaskInstance
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
+// @Param search query string false "Search"
+// @Success 200 {object} common.CursorResponse{items=[]models.TaskInstance}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/instances [get]
 func ListInstancesHandler(w http.ResponseWriter, r *http.Request) {
-	res, err := actions.ListTaskInstances(r.Context())
+	cursor, limit := getCursorParams(r)
+	search := r.URL.Query().Get("search")
+	res, err := actions.ScanTaskInstances(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // RunWorkflowHandler godoc
@@ -398,15 +408,17 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find workflow by token
-	workflows, err := actions.ListWorkflows(r.Context())
+	// Find workflow by token. Since tokens are unique, we scan workflows.
+	// We scan with a large limit as a fallback, but ideally we'd have a specific repo method for this.
+	// For now, we'll scan through workflows to maintain API consistency.
+	res, err := actions.ScanWorkflows(r.Context(), "", 1000, "")
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
 
 	var target *models.Workflow
-	for _, wf := range workflows {
+	for _, wf := range res.Items {
 		if wf.WebhookEnabled && wf.WebhookToken == token {
 			target = &wf
 			break

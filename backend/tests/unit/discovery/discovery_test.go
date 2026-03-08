@@ -16,7 +16,7 @@ func TestDiscoveryService(t *testing.T) {
 	defer cleanup()
 
 	// Register a test lookup
-	discovery.Register("test/items", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+	discovery.Register("test/items", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
 		items := []models.LookupItem{
 			{ID: "1", Name: "Item 1", Description: "Desc 1"},
 			{ID: "2", Name: "Item 2", Description: "Desc 2"},
@@ -30,29 +30,19 @@ func TestDiscoveryService(t *testing.T) {
 			}
 		}
 
-		total := len(filtered)
-		start := offset
-		if start > total {
-			start = total
-		}
-		end := start + limit
-		if end > total {
-			end = total
-		}
-
-		return filtered[start:end], total, nil
+		return discovery.Paginate(filtered, cursor, limit), nil
 	})
 
 	t.Run("Lookup Success", func(t *testing.T) {
 		req := models.LookupRequest{
 			Code:   "test/items",
 			Limit:  10,
-			Offset: 0,
+			Cursor: "",
 		}
-		items, total, err := discovery.Lookup(context.Background(), req)
+		res, err := discovery.Lookup(context.Background(), req)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, total)
-		assert.Len(t, items, 3)
+		assert.Equal(t, int64(3), res.Total)
+		assert.Len(t, res.Items, 3)
 	})
 
 	t.Run("Lookup with Search", func(t *testing.T) {
@@ -61,17 +51,17 @@ func TestDiscoveryService(t *testing.T) {
 			Search: "Item 1",
 			Limit:  10,
 		}
-		items, total, err := discovery.Lookup(context.Background(), req)
+		res, err := discovery.Lookup(context.Background(), req)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, total)
-		assert.Equal(t, "1", items[0].ID)
+		assert.Equal(t, int64(1), res.Total)
+		assert.Equal(t, "1", res.Items[0].ID)
 	})
 
 	t.Run("Lookup Code Not Found", func(t *testing.T) {
 		req := models.LookupRequest{
 			Code: "nonexistent",
 		}
-		_, _, err := discovery.Lookup(context.Background(), req)
+		_, err := discovery.Lookup(context.Background(), req)
 		assert.ErrorIs(t, err, discovery.ErrCodeNotFound)
 	})
 
@@ -104,9 +94,9 @@ func TestDiscoveryPermissions(t *testing.T) {
 		req := models.LookupRequest{
 			Code: "network/dns/domains",
 		}
-		items, _, err := discovery.Lookup(ctx, req)
+		res, err := discovery.Lookup(ctx, req)
 		assert.NoError(t, err)
 		// Should be empty as repo is empty in this test environment
-		assert.Empty(t, items)
+		assert.Empty(t, res.Items)
 	})
 }

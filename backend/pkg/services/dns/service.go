@@ -14,12 +14,12 @@ import (
 func init() {
 	rbac.RegisterResourceWithVerbs("network/dns", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
-		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, "")
+		resp, err := dnsrepo.ScanDomains(ctx, "", 10000, "")
 		if err != nil {
 			return nil, err
 		}
 
-		for _, d := range domains {
+		for _, d := range resp.Items {
 			if strings.HasPrefix(d.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: d.Name,
@@ -34,10 +34,10 @@ func init() {
 					idPrefix = strings.TrimPrefix(prefix, d.Name+"/")
 				}
 
-				records, _, err := dnsrepo.ListRecords(ctx, d.ID, 0, 10000, "")
+				recordsResp, err := dnsrepo.ScanRecords(ctx, d.ID, "", 10000, "")
 				if err == nil {
 					seen := make(map[string]bool)
-					for _, r := range records {
+					for _, r := range recordsResp.Items {
 						if strings.HasPrefix(r.Name, idPrefix) && !seen[r.Name+"/"+r.Type] {
 							seen[r.Name+"/"+r.Type] = true
 							res = append(res, models.DiscoverResult{
@@ -53,14 +53,14 @@ func init() {
 		return res, nil
 	}, []string{"get", "list", "create", "update", "delete", "*"})
 
-	discovery.Register("network/dns/domains", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
-		domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, search)
+	discovery.Register("network/dns/domains", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
+		resp, err := dnsrepo.ScanDomains(ctx, "", 10000, search)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		perms := commonauth.PermissionsFromContext(ctx)
 		var items []models.LookupItem
-		for _, d := range domains {
+		for _, d := range resp.Items {
 			if perms.IsAllowed("network/dns/" + d.Name) {
 				items = append(items, models.LookupItem{
 					ID:          d.ID,
@@ -69,19 +69,18 @@ func init() {
 				})
 			}
 		}
-		result, total := discovery.Paginate(items, offset, limit)
-		return result, total, nil
+		return discovery.Paginate(items, cursor, limit), nil
 	})
 
-	discovery.Register("network/dns/records", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
-		records, _, err := dnsrepo.ListRecords(ctx, "", 0, 10000, search)
+	discovery.Register("network/dns/records", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
+		resp, err := dnsrepo.ScanRecords(ctx, "", "", 10000, search)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		perms := commonauth.PermissionsFromContext(ctx)
 		domainCache := make(map[string]*models.Domain)
 		var items []models.LookupItem
-		for _, r := range records {
+		for _, r := range resp.Items {
 			domain, ok := domainCache[r.DomainID]
 			if !ok {
 				domain, _ = dnsrepo.GetDomain(ctx, r.DomainID)
@@ -100,7 +99,6 @@ func init() {
 				})
 			}
 		}
-		result, total := discovery.Paginate(items, offset, limit)
-		return result, total, nil
+		return discovery.Paginate(items, cursor, limit), nil
 	})
 }

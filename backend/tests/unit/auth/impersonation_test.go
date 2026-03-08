@@ -1,9 +1,9 @@
 package auth_test
 
 import (
-	"context"
 	"homelab/pkg/common/auth"
 	"homelab/pkg/models"
+	rbacrepo "homelab/pkg/repositories/rbac"
 	"homelab/pkg/services/actions"
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
@@ -63,7 +63,14 @@ func TestImpersonation(t *testing.T) {
 
 	// 4. Trigger workflow as a different user
 	triggerUserID := "human-trigger-user"
-	instanceID, err := actions.GlobalExecutor.Execute(context.Background(), triggerUserID, workflow, "Manual", nil, "")
+	ctx := tests.SetupMockRootContext()
+	// Ensure SA exists in DB (direct repo call for robustness)
+	_ = rbacrepo.SaveServiceAccount(ctx, &models.ServiceAccount{
+		ID:      saID,
+		Name:    "Executor SA",
+		Enabled: true,
+	})
+	instanceID, err := actions.GlobalExecutor.Execute(ctx, triggerUserID, workflow, "Manual", nil, "")
 	if err != nil {
 		t.Fatalf("Failed to trigger workflow: %v", err)
 	}

@@ -87,11 +87,11 @@ type Response struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-type PaginatedResponse struct {
-	Total    int         `json:"total"`
-	Page     int         `json:"page"`
-	PageSize int         `json:"pageSize"`
-	Items    interface{} `json:"items"`
+type CursorResponse struct {
+	Total      int         `json:"total"`
+	NextCursor string      `json:"nextCursor,omitempty"`
+	HasMore    bool        `json:"hasMore"`
+	Items      interface{} `json:"items"`
 }
 
 func (rd *Response) Render(_ http.ResponseWriter, _ *http.Request) error {
@@ -104,12 +104,19 @@ func Success(w http.ResponseWriter, r *http.Request, data interface{}) {
 	render.JSON(w, r, data)
 }
 
-func PaginatedSuccess(w http.ResponseWriter, r *http.Request, items interface{}, total int, page int, pageSize int) {
-	Success(w, r, &PaginatedResponse{
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Items:    items,
+type CursorProvider interface {
+	GetItems() interface{}
+	GetTotal() int64
+	GetCursor() string
+	HasMoreData() bool
+}
+
+func CursorSuccess(w http.ResponseWriter, r *http.Request, provider CursorProvider) {
+	Success(w, r, &CursorResponse{
+		Total:      int(provider.GetTotal()),
+		NextCursor: provider.GetCursor(),
+		HasMore:    provider.HasMoreData(),
+		Items:      provider.GetItems(),
 	})
 }
 

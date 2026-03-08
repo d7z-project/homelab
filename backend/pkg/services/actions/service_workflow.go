@@ -363,9 +363,9 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 	}
 
 	// Cascade delete instances and logs
-	instances, err := repo.ListTaskInstances(ctx)
+	res, err := repo.ScanTaskInstances(ctx, "", 10000, "")
 	if err == nil {
-		for _, inst := range instances {
+		for _, inst := range res.Items {
 			if inst.WorkflowID == id {
 				_ = repo.DeleteTaskInstance(ctx, inst.ID)
 			}
@@ -386,17 +386,39 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 }
 
 func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
-	all, err := repo.ListWorkflows(ctx)
+	res, err := repo.ScanWorkflows(ctx, "", 1000, "")
 	if err != nil {
 		return nil, err
 	}
 
 	perms := commonauth.PermissionsFromContext(ctx)
 	var filtered []models.Workflow
-	for _, wf := range all {
+	for _, wf := range res.Items {
 		if perms.IsAllowed("actions/" + wf.ID) {
 			filtered = append(filtered, wf)
 		}
 	}
 	return filtered, nil
+}
+
+func ScanWorkflows(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Workflow], error) {
+	res, err := repo.ScanWorkflows(ctx, cursor, limit, search)
+	if err != nil {
+		return nil, err
+	}
+
+	perms := commonauth.PermissionsFromContext(ctx)
+	if perms.IsAllowed("actions") {
+		return res, nil
+	}
+
+	// Filter per-item
+	var filtered []models.Workflow
+	for _, wf := range res.Items {
+		if perms.IsAllowed("actions/" + wf.ID) {
+			filtered = append(filtered, wf)
+		}
+	}
+	res.Items = filtered
+	return res, nil
 }

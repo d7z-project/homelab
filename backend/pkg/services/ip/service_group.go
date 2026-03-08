@@ -60,22 +60,22 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 
 	old, _ := repo.GetGroup(ctx, id)
 	// 校验依赖：检查是否有 IPExport 引用了此池
-	exports, _, err := repo.ListExports(ctx, 1, 1000, "")
+	resExports, err := repo.ScanExports(ctx, "", 1000, "")
 	if err != nil {
 		return err
 	}
-	for _, e := range exports {
+	for _, e := range resExports.Items {
 		if slices.Contains(e.GroupIDs, id) {
 			return fmt.Errorf("cannot delete group %s: referenced by export %s", id, e.Name)
 		}
 	}
 
 	// 校验依赖：检查是否有同步策略引用了此池
-	policies, _, err := repo.ListSyncPolicies(ctx, 1, 1000, "")
+	resPolicies, err := repo.ScanSyncPolicies(ctx, "", 1000, "")
 	if err != nil {
 		return err
 	}
-	for _, p := range policies {
+	for _, p := range resPolicies.Items {
 		if p.TargetGroupID == id {
 			return fmt.Errorf("cannot delete group %s: referenced by sync policy %s", id, p.Name)
 		}
@@ -108,36 +108,35 @@ func (s *IPPoolService) GetGroup(ctx context.Context, id string) (*models.IPGrou
 	return repo.GetGroup(ctx, id)
 }
 
-func (s *IPPoolService) ListGroups(ctx context.Context, page, pageSize int, search string) ([]models.IPGroup, int, error) {
-	groups, _, err := repo.ListGroups(ctx, 1, 10000, search)
+func (s *IPPoolService) LookupGroup(ctx context.Context, id string) (interface{}, error) {
+	return repo.GetGroup(ctx, id)
+}
+
+func (s *IPPoolService) ScanGroups(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPGroup], error) {
+	// Use a larger limit for repo scan to account for permission filtering
+	res, err := repo.ScanGroups(ctx, cursor, limit*2, search)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	var filtered []models.IPGroup
 	perms := commonauth.PermissionsFromContext(ctx)
-	for _, g := range groups {
+	for _, g := range res.Items {
 		if perms.IsAllowed("network/ip") || perms.IsAllowed("network/ip/"+g.ID) {
 			filtered = append(filtered, g)
 		}
+		if len(filtered) >= limit {
+			return &models.PaginationResponse[models.IPGroup]{
+				Items:      filtered,
+				NextCursor: res.NextCursor,
+				HasMore:    res.HasMore,
+			}, nil
+		}
 	}
 
-	total := len(filtered)
-	start := (page - 1) * pageSize
-	if start < 0 {
-		start = 0
-	}
-	if start >= total {
-		return []models.IPGroup{}, total, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	return filtered[start:end], total, nil
-}
-
-func (s *IPPoolService) LookupGroup(ctx context.Context, id string) (interface{}, error) {
-	return repo.GetGroup(ctx, id)
+	return &models.PaginationResponse[models.IPGroup]{
+		Items:      filtered,
+		NextCursor: res.NextCursor,
+		HasMore:    res.HasMore,
+	}, nil
 }

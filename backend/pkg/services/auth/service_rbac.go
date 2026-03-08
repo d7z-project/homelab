@@ -20,10 +20,11 @@ func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.R
 		return &models.ResourcePermissions{}, nil
 	}
 
-	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
+	res, err := rbacrepo.ScanRoleBindings(ctx, "", 10000, "")
 	if err != nil {
 		return nil, err
 	}
+	rbs := res.Items
 
 	perms := &models.ResourcePermissions{}
 

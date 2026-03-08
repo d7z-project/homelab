@@ -15,25 +15,25 @@ import (
 // @Summary List audit logs
 // @Tags audit
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search query"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.AuditLog}
+// @Success 200 {object} common.CursorResponse{items=[]models.AuditLog}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /audit/logs [get]
 func ListAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
-	res, err := auditservice.ListLogs(r.Context(), page, pageSize, search)
+	res, err := auditservice.ScanLogs(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
 
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // CleanupAuditLogsHandler godoc

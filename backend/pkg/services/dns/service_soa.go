@@ -19,13 +19,15 @@ const (
 func generateSOASerial() string { return time.Now().Format("20060102") + "01" }
 
 func updateSOASerial(ctx context.Context, domainID string) {
-	records, _, _ := dnsrepo.ListRecords(ctx, domainID, 0, 100, "")
-	for _, r := range records {
-		if r.Type == "SOA" {
-			m, rn, _, _ := parseSOA(r.Value)
-			r.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(r.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
-			_ = dnsrepo.SaveRecord(ctx, &r)
-			break
+	resp, _ := dnsrepo.ScanRecords(ctx, domainID, "", 100, "")
+	if resp != nil {
+		for _, r := range resp.Items {
+			if r.Type == "SOA" {
+				m, rn, _, _ := parseSOA(r.Value)
+				r.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(r.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+				_ = dnsrepo.SaveRecord(ctx, &r)
+				break
+			}
 		}
 	}
 }

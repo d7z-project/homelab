@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
@@ -30,23 +29,12 @@ func init() {
 	}, []string{"get", "list", "delete", "*"})
 }
 
-// ListLogs retrieves audit logs with optional pagination and filtering.
-func ListLogs(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	logs, total, err := auditrepo.ListLogs(ctx, page, pageSize, search)
-	if err != nil {
-		return nil, err
+// ScanLogs retrieves audit logs with optional pagination and filtering.
+func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.AuditLog], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("audit") {
+		return nil, fmt.Errorf("%w: audit", commonauth.ErrPermissionDenied)
 	}
-
-	var items []interface{}
-	for _, l := range logs {
-		items = append(items, l)
-	}
-
-	return &common.PaginatedResponse{
-		Items: items,
-		Total: total,
-		Page:  page,
-	}, nil
+	return auditrepo.ScanLogs(ctx, cursor, limit, search)
 }
 
 // CleanupLogs deletes logs older than specified days. Only root can call this.

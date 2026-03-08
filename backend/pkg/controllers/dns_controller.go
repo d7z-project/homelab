@@ -10,28 +10,28 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
-
 // ListDomainsHandler godoc
-// @Summary List all domains
-// @Tags network/dns
+// @Summary List all DNS domains
+// @Tags dns
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.Domain}
+// @Success 200 {object} common.CursorResponse{items=[]models.Domain}
 // @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
-// @Router /network/dns/domains [get]
+// @Router /dns/domains [get]
 func ListDomainsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
-	res, err := dnsservice.ListDomains(r.Context(), page, pageSize, search)
+	res, err := dnsservice.ScanDomains(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateDomainHandler godoc
@@ -116,24 +116,24 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/dns
 // @Produce json
 // @Param domainId query string false "Filter by domain ID"
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name or value"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.Record}
+// @Success 200 {object} common.CursorResponse{items=[]models.Record}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/dns/records [get]
 func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	domainID := r.URL.Query().Get("domainId")
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
 
-	res, err := dnsservice.ListRecords(r.Context(), domainID, page, pageSize, search)
+	res, err := dnsservice.ScanRecords(r.Context(), domainID, cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, res)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateRecordHandler godoc

@@ -20,7 +20,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	golang.org/x/net v0.51.0
 	google.golang.org/protobuf v1.36.11
-	gopkg.d7z.net/middleware v0.0.0-20260301154024-86fede29c31d
+	gopkg.d7z.net/middleware v0.0.0-20260308101717-8b2fb6e1ca67
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -67,7 +67,7 @@ require (
 	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
-	google.golang.org/grpc v1.79.1 // indirect
+	google.golang.org/grpc v1.79.2 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 

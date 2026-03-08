@@ -13,17 +13,13 @@ import (
 )
 
 var (
-	domainCache     *lru.Cache[string, *models.Domain]
-	recordCache     *lru.Cache[string, *models.Record]
-	domainListCache *lru.Cache[string, []models.Domain]
-	recordListCache *lru.Cache[string, []models.Record]
+	domainCache *lru.Cache[string, *models.Domain]
+	recordCache *lru.Cache[string, *models.Record]
 )
 
 func init() {
 	domainCache, _ = lru.New[string, *models.Domain](1024)
 	recordCache, _ = lru.New[string, *models.Record](2048)
-	domainListCache, _ = lru.New[string, []models.Domain](16)
-	recordListCache, _ = lru.New[string, []models.Record](128)
 }
 
 func GetLastModified() time.Time {
@@ -40,8 +36,6 @@ func GetLastModified() time.Time {
 func ClearCache() {
 	domainCache.Purge()
 	recordCache.Purge()
-	domainListCache.Purge()
-	recordListCache.Purge()
 	updateLastModified()
 }
 
@@ -78,7 +72,6 @@ func SaveDomain(ctx context.Context, domain *models.Domain) error {
 	err = db.Put(ctx, domain.ID, string(data), kv.TTLKeep)
 	if err == nil {
 		domainCache.Add(domain.ID, domain)
-		domainListCache.Purge() // Invalidate all lists
 		updateLastModified()
 	}
 	return err
@@ -88,53 +81,45 @@ func DeleteDomain(ctx context.Context, id string) error {
 	_, err := common.DB.Child("network/dns", "domains").Delete(ctx, id)
 	if err == nil {
 		domainCache.Remove(id)
-		domainListCache.Purge() // Invalidate all lists
 		updateLastModified()
 	}
 	return err
 }
 
-func ListDomains(ctx context.Context, page int, pageSize int, search string) ([]models.Domain, int, error) {
-	var all []models.Domain
-	if val, ok := domainListCache.Get("all"); ok {
-		all = val
-	} else {
-		db := common.DB.Child("network/dns", "domains")
-		items, err := db.List(ctx, "")
-		if err != nil {
-			return nil, 0, err
-		}
-		for _, v := range items {
-			var domain models.Domain
-			if err := json.Unmarshal([]byte(v.Value), &domain); err == nil {
-				all = append(all, domain)
-				domainCache.Add(domain.ID, &domain)
-			}
-		}
-		domainListCache.Add("all", all)
+func ScanDomains(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Domain], error) {
+	db := common.DB.Child("network/dns", "domains")
+	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
+		Limit:  int64(limit * 5),
+		Cursor: cursor,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	res := make([]models.Domain, 0)
 	search = strings.ToLower(search)
-	for _, domain := range all {
-		if search == "" || strings.Contains(strings.ToLower(domain.Name), search) || strings.Contains(strings.ToLower(domain.ID), search) {
-			res = append(res, domain)
+	for _, v := range resp.Pairs {
+		var domain models.Domain
+		if err := json.Unmarshal([]byte(v.Value), &domain); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(domain.Name), search) || strings.Contains(strings.ToLower(domain.ID), search) {
+				res = append(res, domain)
+				domainCache.Add(domain.ID, &domain)
+			}
+		}
+		if len(res) >= limit {
+			return &models.PaginationResponse[models.Domain]{
+				Items:      res,
+				NextCursor: v.Key,
+				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+			}, nil
 		}
 	}
 
-	total := len(res)
-	start := (page - 1) * pageSize
-	if start < 0 {
-		start = 0
-	}
-	if start >= total {
-		return []models.Domain{}, total, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-	return res[start:end], total, nil
+	return &models.PaginationResponse[models.Domain]{
+		Items:      res,
+		NextCursor: resp.Cursor,
+		HasMore:    resp.HasMore,
+	}, nil
 }
 
 // Record Repo
@@ -165,7 +150,6 @@ func SaveRecord(ctx context.Context, record *models.Record) error {
 	err = db.Put(ctx, record.ID, string(data), kv.TTLKeep)
 	if err == nil {
 		recordCache.Add(record.ID, record)
-		recordListCache.Purge() // Invalidate all record lists
 		updateLastModified()
 	}
 	return err
@@ -175,60 +159,45 @@ func DeleteRecord(ctx context.Context, id string) error {
 	_, err := common.DB.Child("network/dns", "records").Delete(ctx, id)
 	if err == nil {
 		recordCache.Remove(id)
-		recordListCache.Purge() // Invalidate all record lists
 		updateLastModified()
 	}
 	return err
 }
 
-func ListRecords(ctx context.Context, domainID string, page int, pageSize int, search string) ([]models.Record, int, error) {
-	var all []models.Record
-	cacheKey := "all"
-	if domainID != "" {
-		cacheKey = "domain:" + domainID
-	}
-
-	if val, ok := recordListCache.Get(cacheKey); ok {
-		all = val
-	} else {
-		db := common.DB.Child("network/dns", "records")
-		items, err := db.List(ctx, "")
-		if err != nil {
-			return nil, 0, err
-		}
-		for _, v := range items {
-			var record models.Record
-			if err := json.Unmarshal([]byte(v.Value), &record); err == nil {
-				recordCache.Add(record.ID, &record)
-				if domainID == "" || record.DomainID == domainID {
-					all = append(all, record)
-				}
-			}
-		}
-		recordListCache.Add(cacheKey, all)
+func ScanRecords(ctx context.Context, domainID string, cursor string, limit int, search string) (*models.PaginationResponse[models.Record], error) {
+	db := common.DB.Child("network/dns", "records")
+	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
+		Limit:  int64(limit * 5),
+		Cursor: cursor,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	res := make([]models.Record, 0)
 	search = strings.ToLower(search)
-	for _, record := range all {
-		if search == "" || strings.Contains(strings.ToLower(record.Name), search) || strings.Contains(strings.ToLower(record.Value), search) || strings.Contains(strings.ToLower(record.ID), search) {
-			res = append(res, record)
+	for _, v := range resp.Pairs {
+		var record models.Record
+		if err := json.Unmarshal([]byte(v.Value), &record); err == nil {
+			if (domainID == "" || record.DomainID == domainID) && (search == "" || strings.Contains(strings.ToLower(record.Name), search) || strings.Contains(strings.ToLower(record.Value), search) || strings.Contains(strings.ToLower(record.ID), search)) {
+				res = append(res, record)
+				recordCache.Add(record.ID, &record)
+			}
+		}
+		if len(res) >= limit {
+			return &models.PaginationResponse[models.Record]{
+				Items:      res,
+				NextCursor: v.Key,
+				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+			}, nil
 		}
 	}
 
-	total := len(res)
-	start := (page - 1) * pageSize
-	if start < 0 {
-		start = 0
-	}
-	if start >= total {
-		return []models.Record{}, total, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-	return res[start:end], total, nil
+	return &models.PaginationResponse[models.Record]{
+		Items:      res,
+		NextCursor: resp.Cursor,
+		HasMore:    resp.HasMore,
+	}, nil
 }
 
 func DeleteRecordsByDomain(ctx context.Context, domainID string) error {
@@ -249,7 +218,6 @@ func DeleteRecordsByDomain(ctx context.Context, domainID string) error {
 		}
 	}
 	if deleted {
-		recordListCache.Purge()
 		updateLastModified()
 	}
 	return nil

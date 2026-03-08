@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"homelab/pkg/common"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/site"
 	"io"
@@ -42,8 +43,11 @@ func (s *SitePoolService) GetExport(ctx context.Context, id string) (*models.Sit
 	return repo.GetExport(ctx, id)
 }
 
-func (s *SitePoolService) ListExports(ctx context.Context, page, pageSize int, search string) ([]models.SiteExport, int, error) {
-	return repo.ListExports(ctx, page, pageSize, search)
+func (s *SitePoolService) ScanExports(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteExport], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
+		return nil, fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
+	}
+	return repo.ScanExports(ctx, cursor, limit, search)
 }
 
 func (s *SitePoolService) PreviewExport(ctx context.Context, req *models.SiteExportPreviewRequest) ([]models.SitePoolEntry, error) {

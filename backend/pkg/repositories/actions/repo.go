@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
+	"strings"
 
 	"gopkg.d7z.net/middleware/kv"
 )
@@ -44,7 +45,7 @@ func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
 	if err != nil {
 		return nil, err
 	}
-	res := make([]models.Workflow, 0)
+	res := make([]models.Workflow, 0, len(items))
 	for _, v := range items {
 		var workflow models.Workflow
 		if err := json.Unmarshal([]byte(v.Value), &workflow); err == nil {
@@ -52,6 +53,40 @@ func ListWorkflows(ctx context.Context) ([]models.Workflow, error) {
 		}
 	}
 	return res, nil
+}
+
+func ScanWorkflows(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Workflow], error) {
+	db := common.DB.Child("system", "actions", "workflows")
+	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
+		Limit:  int64(limit * 5),
+		Cursor: cursor,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]models.Workflow, 0)
+	search = strings.ToLower(search)
+	for _, v := range resp.Pairs {
+		var workflow models.Workflow
+		if err := json.Unmarshal([]byte(v.Value), &workflow); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(workflow.Name), search) || strings.Contains(strings.ToLower(workflow.ID), search) {
+				res = append(res, workflow)
+			}
+		}
+		if len(res) >= limit {
+			return &models.PaginationResponse[models.Workflow]{
+				Items:      res,
+				NextCursor: v.Key,
+				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+			}, nil
+		}
+	}
+	return &models.PaginationResponse[models.Workflow]{
+		Items:      res,
+		NextCursor: resp.Cursor,
+		HasMore:    resp.HasMore,
+	}, nil
 }
 
 // TaskInstance Repo
@@ -84,7 +119,7 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	res := make([]models.TaskInstance, 0)
+	res := make([]models.TaskInstance, 0, len(items))
 	for _, v := range items {
 		var instance models.TaskInstance
 		if err := json.Unmarshal([]byte(v.Value), &instance); err == nil {
@@ -92,6 +127,40 @@ func ListTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 		}
 	}
 	return res, nil
+}
+
+func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.TaskInstance], error) {
+	db := common.DB.Child("system", "actions", "instances")
+	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
+		Limit:  int64(limit * 5),
+		Cursor: cursor,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]models.TaskInstance, 0)
+	search = strings.ToLower(search)
+	for _, v := range resp.Pairs {
+		var instance models.TaskInstance
+		if err := json.Unmarshal([]byte(v.Value), &instance); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(instance.ID), search) || strings.Contains(strings.ToLower(instance.WorkflowID), search) {
+				res = append(res, instance)
+			}
+		}
+		if len(res) >= limit {
+			return &models.PaginationResponse[models.TaskInstance]{
+				Items:      res,
+				NextCursor: v.Key,
+				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+			}, nil
+		}
+	}
+	return &models.PaginationResponse[models.TaskInstance]{
+		Items:      res,
+		NextCursor: resp.Cursor,
+		HasMore:    resp.HasMore,
+	}, nil
 }
 
 func DeleteTaskInstance(ctx context.Context, id string) error {

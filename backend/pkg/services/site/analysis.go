@@ -122,9 +122,9 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []
 	res := &models.SiteAnalysisResult{Matched: false}
 
 	if len(groupIDs) == 0 {
-		groups, _, err := repo.ListGroups(ctx, 1, 1000, "")
+		resp, err := repo.ScanGroups(ctx, "", 1000, "")
 		if err == nil {
-			for _, g := range groups {
+			for _, g := range resp.Items {
 				groupIDs = append(groupIDs, g.ID)
 			}
 		}

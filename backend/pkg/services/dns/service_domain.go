@@ -19,36 +19,26 @@ func lockDomain(ctx context.Context, id string) (func(), error) {
 	return common.LockWithTimeout(ctx, "network:dns:domain:"+id, 0)
 }
 
-func ListDomains(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	domains, _, err := dnsrepo.ListDomains(ctx, 0, 10000, search)
+func ScanDomains(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Domain], error) {
+	resp, err := dnsrepo.ScanDomains(ctx, cursor, limit, search)
 	if err != nil {
 		return nil, err
 	}
 
 	perms := commonauth.PermissionsFromContext(ctx)
-	var filteredDomains []models.Domain
-	for _, d := range domains {
-		if perms.IsAllowed("network/dns") || perms.IsAllowed("network/dns/"+d.Name) {
-			filteredDomains = append(filteredDomains, d)
+	if perms.IsAllowed("network/dns") {
+		return resp, nil
+	}
+
+	// Filter by instance permissions
+	var filtered []models.Domain
+	for _, d := range resp.Items {
+		if perms.IsAllowed("network/dns/" + d.Name) {
+			filtered = append(filtered, d)
 		}
 	}
-
-	total := len(filteredDomains)
-	start := (page - 1) * pageSize
-	if start >= total {
-		return &common.PaginatedResponse{Items: []interface{}{}, Total: total, Page: page}, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	var items []interface{}
-	for i := start; i < end; i++ {
-		items = append(items, filteredDomains[i])
-	}
-
-	return &common.PaginatedResponse{Items: items, Total: total, Page: page}, nil
+	resp.Items = filtered
+	return resp, nil
 }
 
 func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, error) {
@@ -60,10 +50,12 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	existingDomains, _, _ := dnsrepo.ListDomains(ctx, 0, 1000, domain.Name)
-	for _, ed := range existingDomains {
-		if strings.EqualFold(ed.Name, domain.Name) {
-			return nil, errors.New("domain already exists")
+	existingResp, _ := dnsrepo.ScanDomains(ctx, "", 1000, domain.Name)
+	if existingResp != nil {
+		for _, ed := range existingResp.Items {
+			if strings.EqualFold(ed.Name, domain.Name) {
+				return nil, errors.New("domain already exists")
+			}
 		}
 	}
 

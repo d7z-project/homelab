@@ -35,25 +35,30 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 		return nil, fmt.Errorf("%w: dns", commonauth.ErrPermissionDenied)
 	}
 
-	domains, _, _ := dnsrepo.ListDomains(ctx, 0, 10000, "")
-	all, _, _ := dnsrepo.ListRecords(ctx, "", 0, 100000, "")
+	domainsResp, _ := dnsrepo.ScanDomains(ctx, "", 10000, "")
+	allResp, _ := dnsrepo.ScanRecords(ctx, "", "", 100000, "")
+	
 	domainMap := make(map[string]map[string]map[string]interface{})
-	for _, r := range all {
-		if !r.Enabled {
-			continue
+	if allResp != nil {
+		for _, r := range allResp.Items {
+			if !r.Enabled {
+				continue
+			}
+			if domainMap[r.DomainID] == nil {
+				domainMap[r.DomainID] = make(map[string]map[string]interface{})
+			}
+			if domainMap[r.DomainID][r.Name] == nil {
+				domainMap[r.DomainID][r.Name] = make(map[string]interface{})
+			}
+			domainMap[r.DomainID][r.Name][r.Type] = r.Value
 		}
-		if domainMap[r.DomainID] == nil {
-			domainMap[r.DomainID] = make(map[string]map[string]interface{})
-		}
-		if domainMap[r.DomainID][r.Name] == nil {
-			domainMap[r.DomainID][r.Name] = make(map[string]interface{})
-		}
-		domainMap[r.DomainID][r.Name][r.Type] = r.Value
 	}
 	resp := &models.DnsExportResponse{Domains: make([]models.ExportDomain, 0)}
-	for _, d := range domains {
-		if d.Enabled && perms.IsAllowed("network/dns/"+d.Name) {
-			resp.Domains = append(resp.Domains, models.ExportDomain{Name: d.Name, Records: domainMap[d.ID]})
+	if domainsResp != nil {
+		for _, d := range domainsResp.Items {
+			if d.Enabled && perms.IsAllowed("network/dns/"+d.Name) {
+				resp.Domains = append(resp.Domains, models.ExportDomain{Name: d.Name, Records: domainMap[d.ID]})
+			}
 		}
 	}
 	return resp, nil

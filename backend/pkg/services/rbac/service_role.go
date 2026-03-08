@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
@@ -13,27 +12,6 @@ import (
 
 	"github.com/google/uuid"
 )
-
-func ListRoles(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
-	}
-	roles, total, err := rbacrepo.ListRoles(ctx, uint64(page-1), uint(pageSize), search)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []interface{}
-	for _, r := range roles {
-		items = append(items, r)
-	}
-
-	return &common.PaginatedResponse{
-		Items: items,
-		Total: int(total),
-		Page:  page,
-	}, nil
-}
 
 func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 	if role.ID == "" {
@@ -116,7 +94,7 @@ func DeleteRole(ctx context.Context, id string) error {
 	}
 
 	// Cascade update/delete RoleBindings
-	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
+	rbs, err := rbacrepo.ListRoleBindings(ctx)
 	if err == nil {
 		for _, rb := range rbs {
 			newRoleIDs := make([]string, 0)

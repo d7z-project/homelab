@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
@@ -12,27 +11,6 @@ import (
 	authservice "homelab/pkg/services/auth"
 	"strings"
 )
-
-func ListServiceAccounts(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
-	}
-	sas, total, err := rbacrepo.ListServiceAccounts(ctx, uint64(page-1), uint(pageSize), search)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []interface{}
-	for _, sa := range sas {
-		items = append(items, sa)
-	}
-
-	return &common.PaginatedResponse{
-		Items: items,
-		Total: int(total),
-		Page:  page,
-	}, nil
-}
 
 func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*models.ServiceAccount, error) {
 	if err := sa.Bind(nil); err != nil {
@@ -113,6 +91,12 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 	return sa, nil
 }
 
+var saUsageCheckers []func(ctx context.Context, id string) error
+
+func RegisterSAUsageChecker(f func(ctx context.Context, id string) error) {
+	saUsageCheckers = append(saUsageCheckers, f)
+}
+
 func DeleteServiceAccount(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
@@ -129,8 +113,15 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 		return errors.New("ServiceAccount not found")
 	}
 
+	// Usage Check
+	for _, check := range saUsageCheckers {
+		if err := check(ctx, id); err != nil {
+			return err
+		}
+	}
+
 	// Cascade delete RoleBindings
-	rbs, err := rbacrepo.ListRoleBindingsAll(ctx)
+	rbs, err := rbacrepo.ListRoleBindings(ctx)
 	if err == nil {
 		for _, rb := range rbs {
 			if rb.ServiceAccountID == id {

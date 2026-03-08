@@ -203,7 +203,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 
 	// 前置校验: 确认执行身份 (ServiceAccount) 仍然存在
 	if instance.ServiceAccountID != "" && instance.ServiceAccountID != "root" {
-		saExists, err := discovery.Verify(ctx, "rbac/serviceaccounts", instance.ServiceAccountID)
+		saExists, err := discovery.Verify(commonauth.SystemContext(), "rbac/serviceaccounts", instance.ServiceAccountID)
 		if err != nil || !saExists {
 			e.fail(instance, fmt.Errorf("service account '%s' no longer exists, workflow cannot execute", instance.ServiceAccountID), logger)
 			return

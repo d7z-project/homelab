@@ -25,14 +25,13 @@ func TestSOARecordLogic(t *testing.T) {
 		t.Fatalf("CreateDomain failed: %v", err)
 	}
 
-	resp, err := dnsservice.ListRecords(ctx, domain.ID, 1, 10, "")
+	resp, err := dnsservice.ScanRecords(ctx, domain.ID, "", 10, "")
 	if err != nil {
-		t.Fatalf("ListRecords failed: %v", err)
+		t.Fatalf("ScanRecords failed: %v", err)
 	}
 
 	var soaRecord *models.Record
-	for _, item := range resp.Items.([]interface{}) {
-		r := item.(models.Record)
+	for _, r := range resp.Items {
 		if r.Type == "SOA" {
 			soaRecord = &r
 			break
@@ -95,9 +94,8 @@ func TestSOARecordLogic(t *testing.T) {
 	}
 
 	// Re-fetch SOA
-	resp2, _ := dnsservice.ListRecords(ctx, domain.ID, 1, 10, "")
-	for _, item := range resp2.Items.([]interface{}) {
-		r := item.(models.Record)
+	resp2, _ := dnsservice.ScanRecords(ctx, domain.ID, "", 10, "")
+	for _, r := range resp2.Items {
 		if r.Type == "SOA" {
 			newSerial := strings.Fields(r.Value)[2]
 			if newSerial <= initialSerial {

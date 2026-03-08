@@ -10,47 +10,78 @@ import (
 )
 
 func init() {
-	discovery.Register("rbac/serviceaccounts", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+	discovery.Register("rbac/serviceaccounts", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-			return nil, 0, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+			return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 		}
 		if limit <= 0 {
 			limit = 20
 		}
-		sas, total, err := rbacrepo.ListServiceAccounts(ctx, uint64(offset/limit), uint(limit), search)
+		res, err := rbacrepo.ScanServiceAccounts(ctx, cursor, limit, search)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		var items []models.LookupItem
-		for _, sa := range sas {
+		for _, sa := range res.Items {
 			items = append(items, models.LookupItem{
 				ID:          sa.ID,
 				Name:        sa.Name,
 				Description: sa.Comments,
 			})
 		}
-		return items, int(total), nil
+		return &models.PaginationResponse[models.LookupItem]{
+			Items:      items,
+			NextCursor: res.NextCursor,
+			HasMore:    res.HasMore,
+			Total:      res.Total,
+		}, nil
 	})
 
-	discovery.Register("rbac/roles", func(ctx context.Context, search string, offset, limit int) ([]models.LookupItem, int, error) {
+	discovery.Register("rbac/roles", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-			return nil, 0, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+			return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 		}
 		if limit <= 0 {
 			limit = 20
 		}
-		roles, total, err := rbacrepo.ListRoles(ctx, uint64(offset/limit), uint(limit), search)
+		res, err := rbacrepo.ScanRoles(ctx, cursor, limit, search)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		var items []models.LookupItem
-		for _, r := range roles {
+		for _, r := range res.Items {
 			items = append(items, models.LookupItem{
 				ID:          r.ID,
 				Name:        r.Name,
 				Description: r.Comments,
 			})
 		}
-		return items, int(total), nil
+		return &models.PaginationResponse[models.LookupItem]{
+			Items:      items,
+			NextCursor: res.NextCursor,
+			HasMore:    res.HasMore,
+			Total:      res.Total,
+		}, nil
 	})
+}
+
+func ScanServiceAccounts(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.ServiceAccount], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+	}
+	return rbacrepo.ScanServiceAccounts(ctx, cursor, limit, search)
+}
+
+func ScanRoles(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Role], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+	}
+	return rbacrepo.ScanRoles(ctx, cursor, limit, search)
+}
+
+func ScanRoleBindings(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.RoleBinding], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+	}
+	return rbacrepo.ScanRoleBindings(ctx, cursor, limit, search)
 }

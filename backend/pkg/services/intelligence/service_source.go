@@ -2,8 +2,10 @@ package intelligence
 
 import (
 	"context"
+	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
+	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/intelligence"
 	"homelab/pkg/services/ip"
@@ -61,6 +63,30 @@ func (s *IntelligenceService) ListSources(ctx context.Context) ([]models.Intelli
 	}
 
 	return sources, nil
+}
+
+func (s *IntelligenceService) ScanSources(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IntelligenceSource], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/intelligence") {
+		return nil, fmt.Errorf("%w: network/intelligence", commonauth.ErrPermissionDenied)
+	}
+	res, err := repo.ScanSources(ctx, cursor, limit, search)
+	if err != nil {
+		return nil, err
+	}
+
+	// 从内存 `manager` 获取最新运行状态、错误和进度
+	for i := range res.Items {
+		if t, ok := s.tasks.GetTask(res.Items[i].ID); ok {
+			status := t.GetStatus()
+			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
+				res.Items[i].Status = status
+				res.Items[i].ErrorMessage = t.Error
+				res.Items[i].Progress = t.GetProgress()
+			}
+		}
+	}
+
+	return res, nil
 }
 
 func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error {

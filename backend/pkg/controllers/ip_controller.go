@@ -30,23 +30,22 @@ func InitIPControllers(service *ipservice.IPPoolService, engine *ipservice.Analy
 // @Summary List all IP groups
 // @Tags network/ip
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.IPGroup}
+// @Success 200 {object} common.CursorResponse{items=[]models.IPGroup}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/pools [get]
 func ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
-
-	items, total, err := ipPoolService.ListGroups(r.Context(), page, pageSize, search)
+	res, err := ipPoolService.ScanGroups(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateGroupHandler godoc
@@ -159,23 +158,22 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary List all IP exports
 // @Tags network/ip
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.IPExport}
+// @Success 200 {object} common.CursorResponse{items=[]models.IPExport}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/exports [get]
 func ListExportsHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
-
-	items, total, err := ipPoolService.ListExports(r.Context(), page, pageSize, search)
+	res, err := ipPoolService.ScanExports(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateExportHandler godoc
@@ -502,23 +500,22 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary List all IP sync policies
 // @Tags network/ip
 // @Produce json
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Items per page"
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.PaginatedResponse{items=[]models.IPSyncPolicy}
+// @Success 200 {object} common.CursorResponse{items=[]models.IPSyncPolicy}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/sync [get]
 func ListSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := getPaginationParams(r)
+	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
-
-	items, total, err := ipPoolService.ListSyncPolicies(r.Context(), page, pageSize, search)
+	res, err := ipPoolService.ScanSyncPolicies(r.Context(), cursor, limit, search)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
-	common.PaginatedSuccess(w, r, items, total, page, pageSize)
+	common.CursorSuccess(w, r, res)
 }
 
 // CreateSyncPolicyHandler godoc

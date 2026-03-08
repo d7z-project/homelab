@@ -95,24 +95,24 @@ func (s *IPPoolService) GetSyncPolicy(ctx context.Context, id string) (*models.I
 	return repo.GetSyncPolicy(ctx, id)
 }
 
-func (s *IPPoolService) ListSyncPolicies(ctx context.Context, page, pageSize int, search string) ([]models.IPSyncPolicy, int, error) {
-	list, total, err := repo.ListSyncPolicies(ctx, page, pageSize, search)
+func (s *IPPoolService) ScanSyncPolicies(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPSyncPolicy], error) {
+	res, err := repo.ScanSyncPolicies(ctx, cursor, limit, search)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	// 从内存 `manager` 获取最新运行状态、错误和进度
-	for i := range list {
-		if t, ok := s.syncTasks.GetTask(list[i].ID); ok {
+	for i := range res.Items {
+		if t, ok := s.syncTasks.GetTask(res.Items[i].ID); ok {
 			status := t.GetStatus()
 			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
-				list[i].LastStatus = status
-				list[i].ErrorMessage = t.Error
-				list[i].Progress = t.GetProgress()
+				res.Items[i].LastStatus = status
+				res.Items[i].ErrorMessage = t.Error
+				res.Items[i].Progress = t.GetProgress()
 			}
 		}
 	}
-	return list, total, nil
+	return res, nil
 }
 
 func (s *IPPoolService) Sync(ctx context.Context, id string) error {

@@ -7,6 +7,7 @@ import (
 	repo "homelab/pkg/repositories/actions"
 	"homelab/pkg/services/actions"
 	_ "homelab/pkg/services/actions/processors" // 触发 init 注册
+	"homelab/pkg/services/rbac"
 	"homelab/tests"
 	"sync"
 	"testing"
@@ -41,6 +42,9 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 
 	ctx := tests.SetupMockRootContext()
 	actions.GlobalTriggerManager.Start()
+
+	// 准备环境
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
 
 	// 准备一个简单的 Workflow
 	wf := &models.Workflow{

@@ -12,24 +12,18 @@ import (
 )
 
 var (
-	groupCache      *lru.Cache[string, *models.SiteGroup]
-	exportCache     *lru.Cache[string, *models.SiteExport]
-	groupListCache  *lru.Cache[string, []models.SiteGroup]
-	exportListCache *lru.Cache[string, []models.SiteExport]
+	groupCache  *lru.Cache[string, *models.SiteGroup]
+	exportCache *lru.Cache[string, *models.SiteExport]
 )
 
 func init() {
 	groupCache, _ = lru.New[string, *models.SiteGroup](512)
 	exportCache, _ = lru.New[string, *models.SiteExport](512)
-	groupListCache, _ = lru.New[string, []models.SiteGroup](16)
-	exportListCache, _ = lru.New[string, []models.SiteExport](16)
 }
 
 func ClearCache() {
 	groupCache.Purge()
 	exportCache.Purge()
-	groupListCache.Purge()
-	exportListCache.Purge()
 }
 
 // Group Repo
@@ -60,7 +54,6 @@ func SaveGroup(ctx context.Context, group *models.SiteGroup) error {
 	err = db.Put(ctx, group.ID, string(data), kv.TTLKeep)
 	if err == nil {
 		groupCache.Add(group.ID, group)
-		groupListCache.Purge()
 	}
 	return err
 }
@@ -69,52 +62,43 @@ func DeleteGroup(ctx context.Context, id string) error {
 	_, err := common.DB.Child("network", "site", "groups").Delete(ctx, id)
 	if err == nil {
 		groupCache.Remove(id)
-		groupListCache.Purge()
 	}
 	return err
 }
 
-func ListGroups(ctx context.Context, page, pageSize int, search string) ([]models.SiteGroup, int, error) {
-	var all []models.SiteGroup
-	if val, ok := groupListCache.Get("all"); ok {
-		all = val
-	} else {
-		db := common.DB.Child("network", "site", "groups")
-		items, err := db.List(ctx, "")
-		if err != nil {
-			return nil, 0, err
-		}
-		for _, v := range items {
-			var group models.SiteGroup
-			if err := json.Unmarshal([]byte(v.Value), &group); err == nil {
-				all = append(all, group)
-				groupCache.Add(group.ID, &group)
-			}
-		}
-		groupListCache.Add("all", all)
+func ScanGroups(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteGroup], error) {
+	db := common.DB.Child("network", "site", "groups")
+	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
+		Limit:  int64(limit * 5),
+		Cursor: cursor,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	res := make([]models.SiteGroup, 0)
 	search = strings.ToLower(search)
-	for _, g := range all {
-		if search == "" || strings.Contains(strings.ToLower(g.Name), search) || strings.Contains(strings.ToLower(g.ID), search) {
-			res = append(res, g)
+	for _, v := range resp.Pairs {
+		var group models.SiteGroup
+		if err := json.Unmarshal([]byte(v.Value), &group); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(group.Name), search) || strings.Contains(strings.ToLower(group.ID), search) {
+				res = append(res, group)
+				groupCache.Add(group.ID, &group)
+			}
+		}
+		if len(res) >= limit {
+			return &models.PaginationResponse[models.SiteGroup]{
+				Items:      res,
+				NextCursor: v.Key,
+				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+			}, nil
 		}
 	}
-
-	total := len(res)
-	start := (page - 1) * pageSize
-	if start < 0 {
-		start = 0
-	}
-	if start >= total {
-		return []models.SiteGroup{}, total, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-	return res[start:end], total, nil
+	return &models.PaginationResponse[models.SiteGroup]{
+		Items:      res,
+		NextCursor: resp.Cursor,
+		HasMore:    resp.HasMore,
+	}, nil
 }
 
 // Export Repo
@@ -145,7 +129,6 @@ func SaveExport(ctx context.Context, export *models.SiteExport) error {
 	err = db.Put(ctx, export.ID, string(data), kv.TTLKeep)
 	if err == nil {
 		exportCache.Add(export.ID, export)
-		exportListCache.Purge()
 	}
 	return err
 }
@@ -154,50 +137,41 @@ func DeleteExport(ctx context.Context, id string) error {
 	_, err := common.DB.Child("network", "site", "exports").Delete(ctx, id)
 	if err == nil {
 		exportCache.Remove(id)
-		exportListCache.Purge()
 	}
 	return err
 }
 
-func ListExports(ctx context.Context, page, pageSize int, search string) ([]models.SiteExport, int, error) {
-	var all []models.SiteExport
-	if val, ok := exportListCache.Get("all"); ok {
-		all = val
-	} else {
-		db := common.DB.Child("network", "site", "exports")
-		items, err := db.List(ctx, "")
-		if err != nil {
-			return nil, 0, err
-		}
-		for _, v := range items {
-			var export models.SiteExport
-			if err := json.Unmarshal([]byte(v.Value), &export); err == nil {
-				all = append(all, export)
-				exportCache.Add(export.ID, &export)
-			}
-		}
-		exportListCache.Add("all", all)
+func ScanExports(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteExport], error) {
+	db := common.DB.Child("network", "site", "exports")
+	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
+		Limit:  int64(limit * 5),
+		Cursor: cursor,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	res := make([]models.SiteExport, 0)
 	search = strings.ToLower(search)
-	for _, e := range all {
-		if search == "" || strings.Contains(strings.ToLower(e.Name), search) || strings.Contains(strings.ToLower(e.ID), search) {
-			res = append(res, e)
+	for _, v := range resp.Pairs {
+		var export models.SiteExport
+		if err := json.Unmarshal([]byte(v.Value), &export); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(export.Name), search) || strings.Contains(strings.ToLower(export.ID), search) {
+				res = append(res, export)
+				exportCache.Add(export.ID, &export)
+			}
+		}
+		if len(res) >= limit {
+			return &models.PaginationResponse[models.SiteExport]{
+				Items:      res,
+				NextCursor: v.Key,
+				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+			}, nil
 		}
 	}
-
-	total := len(res)
-	start := (page - 1) * pageSize
-	if start < 0 {
-		start = 0
-	}
-	if start >= total {
-		return []models.SiteExport{}, total, nil
-	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-	return res[start:end], total, nil
+	return &models.PaginationResponse[models.SiteExport]{
+		Items:      res,
+		NextCursor: resp.Cursor,
+		HasMore:    resp.HasMore,
+	}, nil
 }

@@ -2,6 +2,7 @@ package common_test
 
 import (
 	"homelab/pkg/models"
+	rbacrepo "homelab/pkg/repositories/rbac"
 	"homelab/pkg/services/actions"
 	"homelab/pkg/services/rbac"
 	"homelab/tests"
@@ -64,12 +65,9 @@ func TestDataConsistency(t *testing.T) {
 	})
 
 	t.Run("RBAC: Delete SA used by Workflow", func(t *testing.T) {
-		// 1. Create SA
+		// 1. Create SA (Direct repo call for persistence)
 		saID := "worker-sa"
-		_, err := rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: saID, Name: "Worker SA"})
-		if err != nil {
-			t.Fatalf("Failed to create SA: %v", err)
-		}
+		_ = rbacrepo.SaveServiceAccount(ctx, &models.ServiceAccount{ID: saID, Name: "Worker SA", Enabled: true})
 
 		// 2. Create Workflow using this SA
 		wf := &models.Workflow{
@@ -80,7 +78,7 @@ func TestDataConsistency(t *testing.T) {
 				{ID: "s1", Type: "test/mock", Name: "Step 1"},
 			},
 		}
-		_, err = actions.CreateWorkflow(ctx, wf)
+		_, err := actions.CreateWorkflow(ctx, wf)
 		if err != nil {
 			t.Fatalf("Failed to create Workflow: %v", err)
 		}
@@ -95,12 +93,14 @@ func TestDataConsistency(t *testing.T) {
 
 		// 4. Delete Workflow first
 		// Need to get the generated ID
-		wfs, _ := actions.ListWorkflows(ctx)
+		wfResp, _ := actions.ScanWorkflows(ctx, "", 1000, "")
 		var wfID string
-		for _, w := range wfs {
-			if w.Name == "Worker Workflow" {
-				wfID = w.ID
-				break
+		if wfResp != nil {
+			for _, w := range wfResp.Items {
+				if w.Name == "Worker Workflow" {
+					wfID = w.ID
+					break
+				}
 			}
 		}
 		err = actions.DeleteWorkflow(ctx, wfID)
@@ -117,7 +117,7 @@ func TestDataConsistency(t *testing.T) {
 
 	t.Run("Actions: RunWorkflow Idempotency with Lock", func(t *testing.T) {
 		saID := "idemp-sa"
-		rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: saID, Name: "Idemp SA"})
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: saID, Name: "Idemp SA"})
 		wf := &models.Workflow{
 			Name:             "Idemp Workflow",
 			ServiceAccountID: saID,

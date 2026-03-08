@@ -65,8 +65,8 @@ func (s *IPPoolService) GetExport(ctx context.Context, id string) (*models.IPExp
 	return repo.GetExport(ctx, id)
 }
 
-func (s *IPPoolService) ListExports(ctx context.Context, page, pageSize int, search string) ([]models.IPExport, int, error) {
-	return repo.ListExports(ctx, page, pageSize, search)
+func (s *IPPoolService) ScanExports(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPExport], error) {
+	return repo.ScanExports(ctx, cursor, limit, search)
 }
 
 func (s *IPPoolService) PreviewExport(ctx context.Context, req *models.IPExportPreviewRequest) ([]models.IPPoolEntry, error) {

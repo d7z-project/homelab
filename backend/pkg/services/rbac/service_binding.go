@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
@@ -13,27 +12,6 @@ import (
 
 	"github.com/google/uuid"
 )
-
-func ListRoleBindings(ctx context.Context, page, pageSize int, search string) (*common.PaginatedResponse, error) {
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
-	}
-	rbs, total, err := rbacrepo.ListRoleBindings(ctx, uint64(page-1), uint(pageSize), search)
-	if err != nil {
-		return nil, err
-	}
-
-	var items []interface{}
-	for _, rb := range rbs {
-		items = append(items, rb)
-	}
-
-	return &common.PaginatedResponse{
-		Items: items,
-		Total: int(total),
-		Page:  page,
-	}, nil
-}
 
 func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.RoleBinding, error) {
 	if err := rb.Bind(nil); err != nil {
