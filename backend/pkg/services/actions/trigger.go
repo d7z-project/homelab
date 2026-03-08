@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/actions"
@@ -42,13 +41,7 @@ func (m *TriggerManager) registerClusterHandlers() {
 	})
 
 	// 异步执行工作流事件
-	common.RegisterEventHandler(common.EventWorkflowExecute, func(ctx context.Context, payload string) {
-		var req models.WorkflowExecutePayload
-		if err := json.Unmarshal([]byte(payload), &req); err != nil {
-			log.Printf("TriggerManager: failed to unmarshal "+common.EventWorkflowExecute+" payload: %v", err)
-			return
-		}
-
+	common.RegisterEventHandler(common.EventWorkflowExecute, func(ctx context.Context, req models.WorkflowExecutePayload) {
 		// 使用分布式锁确保同一实例 ID 只被一个节点执行
 		lockKey := "action:execute:" + req.InstanceID
 		release := common.Locker.TryLock(ctx, lockKey)

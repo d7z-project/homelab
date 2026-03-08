@@ -2,7 +2,9 @@ package common
 
 import (
 	"context"
+	"encoding/json"
 	"log"
+	"reflect"
 	"strings"
 	"sync"
 )
@@ -21,20 +23,51 @@ const (
 	EventWorkflowTriggerChanged = "workflow_trigger_changed"
 )
 
-type EventHandler func(ctx context.Context, payload string)
+type eventDispatcher interface {
+	Dispatch(ctx context.Context, payload string)
+}
+
+type genericDispatcher[T any] struct {
+	handler func(ctx context.Context, payload T)
+}
+
+func (d *genericDispatcher[T]) Dispatch(ctx context.Context, payloadStr string) {
+	var payload T
+	// 使用反射安全地检查 T 的底层类型是否为 string
+	t := reflect.TypeOf(payload)
+	if t != nil && t.Kind() == reflect.String {
+		if s, ok := any(&payload).(*string); ok {
+			*s = payloadStr
+			d.handler(ctx, payload)
+			return
+		}
+	}
+
+	if err := json.Unmarshal([]byte(payloadStr), &payload); err != nil {
+		// 如果解析失败且期望的是 string，直接透传 (兼容旧逻辑)
+		if s, ok := any(&payload).(*string); ok {
+			*s = payloadStr
+		} else {
+			log.Printf("[Events] failed to unmarshal payload %q into %T: %v", payloadStr, payload, err)
+			return
+		}
+	}
+	d.handler(ctx, payload)
+}
 
 var (
-	eventHandlers    = make(map[string][]EventHandler)
+	eventDispatchers = make(map[string][]eventDispatcher)
 	eventHandlersMu  sync.RWMutex
 	eventLoopStarted bool
 	eventLoopMu      sync.Mutex
 )
 
-// RegisterEventHandler registers a handler for a specific cluster event.
-func RegisterEventHandler(event string, handler EventHandler) {
+// RegisterEventHandler registers a generic handler for a specific cluster event.
+func RegisterEventHandler[T any](event string, handler func(ctx context.Context, payload T)) {
 	eventHandlersMu.Lock()
 	defer eventHandlersMu.Unlock()
-	eventHandlers[event] = append(eventHandlers[event], handler)
+	dispatcher := &genericDispatcher[T]{handler: handler}
+	eventDispatchers[event] = append(eventDispatchers[event], dispatcher)
 }
 
 // StartEventLoop connects to the cluster Pub/Sub and starts dispatching events.
@@ -70,11 +103,11 @@ func StartEventLoop(ctx context.Context) {
 					payload := parts[1]
 
 					eventHandlersMu.RLock()
-					handlers := eventHandlers[event]
+					dispatchers := eventDispatchers[event]
 					eventHandlersMu.RUnlock()
 
-					for _, h := range handlers {
-						go h(ctx, payload)
+					for _, d := range dispatchers {
+						go d.Dispatch(ctx, payload)
 					}
 				}
 			}
@@ -82,20 +115,53 @@ func StartEventLoop(ctx context.Context) {
 	}()
 }
 
-// GetEventHandlers returns registered handlers for a given event (used for testing).
-func GetEventHandlers(event string) []EventHandler {
+// GetEventHandlersCount returns the number of registered handlers for a given event (used for testing).
+func GetEventHandlersCount(event string) int {
 	eventHandlersMu.RLock()
 	defer eventHandlersMu.RUnlock()
-	return eventHandlers[event]
+	return len(eventDispatchers[event])
 }
 
 // ResetEventHandlers clears all registered handlers (used for testing initialization).
 func ResetEventHandlers() {
 	eventHandlersMu.Lock()
 	defer eventHandlersMu.Unlock()
-	eventHandlers = make(map[string][]EventHandler)
+	eventDispatchers = make(map[string][]eventDispatcher)
 
 	eventLoopMu.Lock()
 	defer eventLoopMu.Unlock()
 	eventLoopStarted = false
+}
+
+// NotifyCluster broadcasts an event with an optional payload to the cluster.
+func NotifyCluster(ctx context.Context, event string, payload any) {
+	if Subscriber == nil {
+		return
+	}
+	msg := event
+	if payload != nil {
+		var pStr string
+		if s, ok := payload.(string); ok {
+			pStr = s
+		} else {
+			data, _ := json.Marshal(payload)
+			pStr = string(data)
+		}
+		msg = event + ":" + pStr
+	}
+
+	if err := Subscriber.Publish(ctx, "homelab:cluster:events", msg); err != nil {
+		log.Printf("[Events] failed to notify cluster: %v", err)
+	}
+}
+
+// TriggerEvent directly triggers handlers for an event (used for testing).
+func TriggerEvent(ctx context.Context, event string, payload string) {
+	eventHandlersMu.RLock()
+	dispatchers := eventDispatchers[event]
+	eventHandlersMu.RUnlock()
+
+	for _, d := range dispatchers {
+		d.Dispatch(ctx, payload)
+	}
 }

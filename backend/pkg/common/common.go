@@ -50,13 +50,6 @@ func GetGlobalVersion(ctx context.Context, module string) int64 {
 	return v
 }
 
-// NotifyCluster 发送集群广播事件
-func NotifyCluster(ctx context.Context, event string, payload string) {
-	if Subscriber != nil {
-		_ = Subscriber.Publish(ctx, "homelab:cluster:events", event+":"+payload)
-	}
-}
-
 // LockWithTimeout 尝试获取分布式锁，带重试和超时机制
 func LockWithTimeout(ctx context.Context, lockKey string, timeout time.Duration) (func(), error) {
 	if Locker == nil {

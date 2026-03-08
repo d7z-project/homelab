@@ -2,7 +2,6 @@ package actions
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
@@ -85,8 +84,7 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 			Trigger:    triggerSource,
 			Inputs:     finalInputs,
 		}
-		b, _ := json.Marshal(payload)
-		common.NotifyCluster(ctx, common.EventWorkflowExecute, string(b))
+		common.NotifyCluster(ctx, common.EventWorkflowExecute, payload)
 	} else {
 		// Standalone/Test mode fallback: execute locally
 		_, _ = GlobalExecutor.Execute(ctx, userID, workflow, triggerSource, finalInputs, instanceID)

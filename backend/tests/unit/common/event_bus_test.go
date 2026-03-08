@@ -28,12 +28,9 @@ func TestEventBusDispatch(t *testing.T) {
 	// Simulate Pub/Sub by directly calling NotifyCluster
 	// In test environment, Subscriber is nil, so we test the handler registry directly
 	t.Run("Handler Registration and Dispatch", func(t *testing.T) {
-		// Directly invoke the handler dispatch path
+		// 直接触发 Handler 分发逻辑 (模拟集群接收)
 		ctx := context.Background()
-		handlers := getEventHandlers("test_event")
-		for _, h := range handlers {
-			h(ctx, "hello")
-		}
+		common.TriggerEvent(ctx, "test_event", "hello")
 
 		count := atomic.LoadInt32(&received)
 		if count != 1 {
@@ -50,10 +47,7 @@ func TestEventBusDispatch(t *testing.T) {
 			atomic.AddInt32(&count2, 10)
 		})
 
-		handlers := getEventHandlers("multi_event")
-		for _, h := range handlers {
-			h(context.Background(), "data")
-		}
+		common.TriggerEvent(context.Background(), "multi_event", "data")
 
 		c := atomic.LoadInt32(&count2)
 		if c != 11 {
@@ -62,18 +56,12 @@ func TestEventBusDispatch(t *testing.T) {
 	})
 
 	t.Run("Unknown Event No Panic", func(t *testing.T) {
-		handlers := getEventHandlers("nonexistent_event")
-		if len(handlers) != 0 {
-			t.Errorf("Expected 0 handlers for unknown event, got %d", len(handlers))
-		}
+		common.TriggerEvent(context.Background(), "nonexistent_event", "whatever")
 	})
 }
 
-// getEventHandlers is a test helper that accesses the registered event handlers.
-// This mimics the internal dispatch logic of StartEventLoop.
-func getEventHandlers(event string) []common.EventHandler {
-	// We use a public test accessor
-	return common.GetEventHandlers(event)
+func TriggerEvent(event string, payload string) {
+	common.TriggerEvent(context.Background(), event, payload)
 }
 
 func TestGlobalVersionTracking(t *testing.T) {

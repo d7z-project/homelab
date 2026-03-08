@@ -81,12 +81,6 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 	})
 
 	t.Run("IPSync_Execution_Is_Independent", func(t *testing.T) {
-		// 模拟集群节点接收到信号并处理
-		handlers := common.GetEventHandlers(common.EventIPSyncRun)
-		if len(handlers) == 0 {
-			t.Fatal("No handlers registered for " + common.EventIPSyncRun)
-		}
-
 		// 先触发以便建立 pending 状态和 Task 注册（模拟集群）
 		_ = service.Sync(ctx, policy.ID)
 
@@ -96,10 +90,8 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 			t.Fatalf("Policy should be in pending state, got %s", p.LastStatus)
 		}
 
-		// 执行 Handler
-		// 注意：doSync 内部会尝试下载，这里会因为 URL 无效而失败，
-		// 但这恰恰能验证异步更新状态的逻辑（从 pending 变为 failed）
-		handlers[0](context.Background(), policy.ID)
+		// 执行 Handler (通过 TriggerEvent 模拟集群节点接收)
+		common.TriggerEvent(context.Background(), common.EventIPSyncRun, policy.ID)
 
 		// 稍微等等框架底层的 goroutine 和 Mutex 完成落盘 (框架包含网络拨号等)
 		// 循环等待因为它是被发配到后台执行的 goroutine

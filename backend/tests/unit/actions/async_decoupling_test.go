@@ -40,6 +40,7 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 	defer func() { common.Subscriber = nil }()
 
 	ctx := tests.SetupMockRootContext()
+	actions.GlobalTriggerManager.Start()
 
 	// 准备一个简单的 Workflow
 	wf := &models.Workflow{
@@ -79,13 +80,6 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		// 再次触发一个新实例
 		instanceID, _ := actions.TriggerWorkflow(ctx, wf, "root", "Manual", nil)
 
-		// 模拟 TriggerManager 接收到信号并处理
-		handlers := common.GetEventHandlers(common.EventWorkflowExecute)
-		if len(handlers) == 0 {
-			actions.GlobalTriggerManager.Start()
-			handlers = common.GetEventHandlers(common.EventWorkflowExecute)
-		}
-
 		// 获取信号 payload
 		msg := <-mockSub.Messages
 		payload := msg[len(common.EventWorkflowExecute+":"):]
@@ -96,8 +90,8 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 			t.Errorf("Expected status Pending before handling signal, got %s", inst.Status)
 		}
 
-		// 执行 Handler (模拟节点领任务)
-		go handlers[0](ctx, payload)
+		// 执行信号分发 (模拟 TriggerManager 接收到信号)
+		common.TriggerEvent(ctx, common.EventWorkflowExecute, payload)
 
 		// 等待状态变为 Success
 		success := false
@@ -120,21 +114,16 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		msg := <-mockSub.Messages
 		payload := msg[len(common.EventWorkflowExecute+":"):]
 
-		handlers := common.GetEventHandlers(common.EventWorkflowExecute)
-
+		// 模拟两个节点同时收到消息触发
 		var wg sync.WaitGroup
 		wg.Add(2)
-
-		start := make(chan struct{})
 		for i := 0; i < 2; i++ {
 			go func() {
 				defer wg.Done()
-				<-start
-				handlers[0](ctx, payload)
+				common.TriggerEvent(ctx, common.EventWorkflowExecute, payload)
 			}()
 		}
 
-		close(start)
 		wg.Wait()
 
 		// 等待执行完成
