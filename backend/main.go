@@ -124,9 +124,8 @@ func main() {
 	// Initialize Actions Scoped FS
 	actions.Init()
 	// Initialize IP Services
-	mmdbManager := ip.NewMMDBManager(func() ([]models.IntelligenceSource, error) {
-		return intrepo.ListSources(context.Background())
-	})
+	mmdbProvider := &mmdbSourceProvider{}
+	mmdbManager := ip.NewMMDBManager(mmdbProvider)
 	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
 	exportManager := ip.NewExportManager(analysisEngine)
 	exportManager.Reconcile(ctx)
@@ -228,4 +227,14 @@ func main() {
 		log.Printf("Server forced to shutdown: %v", err)
 	}
 	log.Println("Server exiting")
+}
+
+type mmdbSourceProvider struct{}
+
+func (p *mmdbSourceProvider) ListSources(ctx context.Context) ([]models.IntelligenceSource, error) {
+	return intrepo.ListSources(ctx)
+}
+
+func (p *mmdbSourceProvider) GetSource(ctx context.Context, id string) (*models.IntelligenceSource, error) {
+	return intrepo.GetSource(ctx, id)
 }

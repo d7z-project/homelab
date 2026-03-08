@@ -8,6 +8,8 @@ import (
 	"net"
 	"testing"
 
+	"context"
+
 	"github.com/maxmind/mmdbwriter"
 	"github.com/maxmind/mmdbwriter/mmdbtype"
 	"github.com/spf13/afero"
@@ -33,12 +35,12 @@ func TestMMDBAdvanced(t *testing.T) {
 	asnFile.Close()
 
 	// 2. Load MMDB
-	manager := ip.NewMMDBManager(func() ([]models.IntelligenceSource, error) {
-		return []models.IntelligenceSource{
+	manager := ip.NewMMDBManager(&mockProvider{
+		sources: []models.IntelligenceSource{
 			{ID: "GeoLite2-ASN", Type: "asn", Enabled: true},
-		}, nil
+		},
 	})
-	err := manager.Reload() // Should load ASN
+	err := manager.ReloadAll(context.Background()) // Should load ASN
 	assert.NoError(t, err)
 
 	// 3. Lookup public IP
