@@ -65,10 +65,9 @@ type SitePoolService struct {
 	exportManager *ExportManager
 }
 
-func NewSitePoolService(engine *AnalysisEngine) *SitePoolService {
-	return &SitePoolService{engine: engine}
-}
-
-func (s *SitePoolService) SetExportManager(em *ExportManager) {
-	s.exportManager = em
+func NewSitePoolService(engine *AnalysisEngine, em *ExportManager) *SitePoolService {
+	return &SitePoolService{
+		engine:        engine,
+		exportManager: em,
+	}
 }

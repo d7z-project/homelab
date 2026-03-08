@@ -23,11 +23,10 @@ func TestIPSecurity(t *testing.T) {
 	defer cleanup()
 	common.FS = afero.NewMemMapFs()
 
-	mmdbManager := ip.NewMMDBManager()
-	ipPoolService := ip.NewIPPoolService(mmdbManager)
+	mmdbManager := ip.NewMMDBManager(nil)
 	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
 	exportManager := ip.NewExportManager(analysisEngine)
-	ipPoolService.SetExportManager(exportManager)
+	ipPoolService := ip.NewIPPoolService(analysisEngine, exportManager)
 	controllers.InitIPControllers(ipPoolService, analysisEngine, exportManager)
 
 	r := chi.NewRouter()

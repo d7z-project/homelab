@@ -83,24 +83,27 @@ func SetupMockContext(userID string, rules []models.PolicyRule) context.Context 
 // SetupIPService 初始化 IPPoolService 及其依赖
 func SetupIPService() (*ip.IPPoolService, func()) {
 	cleanup := SetupTestDB()
-	mmdb := ip.NewMMDBManager()
-	service := ip.NewIPPoolService(mmdb)
+	mmdb := ip.NewMMDBManager(nil)
+	ae := ip.NewAnalysisEngine(mmdb)
+	em := ip.NewExportManager(ae)
+	service := ip.NewIPPoolService(ae, em)
 	return service, cleanup
 }
 
 // SetupSiteService 初始化 SitePoolService 及其依赖
 func SetupSiteService() (*site.SitePoolService, func()) {
 	cleanup := SetupTestDB()
-	mmdb := ip.NewMMDBManager()
-	engine := site.NewAnalysisEngine(mmdb)
-	service := site.NewSitePoolService(engine)
+	mmdb := ip.NewMMDBManager(nil)
+	ae := site.NewAnalysisEngine(mmdb)
+	em := site.NewExportManager(ae)
+	service := site.NewSitePoolService(ae, em)
 	return service, cleanup
 }
 
 // SetupIntelligenceService 初始化 IntelligenceService 及其依赖
 func SetupIntelligenceService() (*intelligence.IntelligenceService, func()) {
 	cleanup := SetupTestDB()
-	mmdb := ip.NewMMDBManager()
+	mmdb := ip.NewMMDBManager(nil)
 	service := intelligence.NewIntelligenceService(mmdb)
 	return service, cleanup
 }

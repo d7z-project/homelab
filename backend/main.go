@@ -9,6 +9,8 @@ import (
 	"homelab/assets"
 	"homelab/pkg/common"
 	"homelab/pkg/controllers"
+	"homelab/pkg/models"
+	intrepo "homelab/pkg/repositories/intelligence"
 	"homelab/pkg/services/intelligence"
 	"homelab/pkg/services/ip"
 	"homelab/pkg/services/site"
@@ -122,21 +124,20 @@ func main() {
 	// Initialize Actions Scoped FS
 	actions.Init()
 	// Initialize IP Services
-	mmdbManager := ip.NewMMDBManager()
-	ipPoolService := ip.NewIPPoolService(mmdbManager)
+	mmdbManager := ip.NewMMDBManager(func() ([]models.IntelligenceSource, error) {
+		return intrepo.ListSources(context.Background())
+	})
 	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
 	exportManager := ip.NewExportManager(analysisEngine)
 	exportManager.Reconcile(ctx)
-	ipPoolService.SetExportManager(exportManager)
-	ipPoolService.SetAnalysisEngine(analysisEngine)
+	ipPoolService := ip.NewIPPoolService(analysisEngine, exportManager)
 	controllers.InitIPControllers(ipPoolService, analysisEngine, exportManager)
 	ipPoolService.StartSyncRunner(context.Background())
 	// Initialize Site Services
 	siteAnalysisEngine := site.NewAnalysisEngine(mmdbManager)
-	sitePoolService := site.NewSitePoolService(siteAnalysisEngine)
 	siteExportManager := site.NewExportManager(siteAnalysisEngine)
 	siteExportManager.Reconcile(ctx)
-	sitePoolService.SetExportManager(siteExportManager)
+	sitePoolService := site.NewSitePoolService(siteAnalysisEngine, siteExportManager)
 	controllers.InitSiteControllers(sitePoolService, siteAnalysisEngine, siteExportManager)
 	site.RegisterSiteProcessors(sitePoolService)
 	intelligenceService := intelligence.NewIntelligenceService(mmdbManager)

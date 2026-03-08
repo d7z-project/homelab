@@ -17,8 +17,7 @@ func TestSiteEntryTagsGranularUpdate(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	engine := site.NewAnalysisEngine(nil)
-	service := site.NewSitePoolService(engine)
+	service := site.NewSitePoolService(nil, nil)
 
 	group := &models.SiteGroup{ID: "tag_test", Name: "Tag Test"}
 	_ = service.CreateGroup(ctx, group)

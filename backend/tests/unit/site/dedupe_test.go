@@ -23,7 +23,7 @@ func TestSiteExportDeduplication(t *testing.T) {
 
 	analysis := site.NewAnalysisEngine(nil)
 	manager := site.NewExportManager(analysis)
-	service := site.NewSitePoolService(analysis)
+	service := site.NewSitePoolService(nil, nil)
 
 	// 1. Setup pool with redundant rules
 	group := &models.SiteGroup{Name: "Dedupe Pool"}

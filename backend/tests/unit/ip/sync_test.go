@@ -25,8 +25,7 @@ func TestIPSyncLogic(t *testing.T) {
 	defer cleanup()
 
 	common.FS = afero.NewMemMapFs()
-	mmdb := ip.NewMMDBManager()
-	service := ip.NewIPPoolService(mmdb)
+	service := ip.NewIPPoolService(nil, nil)
 	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
 
 	group := &models.IPGroup{ID: "test_pool", Name: "Test Pool"}
@@ -236,8 +235,7 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 	cleanup := tests.SetupTestDB()
 	defer cleanup()
 	ctx := tests.SetupMockRootContext()
-	mmdb := ip.NewMMDBManager()
-	service := ip.NewIPPoolService(mmdb)
+	service := ip.NewIPPoolService(nil, nil)
 
 	t.Run("Reconcile Zombie Sync Task", func(t *testing.T) {
 		policy := &models.IPSyncPolicy{ID: "zombie_p", Name: "Zombie"}

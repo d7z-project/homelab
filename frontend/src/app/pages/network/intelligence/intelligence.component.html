@@ -1,6 +1,6 @@
 <div class="animate-in fade-in duration-500 pb-20">
-  <div class="min-h-[calc(100vh-112px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
-    <div class="max-w-7xl mx-auto space-y-6">
+  <div class="min-h-[calc(100vh-112!px)] bg-surface-container-lowest py-6 px-4 sm:px-8">
+    <div class="max-w-7!xl mx-auto space-y-6">
       <app-page-header
         title="情报数据管理"
         subtitle="维护全局 IP 情报数据库 (ASN/GeoIP) 的同步来源与自动更新计划"
@@ -29,7 +29,7 @@
             <th mat-header-cell *matHeaderCellDef class="font-bold">数据库类型</th>
             <td mat-cell *matCellDef="let element">
               <span
-                class="px-2 py-0.5 rounded text-[10px] font-black uppercase border"
+                class="px-2 py-0.5 rounded text-[10px]! font-black uppercase border"
                 [class.bg-blue-50]="element.type === 'asn'"
                 [class.text-blue-700]="element.type === 'asn'"
                 [class.border-blue-200]="element.type === 'asn'"
@@ -74,7 +74,7 @@
                 </div>
               } @else {
                 <span
-                  class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-outline opacity-60 font-medium"
+                  class="text-[10px]! px-1.5 py-0.5 rounded bg-surface-container-high text-outline opacity-60 font-medium"
                 >
                   MANUAL
                 </span>
@@ -88,7 +88,7 @@
               <div class="flex flex-col gap-1.5 w-full max-w-[120px]">
                 @if (element.status === 'Running' || element.status === 'Pending') {
                   <div
-                    class="flex items-center justify-between gap-2 text-primary font-bold text-[10px] animate-pulse"
+                    class="flex items-center justify-between gap-2 text-primary font-bold text-[10px]! animate-pulse"
                   >
                     <div class="flex items-center gap-1.5">
                       <mat-spinner diameter="12"></mat-spinner>
@@ -102,7 +102,7 @@
                     <mat-progress-bar
                       mode="determinate"
                       [value]="element.progress * 100"
-                      class="h-1 rounded-full w-full"
+                      class="h-1! rounded-full w-full"
                     ></mat-progress-bar>
                   }
                 } @else if (element.status === 'Failed') {
@@ -112,19 +112,19 @@
                       [matTooltip]="element.errorMessage"
                       >error_outline</mat-icon
                     >
-                    <span class="text-[10px] font-bold text-red-600">同步失败</span>
+                    <span class="text-[10px]! font-bold text-red-600">同步失败</span>
                   </div>
                 } @else if (element.status === 'Cancelled') {
                   <div class="flex items-center gap-2">
                     <mat-icon class="text-outline w-4! h-4! text-[16px]!">cancel</mat-icon>
-                    <span class="text-[10px] font-bold text-outline opacity-60">已取消</span>
+                    <span class="text-[10px]! font-bold text-outline opacity-60">已取消</span>
                   </div>
                 } @else {
                   <div class="flex items-center gap-2">
                     <mat-icon class="text-green-600 w-4! h-4! text-[16px]!"
                       >check_circle_outline</mat-icon
                     >
-                    <span class="text-[10px] font-bold text-green-700">就绪</span>
+                    <span class="text-[10px]! font-bold text-green-700">就绪</span>
                   </div>
                 }
               </div>

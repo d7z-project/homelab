@@ -21,8 +21,7 @@ func TestIPExportCascadeDeleteAndCleanup(t *testing.T) {
 
 	engine := ip.NewAnalysisEngine(nil)
 	manager := ip.NewExportManager(engine)
-	service := ip.NewIPPoolService(nil)
-	service.SetExportManager(manager)
+	service := ip.NewIPPoolService(engine, manager)
 
 	// Create Group
 	group := &models.IPGroup{Name: "Cascade Pool"}

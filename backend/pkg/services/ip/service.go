@@ -70,7 +70,6 @@ const (
 )
 
 type IPPoolService struct {
-	mmdb           *MMDBManager
 	cron           *cron.Cron
 	cronIDs        map[string]cron.EntryID
 	cronLock       sync.Mutex
@@ -118,12 +117,13 @@ func (t *SyncTask) SetProgress(progress float64) {
 
 var _ models.TaskInfo = (*SyncTask)(nil)
 
-func NewIPPoolService(mmdb *MMDBManager) *IPPoolService {
+func NewIPPoolService(ae *AnalysisEngine, em *ExportManager) *IPPoolService {
 	svc := &IPPoolService{
-		mmdb:      mmdb,
-		cron:      cron.New(),
-		cronIDs:   make(map[string]cron.EntryID),
-		syncTasks: task.NewManager[*SyncTask]("action:ip_sync", "sync_tasks", "network", "ip"),
+		analysisEngine: ae,
+		exportManager:  em,
+		cron:           cron.New(),
+		cronIDs:        make(map[string]cron.EntryID),
+		syncTasks:      task.NewManager[*SyncTask]("action:ip_sync", "sync_tasks", "network", "ip"),
 	}
 
 	// 集群事件: 其他节点更新了同步策略时，本节点刷新 cron 调度
@@ -173,14 +173,6 @@ func (s *IPPoolService) lockPool(ctx context.Context, id string) (func(), error)
 		case <-time.After(50 * time.Millisecond):
 		}
 	}
-}
-
-func (s *IPPoolService) SetExportManager(em *ExportManager) {
-	s.exportManager = em
-}
-
-func (s *IPPoolService) SetAnalysisEngine(ae *AnalysisEngine) {
-	s.analysisEngine = ae
 }
 
 func (s *IPPoolService) GetSyncTasks() *task.Manager[*SyncTask] {

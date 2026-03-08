@@ -29,8 +29,10 @@ func TestIPPoolSecurityInstanceLevel(t *testing.T) {
 		t.Fatalf("Failed to create SA: %v", err)
 	}
 
-	mmdb := ip.NewMMDBManager()
-	service := ip.NewIPPoolService(mmdb)
+	mmdb := ip.NewMMDBManager(nil)
+	ae := ip.NewAnalysisEngine(mmdb)
+	em := ip.NewExportManager(ae)
+	service := ip.NewIPPoolService(ae, em)
 
 	// 2. Setup IP Pools
 	group1 := &models.IPGroup{ID: "pool-1", Name: "Pool 1"}
@@ -107,7 +109,7 @@ func TestSitePoolSecurityInstanceLevel(t *testing.T) {
 	}
 
 	analysis := site.NewAnalysisEngine(nil)
-	service := site.NewSitePoolService(analysis)
+	service := site.NewSitePoolService(analysis, nil)
 
 	// 2. Setup Site Pools
 	group1 := &models.SiteGroup{Name: "Pool 1"}

@@ -127,19 +127,8 @@ func (s *IntelligenceService) downloadFile(ctx context.Context, source *models.I
 		return fmt.Errorf("http status %d", resp.StatusCode)
 	}
 
-	var targetPath string
-	switch source.Type {
-	case "asn":
-		targetPath = ip.MMDBPathASN
-	case "city":
-		targetPath = ip.MMDBPathCity
-	case "country":
-		targetPath = ip.MMDBPathCountry
-	default:
-		return fmt.Errorf("invalid type")
-	}
-
-	_ = common.FS.MkdirAll(filepath.Dir(targetPath), 0755)
+	targetPath := filepath.Join(ip.MMDBDir, source.ID+".mmdb")
+	_ = common.FS.MkdirAll(ip.MMDBDir, 0755)
 
 	// 这里也可以做成先写临时文件，成功后再重命名，避免写一半被 Cancel 导致源文件损坏
 	tempPath := targetPath + ".tmp"

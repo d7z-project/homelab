@@ -21,8 +21,7 @@ func TestSiteExportCascadeDeleteAndCleanup(t *testing.T) {
 
 	engine := site.NewAnalysisEngine(nil)
 	manager := site.NewExportManager(engine)
-	service := site.NewSitePoolService(engine)
-	service.SetExportManager(manager)
+	service := site.NewSitePoolService(engine, manager)
 
 	// Create Group
 	group := &models.SiteGroup{Name: "Cascade Pool"}

@@ -1,6 +1,7 @@
 package intelligence_test
 
 import (
+	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/intelligence"
@@ -59,8 +60,8 @@ func TestIntelligenceService_Base(t *testing.T) {
 		assert.Equal(t, models.TaskStatusSuccess, s.Status, "Sync failed: "+s.ErrorMessage)
 
 		// Verify file in VFS
-		exists, _ := afero.Exists(common.FS, ip.MMDBPathASN)
-		assert.True(t, exists, "ASN file should be created in VFS")
+		exists, _ := afero.Exists(common.FS, fmt.Sprintf("%s/%s.mmdb", ip.MMDBDir, s.ID))
+		assert.True(t, exists, "ASN file should be created in VFS at "+fmt.Sprintf("%s/%s.mmdb", ip.MMDBDir, s.ID))
 	})
 
 	t.Run("SSRF Protection", func(t *testing.T) {

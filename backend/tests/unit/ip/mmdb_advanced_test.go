@@ -2,6 +2,7 @@ package ip_test
 
 import (
 	"homelab/pkg/common"
+	"homelab/pkg/models"
 	"homelab/pkg/services/ip"
 	"homelab/tests"
 	"net"
@@ -32,7 +33,11 @@ func TestMMDBAdvanced(t *testing.T) {
 	asnFile.Close()
 
 	// 2. Load MMDB
-	manager := ip.NewMMDBManager()
+	manager := ip.NewMMDBManager(func() ([]models.IntelligenceSource, error) {
+		return []models.IntelligenceSource{
+			{ID: "GeoLite2-ASN", Type: "asn", Enabled: true},
+		}, nil
+	})
 	err := manager.Reload() // Should load ASN
 	assert.NoError(t, err)
 

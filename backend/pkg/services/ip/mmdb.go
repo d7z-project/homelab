@@ -14,20 +14,23 @@ import (
 )
 
 const (
-	MMDBPathASN     = "network/ip/mmdb/GeoLite2-ASN.mmdb"
-	MMDBPathCity    = "network/ip/mmdb/GeoLite2-City.mmdb"
-	MMDBPathCountry = "network/ip/mmdb/GeoLite2-Country.mmdb"
+	MMDBDir = "network/ip/mmdb"
 )
 
+type SourceProvider func() ([]models.IntelligenceSource, error)
+
 type MMDBManager struct {
-	mu      sync.RWMutex
-	asn     *geoip2.Reader
-	city    *geoip2.Reader
-	country *geoip2.Reader
+	mu       sync.RWMutex
+	asn      []*geoip2.Reader
+	city     []*geoip2.Reader
+	country  []*geoip2.Reader
+	provider SourceProvider
 }
 
-func NewMMDBManager() *MMDBManager {
-	m := &MMDBManager{}
+func NewMMDBManager(provider SourceProvider) *MMDBManager {
+	m := &MMDBManager{
+		provider: provider,
+	}
 	_ = m.Reload() // 尝试初始加载
 
 	// 注册集群事件: 当任意节点更新了 MMDB 文件时，所有节点重新加载
@@ -38,26 +41,55 @@ func NewMMDBManager() *MMDBManager {
 	return m
 }
 
-// Reload 重新从 VFS 加载 MMDB 文件
+// Reload 重新从 VFS 加载 MMDB 文件，支持多库回滚机制
 func (m *MMDBManager) Reload() error {
+	if m.provider == nil {
+		return nil
+	}
+
+	sources, err := m.provider()
+	if err != nil {
+		log.Printf("[MMDB] failed to get sources from provider: %v", err)
+		return err
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	// 关闭旧的 Reader
-	if m.asn != nil {
-		_ = m.asn.Close()
+	for _, r := range m.asn {
+		_ = r.Close()
 	}
-	if m.city != nil {
-		_ = m.city.Close()
+	for _, r := range m.city {
+		_ = r.Close()
 	}
-	if m.country != nil {
-		_ = m.country.Close()
+	for _, r := range m.country {
+		_ = r.Close()
 	}
 
-	// 加载新的 Reader
-	m.asn = m.loadReader(MMDBPathASN)
-	m.city = m.loadReader(MMDBPathCity)
-	m.country = m.loadReader(MMDBPathCountry)
+	m.asn = nil
+	m.city = nil
+	m.country = nil
+
+	for _, src := range sources {
+		if !src.Enabled {
+			continue
+		}
+		path := fmt.Sprintf("%s/%s.mmdb", MMDBDir, src.ID)
+		reader := m.loadReader(path)
+		if reader == nil {
+			continue
+		}
+
+		switch src.Type {
+		case "asn":
+			m.asn = append(m.asn, reader)
+		case "city":
+			m.city = append(m.city, reader)
+		case "country":
+			m.country = append(m.country, reader)
+		}
+	}
 
 	return nil
 }
@@ -101,15 +133,16 @@ func (m *MMDBManager) Lookup(ipStr string) (*models.IPInfoResponse, error) {
 		return res, nil
 	}
 
-	if m.asn != nil {
-		if asn, err := m.asn.ASN(ip); err == nil {
+	for _, db := range m.asn {
+		if asn, err := db.ASN(ip); err == nil && asn.AutonomousSystemNumber > 0 {
 			res.ASN = asn.AutonomousSystemNumber
 			res.Org = asn.AutonomousSystemOrganization
+			break
 		}
 	}
 
-	if m.city != nil {
-		if city, err := m.city.City(ip); err == nil {
+	for _, db := range m.city {
+		if city, err := db.City(ip); err == nil && city.Country.GeoNameID > 0 {
 			res.City = city.City.Names.SimplifiedChinese
 			if res.City == "" {
 				res.City = city.City.Names.English
@@ -121,13 +154,17 @@ func (m *MMDBManager) Lookup(ipStr string) (*models.IPInfoResponse, error) {
 			if city.Location.Latitude != nil && city.Location.Longitude != nil {
 				res.Location = fmt.Sprintf("%f,%f", *city.Location.Latitude, *city.Location.Longitude)
 			}
+			return res, nil // 优先使用 City 库的结果
 		}
-	} else if m.country != nil {
-		if country, err := m.country.Country(ip); err == nil {
+	}
+
+	for _, db := range m.country {
+		if country, err := db.Country(ip); err == nil && country.Country.GeoNameID > 0 {
 			res.Country = country.Country.Names.SimplifiedChinese
 			if res.Country == "" {
 				res.Country = country.Country.Names.English
 			}
+			break
 		}
 	}
 

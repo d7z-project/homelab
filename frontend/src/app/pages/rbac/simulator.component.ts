@@ -184,7 +184,7 @@ import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-i
                       class="flex items-start gap-4 p-4 rounded-2xl bg-secondary-container/30 border border-secondary-container/50 animate-in zoom-in-95 duration-300"
                     >
                       <div
-                        class="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center"
+                        class="mt-1 shrink-0 w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center"
                       >
                         <mat-icon class="text-lg">policy</mat-icon>
                       </div>

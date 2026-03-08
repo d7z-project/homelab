@@ -24,9 +24,8 @@ func TestSiteSecurity(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 
 	engine := site.NewAnalysisEngine(nil)
-	sitePoolService := site.NewSitePoolService(engine)
 	siteExportManager := site.NewExportManager(engine)
-	sitePoolService.SetExportManager(siteExportManager)
+	sitePoolService := site.NewSitePoolService(engine, siteExportManager)
 	controllers.InitSiteControllers(sitePoolService, engine, siteExportManager)
 
 	r := chi.NewRouter()

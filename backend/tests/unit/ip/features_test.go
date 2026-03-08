@@ -14,8 +14,12 @@ import (
 )
 
 func TestIPExportCRUD(t *testing.T) {
-	service, cleanup := tests.SetupIPService()
+	cleanup := tests.SetupTestDB()
 	defer cleanup()
+	mmdb := ip.NewMMDBManager(nil)
+	analysis := ip.NewAnalysisEngine(mmdb)
+	manager := ip.NewExportManager(analysis)
+	service := ip.NewIPPoolService(analysis, manager)
 	ctx := tests.SetupMockRootContext()
 
 	export := &models.IPExport{
@@ -64,10 +68,10 @@ func TestIPExportManager(t *testing.T) {
 	// Initialize global VFS for export tasks
 	common.TempDir = afero.NewMemMapFs()
 
-	mmdb := ip.NewMMDBManager()
+	mmdb := ip.NewMMDBManager(nil)
 	analysis := ip.NewAnalysisEngine(mmdb)
 	manager := ip.NewExportManager(analysis)
-	service := ip.NewIPPoolService(mmdb)
+	service := ip.NewIPPoolService(analysis, manager)
 
 	// 1. Create a group and add some data
 	group := &models.IPGroup{ID: "pool1", Name: "Pool 1"}
@@ -159,9 +163,10 @@ func TestIPAnalysisEngine(t *testing.T) {
 	defer cleanup()
 	ctx := tests.SetupMockRootContext()
 
-	mmdb := ip.NewMMDBManager()
+	mmdb := ip.NewMMDBManager(nil)
 	analysis := ip.NewAnalysisEngine(mmdb)
-	service := ip.NewIPPoolService(mmdb)
+	manager := ip.NewExportManager(analysis)
+	service := ip.NewIPPoolService(analysis, manager)
 
 	// 1. Create group and mock data
 	group := &models.IPGroup{ID: "pool_analysis", Name: "Analysis Pool"}
@@ -192,8 +197,7 @@ func TestIPInfoLookup(t *testing.T) {
 	// Setup FS to prevent nil pointer in afero.ReadFile
 	common.FS = afero.NewMemMapFs()
 
-	// Test graceful handling when MMDB files are missing
-	mmdb := ip.NewMMDBManager() // No files loaded
+	mmdb := ip.NewMMDBManager(nil)
 	analysis := ip.NewAnalysisEngine(mmdb)
 	ctx := tests.SetupMockRootContext()
 
@@ -215,10 +219,10 @@ func TestIPExportCancellation(t *testing.T) {
 	// IMPORTANT: Initialize TempDir for export tasks
 	common.TempDir = afero.NewMemMapFs()
 
-	mmdb := ip.NewMMDBManager()
+	mmdb := ip.NewMMDBManager(nil)
 	analysis := ip.NewAnalysisEngine(mmdb)
 	manager := ip.NewExportManager(analysis)
-	service := ip.NewIPPoolService(mmdb)
+	service := ip.NewIPPoolService(analysis, manager)
 
 	// Create pool
 	_ = service.CreateGroup(ctx, &models.IPGroup{ID: "pool1", Name: "Pool 1"})
@@ -276,10 +280,10 @@ func TestIPExportManualCancellation(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.TempDir = afero.NewMemMapFs()
 
-	mmdb := ip.NewMMDBManager()
+	mmdb := ip.NewMMDBManager(nil)
 	analysis := ip.NewAnalysisEngine(mmdb)
 	manager := ip.NewExportManager(analysis)
-	service := ip.NewIPPoolService(mmdb)
+	service := ip.NewIPPoolService(analysis, manager)
 
 	_ = service.CreateGroup(ctx, &models.IPGroup{ID: "pool1", Name: "Pool 1"})
 	common.FS = afero.NewMemMapFs()
@@ -327,8 +331,9 @@ func TestManagePoolEntry(t *testing.T) {
 	defer cleanup()
 	ctx := tests.SetupMockRootContext()
 
-	mmdb := ip.NewMMDBManager()
-	service := ip.NewIPPoolService(mmdb)
+	mmdb := ip.NewMMDBManager(nil)
+	analysis := ip.NewAnalysisEngine(mmdb)
+	service := ip.NewIPPoolService(analysis, nil)
 
 	// Create pool
 	group := &models.IPGroup{ID: "pool_entries", Name: "Entry Pool"}

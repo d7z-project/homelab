@@ -17,10 +17,10 @@ func TestIPPoolCascadeDeleteAndDependencies(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	mmdbManager := ip.NewMMDBManager()
+	mmdbManager := ip.NewMMDBManager(nil)
 	analysisEngine := ip.NewAnalysisEngine(mmdbManager)
-	service := ip.NewIPPoolService(mmdbManager)
-	service.SetAnalysisEngine(analysisEngine)
+	exportManager := ip.NewExportManager(analysisEngine)
+	service := ip.NewIPPoolService(analysisEngine, exportManager)
 
 	// 1. Create a Pool
 	group := &models.IPGroup{ID: "test_pool", Name: "Test Pool"}

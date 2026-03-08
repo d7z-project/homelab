@@ -38,7 +38,7 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 	defer func() { common.Subscriber = nil }()
 
 	// 初始化服务
-	service := ipservice.NewIPPoolService(nil)
+	service := ipservice.NewIPPoolService(nil, nil)
 	ctx := tests.SetupMockRootContext()
 
 	// 2. 创建一个同步策略和目标池

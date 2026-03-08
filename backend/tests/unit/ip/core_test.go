@@ -106,8 +106,7 @@ func TestIPService(t *testing.T) {
 	defer cleanup()
 	ctx := tests.SetupMockRootContext()
 
-	mmdb := ip.NewMMDBManager()
-	service := ip.NewIPPoolService(mmdb)
+	service := ip.NewIPPoolService(nil, nil)
 
 	// 1. 创建 Group
 	group := &models.IPGroup{
@@ -154,8 +153,7 @@ func TestIPPreviewCursor(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 
 	common.FS = afero.NewMemMapFs()
-	mmdb := ip.NewMMDBManager()
-	service := ip.NewIPPoolService(mmdb)
+	service := ip.NewIPPoolService(nil, nil)
 
 	// 1. Create group and many entries
 	group := &models.IPGroup{ID: "cursor_pool", Name: "Cursor Pool"}
@@ -191,7 +189,7 @@ func TestIPPreviewCursor(t *testing.T) {
 func TestIPIntelligence(t *testing.T) {
 	cleanup := tests.SetupTestDB()
 	defer cleanup()
-	mmdb := ip.NewMMDBManager()
+	mmdb := ip.NewMMDBManager(nil)
 
 	// 测试私有 IP
 	res, err := mmdb.Lookup("192.168.1.1")

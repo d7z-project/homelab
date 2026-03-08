@@ -67,7 +67,7 @@ func TestSiteAnalysisEngine(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 
 	engine := site.NewAnalysisEngine(nil)
-	service := site.NewSitePoolService(engine)
+	service := site.NewSitePoolService(engine, nil)
 
 	// Create pool and entries
 	group := &models.SiteGroup{Name: "Analysis Pool"}
@@ -104,7 +104,7 @@ func TestSiteExportManager(t *testing.T) {
 
 	analysis := site.NewAnalysisEngine(nil)
 	manager := site.NewExportManager(analysis)
-	service := site.NewSitePoolService(analysis)
+	service := site.NewSitePoolService(analysis, manager)
 
 	// Setup data
 	group := &models.SiteGroup{Name: "Pool 1"}
@@ -167,8 +167,7 @@ func TestSiteImportProcessor(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 	actions.Init()
 
-	analysis := site.NewAnalysisEngine(nil)
-	service := site.NewSitePoolService(analysis)
+	service := site.NewSitePoolService(nil, nil)
 	site.RegisterSiteProcessors(service)
 
 	group := &models.SiteGroup{Name: "Import Pool"}
@@ -211,8 +210,7 @@ func TestSitePreviewSearch(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	engine := site.NewAnalysisEngine(nil)
-	service := site.NewSitePoolService(engine)
+	service := site.NewSitePoolService(nil, nil)
 
 	group := &models.SiteGroup{ID: "search_pool", Name: "Search Pool"}
 	_ = service.CreateGroup(ctx, group)

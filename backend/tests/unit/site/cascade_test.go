@@ -18,7 +18,7 @@ func TestSitePoolCascadeDeleteAndDependencies(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 
 	engine := site.NewAnalysisEngine(nil)
-	service := site.NewSitePoolService(engine)
+	service := site.NewSitePoolService(engine, nil)
 
 	// 1. Create a Pool
 	group := &models.SiteGroup{ID: "test_site_pool", Name: "Test Site Pool"}
