@@ -159,16 +159,16 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 
 	_ = repo.SaveGroup(ctx, group)
 	if s.engine != nil {
-		notifySitePoolUpdate(ctx, groupID)
+		notifySitePoolChanged(ctx, groupID)
 	}
 
 	commonaudit.FromContext(ctx).Log("ManageSiteEntry", req.Value, mode, true)
 	return nil
 }
 
-func notifySitePoolUpdate(ctx context.Context, groupID string) {
+func notifySitePoolChanged(ctx context.Context, groupID string) {
 	common.UpdateGlobalVersion(ctx, "network/site/pool/"+groupID)
-	common.NotifyCluster(ctx, common.EventSitePoolUpdate, groupID)
+	common.NotifyCluster(ctx, common.EventSitePoolChanged, groupID)
 }
 
 func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, cursor int64, limit int, search string) (*models.SitePoolPreviewResponse, error) {

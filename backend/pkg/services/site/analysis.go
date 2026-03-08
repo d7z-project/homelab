@@ -43,7 +43,7 @@ func NewAnalysisEngine(mmdb *ip.MMDBManager) *AnalysisEngine {
 	cache, _ := lru.New[string, *CompositeMatcher](32)
 	engine := &AnalysisEngine{cache: cache, mmdb: mmdb}
 
-	common.RegisterEventHandler(common.EventSitePoolUpdate, func(ctx context.Context, payload string) {
+	common.RegisterEventHandler(common.EventSitePoolChanged, func(ctx context.Context, payload string) {
 		groupID := payload
 		engine.RemoveCache(groupID)
 	})

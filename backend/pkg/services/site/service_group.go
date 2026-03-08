@@ -74,7 +74,7 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 	poolPath := filepath.Join(PoolsDir, id+".bin")
 	_ = common.FS.Remove(poolPath)
 	if s.engine != nil {
-		notifySitePoolUpdate(ctx, id)
+		notifySitePoolChanged(ctx, id)
 	}
 
 	if old != nil {

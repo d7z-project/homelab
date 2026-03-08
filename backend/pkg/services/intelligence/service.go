@@ -83,18 +83,14 @@ func NewIntelligenceService(mmdb *ip.MMDBManager) *IntelligenceService {
 	}
 	s.cron.Start()
 
-	// 集群事件: 其他节点更新了数据源时，本节点刷新 cron 调度
-	common.RegisterEventHandler(common.EventIntelligenceSourceUpdate, func(ctx context.Context, sourceID string) {
+	// 集群事件: 变更数据源时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
+	common.RegisterEventHandler(common.EventIntelligenceSourceChanged, func(ctx context.Context, sourceID string) {
 		src, err := repo.GetSource(ctx, sourceID)
 		if err != nil {
 			s.removeCronJob(sourceID)
 			return
 		}
 		s.updateCronJob(*src)
-	})
-
-	common.RegisterEventHandler(common.EventIntelligenceSourceDelete, func(ctx context.Context, sourceID string) {
-		s.removeCronJob(sourceID)
 	})
 
 	return s

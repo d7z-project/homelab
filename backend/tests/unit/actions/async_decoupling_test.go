@@ -67,8 +67,8 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		// 检查消息队列是否收到了执行信号
 		select {
 		case msg := <-mockSub.Messages:
-			if !startsWith(msg, "workflow_execute") {
-				t.Errorf("Expected workflow_execute signal, got %s", msg)
+			if !startsWith(msg, common.EventWorkflowExecute) {
+				t.Errorf("Expected %s signal, got %s", common.EventWorkflowExecute, msg)
 			}
 		case <-time.After(1 * time.Second):
 			t.Fatal("Timeout waiting for cluster notification")
@@ -80,15 +80,15 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		instanceID, _ := actions.TriggerWorkflow(ctx, wf, "root", "Manual", nil)
 
 		// 模拟 TriggerManager 接收到信号并处理
-		handlers := common.GetEventHandlers("workflow_execute")
+		handlers := common.GetEventHandlers(common.EventWorkflowExecute)
 		if len(handlers) == 0 {
 			actions.GlobalTriggerManager.Start()
-			handlers = common.GetEventHandlers("workflow_execute")
+			handlers = common.GetEventHandlers(common.EventWorkflowExecute)
 		}
 
 		// 获取信号 payload
 		msg := <-mockSub.Messages
-		payload := msg[len("workflow_execute:"):]
+		payload := msg[len(common.EventWorkflowExecute+":"):]
 
 		// 此时状态依然应该是 Pending
 		inst, _ := repo.GetTaskInstance(ctx, instanceID)
@@ -118,9 +118,9 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 	t.Run("Distributed_Lock_Prevents_Duplicate_Execution", func(t *testing.T) {
 		instanceID, _ := actions.TriggerWorkflow(ctx, wf, "root", "Manual", nil)
 		msg := <-mockSub.Messages
-		payload := msg[len("workflow_execute:"):]
+		payload := msg[len(common.EventWorkflowExecute+":"):]
 
-		handlers := common.GetEventHandlers("workflow_execute")
+		handlers := common.GetEventHandlers(common.EventWorkflowExecute)
 
 		var wg sync.WaitGroup
 		wg.Add(2)

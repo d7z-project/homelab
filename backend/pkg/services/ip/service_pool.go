@@ -206,7 +206,7 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 
 	err = repo.SaveGroup(ctx, group)
 	if err == nil {
-		notifyIPPoolUpdate(ctx, groupID)
+		notifyIPPoolChanged(ctx, groupID)
 	}
 
 	actionName := "ManagePoolEntry"
@@ -300,7 +300,7 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursor 
 	return res, nil
 }
 
-func notifyIPPoolUpdate(ctx context.Context, groupID string) {
+func notifyIPPoolChanged(ctx context.Context, groupID string) {
 	common.UpdateGlobalVersion(ctx, "network/ip/pool/"+groupID)
-	common.NotifyCluster(ctx, common.EventIPPoolUpdate, groupID)
+	common.NotifyCluster(ctx, common.EventIPPoolChanged, groupID)
 }

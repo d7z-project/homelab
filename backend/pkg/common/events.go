@@ -8,20 +8,17 @@ import (
 )
 
 const (
-	EventIPPoolUpdate       = "ip_pool_update"
-	EventIPSyncPolicyUpdate = "ip_sync_policy_update"
-	EventIPSyncPolicyDelete = "ip_sync_policy_delete"
-	EventIPSyncRun          = "ip_sync_run"
+	EventIPPoolChanged       = "ip_pool_changed"
+	EventIPSyncPolicyChanged = "ip_sync_policy_changed"
+	EventIPSyncRun           = "ip_sync_run"
 
-	EventSitePoolUpdate = "site_pool_update"
+	EventSitePoolChanged = "site_pool_changed"
 
-	EventMMDBUpdate               = "mmdb_update"
-	EventIntelligenceSourceUpdate = "intelligence_source_update"
-	EventIntelligenceSourceDelete = "intelligence_source_delete"
+	EventMMDBUpdate                = "mmdb_update"
+	EventIntelligenceSourceChanged = "intelligence_source_changed"
 
-	EventWorkflowExecute       = "workflow_execute"
-	EventWorkflowTriggerUpdate = "workflow_trigger_update"
-	EventWorkflowTriggerDelete = "workflow_trigger_delete"
+	EventWorkflowExecute        = "workflow_execute"
+	EventWorkflowTriggerChanged = "workflow_trigger_changed"
 )
 
 type EventHandler func(ctx context.Context, payload string)

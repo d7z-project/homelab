@@ -31,18 +31,14 @@ func (m *TriggerManager) Start() {
 }
 
 func (m *TriggerManager) registerClusterHandlers() {
-	// 当其他节点创建/更新了工作流时，本节点也需要刷新 cron 调度
-	common.RegisterEventHandler(common.EventWorkflowTriggerUpdate, func(ctx context.Context, workflowID string) {
+	// 集群事件: 变更工作流触发器时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
+	common.RegisterEventHandler(common.EventWorkflowTriggerChanged, func(ctx context.Context, workflowID string) {
 		wf, err := repo.GetWorkflow(ctx, workflowID)
 		if err != nil {
+			m.RemoveTriggers(workflowID)
 			return
 		}
 		m.UpdateTriggers(*wf)
-	})
-
-	// 当其他节点删除了工作流时，本节点也需要移除 cron 调度
-	common.RegisterEventHandler(common.EventWorkflowTriggerDelete, func(ctx context.Context, workflowID string) {
-		m.RemoveTriggers(workflowID)
 	})
 
 	// 异步执行工作流事件

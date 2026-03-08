@@ -91,7 +91,7 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 	poolPath := filepath.Join(PoolsDir, id+".bin")
 	_ = common.FS.Remove(poolPath)
 	if s.analysisEngine != nil {
-		notifyIPPoolUpdate(ctx, id)
+		notifyIPPoolChanged(ctx, id)
 	}
 
 	if old != nil {

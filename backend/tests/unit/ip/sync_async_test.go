@@ -72,7 +72,7 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 		// 验证信号已发出
 		select {
 		case msg := <-mockSub.Messages:
-			if msg != "ip_sync_run:test-policy" {
+			if msg != common.EventIPSyncRun+":test-policy" {
 				t.Errorf("Unexpected cluster message: %s", msg)
 			}
 		case <-time.After(100 * time.Millisecond):
@@ -82,9 +82,9 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 
 	t.Run("IPSync_Execution_Is_Independent", func(t *testing.T) {
 		// 模拟集群节点接收到信号并处理
-		handlers := common.GetEventHandlers("ip_sync_run")
+		handlers := common.GetEventHandlers(common.EventIPSyncRun)
 		if len(handlers) == 0 {
-			t.Fatal("No handlers registered for ip_sync_run")
+			t.Fatal("No handlers registered for " + common.EventIPSyncRun)
 		}
 
 		// 先触发以便建立 pending 状态和 Task 注册（模拟集群）
