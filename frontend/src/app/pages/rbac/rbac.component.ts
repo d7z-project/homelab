@@ -237,7 +237,6 @@ export class RbacComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.uiService.configureToolbar({ shadow: false });
     const params = this.route.snapshot.queryParams;
     if (params['pageSize']) this.pageSize.set(Number(params['pageSize']));
     this.refreshAll();
@@ -245,7 +244,6 @@ export class RbacComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.uiService.resetToolbar();
     if (this.scrollListener) {
       const scrollElement = document.querySelector('mat-sidenav-content');
       scrollElement?.removeEventListener('scroll', this.scrollListener);

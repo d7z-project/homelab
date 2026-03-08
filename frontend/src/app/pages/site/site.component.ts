@@ -6,6 +6,7 @@ import {
   signal,
   computed,
   HostListener,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -67,18 +68,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     `
       :host {
         display: block;
-      }
-      .site-tabs-integrated {
-        ::ng-deep .mat-mdc-tab-header {
-          background: var(--mat-sys-surface);
-          border-bottom: 1px solid var(--mat-sys-outline-variant);
-          position: sticky;
-          top: 0;
-          z-index: 10;
-        }
-        ::ng-deep .mat-mdc-tab-body-wrapper {
-          background: var(--mat-sys-surface-container-lowest);
-        }
       }
       .search-field-m3 {
         ::ng-deep .mdc-text-field--filled {
@@ -158,19 +147,35 @@ export class SiteComponent implements OnInit, OnDestroy {
     return null;
   });
 
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    this.showScrollTop.set(window.scrollY > 300);
+  constructor() {
+    this.route.queryParams.subscribe((params) => {
+      const tab = params['tab'];
+      if (tab === 'export') {
+        this.selectedTabIndex.set(1);
+      } else if (tab === 'analysis') {
+        this.selectedTabIndex.set(2);
+      } else {
+        this.selectedTabIndex.set(0);
+      }
+
+      const search = params['search'] || '';
+      if (this.selectedTabIndex() === 0) {
+        if (search !== this.poolSearch()) {
+          this.poolSearch.set(search);
+          untracked(() => this.loadPools(true));
+        }
+      } else if (this.selectedTabIndex() === 1) {
+        if (search !== this.exportSearch()) {
+          this.exportSearch.set(search);
+          untracked(() => this.loadExports(true));
+        }
+      }
+    });
   }
 
   ngOnInit() {
-    this.route.queryParams.subscribe((params) => {
-      if (params['tab'] === 'pool') this.selectedTabIndex.set(0);
-      else if (params['tab'] === 'export') this.selectedTabIndex.set(1);
-      else if (params['tab'] === 'analysis') this.selectedTabIndex.set(2);
-      this.loadData();
-    });
     this.setupScrollListener();
+    this.loadData();
   }
 
   ngOnDestroy() {
@@ -215,8 +220,16 @@ export class SiteComponent implements OnInit, OnDestroy {
     let tab = 'pool';
     if (index === 1) tab = 'export';
     else if (index === 2) tab = 'analysis';
-    this.router.navigate([], { queryParams: { tab }, queryParamsHandling: 'merge' });
+
+    const search = index === 0 ? this.poolSearch() : index === 1 ? this.exportSearch() : '';
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab, search: search || null },
+      queryParamsHandling: 'merge',
+    });
     this.uiService.closeSearch();
+    this.loadData();
   }
 
   openSearch() {
@@ -225,20 +238,21 @@ export class SiteComponent implements OnInit, OnDestroy {
       placeholder: tab === 0 ? '搜索域名池名称...' : '搜索导出配置名称...',
       value: tab === 0 ? this.poolSearch() : this.exportSearch(),
       onSearch: (val) => {
-        if (tab === 0) this.onPoolSearch(val);
-        else if (tab === 1) this.onExportSearch(val);
+        if (tab === 0) {
+          this.poolSearch.set(val);
+        } else if (tab === 1) {
+          this.exportSearch.set(val);
+        }
+
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { search: val || null },
+          queryParamsHandling: 'merge',
+        });
+
+        this.loadData();
       },
     });
-  }
-
-  onPoolSearch(val: string) {
-    this.poolSearch.set(val);
-    this.loadPools(true);
-  }
-
-  onExportSearch(val: string) {
-    this.exportSearch.set(val);
-    this.loadExports(true);
   }
 
   loadData() {

@@ -8,6 +8,7 @@ import {
   ElementRef,
   Optional,
   Self,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -19,6 +20,8 @@ import {
   Validator,
   AbstractControl,
   ValidationErrors,
+  FormGroupDirective,
+  NgForm,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -30,6 +33,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ErrorStateMatcher } from '@angular/material/core';
 import { DiscoveryService, ModelsLookupItem } from '../generated';
 import {
   debounceTime,
@@ -42,9 +46,19 @@ import {
 } from 'rxjs';
 
 /**
- * AppDiscoverySelectComponent
- * Provides a selection-only input (single or multiple) using discovery lookup service.
+ * Custom error state matcher to link internal input error state to external ngControl
  */
+class CrossFieldMatcher implements ErrorStateMatcher {
+  constructor(private parentControl: NgControl | null) {}
+  isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
+    if (!this.parentControl) return false;
+    return !!(
+      this.parentControl.invalid &&
+      (this.parentControl.touched || this.parentControl.dirty)
+    );
+  }
+}
+
 @Component({
   selector: 'app-discovery-select',
   standalone: true,
@@ -63,17 +77,17 @@ import {
   template: `
     <mat-form-field
       [appearance]="appearance"
-      class="w-full relative"
+      class="w-full m3-form-field"
       [subscriptSizing]="subscriptSizing"
     >
-      <mat-label>{{ label }}</mat-label>
+      <mat-label class="font-bold text-xs uppercase tracking-widest">{{ label }}</mat-label>
 
       @if (multiple) {
-        <mat-chip-grid #chipGrid>
+        <mat-chip-grid #chipGrid [errorStateMatcher]="matcher">
           @for (item of selectedItems(); track item.id) {
-            <mat-chip-row (removed)="removeItem(item)" class="bg-secondary-container!">
+            <mat-chip-row (removed)="removeItem(item)" class="m3-chip">
               <div class="flex flex-col leading-tight py-0.5">
-                <span class="text-[10px] font-bold">{{ item.name }}</span>
+                <span class="text-[10px] font-black">{{ item.name }}</span>
                 @if (item.description) {
                   <span class="text-[8px] opacity-60 truncate max-w-[120px]">{{
                     item.description
@@ -98,65 +112,57 @@ import {
           [placeholder]="placeholder"
           [matAutocomplete]="auto"
           [formControl]="inputControl"
+          [errorStateMatcher]="matcher"
           (blur)="onTouched()"
           #inputElement
+          class="font-medium"
         />
       }
 
-      <mat-icon matSuffix class="text-outline opacity-50">arrow_drop_down</mat-icon>
-
-      <!-- Height animated loading indicator -->
-      <div
-        class="absolute left-0 right-0 bottom-0 overflow-hidden transition-all duration-300 pointer-events-none"
-        [style.height]="isLoading() ? '2px' : '0px'"
-        [style.opacity]="isLoading() ? 1 : 0"
+      <mat-icon
+        matSuffix
+        class="text-primary opacity-40 transition-opacity group-hover:opacity-100"
       >
-        <mat-progress-bar mode="indeterminate" class="h-[2px]!"></mat-progress-bar>
+        expand_more
+      </mat-icon>
+
+      <!-- M3 Loading Indicator -->
+      <div
+        class="absolute left-0 right-0 bottom-0 overflow-hidden transition-all duration-500 pointer-events-none"
+        [style.height]="isLoading() ? '3px' : '0px'"
+      >
+        <mat-progress-bar mode="indeterminate" class="m3-loader"></mat-progress-bar>
       </div>
 
       <mat-autocomplete
         #auto="matAutocomplete"
         [displayWith]="displayFn"
         (optionSelected)="onSelected($event)"
+        class="m3-autocomplete-panel"
       >
         @if (showAllOption) {
-          <mat-option [value]="{ id: '', name: allOptionLabel }" class="h-auto! py-3!">
+          <mat-option [value]="{ id: '', name: allOptionLabel }" class="m3-option">
             <div class="flex items-center gap-4">
-              <div
-                class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"
-              >
-                <mat-icon
-                  class="m-0! text-[24px]! w-6! h-6! leading-none! flex items-center justify-center text-primary"
-                  >all_inclusive</mat-icon
-                >
+              <div class="m3-option-icon bg-primary/10 text-primary">
+                <mat-icon>all_inclusive</mat-icon>
               </div>
-              <span class="font-bold text-sm">{{ allOptionLabel }}</span>
+              <span class="font-black text-sm">{{ allOptionLabel }}</span>
             </div>
           </mat-option>
         }
         @for (item of items(); track item.id) {
-          <mat-option [value]="item" class="h-auto! py-3!">
+          <mat-option [value]="item" class="m3-option">
             <div class="flex items-start gap-4">
-              <!-- Optimized Icon Container with absolute centering -->
-              <div
-                class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 mt-0.5"
-              >
-                <mat-icon
-                  class="m-0! text-[24px]! w-6! h-6! leading-none! flex items-center justify-center opacity-70"
-                  >{{ item.icon || 'label' }}</mat-icon
-                >
+              <div class="m3-option-icon bg-surface-container text-outline/60">
+                <mat-icon>{{ item.icon || 'label' }}</mat-icon>
               </div>
-
-              <!-- Content Container -->
-              <div class="flex flex-col min-w-0 flex-1 leading-tight">
-                <span class="font-bold text-[14px] text-on-surface truncate">{{ item.name }}</span>
-                <span class="text-[11px] font-mono text-outline truncate opacity-60 mt-0.5">
+              <div class="flex flex-col min-w-0 flex-1 leading-tight py-1">
+                <span class="font-black text-sm text-on-surface truncate">{{ item.name }}</span>
+                <span class="text-[10px] font-mono text-outline truncate opacity-50">
                   {{ item.id }}
                 </span>
                 @if (item.description) {
-                  <span
-                    class="text-[11px] text-outline truncate opacity-80 mt-1 italic leading-tight"
-                  >
+                  <span class="text-[11px] text-outline truncate opacity-80 mt-1 italic">
                     {{ item.description }}
                   </span>
                 }
@@ -165,40 +171,101 @@ import {
           </mat-option>
         }
         @if (items().length === 0 && !isLoading() && lastSearch()) {
-          <mat-option disabled class="text-xs opacity-50">未找到相关项</mat-option>
+          <mat-option disabled class="text-xs italic opacity-50">未找到匹配项</mat-option>
         }
       </mat-autocomplete>
 
-      @if (ngControl && ngControl.errors && ngControl.errors['required']) {
-        <mat-error>此项为必填项</mat-error>
-      }
-
       @if (hint && (!ngControl || !ngControl.invalid)) {
-        <mat-hint>{{ hint }}</mat-hint>
+        <mat-hint class="text-[10px] font-medium opacity-60">{{ hint }}</mat-hint>
       }
     </mat-form-field>
   `,
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      ::ng-deep .m3-form-field .mat-mdc-form-field-wrapper {
+        padding-bottom: 0;
+      }
+      ::ng-deep .m3-form-field .mat-mdc-text-field-wrapper {
+        border-radius: 16px !important; /* M3 extra rounded */
+        background-color: var(--mat-sys-surface-container-low) !important;
+        transition: all 0.2s ease-in-out;
+      }
+      ::ng-deep .m3-form-field.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+        background-color: var(--mat-sys-error-container) !important;
+        opacity: 0.8;
+      }
+      ::ng-deep .m3-form-field .mat-mdc-form-field-focus-overlay {
+        background-color: transparent !important;
+      }
+      ::ng-deep .m3-form-field .mat-mdc-form-field-label {
+        color: var(--mat-sys-outline) !important;
+      }
+      ::ng-deep .m3-form-field.mat-focused .mat-mdc-form-field-label {
+        color: var(--mat-sys-primary) !important;
+      }
+
+      .m3-chip {
+        border-radius: 12px !important;
+        background-color: var(--mat-sys-secondary-container) !important;
+        color: var(--mat-sys-on-secondary-container) !important;
+        border: none !important;
+      }
+
+      .m3-option {
+        height: auto !important;
+        min-height: 64px !important;
+        margin: 4px 8px !important;
+        border-radius: 16px !important;
+        transition: background-color 0.2s;
+      }
+      .m3-option-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .m3-option-icon mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      ::ng-deep .m3-autocomplete-panel {
+        border-radius: 24px !important;
+        margin-top: 8px !important;
+        padding: 8px 0 !important;
+        box-shadow: var(--shadow-lg) !important;
+        background-color: var(--mat-sys-surface-container-high) !important;
+        border: 1px solid var(--mat-sys-outline-variant) !important;
+      }
+
+      .m3-loader {
+        height: 3px !important;
+        background-color: transparent !important;
+      }
+      ::ng-deep .m3-loader .mat-mdc-progress-bar-background {
+        display: none;
+      }
+    `,
+  ],
 })
 export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, Validator {
   private discoveryService = inject(DiscoveryService);
 
-  /** Standard lookup code for discovery service */
   @Input() code = '';
-  /** Main field label */
   @Input() label = '选择';
-  /** Field placeholder */
   @Input() placeholder = '搜索...';
-  /** Optional hint text */
   @Input() hint = '';
-  /** Material field appearance */
   @Input() appearance: 'fill' | 'outline' = 'outline';
-  /** Subscript sizing behavior */
   @Input() subscriptSizing: 'fixed' | 'dynamic' = 'fixed';
-  /** Whether multiple items can be selected */
   @Input() multiple = false;
-  /** Whether to show an "All" option with empty ID */
   @Input() showAllOption = false;
-  /** Label for the "All" option */
   @Input() allOptionLabel = '全部';
 
   @ViewChild('inputElement') inputElement!: ElementRef<HTMLInputElement>;
@@ -210,17 +277,19 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
   lastSearch = signal('');
   disabled = false;
 
+  matcher: ErrorStateMatcher;
+
   constructor(@Optional() @Self() public ngControl: NgControl) {
     if (this.ngControl) {
       this.ngControl.valueAccessor = this;
     }
+    this.matcher = new CrossFieldMatcher(this.ngControl);
   }
 
   public onChange: (value: any) => void = () => {};
   public onTouched: () => void = () => {};
 
   ngOnInit() {
-    // Register validator manually
     if (this.ngControl && this.ngControl.control) {
       this.ngControl.control.addValidators(this.validate.bind(this));
     }
@@ -244,7 +313,6 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
         if (res) this.items.set(res.items || []);
       });
 
-    // Initial load
     if (this.code) {
       this.discoveryService
         .discoveryLookupGet(this.code, '', '', 20)
@@ -271,6 +339,7 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
       this.inputControl.setValue(item.name || '', { emitEvent: false });
       this.triggerChange();
     }
+    this.onTouched();
   }
 
   removeItem(item: ModelsLookupItem) {
@@ -285,13 +354,10 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     this.onChange(val);
   }
 
-  // Validator implementation
   validate(control: AbstractControl): ValidationErrors | null {
-    // Basic required check handled by outer [required]
     return null;
   }
 
-  // ControlValueAccessor implementation
   writeValue(value: any): void {
     if (value === '' && this.showAllOption) {
       this.selectedItems.set([{ id: '', name: this.allOptionLabel }]);
@@ -308,12 +374,10 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     const ids = Array.isArray(value) ? value : [value];
     const currentIds = this.selectedItems().map((i) => i.id);
 
-    // Skip if nothing changed to avoid feedback loops
     if (JSON.stringify(ids) === JSON.stringify(currentIds)) {
       return;
     }
 
-    // Try finding in existing items
     const found = this.items().filter((item) => ids.includes(item.id));
     if (found.length === ids.length) {
       this.selectedItems.set(found);
@@ -323,7 +387,6 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
       return;
     }
 
-    // Remote lookup
     if (!this.code) return;
     this.isLoading.set(true);
     const lookups = ids.map((id) =>

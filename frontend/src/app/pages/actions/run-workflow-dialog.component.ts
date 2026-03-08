@@ -31,27 +31,31 @@ import { ModelsWorkflow } from '../../generated';
   template: `
     <h2 mat-dialog-title>手动运行工作流: {{ data.workflow.name }}</h2>
     <mat-dialog-content>
-      <p class="text-sm text-outline mb-4">此工作流需要以下运行参数：</p>
-      <form [formGroup]="form" class="flex flex-col gap-4 mt-2">
-        @for (key of varKeys; track key) {
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>{{ key }}</mat-label>
-            <input
-              matInput
-              [formControlName]="key"
-              [placeholder]="data.workflow.vars?.[key]?.default || ''"
-            />
-            <mat-hint>{{ data.workflow.vars?.[key]?.description }}</mat-hint>
-            @if (form.get(key)?.errors?.['regexMatch']) {
-              <mat-error>值不符合该参数的前端正则要求</mat-error>
-            }
-          </mat-form-field>
-        }
-      </form>
+      @if (varKeys.length > 0) {
+        <p class="text-sm text-outline mb-4">此工作流需要以下运行参数：</p>
+        <form [formGroup]="form" class="flex flex-col gap-4 mt-2">
+          @for (key of varKeys; track key) {
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ key }}</mat-label>
+              <input
+                matInput
+                [formControlName]="key"
+                [placeholder]="data.workflow.vars?.[key]?.default || ''"
+              />
+              <mat-hint>{{ data.workflow.vars?.[key]?.description }}</mat-hint>
+              @if (form.get(key)?.errors?.['regexMatch']) {
+                <mat-error>值不符合该参数的前端正则要求</mat-error>
+              }
+            </mat-form-field>
+          }
+        </form>
+      } @else {
+        <p class="text-sm text-outline py-4">此工作流无需配置额外参数，点击下方按钮立即启动。</p>
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>取消</button>
-      <button mat-flat-button color="primary" [disabled]="form.valid!" (click)="submit()">
+      <button mat-flat-button color="primary" [disabled]="!form.valid" (click)="submit()">
         立即运行
       </button>
     </mat-dialog-actions>

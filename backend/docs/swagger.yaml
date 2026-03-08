@@ -897,6 +897,10 @@ paths:
         in: query
         name: search
         type: string
+      - description: Workflow ID filter
+        in: query
+        name: workflowId
+        type: string
       produces:
       - application/json
       responses:
@@ -953,6 +957,38 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Delete a task instance
+      tags:
+      - actions
+    get:
+      description: Retrieves a specific task instance by its ID.
+      parameters:
+      - description: Task Instance ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TaskInstance'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Instance Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a task instance
       tags:
       - actions
   /actions/instances/{id}/cancel:
@@ -1313,6 +1349,38 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Delete a workflow
+      tags:
+      - actions
+    get:
+      description: Retrieves a specific workflow template by its ID.
+      parameters:
+      - description: Workflow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Workflow'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.Response'
+        "404":
+          description: Workflow Not Found
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a workflow
       tags:
       - actions
     put:

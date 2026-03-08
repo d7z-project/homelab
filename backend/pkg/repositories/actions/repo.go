@@ -62,7 +62,7 @@ func ScanWorkflows(ctx context.Context, cursor string, limit int, search string)
 			return &models.PaginationResponse[models.Workflow]{
 				Items:      res,
 				NextCursor: v.Key,
-				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				HasMore:    true, // We reached the limit, there might be more
 			}, nil
 		}
 	}
@@ -129,7 +129,7 @@ func ScanAllTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 	return res, nil
 }
 
-func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.TaskInstance], error) {
+func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string, workflowId string) (*models.PaginationResponse[models.TaskInstance], error) {
 	db := common.DB.Child("system", "actions", "instances")
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
@@ -144,6 +144,9 @@ func ScanTaskInstances(ctx context.Context, cursor string, limit int, search str
 	for _, v := range resp.Pairs {
 		var instance models.TaskInstance
 		if err := json.Unmarshal([]byte(v.Value), &instance); err == nil {
+			if workflowId != "" && instance.WorkflowID != workflowId {
+				continue
+			}
 			if search == "" || strings.Contains(strings.ToLower(instance.ID), search) || strings.Contains(strings.ToLower(instance.WorkflowID), search) {
 				res = append(res, instance)
 			}

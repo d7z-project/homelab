@@ -54,18 +54,18 @@ interface StepState {
         <div class="flex items-center gap-4 min-w-0">
           <mat-icon
             class="w-6! h-6! text-[24px]! shrink-0"
-            [style.color]="getStatusColor(instance().status)"
+            [style.color]="getStatusColor(instance()?.status)"
           >
-            {{ getStatusIcon(instance().status) }}
+            {{ getStatusIcon(instance()?.status) }}
           </mat-icon>
           <div class="flex flex-col min-w-0">
             <h2 class="text-sm sm:text-lg font-bold truncate m-0 tracking-tight">
               {{ workflowName() }}
             </h2>
             <div class="flex items-center gap-2 text-[10px] sm:text-xs text-outline font-medium">
-              <span class="uppercase tracking-widest">{{ instance().status }}</span>
+              <span class="uppercase tracking-widest">{{ instance()?.status || 'UNKNOWN' }}</span>
               <span class="opacity-30">•</span>
-              <span>#{{ instance().id?.slice(-6) }}</span>
+              <span>#{{ instance()?.id?.slice(-6) || 'N/A' }}</span>
               <span class="opacity-30">•</span>
               <span class="text-primary font-mono">{{ duration() }}</span>
             </div>
@@ -73,7 +73,7 @@ interface StepState {
         </div>
 
         <div class="flex items-center gap-2">
-          @if (instance().status === 'Running' || instance().status === 'Pending') {
+          @if (instance()?.status === 'Running' || instance()?.status === 'Pending') {
             <button mat-button color="warn" (click)="cancel()" class="rounded-full! font-bold">
               停止执行
             </button>
@@ -215,8 +215,13 @@ interface StepState {
     `
       :host {
         display: block;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
+        border-radius: 24px;
+        overflow: hidden;
+      }
+      ::ng-deep .task-detail-panel .mat-mdc-dialog-container .mdc-dialog__surface {
+        border-radius: 24px !important;
       }
       ::ng-deep .pill-step-panel .mat-expansion-panel-body {
         padding: 0 !important;
@@ -279,38 +284,49 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((r) => r.matches)),
     { initialValue: false },
   );
-  instance = signal<ModelsTaskInstance>(this.dialogData.instance);
+  instance = signal<ModelsTaskInstance | undefined>(this.dialogData?.instance);
   workflowName = signal<string>('');
   stepStates = signal<StepState[]>([]);
   autoScroll = signal(true);
   now = signal(new Date());
 
-  currentRunningStep = computed(() => (this.instance() as any).currentStep ?? -1);
+  currentRunningStep = computed(() => (this.instance() as any)?.currentStep ?? -1);
   private pollingActive = true;
+  private lastStepIndex = -1;
 
   duration = computed(() => {
-    const start = new Date(this.instance().startedAt || new Date()).getTime();
-    const end = this.instance().finishedAt
-      ? new Date(this.instance().finishedAt!).getTime()
-      : this.now().getTime();
+    const inst = this.instance();
+    if (!inst) return '0s';
+    const start = new Date(inst.startedAt || new Date()).getTime();
+    const end = inst.finishedAt ? new Date(inst.finishedAt!).getTime() : this.now().getTime();
     const diff = Math.max(0, Math.floor((end - start) / 1000));
     return this.formatSeconds(diff);
   });
 
   constructor(public dialogRef: MatDialogRef<TaskDetailDialogComponent>) {
-    this.workflowName.set(this.instance().workflowId || 'Workflow');
+    const inst = this.instance();
+    this.workflowName.set(inst?.workflowId || 'Workflow');
 
     effect(() => {
+      const inst = this.instance();
       const current = this.currentRunningStep();
-      const status = this.instance().status;
-      if ((status === 'Running' || status === 'Pending') && current >= 0 && this.autoScroll()) {
-        this.expandStepOnly(current);
+      const status = inst?.status;
+
+      // 仅在步骤真正变更且启用了自动跟随，或者刚进入 Running 状态时触发跟随
+      if (current !== this.lastStepIndex && current >= 0) {
+        if ((status === 'Running' || status === 'Pending') && this.autoScroll()) {
+          this.scrollToStep(current);
+        }
+        this.lastStepIndex = current;
       }
     });
   }
 
   async ngOnInit() {
     await this.initStepStates();
+    // 初始进入时，如果有正在运行的步骤，确保它被记录
+    this.lastStepIndex = this.currentRunningStep();
+
     this.pollSubscription = interval(2000).subscribe(() => {
       this.now.set(new Date());
       this.refresh();
@@ -324,6 +340,8 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
   private async initStepStates() {
     const inst = this.instance() as any;
+    if (!inst) return;
+
     const steps = (inst.steps || []).map((s: any) => ({
       id: s.id || '',
       name: s.name || s.id || '',
@@ -375,38 +393,17 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
     // Async fetch workflow name for display if available, but don't block
     try {
-      const res = await firstValueFrom(this.orchService.actionsWorkflowsGet('', 100));
-      const wf = (res.items || []).find((w: any) => w.id === inst.workflowId);
+      const wf = await firstValueFrom(this.orchService.actionsWorkflowsIdGet(inst.workflowId!));
       if (wf) this.workflowName.set(wf.name || wf.id || '');
     } catch (e) {}
   }
 
-  private expandStepOnly(index: number) {
-    this.stepStates.update((states) => {
-      let changed = false;
-      states.forEach((s) => {
-        if (s.index === index) {
-          if (!s.expanded) {
-            s.expanded = true;
-            this.loadLogsForStep(s.index);
-            changed = true;
-          }
-        } else {
-          if (s.expanded) {
-            s.expanded = false;
-            changed = true;
-          }
-        }
-      });
-      return changed ? [...states] : states;
-    });
-  }
-
   async refresh() {
     if (!this.pollingActive) return;
+    const inst = this.instance();
+    if (!inst) return;
     try {
-      const res = await firstValueFrom(this.orchService.actionsInstancesGet('', 100));
-      const updated = (res.items || []).find((i: any) => i.id === this.instance().id);
+      const updated = await firstValueFrom(this.orchService.actionsInstancesIdGet(inst.id!));
       if (updated) {
         this.instance.set(updated);
         const expanded = this.stepStates().filter((s) => s.expanded);
@@ -421,14 +418,39 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   async onPanelOpened(index: number) {
-    const s = this.stepStates()[index];
+    const states = this.stepStates();
+    const s = states[index];
     if (s) {
-      s.expanded = true;
-      await this.loadLogsForStep(index);
+      // 如果用户点击的不是当前运行步骤，暂时关闭自动跟随，防止被拉回
+      if (this.autoScroll() && index !== this.currentRunningStep()) {
+        this.autoScroll.set(false);
+      }
+
+      this.expandStepOnly(index);
     }
   }
 
+  private expandStepOnly(index: number) {
+    this.stepStates.update((states) => {
+      let changed = false;
+      states.forEach((s) => {
+        const shouldExpand = s.index === index;
+        if (s.expanded !== shouldExpand) {
+          s.expanded = shouldExpand;
+          changed = true;
+          if (shouldExpand) {
+            this.loadLogsForStep(s.index);
+          }
+        }
+      });
+      return changed ? [...states] : states;
+    });
+  }
+
   private async loadLogsForStep(index: number) {
+    const inst = this.instance();
+    if (!inst || !inst.id) return;
+
     const states = this.stepStates();
     const s = states[index];
     if (!s || s.loading) return;
@@ -436,7 +458,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     s.loading = true;
     try {
       const res = await firstValueFrom<any>(
-        this.orchService.actionsInstancesIdLogsGet(this.instance().id!, index, s.offset),
+        this.orchService.actionsInstancesIdLogsGet(inst.id, index, s.offset),
       );
       if (res && res.logs) {
         this.stepStates.update((prevStates) => {
@@ -448,7 +470,8 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
           target.loading = false;
           return [...prevStates];
         });
-        if (res.logs.length > 0 && this.autoScroll()) {
+        // 只有当前展开的步骤是运行中的步骤，且开启了随动，才滚动到底部
+        if (res.logs.length > 0 && this.autoScroll() && index === this.currentRunningStep()) {
           this.scrollToBottom();
         }
       } else {
@@ -504,9 +527,9 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   getStepDuration(index: number): string | null {
-    const timings = (this.instance() as any).stepTimings;
-    if (!timings || !timings[index]) return null;
-    const t = timings[index];
+    const inst = this.instance() as any;
+    if (!inst || !inst.stepTimings || !inst.stepTimings[index]) return null;
+    const t = inst.stepTimings[index];
     const start = new Date(t.startedAt).getTime();
     const end = t.finishedAt ? new Date(t.finishedAt).getTime() : this.now().getTime();
     const diff = Math.max(0, Math.floor((end - start) / 1000));
@@ -520,8 +543,10 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   async cancel() {
+    const inst = this.instance();
+    if (!inst) return;
     try {
-      await firstValueFrom(this.orchService.actionsInstancesIdCancelPost(this.instance().id!));
+      await firstValueFrom(this.orchService.actionsInstancesIdCancelPost(inst.id!));
       this.refresh();
     } catch (e) {}
   }
@@ -557,7 +582,9 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   getStepStatusIcon(index: number): string {
-    const status = this.instance().status;
+    const inst = this.instance();
+    if (!inst) return 'help_outline';
+    const status = inst.status;
     const currentStep = this.currentRunningStep();
     if (status === 'Success') return 'check_circle';
     if (status === 'Failed' || status === 'Cancelled') {

@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  signal,
+  computed,
+  untracked,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
@@ -55,15 +63,6 @@ import { NetworkIpService, ModelsIPGroup, ModelsIPExport } from '../../generated
     `
       :host {
         display: block;
-      }
-      ::ng-deep .ip-tabs-integrated {
-        .mat-mdc-tab-header {
-          background: var(--mat-sys-surface);
-          border-bottom: 1px solid var(--mat-sys-outline-variant);
-        }
-        .mat-mdc-tab-body-wrapper {
-          background: var(--mat-sys-surface-container-lowest);
-        }
       }
     `,
   ],
@@ -129,26 +128,36 @@ export class IpComponent implements OnInit, OnDestroy {
     }
   });
 
-  ngOnInit() {
-    this.uiService.configureToolbar({ shadow: false });
+  constructor() {
     this.route.queryParams.subscribe((params) => {
-      if (params['tab'] === 'pool') this.selectedTabIndex.set(0);
-      else if (params['tab'] === 'export') this.selectedTabIndex.set(1);
+      const tab = params['tab'];
+      if (tab === 'export') {
+        this.selectedTabIndex.set(1);
+      } else {
+        this.selectedTabIndex.set(0);
+      }
 
-      if (params['search']) {
-        if (this.selectedTabIndex() === 0) {
-          this.poolSearch.set(params['search']);
-        } else {
-          this.exportSearch.set(params['search']);
+      const search = params['search'] || '';
+      if (this.selectedTabIndex() === 0) {
+        if (search !== this.poolSearch()) {
+          this.poolSearch.set(search);
+          untracked(() => this.loadPools(true));
+        }
+      } else {
+        if (search !== this.exportSearch()) {
+          this.exportSearch.set(search);
+          untracked(() => this.loadExports(true));
         }
       }
-      this.loadData(true);
     });
+  }
+
+  ngOnInit() {
     this.setupScrollListener();
+    this.loadData(true);
   }
 
   ngOnDestroy() {
-    this.uiService.resetToolbar();
     this.uiService.closeSearch();
     if (this.scrollListener) {
       const scrollElement = document.querySelector('mat-sidenav-content');
@@ -185,18 +194,24 @@ export class IpComponent implements OnInit, OnDestroy {
 
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
-    const tab = index === 0 ? 'pool' : 'export';
+    const tabName = index === 0 ? 'pool' : 'export';
+    const search = index === 0 ? this.poolSearch() : this.exportSearch();
+
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { tab },
+      queryParams: { tab: tabName, search: search || null },
       queryParamsHandling: 'merge',
     });
+
     this.loadData(true);
   }
 
   loadData(reset = false) {
-    if (this.selectedTabIndex() === 0) this.loadPools(reset);
-    else this.loadExports(reset);
+    if (this.selectedTabIndex() === 0) {
+      this.loadPools(reset);
+    } else {
+      this.loadExports(reset);
+    }
   }
 
   async loadPools(reset = false) {
@@ -265,18 +280,18 @@ export class IpComponent implements OnInit, OnDestroy {
       placeholder: isPool ? '搜索地址池名称...' : '搜索导出配置名称...',
       value: isPool ? this.poolSearch() : this.exportSearch(),
       onSearch: (val) => {
-        const queryParams: any = { search: val || null };
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams,
-          queryParamsHandling: 'merge',
-        });
-
         if (isPool) {
           this.poolSearch.set(val);
         } else {
           this.exportSearch.set(val);
         }
+
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { search: val || null },
+          queryParamsHandling: 'merge',
+        });
+
         this.loadData(true);
       },
     });

@@ -154,7 +154,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
   private breakpointObserver = inject(BreakpointObserver);
 
   editMode = signal<'visual' | 'yaml'>('visual');
-  yamlCode = '';
+  yamlCode = signal('');
   isEditorLoading = signal(true);
   monacoOptions = {
     theme: 'vs-dark',
@@ -202,18 +202,24 @@ export class CreateWorkflowDialogComponent implements OnInit {
   vars: FormArray = this.fb.array([]);
   steps: FormArray = this.fb.array([]);
 
+  // Create a signal from form changes to drive stepsData reactivity
+  private stepsValue = toSignal(this.steps.valueChanges, { initialValue: [] });
+
   activeStepIndex = signal(0);
   totalSteps = computed(() => 4); // Fixed steps in visual mode
 
   // Pre-calculate step manifests to avoid function calls in template (NG0100 fix)
   stepsData = computed(() => {
-    const s = this.steps.value as any[];
-    return s.map(step => {
-      const manifest = this.manifestMap().get(step.type);
+    // Explicitly track both stepsValue signal and the raw array length
+    this.stepsValue();
+    const s = this.steps.controls as any[];
+    return s.map((control) => {
+      const type = control.get('type')?.value;
+      const manifest = this.manifestMap().get(type);
       return {
         manifest,
         icon: manifest?.id?.startsWith('core/') ? 'memory' : 'api',
-        params: manifest?.params || []
+        params: manifest?.params || [],
       };
     });
   });
@@ -250,14 +256,34 @@ export class CreateWorkflowDialogComponent implements OnInit {
     if (this.editMode() === 'visual') {
       return this.infoForm.valid && this.vars.valid && this.steps.valid && this.steps.length > 0;
     }
-    if (!this.yamlCode.trim()) return false;
+    const code = this.yamlCode().trim();
+    if (!code) return false;
     try {
-      const parsed = yaml.load(this.yamlCode);
+      const parsed = yaml.load(code);
       return (
-        !!parsed && typeof parsed === 'object' && (parsed as any).name && (parsed as any).steps
+        !!parsed &&
+        typeof parsed === 'object' &&
+        (parsed as any).name &&
+        Array.isArray((parsed as any).steps) &&
+        (parsed as any).steps.length > 0
       );
     } catch (e) {
       return false;
+    }
+  }
+
+  isStepValid(index: number): boolean {
+    switch (index) {
+      case 0:
+        return this.infoForm.valid;
+      case 1:
+        return this.vars.valid;
+      case 2:
+        return this.steps.valid && this.steps.length > 0;
+      case 3:
+        return this.isValid();
+      default:
+        return true;
     }
   }
 
@@ -385,10 +411,10 @@ export class CreateWorkflowDialogComponent implements OnInit {
     if (this.editMode() === newMode) return;
     if (newMode === 'yaml') {
       const cleaned = this.getCurrentWorkflow();
-      this.yamlCode = yaml.dump(cleaned, { indent: 2, noArrayIndent: true });
+      this.yamlCode.set(yaml.dump(cleaned, { indent: 2, noArrayIndent: true }));
     } else {
       try {
-        const parsed = yaml.load(this.yamlCode) as ModelsWorkflow;
+        const parsed = yaml.load(this.yamlCode()) as ModelsWorkflow;
         if (parsed) this.applyWorkflowToForms(parsed);
       } catch (e: any) {
         this.snackBar.open('YAML 解析失败: ' + e.message, '确定', { duration: 3000 });
@@ -615,6 +641,22 @@ export class CreateWorkflowDialogComponent implements OnInit {
       manifest.params.forEach((p) => {
         if (p.name) {
           const validators = p.optional ? [] : [Validators.required];
+
+          // Add custom regex validator if defined
+          if (p.regexFrontend) {
+            validators.push((c: AbstractControl) => {
+              const v = c.value;
+              // Bypass regex check if it contains a variable placeholder
+              if (!v || v.includes('${{')) return null;
+              try {
+                const re = new RegExp(p.regexFrontend!);
+                return re.test(v) ? null : { regexMatch: true };
+              } catch (e) {
+                return null; // Invalid regex in manifest, don't block user
+              }
+            });
+          }
+
           paramsGroup.addControl(
             p.name,
             this.fb.control(initialParams?.[p.name] || '', validators),
@@ -622,6 +664,8 @@ export class CreateWorkflowDialogComponent implements OnInit {
         }
       });
     }
+    // Force a value change notification to trigger computed signals
+    this.steps.updateValueAndValidity();
   }
 
   getProcessorParams(type: string | undefined) {
@@ -654,15 +698,29 @@ export class CreateWorkflowDialogComponent implements OnInit {
     let workflow: ModelsWorkflow;
     try {
       if (this.editMode() === 'yaml') {
-        workflow = yaml.load(this.yamlCode) as ModelsWorkflow;
+        workflow = yaml.load(this.yamlCode()) as ModelsWorkflow;
       } else {
         workflow = this.getCurrentWorkflow();
       }
       if (!workflow?.name || !workflow?.steps) throw new Error('工作流名称和步骤必填');
+
+      // 1. Validate
       await firstValueFrom(this.orchService.actionsWorkflowsValidatePost(workflow));
-      this.dialogRef.close(workflow);
+
+      // 2. Save (Create or Update)
+      if (this.data?.workflow?.id) {
+        await firstValueFrom(
+          this.orchService.actionsWorkflowsIdPut(this.data.workflow.id, workflow),
+        );
+        this.snackBar.open('工作流已更新', '确定', { duration: 3000 });
+      } else {
+        await firstValueFrom(this.orchService.actionsWorkflowsPost(workflow));
+        this.snackBar.open('工作流已创建', '确定', { duration: 3000 });
+      }
+
+      this.dialogRef.close(true);
     } catch (e: any) {
-      this.snackBar.open('校验失败: ' + (e.error?.message || e.message), '确定', {
+      this.snackBar.open('操作失败: ' + (e.error?.message || e.message), '确定', {
         duration: 5000,
       });
     }

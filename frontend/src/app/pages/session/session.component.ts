@@ -202,7 +202,6 @@ export class SessionComponent implements OnInit, OnDestroy {
   );
 
   ngOnInit(): void {
-    this.uiService.configureToolbar({ shadow: true, sticky: true });
     this.loadSessions();
     this.setupScrollListener();
   }

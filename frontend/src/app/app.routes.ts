@@ -25,7 +25,11 @@ export const routes: Routes = [
         component: RbacComponent,
         data: { toolbar: { shadow: false, sticky: false } },
       },
-      { path: 'rbac/simulator', component: RbacSimulatorComponent },
+      {
+        path: 'rbac/simulator',
+        component: RbacSimulatorComponent,
+        data: { toolbar: { shadow: true, sticky: true } },
+      },
       {
         path: 'sessions',
         component: SessionComponent,
@@ -49,7 +53,7 @@ export const routes: Routes = [
       {
         path: 'network/ip/sync',
         loadComponent: () => import('./pages/ip/sync.component').then((m) => m.IpSyncComponent),
-        data: { toolbar: { shadow: false, sticky: false } },
+        data: { toolbar: { shadow: true, sticky: true } },
       },
       {
         path: 'network/site',
@@ -60,7 +64,7 @@ export const routes: Routes = [
         path: 'network/analysis',
         loadComponent: () =>
           import('./pages/network/analysis/analysis.component').then((m) => m.AnalysisComponent),
-        data: { toolbar: { shadow: false, sticky: false } },
+        data: { toolbar: { shadow: true, sticky: true } },
       },
       {
         path: 'network/intelligence',
@@ -68,7 +72,7 @@ export const routes: Routes = [
           import('./pages/network/intelligence/intelligence.component').then(
             (m) => m.IntelligenceComponent,
           ),
-        data: { toolbar: { shadow: false, sticky: false } },
+        data: { toolbar: { shadow: true, sticky: true } },
       },
       {
         path: 'actions',

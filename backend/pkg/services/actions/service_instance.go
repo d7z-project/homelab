@@ -153,11 +153,11 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 	return inst, nil
 }
 
-func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.TaskInstance], error) {
+func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string, workflowId string) (*models.PaginationResponse[models.TaskInstance], error) {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions") {
 		return nil, fmt.Errorf("%w: actions", commonauth.ErrPermissionDenied)
 	}
-	res, err := repo.ScanTaskInstances(ctx, cursor, limit, search)
+	res, err := repo.ScanTaskInstances(ctx, cursor, limit, search, workflowId)
 	if err != nil {
 		return nil, err
 	}

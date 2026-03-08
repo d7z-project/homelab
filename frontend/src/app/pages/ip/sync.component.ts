@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  signal,
+  computed,
+  untracked,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +26,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
@@ -70,6 +78,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private breakpointObserver = inject(BreakpointObserver);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   public uiService = inject(UiService);
 
   private scrollListener?: () => void;
@@ -106,8 +115,17 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   private refreshTimer?: any;
 
+  constructor() {
+    this.route.queryParams.subscribe((params) => {
+      const search = params['search'] || '';
+      if (search !== this.search()) {
+        this.search.set(search);
+        untracked(() => this.loadPolicies(true));
+      }
+    });
+  }
+
   ngOnInit() {
-    this.uiService.configureToolbar({ shadow: false });
     this.loadGroups();
     this.loadPolicies(true);
     this.setupScrollListener();
@@ -115,7 +133,6 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.uiService.resetToolbar();
     this.uiService.closeSearch();
     if (this.scrollListener) {
       const scrollElement = document.querySelector('mat-sidenav-content');
@@ -194,6 +211,11 @@ export class IpSyncComponent implements OnInit, OnDestroy {
       value: this.search(),
       onSearch: (val) => {
         this.search.set(val);
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { search: val || null },
+          queryParamsHandling: 'merge',
+        });
         this.loadPolicies(true);
       },
     });

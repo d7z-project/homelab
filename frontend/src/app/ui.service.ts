@@ -21,9 +21,9 @@ export class UiService {
 
   // Dynamic toolbar controls (inherited from route or manually set)
   toolbarVisible = signal(true);
-  toolbarShadow = signal(true);
+  toolbarShadow = signal(false);
   toolbarDivider = signal(false);
-  toolbarSticky = signal(true);
+  toolbarSticky = signal(false);
 
   // Global Search Overlay state
   searchConfig = signal<SearchConfig | null>(null);
@@ -46,13 +46,6 @@ export class UiService {
 
   setSidenav(opened: boolean) {
     this.sidenavOpened.set(opened);
-  }
-
-  resetToolbar() {
-    this.toolbarVisible.set(true);
-    this.toolbarShadow.set(true);
-    this.toolbarDivider.set(false);
-    this.toolbarSticky.set(true);
   }
 
   configureToolbar(config: {

@@ -213,11 +213,14 @@ func ValidateWorkflow(ctx context.Context, workflow *models.Workflow) error {
 }
 
 func CreateWorkflow(ctx context.Context, workflow *models.Workflow) (*models.Workflow, error) {
+	// 强制由后端生成 ID，禁止用户指定
+	workflow.ID = uuid.NewString()
+
 	if err := ValidateWorkflow(ctx, workflow); err != nil {
 		return nil, err
 	}
 
-	workflow.ID = uuid.New().String()
+	// Double-check permission for the specific ID
 	workflow.CreatedAt = time.Now()
 	workflow.UpdatedAt = time.Now()
 
@@ -363,12 +366,10 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 	}
 
 	// Cascade delete instances and logs
-	res, err := repo.ScanTaskInstances(ctx, "", 10000, "")
+	res, err := repo.ScanTaskInstances(ctx, "", 10000, "", id)
 	if err == nil {
 		for _, inst := range res.Items {
-			if inst.WorkflowID == id {
-				_ = repo.DeleteTaskInstance(ctx, inst.ID)
-			}
+			_ = repo.DeleteTaskInstance(ctx, inst.ID)
 		}
 		_ = RemoveWorkflowLogs(id)
 	}

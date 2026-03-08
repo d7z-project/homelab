@@ -28,11 +28,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
 
-import {
-  ActionsService,
-  ModelsWorkflow,
-  ModelsTaskInstance,
-} from '../../generated';
+import { ActionsService, ModelsWorkflow, ModelsTaskInstance } from '../../generated';
 import { UiService } from '../../ui.service';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { RunWorkflowDialogComponent } from './run-workflow-dialog.component';
@@ -136,27 +132,23 @@ export class ActionsComponent implements OnInit, OnDestroy {
         this.selectedTabIndex.set(0);
         this.stopRefreshTimer();
       }
-      if (params['workflowId']) {
-        this.selectedWorkflowId.set(params['workflowId']);
-      } else {
-        this.selectedWorkflowId.set(null);
-      }
-    });
 
-    effect(() => {
-      // 追踪 searchConfig 以实现自动搜索
-      this.uiService.searchConfig();
-      untracked(() => this.refreshAll());
+      const prevWfId = this.selectedWorkflowId();
+      const newWfId = params['workflowId'] || null;
+
+      if (newWfId !== prevWfId) {
+        this.selectedWorkflowId.set(newWfId);
+        untracked(() => this.loadInstances(true));
+      }
     });
   }
 
   ngOnInit(): void {
-    this.uiService.configureToolbar({ shadow: false });
     this.setupScrollListener();
+    this.refreshAll();
   }
 
   ngOnDestroy(): void {
-    this.uiService.resetToolbar();
     this.stopRefreshTimer();
     if (this.scrollListener) {
       const scrollElement = document.querySelector('mat-sidenav-content');
@@ -211,24 +203,30 @@ export class ActionsComponent implements OnInit, OnDestroy {
 
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
-    const tab = index === 0 ? 'workflows' : 'instances';
+    const tabName = index === 0 ? 'workflows' : 'instances';
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { tab },
+      queryParams: { tab: tabName },
       queryParamsHandling: 'merge',
     });
 
     if (index === 1) {
       this.startRefreshTimer();
+      this.loadInstances(true);
     } else {
       this.stopRefreshTimer();
+      this.loadWorkflows(true);
     }
   }
 
   async refreshAll() {
     this.loading.set(true);
     try {
-      await Promise.all([this.loadWorkflows(true), this.loadInstances(true, true)]);
+      if (this.selectedTabIndex() === 0) {
+        await this.loadWorkflows(true);
+      } else {
+        await this.loadInstances(true);
+      }
     } catch (err) {
       this.snackBar
         .open('加载失败', '重试')
@@ -283,14 +281,11 @@ export class ActionsComponent implements OnInit, OnDestroy {
           this.instNextCursor(),
           this.pageSize(),
           this.uiService.searchConfig()?.value,
+          this.selectedWorkflowId() || undefined,
         ),
       );
 
       let newItems = res.items || [];
-      const wfId = this.selectedWorkflowId();
-      if (wfId) {
-        newItems = newItems.filter((i) => i.workflowId === wfId);
-      }
 
       if (reset) {
         this.instances.set(newItems);
@@ -318,8 +313,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
   isWorkflowRunning(id: string | undefined): boolean {
     if (!id) return false;
     return this.instances().some(
-      (i) =>
-        i.workflowId === id && (i.status === 'Running' || i.status === 'Pending'),
+      (i) => i.workflowId === id && (i.status === 'Running' || i.status === 'Pending'),
     );
   }
 
@@ -333,10 +327,14 @@ export class ActionsComponent implements OnInit, OnDestroy {
 
   getTriggerIcon(trigger: string | undefined): string {
     switch (trigger) {
-      case 'Manual': return 'person';
-      case 'Webhook': return 'link';
-      case 'Cron': return 'schedule';
-      default: return 'help_outline';
+      case 'Manual':
+        return 'person';
+      case 'Webhook':
+        return 'link';
+      case 'Cron':
+        return 'schedule';
+      default:
+        return 'help_outline';
     }
   }
 
@@ -364,11 +362,15 @@ export class ActionsComponent implements OnInit, OnDestroy {
 
   filterByWorkflow(id: string | null) {
     this.selectedWorkflowId.set(id);
+    const tab = id ? 'instances' : (this.selectedTabIndex() === 0 ? 'workflows' : 'instances');
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { workflowId: id },
+      queryParams: { workflowId: id, tab },
       queryParamsHandling: 'merge',
     });
+    if (id) {
+      this.selectedTabIndex.set(1);
+    }
     this.loadInstances(true);
   }
 
@@ -417,23 +419,40 @@ export class ActionsComponent implements OnInit, OnDestroy {
     this.dialog
       .open(RunWorkflowDialogComponent, {
         width: '500px',
-        data: workflow,
+        data: { workflow },
       })
       .afterClosed()
-      .subscribe((res) => {
+      .subscribe(async (res) => {
         if (res) {
-          this.selectedTabIndex.set(1);
-          this.loadInstances(true);
+          this.loading.set(true);
+          try {
+            await firstValueFrom(
+              this.orchService.actionsWorkflowsWorkflowIdRunPost(workflow.id!, {
+                inputs: res,
+              }),
+            );
+            this.snackBar.open('工作流已启动', '了解', { duration: 2000 });
+            this.selectedTabIndex.set(1);
+            untracked(() => this.loadInstances(true));
+          } catch (err: any) {
+            this.snackBar.open('启动失败: ' + (err.error?.message || err.message), '了解', {
+              duration: 3000,
+            });
+          } finally {
+            this.loading.set(false);
+          }
         }
       });
   }
 
   viewLogs(instance: ModelsTaskInstance) {
     this.dialog.open(TaskDetailDialogComponent, {
-      width: '900px',
-      maxWidth: '95vw',
-      data: instance,
-      panelClass: 'task-detail-panel',
+      width: '100vw',
+      height: '100vh',
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      data: { instance },
+      panelClass: 'full-screen-dialog',
     });
   }
 
@@ -561,13 +580,17 @@ export class ActionsComponent implements OnInit, OnDestroy {
 
   openSearch() {
     this.uiService.openSearch({
-      placeholder:
-        this.selectedTabIndex() === 0 ? '搜索工作流...' : '搜索记录...',
+      placeholder: this.selectedTabIndex() === 0 ? '搜索工作流...' : '搜索记录...',
       value: this.uiService.searchConfig()?.value || '',
       onSearch: (val: string) => {
         const config = this.uiService.searchConfig();
         if (config) {
           this.uiService.searchConfig.set({ ...config, value: val });
+        }
+        if (this.selectedTabIndex() === 0) {
+          this.loadWorkflows(true);
+        } else {
+          this.loadInstances(true);
         }
       },
     });

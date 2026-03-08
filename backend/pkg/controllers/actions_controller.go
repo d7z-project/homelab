@@ -119,6 +119,28 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "success")
 }
 
+// GetWorkflowHandler godoc
+// @Summary Get a workflow
+// @Description Retrieves a specific workflow template by its ID.
+// @Tags actions
+// @Produce json
+// @Param id path string true "Workflow ID"
+// @Success 200 {object} models.Workflow
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Workflow Not Found"
+// @Security ApiKeyAuth
+// @Router /actions/workflows/{id} [get]
+func GetWorkflowHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	res, err := actions.GetWorkflow(r.Context(), id)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, res)
+}
+
 // ScanInstancesHandler godoc
 // @Summary Scan task instances
 // @Description Retrieves historical execution logs with cursor-based pagination.
@@ -127,20 +149,43 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search"
+// @Param workflowId query string false "Workflow ID filter"
 // @Success 200 {object} common.CursorResponse{items=[]models.TaskInstance}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /actions/instances [get]
 func ScanInstancesHandler(w http.ResponseWriter, r *http.Request) {
-
 	cursor, limit := getCursorParams(r)
 	search := r.URL.Query().Get("search")
-	res, err := actions.ScanTaskInstances(r.Context(), cursor, limit, search)
+	workflowId := r.URL.Query().Get("workflowId")
+	res, err := actions.ScanTaskInstances(r.Context(), cursor, limit, search, workflowId)
 	if err != nil {
 		HandleError(w, r, err)
 		return
 	}
 	common.CursorSuccess(w, r, res)
+}
+
+// GetInstanceHandler godoc
+// @Summary Get a task instance
+// @Description Retrieves a specific task instance by its ID.
+// @Tags actions
+// @Produce json
+// @Param id path string true "Task Instance ID"
+// @Success 200 {object} models.TaskInstance
+// @Failure 401 {object} common.Response "Unauthorized"
+// @Failure 403 {object} common.Response "Forbidden"
+// @Failure 404 {object} common.Response "Instance Not Found"
+// @Security ApiKeyAuth
+// @Router /actions/instances/{id} [get]
+func GetInstanceHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	res, err := actions.GetTaskInstance(r.Context(), id)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, res)
 }
 
 // RunWorkflowHandler godoc
@@ -488,11 +533,13 @@ func ActionsRouter(r chi.Router) {
 
 		// Use Chi's idiomatic With() pattern for cleaner middleware integration
 		r.With(middlewares.RequirePermission("update", "actions")).Put("/workflows/{id}", UpdateWorkflowHandler)
+		r.With(middlewares.RequirePermission("get", "actions")).Get("/workflows/{id}", GetWorkflowHandler)
 		r.With(middlewares.RequirePermission("delete", "actions")).Delete("/workflows/{id}", DeleteWorkflowHandler)
 		r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/{workflowId}/run", RunWorkflowHandler)
 		r.With(middlewares.RequirePermission("update", "actions")).Post("/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
 
 		r.With(middlewares.RequirePermission("list", "actions")).Get("/instances", ScanInstancesHandler)
+		r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}", GetInstanceHandler)
 		r.With(middlewares.RequirePermission("delete", "actions")).Post("/instances/cleanup", CleanupInstancesHandler)
 		r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}/logs", GetInstanceLogsHandler)
 		r.With(middlewares.RequirePermission("delete", "actions")).Delete("/instances/{id}", DeleteInstanceHandler)

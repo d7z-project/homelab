@@ -177,7 +177,12 @@ export class MainComponent {
             if (config) {
               this.uiService.configureToolbar(config);
             } else {
-              this.uiService.resetToolbar();
+              this.uiService.configureToolbar({
+                visible: true,
+                shadow: false,
+                divider: false,
+                sticky: false,
+              });
             }
           });
         }),
@@ -273,13 +278,13 @@ export class MainComponent {
         children: [
           {
             link: '/actions',
-            queryParams: { tab: 'workflow' },
+            queryParams: { tab: 'workflows' },
             icon: 'view_kanban',
             label: '工作流模板',
           },
           {
             link: '/actions',
-            queryParams: { tab: 'instance' },
+            queryParams: { tab: 'instances' },
             icon: 'history',
             label: '运行记录',
           },

@@ -6,11 +6,24 @@
 
 /* 1.2 Full-screen Dialog Overrides */
 .full-screen-dialog {
-  max-width: none !important;
-  max-height: none !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.full-screen-dialog .mat-mdc-dialog-container {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
 }
 .full-screen-dialog .mat-mdc-dialog-container .mdc-dialog__surface {
   border-radius: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
 }
 
 /* 2. Fonts */
@@ -138,7 +151,9 @@ body {
 /* Sticky Header Logic for Integrated Tabs */
 
 .rbac-tabs-integrated .mat-mdc-tab-header,
-.dns-tabs-integrated .mat-mdc-tab-header {
+.dns-tabs-integrated .mat-mdc-tab-header,
+.ip-tabs-integrated .mat-mdc-tab-header,
+.site-tabs-integrated .mat-mdc-tab-header {
   position: sticky !important;
   top: 0;
   z-index: 30 !important;
@@ -149,7 +164,9 @@ body {
 
 /* If toolbar is STICKY, tabs should stick right BELOW it */
 .has-sticky-toolbar .rbac-tabs-integrated .mat-mdc-tab-header,
-.has-sticky-toolbar .dns-tabs-integrated .mat-mdc-tab-header {
+.has-sticky-toolbar .dns-tabs-integrated .mat-mdc-tab-header,
+.has-sticky-toolbar .ip-tabs-integrated .mat-mdc-tab-header,
+.has-sticky-toolbar .site-tabs-integrated .mat-mdc-tab-header {
   top: var(--header-height);
 }
 

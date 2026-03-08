@@ -33,7 +33,7 @@
           <button
             mat-button
             (click)="switchMode('yaml')"
-            class="rounded-full! h-8! min-w-[60px]! sm:!min-w-[90px] text-[11px]! font-black"
+            class="rounded-full! h-8! min-w-15! sm:min-w-22.5! text-[11px]! font-black"
           >
             YAML
           </button>
@@ -83,7 +83,6 @@
               [linear]="true"
               (selectionChange)="activeStepIndex.set($event.selectedIndex)"
             >
-
               <!-- Step 1: Info -->
               <mat-step [stepControl]="infoForm">
                 <ng-template matStepLabel><span class="font-black">基本信息配置</span></ng-template>
@@ -331,19 +330,19 @@
                               {{ stepsData()[sIndex].manifest?.name || '未选择处理器' }}
                             </h4>
                           </div>
-                          </div>
-                          <button
+                        </div>
+                        <button
                           mat-icon-button
                           color="warn"
                           (click)="removeStep(sIndex)"
                           class="opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
+                        >
                           <mat-icon>delete_outline</mat-icon>
-                          </button>
-                          </div>
+                        </button>
+                      </div>
 
-                          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-                          <div class="lg:col-span-8 space-y-6">
+                      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+                        <div class="lg:col-span-8 space-y-6">
                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <mat-form-field appearance="outline" class="w-full">
                               <mat-label>步骤唯一标识 (ID)</mat-label>
@@ -382,9 +381,9 @@
                               ></mat-slide-toggle>
                             </div>
                           </div>
-                          </div>
+                        </div>
 
-                          <div class="lg:col-span-4">
+                        <div class="lg:col-span-4">
                           <button
                             mat-button
                             (click)="openProcessorSelector(sIndex)"
@@ -396,7 +395,9 @@
                               {{ stepsData()[sIndex].icon }}
                             </mat-icon>
                             <div class="text-center">
-                              <p class="text-[10px] text-outline/60 font-black uppercase tracking-widest">
+                              <p
+                                class="text-[10px] text-outline/60 font-black uppercase tracking-widest"
+                              >
                                 更换处理器
                               </p>
                               <p class="text-sm font-black text-primary/70">
@@ -404,13 +405,13 @@
                               </p>
                             </div>
                           </button>
-                          </div>
-                          </div>
+                        </div>
+                      </div>
 
-                          <div
-                          class="bg-surface-container-low/50 p-6 sm:p-8 rounded-[24px] border border-outline-variant/20"
-                          >
-                          <div class="flex items-center gap-3 mb-6">
+                      <div
+                        class="bg-surface-container-low/50 p-6 sm:p-8 rounded-[24px] border border-outline-variant/20"
+                      >
+                        <div class="flex items-center gap-3 mb-6">
                           <mat-icon class="text-sm! text-outline/40"
                             >settings_input_component</mat-icon
                           >
@@ -418,15 +419,14 @@
                             class="text-[10px] font-black uppercase tracking-widest text-outline/60"
                             >输入参数 (Parameters)</span
                           >
-                          </div>
+                        </div>
 
-                          <div
+                        <div
                           formGroupName="params"
                           class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2"
-                          >
+                        >
                           @for (p of stepsData()[sIndex].params; track p.name) {
                             @if (p.lookupCode) {
-
                               <app-discovery-suggest-input
                                 [code]="p.lookupCode"
                                 [formControlName]="p.name!"
@@ -442,6 +442,20 @@
                                   [formControlName]="p.name!"
                                   [matAutocomplete]="refAuto"
                                 />
+                                @if (
+                                  getStepGroup(sIndex).get('params')?.get(p.name!)?.errors?.[
+                                    'required'
+                                  ]
+                                ) {
+                                  <mat-error>此项必填</mat-error>
+                                }
+                                @if (
+                                  getStepGroup(sIndex).get('params')?.get(p.name!)?.errors?.[
+                                    'regexMatch'
+                                  ]
+                                ) {
+                                  <mat-error>输入格式不正确</mat-error>
+                                }
                               </mat-form-field>
                             }
                           } @empty {
@@ -471,7 +485,9 @@
                     >
                       <mat-icon class="text-6xl h-auto w-auto text-success">verified</mat-icon>
                     </div>
-                    <h3 class="text-2xl sm:text-3xl font-black tracking-tight mb-4">配置准备就绪</h3>
+                    <h3 class="text-2xl sm:text-3xl font-black tracking-tight mb-4">
+                      配置准备就绪
+                    </h3>
                     <p class="text-outline font-medium mb-4 leading-relaxed text-sm sm:text-base">
                       工作流编排已完成，您可以立即保存并使其生效。
                     </p>
@@ -509,6 +525,7 @@
                 mat-flat-button
                 (click)="stepper.next()"
                 color="primary"
+                [disabled]="!isStepValid(activeStepIndex())"
                 class="rounded-full! px-10! h-12! font-black"
               >
                 下一步 <mat-icon class="ml-2">arrow_forward</mat-icon>
@@ -540,7 +557,8 @@
           class="h-full w-full"
           style="height: 100%; width: 100%"
           [options]="monacoOptions"
-          [(ngModel)]="yamlCode"
+          [ngModel]="yamlCode()"
+          (ngModelChange)="yamlCode.set($event)"
           (onInit)="onEditorInit($event)"
         ></ngx-monaco-editor>
       </div>
