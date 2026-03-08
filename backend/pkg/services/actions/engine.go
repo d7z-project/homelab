@@ -8,6 +8,7 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	repo "homelab/pkg/repositories/actions"
+	"homelab/pkg/services/discovery"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -199,6 +200,15 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 	logger.SetStep(0)
 	logger.Log("Initializing workflow")
 	e.updateInstanceState(instance, logger)
+
+	// 前置校验: 确认执行身份 (ServiceAccount) 仍然存在
+	if instance.ServiceAccountID != "" && instance.ServiceAccountID != "root" {
+		saExists, err := discovery.Verify(ctx, "rbac/serviceaccounts", instance.ServiceAccountID)
+		if err != nil || !saExists {
+			e.fail(instance, fmt.Errorf("service account '%s' no longer exists, workflow cannot execute", instance.ServiceAccountID), logger)
+			return
+		}
+	}
 
 	stepOutputs := make(map[string]map[string]string)
 	stepStatuses := make(map[string]bool)

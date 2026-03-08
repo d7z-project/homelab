@@ -8,7 +8,6 @@ import (
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
-	actionsrepo "homelab/pkg/repositories/actions"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
 	"strings"
@@ -128,16 +127,6 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	existing, err := rbacrepo.GetServiceAccount(ctx, id)
 	if err != nil {
 		return errors.New("ServiceAccount not found")
-	}
-
-	// Check if used by any Workflow (use global list workflows from repo to avoid circular dependency)
-	workflows, err := actionsrepo.ListWorkflows(ctx)
-	if err == nil {
-		for _, wf := range workflows {
-			if wf.ServiceAccountID == id {
-				return fmt.Errorf("cannot delete ServiceAccount: it is being used by workflow '%s' (%s)", wf.Name, wf.ID)
-			}
-		}
 	}
 
 	// Cascade delete RoleBindings

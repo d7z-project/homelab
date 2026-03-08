@@ -41,18 +41,8 @@ func init() {
 				Description: g.Description,
 			})
 		}
-		total := len(items)
-		if limit <= 0 {
-			limit = 20
-		}
-		if offset >= total {
-			return []models.LookupItem{}, total, nil
-		}
-		end := offset + limit
-		if end > total {
-			end = total
-		}
-		return items[offset:end], total, nil
+		result, total := discovery.Paginate(items, offset, limit)
+		return result, total, nil
 	})
 }
 

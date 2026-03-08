@@ -76,3 +76,20 @@ func GetRegisteredCodes() []string {
 	}
 	return codes
 }
+
+// Paginate applies offset/limit pagination to a slice of LookupItems.
+// If limit <= 0, it defaults to 20.
+func Paginate(items []models.LookupItem, offset, limit int) ([]models.LookupItem, int) {
+	total := len(items)
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset >= total {
+		return []models.LookupItem{}, total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	return items[offset:end], total
+}
