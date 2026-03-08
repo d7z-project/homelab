@@ -70,6 +70,25 @@
 
 - **单身执行**: 集群环境下必须使用 `common.AddDistributedCronJob` 注册任务，配合分布式锁确保同一时刻只有一个节点在执行。
 
+### 5. 集群事件总线 (Cluster Event Bus)
+
+- **泛型事件注册 (Generic Handler)**:
+  - 使用 `common.RegisterEventHandler[T any](event, handler)` 注册处理器，`T` 为 Payload 类型。
+  - 框架内部通过 `reflect` 区分 `string` 与结构体类型，自动执行 JSON 反序列化。
+  - 当 Payload 的 JSON 无法解析为目标类型 `T` 时，框架会记录 `[Events] failed to unmarshal` 日志并 **跳过执行**，防止零值结构体引发业务异常。
+- **结构化 Payload (Structured Payloads)**:
+  - 新事件 **必须** 在 `pkg/models/` 中定义专用的 Payload 结构体（如 `WorkflowExecutePayload`、`MMDBUpdatePayload`），严禁使用拼接字符串传递多字段数据。
+  - Payload 结构体字段必须带有 `json` 标签。
+- **事件发布 (`NotifyCluster`)**:
+  - `common.NotifyCluster(ctx, event, payload any)` 接受任意类型 Payload。
+  - `string` 类型直接透传；结构体/Map 类型自动 `json.Marshal` 序列化。
+  - **Context 注意事项**: 在 `task.RunTask` 回调中发布事件时，**必须使用 `context.Background()`** 而非 `taskCtx`，因为 `taskCtx` 在任务完成后会被 cancel，导致 Pub/Sub 静默丢弃消息。
+- **事件常量命名**: 所有事件 Key 必须定义为 `pkg/common/events.go` 中的常量（如 `EventMMDBUpdate = "mmdb_update"`），严禁硬编码字符串。
+- **构造函数初始化模式 (Constructor-Driven Init)**:
+  - 需要全量数据初始化的组件（如 `MMDBManager`），其构造函数应直接接收数据切片（如 `[]models.IntelligenceSource`），由 **调用方 (`main.go`)** 负责查询 DB 后传入。
+  - **严禁** 在组件内部持有 `SourceProvider` 等接口反向查询 DB，消除运行时对数据库的隐式依赖。
+  - 后续增量更新完全通过集群事件驱动，事件 Payload 必须包含重载所需的全部信息（如 `Type` + `ID`），实现 **零 DB 查询热路径**。
+
 ---
 
 ## 前端交互规范 (UX Standards)
@@ -104,6 +123,12 @@
 ### 2. 长任务健壮性
 
 - **取消机制验证**: 凡涉及新增后台任务模式（如导出、同步）的功能，必须在单元测试中包含针对 `CancelTask` 的手动触发验证，确保 Context 链路能正确关闭。
+
+### 3. 集群事件验证
+
+- **`TriggerEvent` 测试工具**: 单元测试中模拟集群通知 **必须** 使用 `common.TriggerEvent(ctx, event, payloadJSON)`，严禁直接访问内部 handler map 或构造 mock Subscriber。
+- **JSON Payload**: 测试中传入的 payload 必须通过 `json.Marshal(models.XXXPayload{...})` 构造，确保与生产环境的序列化路径一致。
+- **Handler 注册时序**: 若测试依赖 `RegisterEventHandler`（如在 `NewXXXManager` 构造函数中注册），必须确保构造函数在 `TriggerEvent` 之前调用。
 
 ---
 
