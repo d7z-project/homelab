@@ -64,6 +64,7 @@ model/modelsSiteGroup.ts
 model/modelsSitePoolEntry.ts
 model/modelsSitePoolEntryRequest.ts
 model/modelsSitePoolPreviewResponse.ts
+model/modelsSiteSyncPolicy.ts
 model/modelsStep.ts
 model/modelsStepManifest.ts
 model/modelsStepTiming.ts
@@ -81,6 +82,7 @@ model/networkIpPoolsGet200Response.ts
 model/networkIpSyncGet200Response.ts
 model/networkSiteExportsGet200Response.ts
 model/networkSitePoolsGet200Response.ts
+model/networkSiteSyncGet200Response.ts
 model/rbacRolebindingsGet200Response.ts
 model/rbacRolesGet200Response.ts
 model/rbacServiceaccountsGet200Response.ts

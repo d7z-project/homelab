@@ -75,6 +75,11 @@ export const routes: Routes = [
         data: { toolbar: { shadow: true, sticky: true } },
       },
       {
+        path: 'network/site/sync',
+        loadComponent: () => import('./pages/site/sync.component').then((m) => m.SiteSyncComponent),
+        data: { title: 'Site 同步策略' },
+      },
+      {
         path: 'actions',
         component: ActionsComponent,
         data: { toolbar: { shadow: false, sticky: false } },

@@ -10,13 +10,15 @@ import (
 )
 
 const (
-	EventIPPoolChanged       = "ip_pool_changed"
-	EventIPSyncPolicyChanged = "ip_sync_policy_changed"
-	EventIPSyncRun           = "ip_sync_run"
+        EventIPPoolChanged       = "ip_pool_changed"
+        EventIPSyncPolicyChanged = "ip_sync_policy_changed"
+        EventIPSyncRun           = "ip_sync_run"
 
-	EventSitePoolChanged = "site_pool_changed"
+        EventSitePoolChanged       = "site_pool_changed"
+        EventSiteSyncPolicyChanged = "site_sync_policy_changed"
+        EventSiteSyncRun           = "site_sync_run"
 
-	EventMMDBUpdate                = "mmdb_update"
+        EventMMDBUpdate                = "mmdb_update"
 	EventIntelligenceSourceChanged = "intelligence_source_changed"
 
 	EventWorkflowExecute        = "workflow_execute"

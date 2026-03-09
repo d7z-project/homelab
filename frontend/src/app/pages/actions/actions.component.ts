@@ -362,7 +362,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
 
   filterByWorkflow(id: string | null) {
     this.selectedWorkflowId.set(id);
-    const tab = id ? 'instances' : (this.selectedTabIndex() === 0 ? 'workflows' : 'instances');
+    const tab = id ? 'instances' : this.selectedTabIndex() === 0 ? 'workflows' : 'instances';
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { workflowId: id, tab },

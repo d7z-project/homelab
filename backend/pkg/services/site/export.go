@@ -242,6 +242,12 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 		if task.Format == "json" {
 			f.WriteString("[\n")
 		}
+		
+		var geositeGroups map[string][]ParsedGeoSiteEntry
+		if task.Format == "v2ray-dat" {
+			geositeGroups = make(map[string][]ParsedGeoSiteEntry)
+		}
+		
 		firstItem := true
 		totalRead := int64(0)
 
@@ -282,11 +288,28 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 					task.RecordCount++
 					task.mu.Unlock()
 
-					if !firstItem && task.Format == "json" {
-						f.WriteString(",\n")
+					if task.Format == "v2ray-dat" {
+						var publicTags []string
+						for _, t := range entry.Tags {
+							if !strings.HasPrefix(t, "_") {
+								publicTags = append(publicTags, t)
+							}
+						}
+						if len(publicTags) == 0 {
+							geositeGroups["UNKNOWN"] = append(geositeGroups["UNKNOWN"], ParsedGeoSiteEntry{Type: entry.Type, Value: entry.Value})
+						} else {
+							for _, t := range publicTags {
+								cat := strings.ToUpper(t)
+								geositeGroups[cat] = append(geositeGroups[cat], ParsedGeoSiteEntry{Type: entry.Type, Value: entry.Value})
+							}
+						}
+					} else {
+						if !firstItem && task.Format == "json" {
+							f.WriteString(",\n")
+						}
+						writeEntry(f, task.Format, entry)
+						firstItem = false
 					}
-					writeEntry(f, task.Format, entry)
-					firstItem = false
 				}
 
 				if totalRead%1000 == 0 {
@@ -301,6 +324,8 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 
 		if task.Format == "json" {
 			f.WriteString("\n]\n")
+		} else if task.Format == "v2ray-dat" {
+			_ = BuildV2RayGeoSite(f, geositeGroups)
 		}
 
 		task.mu.Lock()

@@ -412,6 +412,104 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, f)
 }
 
+// Site Sync Policies
+
+// ScanSiteSyncPoliciesHandler godoc
+// @Summary Scan all site sync policies
+// @Tags network/site
+// @Produce json
+// @Param cursor query string false "Cursor"
+// @Param limit query int false "Limit"
+// @Param search query string false "Search by name"
+// @Success 200 {object} common.CursorResponse{items=[]models.SiteSyncPolicy}
+// @Router /network/site/sync [get]
+func ScanSiteSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
+	cursor, limit := getCursorParams(r)
+	search := r.URL.Query().Get("search")
+	res, err := sitePoolService.ScanSyncPolicies(r.Context(), cursor, limit, search)
+	if err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.CursorSuccess(w, r, res)
+}
+
+// CreateSiteSyncPolicyHandler godoc
+// @Summary Create a site sync policy
+// @Tags network/site
+// @Accept json
+// @Produce json
+// @Param policy body models.SiteSyncPolicy true "Site Sync Policy"
+// @Success 200 {object} models.SiteSyncPolicy
+// @Router /network/site/sync [post]
+func CreateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
+	var policy models.SiteSyncPolicy
+	if err := render.Bind(r, &policy); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := sitePoolService.CreateSyncPolicy(r.Context(), &policy); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, policy)
+}
+
+// UpdateSiteSyncPolicyHandler godoc
+// @Summary Update a site sync policy
+// @Tags network/site
+// @Accept json
+// @Produce json
+// @Param id path string true "Policy ID"
+// @Param policy body models.SiteSyncPolicy true "Site Sync Policy"
+// @Success 200 {object} models.SiteSyncPolicy
+// @Router /network/site/sync/{id} [put]
+func UpdateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
+	var policy models.SiteSyncPolicy
+	if err := render.Bind(r, &policy); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	policy.ID = chi.URLParam(r, "id")
+	if err := sitePoolService.UpdateSyncPolicy(r.Context(), &policy); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, policy)
+}
+
+// DeleteSiteSyncPolicyHandler godoc
+// @Summary Delete a site sync policy
+// @Tags network/site
+// @Produce json
+// @Param id path string true "Policy ID"
+// @Success 200 {string} string "success"
+// @Router /network/site/sync/{id} [delete]
+func DeleteSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := sitePoolService.DeleteSyncPolicy(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "success")
+}
+
+// TriggerSiteSyncHandler godoc
+// @Summary Trigger a site sync policy execution
+// @Tags network/site
+// @Produce json
+// @Param id path string true "Policy ID"
+// @Success 200 {string} string "success"
+// @Router /network/site/sync/{id}/trigger [post]
+func TriggerSiteSyncHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := sitePoolService.Sync(r.Context(), id); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, "sync started")
+}
+
 func SiteRouter(r chi.Router) {
 	r.Route("/network/site", func(r chi.Router) {
 		r.Route("/pools", func(r chi.Router) {
@@ -436,6 +534,13 @@ func SiteRouter(r chi.Router) {
 			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/task/{taskId}/cancel", CancelSiteExportTaskHandler)
 			r.With(middlewares.RequirePermission("get", "network/site")).Get("/download/{taskId}", DownloadSiteExportHandler)
 			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/preview", PreviewSiteExportHandler)
+		})
+		r.Route("/sync", func(r chi.Router) {
+			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ScanSiteSyncPoliciesHandler)
+			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteSyncPolicyHandler)
+			r.With(middlewares.RequirePermission("update", "network/site")).Put("/{id}", UpdateSiteSyncPolicyHandler)
+			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteSyncPolicyHandler)
+			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/{id}/trigger", TriggerSiteSyncHandler)
 		})
 	})
 }

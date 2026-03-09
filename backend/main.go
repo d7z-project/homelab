@@ -138,6 +138,7 @@ func main() {
 	siteExportManager.Reconcile(ctx)
 	sitePoolService := site.NewSitePoolService(siteAnalysisEngine, siteExportManager)
 	controllers.InitSiteControllers(sitePoolService, siteAnalysisEngine, siteExportManager)
+	sitePoolService.Start(context.Background())
 	site.RegisterSiteProcessors(sitePoolService)
 	intelligenceService := intelligence.NewIntelligenceService(mmdbManager)
 	if err := intelligenceService.Init(ctx); err != nil {

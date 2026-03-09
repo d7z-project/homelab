@@ -24,10 +24,10 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateSyncPolicyDialogComponent } from './create-sync-policy-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../generated';
+import { NetworkSiteService, ModelsSiteSyncPolicy, ModelsSiteGroup } from '../../generated';
 
 @Component({
-  selector: 'app-ip-sync',
+  selector: 'app-site-sync',
   standalone: true,
   imports: [
     CommonModule,
@@ -64,8 +64,8 @@ import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../gener
     `,
   ],
 })
-export class IpSyncComponent implements OnInit, OnDestroy {
-  private ipService = inject(NetworkIpService);
+export class SiteSyncComponent implements OnInit, OnDestroy {
+  private siteService = inject(NetworkSiteService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private breakpointObserver = inject(BreakpointObserver);
@@ -83,7 +83,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   loading = signal(false);
   loadingMore = signal(false);
   syncingRows = signal<Record<string, boolean>>({}); // Track per-row syncing
-  policies = signal<ModelsIPSyncPolicy[]>([]);
+  policies = signal<ModelsSiteSyncPolicy[]>([]);
   groups = signal<Map<string, string>>(new Map()); // ID -> Name
   search = signal('');
   nextCursor = signal('');
@@ -172,7 +172,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   }
 
   loadGroups() {
-    this.ipService.networkIpPoolsGet('', 100).subscribe({
+    this.siteService.networkSitePoolsGet('', 100).subscribe({
       next: (res) => {
         const m = new Map<string, string>();
         (res.items || []).forEach((g) => m.set(g.id || '', g.name || ''));
@@ -223,7 +223,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
     try {
       const res = await firstValueFrom(
-        this.ipService.networkIpSyncGet(this.nextCursor(), this.pageSize(), this.search()),
+        this.siteService.networkSiteSyncGet(this.nextCursor(), this.pageSize(), this.search()),
       );
       if (reset) {
         this.policies.set(res.items || []);
@@ -255,7 +255,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     });
   }
 
-  editPolicy(policy: ModelsIPSyncPolicy) {
+  editPolicy(policy: ModelsSiteSyncPolicy) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateSyncPolicyDialogComponent, {
         width: '500px',
@@ -267,12 +267,12 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     });
   }
 
-  async togglePolicy(policy: ModelsIPSyncPolicy) {
+  async togglePolicy(policy: ModelsSiteSyncPolicy) {
     if (!policy.id) return;
     this.loading.set(true);
     try {
       const updated = { ...policy, enabled: policy.enabled! };
-      await firstValueFrom(this.ipService.networkIpSyncIdPut(policy.id, updated));
+      await firstValueFrom(this.siteService.networkSiteSyncIdPut(policy.id, updated));
       this.snackBar.open(updated.enabled ? '策略已启用' : '策略已禁用', '关闭', { duration: 2000 });
       await this.loadPolicies(true);
     } catch (err: any) {
@@ -284,7 +284,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     }
   }
 
-  deletePolicy(policy: ModelsIPSyncPolicy) {
+  deletePolicy(policy: ModelsSiteSyncPolicy) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
@@ -298,7 +298,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
         if (res && policy.id) {
           this.loading.set(true);
           try {
-            await firstValueFrom(this.ipService.networkIpSyncIdDelete(policy.id));
+            await firstValueFrom(this.siteService.networkSiteSyncIdDelete(policy.id));
             this.snackBar.open('删除成功', '关闭', { duration: 3000 });
             this.loadPolicies(true);
           } catch (err: any) {
@@ -313,11 +313,11 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     });
   }
 
-  async triggerSync(policy: ModelsIPSyncPolicy) {
+  async triggerSync(policy: ModelsSiteSyncPolicy) {
     if (!policy.id) return;
     this.syncingRows.update((s) => ({ ...s, [policy.id!]: true }));
     try {
-      await firstValueFrom(this.ipService.networkIpSyncIdTriggerPost(policy.id));
+      await firstValueFrom(this.siteService.networkSiteSyncIdTriggerPost(policy.id));
       this.snackBar.open('同步任务已触发', '关闭', { duration: 2000 });
       await this.loadPolicies(true);
     } catch (err: any) {

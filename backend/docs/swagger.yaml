@@ -656,6 +656,48 @@ definitions:
         description: 总条数
         type: integer
     type: object
+  models.SiteSyncPolicy:
+    properties:
+      config:
+        additionalProperties:
+          type: string
+        description: 格式特定的配置
+        type: object
+      createdAt:
+        type: string
+      cron:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      errorMessage:
+        type: string
+      format:
+        description: '"text", "geosite"'
+        type: string
+      id:
+        type: string
+      lastRunAt:
+        type: string
+      lastStatus:
+        allOf:
+        - $ref: '#/definitions/models.TaskStatus'
+        description: '"success", "failed"'
+      mode:
+        description: '"overwrite", "append"'
+        type: string
+      name:
+        type: string
+      progress:
+        type: number
+      sourceUrl:
+        type: string
+      targetGroupId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   models.Step:
     properties:
       fail:
@@ -3615,6 +3657,119 @@ paths:
           schema:
             $ref: '#/definitions/models.SitePoolPreviewResponse'
       summary: Preview site pool data (cursor-based)
+      tags:
+      - network/site
+  /network/site/sync:
+    get:
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.CursorResponse'
+            - properties:
+                items:
+                  items:
+                    $ref: '#/definitions/models.SiteSyncPolicy'
+                  type: array
+              type: object
+      summary: Scan all site sync policies
+      tags:
+      - network/site
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Site Sync Policy
+        in: body
+        name: policy
+        required: true
+        schema:
+          $ref: '#/definitions/models.SiteSyncPolicy'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SiteSyncPolicy'
+      summary: Create a site sync policy
+      tags:
+      - network/site
+  /network/site/sync/{id}:
+    delete:
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Delete a site sync policy
+      tags:
+      - network/site
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Site Sync Policy
+        in: body
+        name: policy
+        required: true
+        schema:
+          $ref: '#/definitions/models.SiteSyncPolicy'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SiteSyncPolicy'
+      summary: Update a site sync policy
+      tags:
+      - network/site
+  /network/site/sync/{id}/trigger:
+    post:
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: Trigger a site sync policy execution
       tags:
       - network/site
   /ping:

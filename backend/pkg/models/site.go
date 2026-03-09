@@ -7,9 +7,67 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 var siteIDRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+// SiteSyncPolicy 代表一个域名数据同步策略
+type SiteSyncPolicy struct {
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description"`
+	SourceURL     string            `json:"sourceUrl"`
+	Format        string            `json:"format"` // "text", "geosite"
+	Mode          string            `json:"mode"`   // "overwrite", "append"
+	Config        map[string]string `json:"config"` // 格式特定的配置
+	TargetGroupID string            `json:"targetGroupId"`
+	Cron          string            `json:"cron"`
+	Enabled       bool              `json:"enabled"`
+	CreatedAt     time.Time         `json:"createdAt"`
+	UpdatedAt     time.Time         `json:"updatedAt"`
+	LastRunAt     time.Time         `json:"lastRunAt"`
+	LastStatus    TaskStatus        `json:"lastStatus"` // "success", "failed"
+	Progress      float64           `json:"progress"`
+	ErrorMessage  string            `json:"errorMessage"`
+}
+
+func (p *SiteSyncPolicy) Bind(r *http.Request) error {
+	p.Name = strings.TrimSpace(p.Name)
+	if p.Name == "" {
+		return errors.New("name is required")
+	}
+	if p.ID != "" && !siteIDRegex.MatchString(p.ID) {
+		return fmt.Errorf("invalid id format: %s", p.ID)
+	}
+	p.SourceURL = strings.TrimSpace(p.SourceURL)
+	if p.SourceURL == "" {
+		return errors.New("sourceUrl is required")
+	}
+	if p.TargetGroupID == "" {
+		return errors.New("targetGroupId is required")
+	}
+	p.Cron = strings.TrimSpace(p.Cron)
+	if p.Cron != "" {
+		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+		if _, err := parser.Parse(p.Cron); err != nil {
+			return fmt.Errorf("invalid cron expression: %w", err)
+		}
+	} else {
+		return errors.New("cron expression is required")
+	}
+	if p.Format == "" {
+		p.Format = "text"
+	}
+	if p.Mode == "" {
+		p.Mode = "overwrite"
+	}
+	if p.Config == nil {
+		p.Config = make(map[string]string)
+	}
+	return nil
+}
 
 // RuleType 定义
 const (

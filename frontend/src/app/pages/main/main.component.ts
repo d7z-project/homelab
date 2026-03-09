@@ -267,6 +267,7 @@ export class MainComponent {
                 icon: 'import_export',
                 label: '动态导出',
               },
+              { link: '/network/site/sync', icon: 'sync', label: '同步策略' },
             ],
           },
         ],

@@ -42,6 +42,7 @@ func (p *ImportProcessor) Manifest() actions.StepManifest {
 			{Name: "format", Description: "输入文件格式 (text, geosite)", Optional: false},
 			{Name: "mode", Description: "导入模式 (append, delete)", Optional: true},
 			{Name: "defaultTags", Description: "附加的默认 Tags (逗号分隔)", Optional: true},
+			{Name: "category", Description: "geosite 格式的指定类别 (为空表示导入全部并将类别作为 Tag)", Optional: true},
 		},
 	}
 }
@@ -57,7 +58,11 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	if mode == "" {
 		mode = "append"
 	}
-	defaultTags := strings.Split(inputs["defaultTags"], ",")
+	
+	var defaultTags []string
+	if inputs["defaultTags"] != "" {
+		defaultTags = strings.Split(inputs["defaultTags"], ",")
+	}
 
 	group, err := p.service.GetGroup(ctx.Context, groupID)
 	if err != nil {
@@ -91,6 +96,42 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 			}
 
 			newEntries = append(newEntries, entry)
+		}
+	} else if format == "geosite" || format == "v2ray-dat" {
+		data, err := io.ReadAll(f)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read geosite file: %w", err)
+		}
+
+		targetCategory := inputs["category"]
+		importAll := targetCategory == "" || targetCategory == "*" || targetCategory == "all"
+
+		parsedEntries, err := ParseV2RayGeoSite(data, targetCategory, importAll)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse geosite: %w", err)
+		}
+
+		for _, e := range parsedEntries {
+			var tags []string
+			tags = append(tags, defaultTags...)
+			if importAll {
+				tags = append(tags, strings.ToLower(e.Category))
+			} else {
+				if len(tags) == 0 {
+					tags = append(tags, strings.ToLower(e.Category))
+				}
+			}
+
+			val, err := idna.ToASCII(strings.ToLower(e.Value))
+			if err != nil {
+				val = strings.ToLower(e.Value)
+			}
+
+			newEntries = append(newEntries, models.SitePoolEntry{
+				Type:  e.Type,
+				Value: val,
+				Tags:  tags,
+			})
 		}
 	} else {
 		return nil, fmt.Errorf("format %s not yet fully implemented", format)

@@ -14,16 +14,19 @@ import (
 var (
 	groupCache  *lru.Cache[string, *models.SiteGroup]
 	exportCache *lru.Cache[string, *models.SiteExport]
+	policyCache *lru.Cache[string, *models.SiteSyncPolicy]
 )
 
 func init() {
 	groupCache, _ = lru.New[string, *models.SiteGroup](512)
 	exportCache, _ = lru.New[string, *models.SiteExport](512)
+	policyCache, _ = lru.New[string, *models.SiteSyncPolicy](512)
 }
 
 func ClearCache() {
 	groupCache.Purge()
 	exportCache.Purge()
+	policyCache.Purge()
 }
 
 // Group Repo
@@ -169,9 +172,87 @@ func ScanExports(ctx context.Context, cursor string, limit int, search string) (
 			}, nil
 		}
 	}
+
 	return &models.PaginationResponse[models.SiteExport]{
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
 	}, nil
 }
+
+// SyncPolicy Repo
+
+func GetSyncPolicy(ctx context.Context, id string) (*models.SiteSyncPolicy, error) {
+	if val, ok := policyCache.Get(id); ok {
+		return val, nil
+	}
+	db := common.DB.Child("network", "site", "policies")
+	data, err := db.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	var policy models.SiteSyncPolicy
+	if err := json.Unmarshal([]byte(data), &policy); err != nil {
+		return nil, err
+	}
+	policyCache.Add(id, &policy)
+	return &policy, nil
+}
+
+func SaveSyncPolicy(ctx context.Context, policy *models.SiteSyncPolicy) error {
+	db := common.DB.Child("network", "site", "policies")
+	data, err := json.Marshal(policy)
+	if err != nil {
+		return err
+	}
+	err = db.Put(ctx, policy.ID, string(data), kv.TTLKeep)
+	if err == nil {
+		policyCache.Add(policy.ID, policy)
+	}
+	return err
+}
+
+func DeleteSyncPolicy(ctx context.Context, id string) error {
+	_, err := common.DB.Child("network", "site", "policies").Delete(ctx, id)
+	if err == nil {
+		policyCache.Remove(id)
+	}
+	return err
+}
+
+func ScanSyncPolicies(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteSyncPolicy], error) {
+	db := common.DB.Child("network", "site", "policies")
+	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
+		Limit:  int64(limit * 5),
+		Cursor: cursor,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]models.SiteSyncPolicy, 0)
+	search = strings.ToLower(search)
+	for _, v := range resp.Pairs {
+		var policy models.SiteSyncPolicy
+		if err := json.Unmarshal([]byte(v.Value), &policy); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(policy.Name), search) || strings.Contains(strings.ToLower(policy.ID), search) {
+				res = append(res, policy)
+				policyCache.Add(policy.ID, &policy)
+			}
+		}
+		if len(res) >= limit {
+			return &models.PaginationResponse[models.SiteSyncPolicy]{
+				Items:      res,
+				NextCursor: v.Key,
+				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+			}, nil
+		}
+	}
+
+	return &models.PaginationResponse[models.SiteSyncPolicy]{
+		Items:      res,
+		NextCursor: resp.Cursor,
+		HasMore:    resp.HasMore,
+	}, nil
+}
+

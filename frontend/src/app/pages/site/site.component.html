@@ -276,6 +276,11 @@
                           <mat-icon>list_alt</mat-icon>
                           <span>YAML 格式</span>
                         </button>
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item (click)="triggerExport(element, 'v2ray-dat')">
+                          <mat-icon>public</mat-icon>
+                          <span>V2Ray Dat (geosite.dat)</span>
+                        </button>
                       </mat-menu>
 
                       <button
@@ -307,6 +312,10 @@
                             </button>
                             <button mat-menu-item (click)="triggerExport(element, 'yaml')">
                               YAML
+                            </button>
+                            <mat-divider></mat-divider>
+                            <button mat-menu-item (click)="triggerExport(element, 'v2ray-dat')">
+                              V2Ray Dat
                             </button>
                           </mat-menu>
                           <button mat-menu-item (click)="deleteExport(element)">
