@@ -13,5 +13,6 @@ export interface ModelsSiteDNSAnalysis {
   a?: Array<ModelsIPInfoResponse>;
   aaaa?: Array<ModelsIPInfoResponse>;
   cname?: Array<string>;
+  ns?: Array<ModelsIPInfoResponse>;
   soa?: Array<string>;
 }

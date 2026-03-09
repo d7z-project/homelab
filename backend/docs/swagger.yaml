@@ -230,6 +230,9 @@ definitions:
         type: string
       ip:
         type: string
+      label:
+        description: 附加标识 (如 NS 主机名)
+        type: string
       location:
         description: '"lat,lon"'
         type: string
@@ -554,6 +557,10 @@ definitions:
       cname:
         items:
           type: string
+        type: array
+      ns:
+        items:
+          $ref: '#/definitions/models.IPInfoResponse'
         type: array
       soa:
         items:

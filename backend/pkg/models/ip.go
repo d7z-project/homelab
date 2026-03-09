@@ -194,6 +194,7 @@ type IPExportTriggerResponse struct {
 // IPInfoResponse IP 情报查询结果
 type IPInfoResponse struct {
 	IP       string `json:"ip"`
+	Label    string `json:"label,omitempty"` // 附加标识 (如 NS 主机名)
 	ASN      uint   `json:"asn"`
 	Org      string `json:"org"`
 	Country  string `json:"country"`

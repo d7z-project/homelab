@@ -104,6 +104,22 @@ export class AnalysisComponent implements OnInit {
   ipInfo = signal<ModelsIPInfoResponse | null>(null);
   siteResult = signal<ModelsSiteAnalysisResult | null>(null);
 
+  // Expansion state
+  dnsResolvedExpanded = signal(false);
+  dnsNsExpanded = signal(false);
+
+  allResolvedIps = computed(() => {
+    const dns = this.siteResult()?.dns;
+    if (!dns) return [];
+    return [...(dns.a || []), ...(dns.aaaa || [])];
+  });
+
+  allNsIps = computed(() => {
+    const dns = this.siteResult()?.dns;
+    if (!dns) return [];
+    return dns.ns || [];
+  });
+
   private chart?: echarts.ECharts;
 
   hasResult = computed(
@@ -231,6 +247,8 @@ export class AnalysisComponent implements OnInit {
     this.ipResult.set(null);
     this.ipInfo.set(null);
     this.siteResult.set(null);
+    this.dnsResolvedExpanded.set(false);
+    this.dnsNsExpanded.set(false);
 
     const isIP = this.checkIsIP(val);
     if (isIP) {

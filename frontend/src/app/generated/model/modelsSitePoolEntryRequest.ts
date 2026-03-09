@@ -17,10 +17,6 @@ export interface ModelsSitePoolEntryRequest {
    * 被替换的标签（用于编辑场景）
    */
   oldTags?: Array<string>;
-  /**
-   * 已废弃，由 NewTags 代替
-   */
-  tags?: Array<string>;
   type?: number;
   value?: string;
 }

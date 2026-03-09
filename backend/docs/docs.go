@@ -5820,6 +5820,10 @@ const docTemplate = `{
                 "ip": {
                     "type": "string"
                 },
+                "label": {
+                    "description": "附加标识 (如 NS 主机名)",
+                    "type": "string"
+                },
                 "location": {
                     "description": "\"lat,lon\"",
                     "type": "string"
@@ -6313,6 +6317,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                },
+                "ns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.IPInfoResponse"
                     }
                 },
                 "soa": {

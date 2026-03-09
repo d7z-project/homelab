@@ -14,6 +14,10 @@ export interface ModelsIPInfoResponse {
   country?: string;
   ip?: string;
   /**
+   * 附加标识 (如 NS 主机名)
+   */
+  label?: string;
+  /**
    * \"lat,lon\"
    */
   location?: string;

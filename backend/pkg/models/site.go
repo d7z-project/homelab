@@ -199,6 +199,7 @@ type SiteDNSAnalysis struct {
 	A     []IPInfoResponse `json:"a,omitempty"`
 	AAAA  []IPInfoResponse `json:"aaaa,omitempty"`
 	CNAME []string         `json:"cname,omitempty"`
+	NS    []IPInfoResponse `json:"ns,omitempty"`
 	SOA   []string         `json:"soa,omitempty"`
 }
 

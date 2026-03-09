@@ -309,44 +309,60 @@
                         <div
                           class="flex flex-col border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest"
                         >
-                          @for (a of siteResult()?.dns?.a; track a.ip) {
+                          @for (
+                            addr of allResolvedIps().slice(
+                              0,
+                              dnsResolvedExpanded() ? allResolvedIps().length : 1
+                            );
+                            track addr.ip
+                          ) {
                             <div
                               class="flex flex-col gap-1.5 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group"
                             >
                               <!-- Line 1: ASN + IP Title -->
                               <div class="flex items-center gap-3">
                                 <span
-                                  class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0"
-                                  >AS{{ a.asn }}</span
+                                  class="px-2 py-0.5 rounded-md text-white text-[10px] font-bold uppercase shrink-0"
+                                  [class.bg-primary]="!addr.ip?.includes(':')"
+                                  [class.bg-secondary]="addr.ip?.includes(':')"
+                                  >AS{{ addr.asn }}</span
                                 >
                                 <span
-                                  class="text-base sm:text-lg font-mono font-black text-primary clickable-link truncate flex-1"
-                                  (click)="pivotSearch(a.ip)"
-                                  [matTooltip]="a.ip"
-                                  >{{ a.ip }}</span
+                                  class="text-base sm:text-lg font-mono font-black clickable-link truncate flex-1"
+                                  [class.text-primary]="!addr.ip?.includes(':')"
+                                  [class.text-secondary]="addr.ip?.includes(':')"
+                                  (click)="pivotSearch(addr.ip)"
+                                  [matTooltip]="addr.ip || ''"
+                                  >{{ addr.ip }}</span
                                 >
                               </div>
                               <!-- Line 2: Operator -->
                               <div
                                 class="text-[11px] sm:text-sm text-outline font-medium opacity-80 truncate"
                               >
-                                {{ a.org }}
+                                {{ addr.org }}
                               </div>
                               <!-- Line 3: Geo Tags -->
                               <div class="flex flex-wrap gap-2">
-                                @if (a.country) {
+                                @if (addr.ip?.includes(':')) {
                                   <span
-                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
-                                    >{{ a.country }}</span
+                                    class="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-high text-outline font-black border border-outline-variant/30"
+                                    >IPv6</span
                                   >
                                 }
-                                @if (a.city) {
+                                @if (addr.country) {
                                   <span
                                     class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
-                                    >{{ a.city }}</span
+                                    >{{ addr.country }}</span
                                   >
                                 }
-                                @if (!a.country && !a.city) {
+                                @if (addr.city) {
+                                  <span
+                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                    >{{ addr.city }}</span
+                                  >
+                                }
+                                @if (!addr.country && !addr.city) {
                                   <span class="text-[10px] text-outline opacity-40 italic"
                                     >未知地理位置</span
                                   >
@@ -354,111 +370,138 @@
                               </div>
                             </div>
                           }
-                          @for (aaaa of siteResult()?.dns?.aaaa; track aaaa.ip) {
-                            <div
-                              class="flex flex-col gap-1.5 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group"
+
+                          @if (allResolvedIps().length > 1) {
+                            <button
+                              mat-button
+                              class="w-full h-10! rounded-none border-t border-outline-variant bg-surface-container-low! hover:bg-surface-container-high! transition-all"
+                              (click)="dnsResolvedExpanded.set(!dnsResolvedExpanded())"
                             >
-                              <!-- Line 1: ASN + IPv6 Title -->
-                              <div class="flex items-center gap-3">
-                                <span
-                                  class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0"
-                                  >AS{{ aaaa.asn }}</span
-                                >
-                                <span
-                                  class="text-sm sm:text-base font-mono font-black text-secondary clickable-link truncate flex-1"
-                                  (click)="pivotSearch(aaaa.ip)"
-                                  [matTooltip]="aaaa.ip"
-                                  >{{ aaaa.ip }}</span
-                                >
+                              <div class="flex items-center justify-center gap-2 text-xs font-bold">
+                                <mat-icon class="w-4! h-4! text-[16px]!">{{
+                                  dnsResolvedExpanded() ? 'expand_less' : 'expand_more'
+                                }}</mat-icon>
+                                {{
+                                  dnsResolvedExpanded()
+                                    ? '收起列表'
+                                    : '查看全部 ' + allResolvedIps().length + ' 条解析'
+                                }}
                               </div>
-                              <!-- Line 2: Operator -->
-                              <div
-                                class="text-[11px] sm:text-sm text-outline font-medium opacity-80 truncate"
-                              >
-                                {{ aaaa.org }}
-                              </div>
-                              <!-- Line 3: Tags -->
-                              <div class="flex flex-wrap gap-2">
-                                <span
-                                  class="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-high text-outline font-black border border-outline-variant/30"
-                                  >IPv6</span
-                                >
-                                @if (aaaa.country) {
-                                  <span
-                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
-                                    >{{ aaaa.country }}</span
-                                  >
-                                }
-                                @if (aaaa.city) {
-                                  <span
-                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
-                                    >{{ aaaa.city }}</span
-                                  >
-                                }
-                                @if (!aaaa.country && !aaaa.city) {
-                                  <span class="text-[10px] text-outline opacity-40 italic"
-                                    >未知地理位置</span
-                                  >
-                                }
-                              </div>
-                            </div>
+                            </button>
                           }
                         </div>
                       </div>
 
-                      <!-- CNAME & SOA Section -->
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @if (siteResult()?.dns?.cname?.length) {
-                          <div class="space-y-3">
-                            <div
-                              class="text-xs font-bold text-outline uppercase tracking-widest opacity-70"
-                            >
-                              CNAME 别名
-                            </div>
-                            <div class="flex flex-col gap-2">
-                              @for (cname of siteResult()?.dns?.cname; track cname) {
-                                <div
-                                  class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3 group"
+                      <!-- CNAME Section -->
+                      @if (siteResult()?.dns?.cname?.length) {
+                        <div class="space-y-3">
+                          <div
+                            class="text-xs font-bold text-outline uppercase tracking-widest opacity-70"
+                          >
+                            CNAME 别名
+                          </div>
+                          <div class="flex flex-col gap-2">
+                            @for (cname of siteResult()?.dns?.cname; track cname) {
+                              <div
+                                class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3 group"
+                              >
+                                <mat-icon class="text-secondary w-4! h-4! text-[16px]!"
+                                  >link</mat-icon
                                 >
-                                  <mat-icon class="text-secondary w-4! h-4! text-[16px]!"
-                                    >link</mat-icon
+                                <span
+                                  class="text-sm font-mono font-medium text-secondary truncate flex-1 clickable-link"
+                                  (click)="pivotSearch(cname)"
+                                  >{{ cname }}</span
+                                >
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      <!-- NS Section -->
+                      @if (allNsIps().length) {
+                        <div class="space-y-3">
+                          <div
+                            class="text-xs font-bold text-outline uppercase tracking-widest opacity-70"
+                          >
+                            权威名称服务器 (NS) 与其地址
+                          </div>
+                          <div
+                            class="flex flex-col border border-outline-variant rounded-2xl overflow-hidden bg-surface-container-lowest"
+                          >
+                            @for (
+                              ns of allNsIps().slice(0, dnsNsExpanded() ? allNsIps().length : 1);
+                              track ns.ip
+                            ) {
+                              <div
+                                class="flex flex-col gap-1.5 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group"
+                              >
+                                <!-- Line 1: ASN + IP Title -->
+                                <div class="flex items-center gap-3">
+                                  <span
+                                    class="px-2 py-0.5 rounded-md bg-secondary text-white text-[10px] font-bold uppercase shrink-0"
+                                    >AS{{ ns.asn }}</span
                                   >
                                   <span
-                                    class="text-sm font-mono font-medium text-secondary truncate flex-1 clickable-link"
-                                    (click)="pivotSearch(cname)"
-                                    >{{ cname }}</span
+                                    class="text-base sm:text-lg font-mono font-black text-secondary clickable-link truncate flex-1"
+                                    (click)="pivotSearch(ns.ip)"
+                                    [matTooltip]="ns.ip || ''"
+                                    >{{ ns.ip }}</span
                                   >
                                 </div>
-                              }
-                            </div>
-                          </div>
-                        }
-                        @if (siteResult()?.dns?.soa?.length) {
-                          <div class="space-y-3">
-                            <div
-                              class="text-xs font-bold text-outline uppercase tracking-widest opacity-70"
-                            >
-                              SOA 权威
-                            </div>
-                            <div class="flex flex-col gap-2">
-                              @for (soa of siteResult()?.dns?.soa; track soa) {
+                                <!-- Line 2: Hostname & Operator -->
                                 <div
-                                  class="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-3"
+                                  class="text-[11px] sm:text-sm text-outline font-medium opacity-80 truncate"
                                 >
-                                  <mat-icon class="text-primary w-4! h-4! text-[16px]!"
-                                    >verified_user</mat-icon
-                                  >
-                                  <span
-                                    class="text-sm font-mono font-medium text-outline truncate flex-1 clickable-link"
-                                    (click)="pivotSearch(soa)"
-                                    >{{ soa }}</span
-                                  >
+                                  @if (ns.label) {
+                                    <span class="text-secondary font-bold mr-2"
+                                      >[{{ ns.label }}]</span
+                                    >
+                                  }
+                                  {{ ns.org }}
                                 </div>
-                              }
-                            </div>
+                                <!-- Line 3: Geo Tags -->
+                                <div class="flex flex-wrap gap-2">
+                                  @if (ns.country) {
+                                    <span
+                                      class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                      >{{ ns.country }}</span
+                                    >
+                                  }
+                                  @if (ns.city) {
+                                    <span
+                                      class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                      >{{ ns.city }}</span
+                                    >
+                                  }
+                                </div>
+                              </div>
+                            }
+
+                            @if (allNsIps().length > 1) {
+                              <button
+                                mat-button
+                                class="w-full h-10! rounded-none border-t border-outline-variant bg-surface-container-low! hover:bg-surface-container-high! transition-all"
+                                (click)="dnsNsExpanded.set(!dnsNsExpanded())"
+                              >
+                                <div
+                                  class="flex items-center justify-center gap-2 text-xs font-bold"
+                                >
+                                  <mat-icon class="w-4! h-4! text-[16px]!">{{
+                                    dnsNsExpanded() ? 'expand_less' : 'expand_more'
+                                  }}</mat-icon>
+                                  {{
+                                    dnsNsExpanded()
+                                      ? '收起列表'
+                                      : '查看全部 ' + allNsIps().length + ' 个 DNS 节点'
+                                  }}
+                                </div>
+                              </button>
+                            }
                           </div>
-                        }
-                      </div>
+                        </div>
+                      }
                     </div>
 
                     <!-- Map -->

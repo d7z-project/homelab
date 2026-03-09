@@ -109,6 +109,9 @@ func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*Compo
 		}
 	}
 
+	// 预构建 AC 自动机
+	matcher.keyword.Build()
+
 	e.cache.Add(groupID, matcher)
 	return matcher, nil
 }
@@ -185,12 +188,16 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []
 
 func (e *AnalysisEngine) dnsLookup(domain string) *models.SiteDNSAnalysis {
 	res := &models.SiteDNSAnalysis{}
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
 
-	// 1. A & AAAA Records
-	ips, err := net.LookupIP(domain)
+	resolver := &net.Resolver{PreferGo: true}
+
+	// 1. A & AAAA Records (The domain's direct IPs)
+	addrs, err := resolver.LookupIPAddr(ctx, domain)
 	if err == nil {
-		for _, ip := range ips {
-			ipStr := ip.String()
+		for _, addr := range addrs {
+			ipStr := addr.IP.String()
 			var info *models.IPInfoResponse
 			if e.mmdb != nil {
 				info, _ = e.mmdb.Lookup(ipStr)
@@ -199,7 +206,7 @@ func (e *AnalysisEngine) dnsLookup(domain string) *models.SiteDNSAnalysis {
 				info = &models.IPInfoResponse{IP: ipStr}
 			}
 
-			if ip.To4() != nil {
+			if addr.IP.To4() != nil {
 				res.A = append(res.A, *info)
 			} else {
 				res.AAAA = append(res.AAAA, *info)
@@ -208,16 +215,32 @@ func (e *AnalysisEngine) dnsLookup(domain string) *models.SiteDNSAnalysis {
 	}
 
 	// 2. CNAME Records
-	cname, err := net.LookupCNAME(domain)
-	if err == nil && strings.TrimRight(cname, ".") != strings.TrimRight(domain, ".") {
-		res.CNAME = append(res.CNAME, cname)
+	cname, err := resolver.LookupCNAME(ctx, domain)
+	if err == nil {
+		cnameClean := strings.TrimRight(cname, ".")
+		if strings.ToLower(cnameClean) != strings.ToLower(strings.TrimRight(domain, ".")) {
+			res.CNAME = append(res.CNAME, cnameClean)
+		}
 	}
 
-	// 3. SOA Records (using LookupNS as proxy for authority)
-	ns, err := net.LookupNS(domain)
+	// 3. NS Records & their IPs (DNS Server Intelligence)
+	nsList, err := resolver.LookupNS(ctx, domain)
 	if err == nil {
-		for _, n := range ns {
-			res.SOA = append(res.SOA, n.Host)
+		for _, ns := range nsList {
+			nsHost := strings.TrimRight(ns.Host, ".")
+			// Resolve IPs for this NS
+			nsIPs, _ := resolver.LookupHost(ctx, nsHost)
+			for _, ipStr := range nsIPs {
+				var info *models.IPInfoResponse
+				if e.mmdb != nil {
+					info, _ = e.mmdb.Lookup(ipStr)
+				}
+				if info == nil {
+					info = &models.IPInfoResponse{IP: ipStr}
+				}
+				info.Label = nsHost
+				res.NS = append(res.NS, *info)
+			}
 		}
 	}
 

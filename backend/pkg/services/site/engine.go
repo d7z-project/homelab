@@ -3,7 +3,147 @@ package site
 import (
 	"regexp"
 	"strings"
+	"sync"
+
+	lru "github.com/hashicorp/golang-lru/v2"
 )
+
+// --- Aho-Corasick for Keyword Matching ---
+
+type acNode struct {
+	children map[rune]*acNode
+	fail     *acNode
+	patterns []string
+	tags     []string
+}
+
+func newACNode() *acNode {
+	return &acNode{
+		children: make(map[rune]*acNode),
+	}
+}
+
+type KeywordMatcher struct {
+	root          *acNode
+	built         bool
+	mu            sync.RWMutex
+	patternToTags map[string][]string
+}
+
+func NewKeywordMatcher() *KeywordMatcher {
+	return &KeywordMatcher{
+		root:          newACNode(),
+		patternToTags: make(map[string][]string),
+	}
+}
+
+func (m *KeywordMatcher) Insert(value string, tags []string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.built = false
+	m.patternToTags[value] = append(m.patternToTags[value], tags...)
+}
+
+func (m *KeywordMatcher) Build() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.built {
+		return
+	}
+
+	newRoot := newACNode()
+	for pat, tags := range m.patternToTags {
+		curr := newRoot
+		for _, r := range pat {
+			if _, ok := curr.children[r]; !ok {
+				curr.children[r] = newACNode()
+			}
+			curr = curr.children[r]
+		}
+		curr.patterns = append(curr.patterns, pat)
+		curr.tags = append(curr.tags, tags...)
+	}
+
+	// BFS to build failure links
+	queue := make([]*acNode, 0)
+	for _, child := range newRoot.children {
+		child.fail = newRoot
+		queue = append(queue, child)
+	}
+
+	for len(queue) > 0 {
+		u := queue[0]
+		queue = queue[1:]
+
+		for r, v := range u.children {
+			f := u.fail
+			for f != nil {
+				if next, ok := f.children[r]; ok {
+					v.fail = next
+					break
+				}
+				f = f.fail
+			}
+			if v.fail == nil {
+				v.fail = newRoot
+			}
+			// Merge tags and patterns from failure node to handle overlapping patterns
+			v.patterns = append(v.patterns, v.fail.patterns...)
+			v.tags = append(v.tags, v.fail.tags...)
+			queue = append(queue, v)
+		}
+	}
+
+	m.root = newRoot
+	m.built = true
+}
+
+func (m *KeywordMatcher) Match(domain string) (bool, string, []string) {
+	m.mu.RLock()
+	if !m.built {
+		m.mu.RUnlock()
+		m.Build()
+		m.mu.RLock()
+	}
+	defer m.mu.RUnlock()
+
+	curr := m.root
+	var allTags []string
+	var firstPat string
+	matched := false
+
+	tagSet := make(map[string]struct{})
+
+	for _, r := range domain {
+		for {
+			if next, ok := curr.children[r]; ok {
+				curr = next
+				break
+			}
+			if curr == m.root {
+				break
+			}
+			curr = curr.fail
+		}
+
+		if len(curr.patterns) > 0 {
+			matched = true
+			if firstPat == "" {
+				firstPat = curr.patterns[0]
+			}
+			for _, t := range curr.tags {
+				if _, ok := tagSet[t]; !ok {
+					tagSet[t] = struct{}{}
+					allTags = append(allTags, t)
+				}
+			}
+		}
+	}
+
+	return matched, firstPat, allTags
+}
+
+// --- Suffix Trie for Domain/Full Matching ---
 
 type trieNode struct {
 	children map[string]*trieNode
@@ -19,7 +159,6 @@ func newTrieNode() *trieNode {
 	}
 }
 
-// SuffixTrie 用于处理 Domain 和 Full 匹配
 type SuffixTrie struct {
 	root *trieNode
 }
@@ -31,7 +170,6 @@ func NewSuffixTrie() *SuffixTrie {
 func (t *SuffixTrie) Insert(ruleType uint8, value string, tags []string) {
 	parts := strings.Split(value, ".")
 	curr := t.root
-	// 倒序插入
 	for i := len(parts) - 1; i >= 0; i-- {
 		p := parts[i]
 		if _, ok := curr.children[p]; !ok {
@@ -49,7 +187,7 @@ func (t *SuffixTrie) Insert(ruleType uint8, value string, tags []string) {
 	}
 }
 
-func (t *SuffixTrie) Match(domain string) (matched bool, matchedPattern string, tags []string) {
+func (t *SuffixTrie) Match(domain string) (bool, string, []string) {
 	parts := strings.Split(domain, ".")
 	curr := t.root
 
@@ -65,17 +203,14 @@ func (t *SuffixTrie) Match(domain string) (matched bool, matchedPattern string, 
 				lastDomainPattern = strings.Join(parts[i:], ".")
 			}
 		} else {
-			// 不再匹配
 			break
 		}
 	}
 
-	// 优先 Full 匹配
-	if curr.isFull && len(strings.Split(domain, ".")) == len(parts) { // 路径到底了
+	if curr.isFull && len(strings.Split(domain, ".")) == len(parts) {
 		return true, domain, getTags(curr.tags)
 	}
 
-	// 降级到最近的 Domain 匹配
 	if lastDomainNode != nil {
 		return true, lastDomainPattern, getTags(lastDomainNode.tags)
 	}
@@ -91,36 +226,14 @@ func getTags(m map[string]struct{}) []string {
 	return res
 }
 
-// KeywordMatcher 简单实现，AC 自动机在大规模 keyword 时更佳
-type KeywordMatcher struct {
-	rules map[string][]string // keyword -> tags
+// --- Regex Matcher with Pre-compilation Cache ---
+
+var regexGlobalCache *lru.Cache[string, *regexp.Regexp]
+
+func init() {
+	regexGlobalCache, _ = lru.New[string, *regexp.Regexp](2048)
 }
 
-func NewKeywordMatcher() *KeywordMatcher {
-	return &KeywordMatcher{rules: make(map[string][]string)}
-}
-
-func (m *KeywordMatcher) Insert(value string, tags []string) {
-	m.rules[value] = append(m.rules[value], tags...)
-}
-
-func (m *KeywordMatcher) Match(domain string) (bool, string, []string) {
-	var allTags []string
-	var firstPat string
-	matched := false
-	for kw, tags := range m.rules {
-		if strings.Contains(domain, kw) {
-			if !matched {
-				firstPat = kw
-				matched = true
-			}
-			allTags = append(allTags, tags...)
-		}
-	}
-	return matched, firstPat, allTags
-}
-
-// RegexMatcher
 type RegexMatcher struct {
 	rules []struct {
 		re   *regexp.Regexp
@@ -133,10 +246,18 @@ func NewRegexMatcher() *RegexMatcher {
 }
 
 func (m *RegexMatcher) Insert(value string, tags []string) error {
-	re, err := regexp.Compile(value)
-	if err != nil {
-		return err
+	var re *regexp.Regexp
+	if cached, ok := regexGlobalCache.Get(value); ok {
+		re = cached
+	} else {
+		var err error
+		re, err = regexp.Compile(value)
+		if err != nil {
+			return err
+		}
+		regexGlobalCache.Add(value, re)
 	}
+
 	m.rules = append(m.rules, struct {
 		re   *regexp.Regexp
 		tags []string
@@ -160,7 +281,8 @@ func (m *RegexMatcher) Match(domain string) (bool, string, []string) {
 	return matched, firstPat, allTags
 }
 
-// CompositeMatcher 复合匹配引擎
+// --- Composite Matcher ---
+
 type CompositeMatcher struct {
 	trie    *SuffixTrie
 	keyword *KeywordMatcher
@@ -184,11 +306,11 @@ func (m *CompositeMatcher) Match(domain string) (bool, uint8, string, []string) 
 	// 1. Trie (Domain/Full)
 	if ok, pattern, tags := m.trie.Match(domain); ok {
 		matched = true
-		finalRuleType = 2 // Domain (Simplified)
+		finalRuleType = 2
 		finalPattern = pattern
 		allTags = append(allTags, tags...)
 	}
-	// 2. Keyword
+	// 2. Keyword (AC)
 	if ok, pattern, tags := m.keyword.Match(domain); ok {
 		if !matched {
 			finalRuleType = 0
@@ -211,7 +333,6 @@ func (m *CompositeMatcher) Match(domain string) (bool, uint8, string, []string) 
 		return false, 0, "", nil
 	}
 
-	// Unique tags
 	tagMap := make(map[string]struct{})
 	var uniqueTags []string
 	for _, t := range allTags {
