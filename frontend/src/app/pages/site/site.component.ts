@@ -33,15 +33,8 @@ import { ManageSiteEntriesDialogComponent } from './manage-site-entries-dialog.c
 import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
 import { PreviewExportDialogComponent } from '../../shared/preview-export-dialog.component';
 import { UiService } from '../../ui.service';
-import {
-  NetworkSiteService,
-  ModelsSiteGroup,
-  ModelsSiteExport,
-  ModelsSiteAnalysisResult,
-} from '../../generated';
+import { NetworkSiteService, ModelsSiteGroup, ModelsSiteExport } from '../../generated';
 import { FormsModule } from '@angular/forms';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 
 @Component({
   selector: 'app-site',
@@ -60,8 +53,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     MatTooltipModule,
     PageHeaderComponent,
     FormsModule,
-    MatInputModule,
-    MatFormFieldModule,
   ],
   templateUrl: './site.component.html',
   styles: [
@@ -114,10 +105,6 @@ export class SiteComponent implements OnInit, OnDestroy {
   exportSearch = signal('');
   hasMoreExports = signal(false);
 
-  // Analysis state
-  analysisDomain = signal('');
-  analysisResult = signal<ModelsSiteAnalysisResult | null>(null);
-
   displayedPoolColumns = computed(() =>
     this.isHandset()
       ? ['name', 'actions']
@@ -152,8 +139,6 @@ export class SiteComponent implements OnInit, OnDestroy {
       const tab = params['tab'];
       if (tab === 'export') {
         this.selectedTabIndex.set(1);
-      } else if (tab === 'analysis') {
-        this.selectedTabIndex.set(2);
       } else {
         this.selectedTabIndex.set(0);
       }
@@ -219,7 +204,6 @@ export class SiteComponent implements OnInit, OnDestroy {
     this.selectedTabIndex.set(index);
     let tab = 'pool';
     if (index === 1) tab = 'export';
-    else if (index === 2) tab = 'analysis';
 
     const search = index === 0 ? this.poolSearch() : index === 1 ? this.exportSearch() : '';
 
@@ -426,24 +410,5 @@ export class SiteComponent implements OnInit, OnDestroy {
       maxWidth: '95vw',
       data: { type: 'site', rule: '', groupIds: [] },
     });
-  }
-
-  runAnalysis() {
-    if (!this.analysisDomain()) return;
-    this.loading.set(true);
-    this.siteService
-      .networkSiteAnalysisHitTestPost({ domain: this.analysisDomain(), groupIds: [] })
-      .subscribe({
-        next: (res) => {
-          this.analysisResult.set(res);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.snackBar.open(`分析失败: ${err.error?.message || err.message}`, '关闭', {
-            duration: 3000,
-          });
-          this.loading.set(false);
-        },
-      });
   }
 }

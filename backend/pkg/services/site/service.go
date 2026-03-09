@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/robfig/cron/v3"
 	"homelab/pkg/common"
 	taskpkg "homelab/pkg/common/task"
-	"github.com/robfig/cron/v3"
 )
 
 func init() {
@@ -63,7 +63,7 @@ type SitePoolService struct {
 	engine        *AnalysisEngine
 	exportManager *ExportManager
 	syncTasks     *taskpkg.Manager[*SyncTask]
-	
+
 	cron     *cron.Cron
 	cronIDs  map[string]cron.EntryID
 	cronLock sync.Mutex

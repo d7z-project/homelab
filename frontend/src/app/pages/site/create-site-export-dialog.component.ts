@@ -12,6 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
 import { NetworkSiteService, ModelsSiteExport } from '../../generated';
 
@@ -26,6 +27,7 @@ import { NetworkSiteService, ModelsSiteExport } from '../../generated';
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
+    MatExpansionModule,
     DiscoverySelectComponent,
   ],
   template: `
@@ -51,13 +53,72 @@ import { NetworkSiteService, ModelsSiteExport } from '../../generated';
             rows="3"
             class="font-mono text-sm"
           ></textarea>
-          <mat-hint>可用变量: tags ([]string), domain (string), type (uint8)</mat-hint>
         </mat-form-field>
+
+        <mat-expansion-panel
+          class="bg-surface-container-low! rounded-xl! overflow-hidden border border-outline-variant/30"
+        >
+          <mat-expansion-panel-header class="h-10!">
+            <mat-panel-title class="flex items-center gap-2 text-xs font-bold text-primary">
+              <mat-icon class="w-4! h-4! text-[16px]! flex items-center justify-center"
+                >help_outline</mat-icon
+              >
+              过滤规则编写指南 (go-expr)
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="text-[11px] space-y-3 text-outline leading-relaxed pb-3 px-1">
+            <p>
+              本系统基于
+              <a
+                href="https://github.com/expr-lang/expr"
+                target="_blank"
+                class="text-primary hover:underline"
+                >go-expr</a
+              >
+              引擎进行动态过滤。规则必须返回 <b>true</b> 以保留条目。
+            </p>
+
+            <div class="space-y-1.5">
+              <div class="font-bold text-on-surface flex items-center gap-1">
+                <mat-icon class="w-3! h-3! text-[12px]!">variable</mat-icon>
+                可用变量
+              </div>
+              <div class="grid grid-cols-1 gap-1 pl-4">
+                <div><code>tags</code>: 标签列表 (如 <code>["cn", "sync"]</code>)</div>
+                <div><code>domain</code>: 规则值 (如 <code>"google.com"</code>)</div>
+                <div><code>type</code>: 类型 (0:kw, 1:re, 2:dom, 3:full)</div>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="font-bold text-on-surface flex items-center gap-1">
+                <mat-icon class="w-3! h-3! text-[12px]!">lightbulb</mat-icon>
+                常用示例
+              </div>
+              <div class="space-y-2 pl-4">
+                <div class="p-2 bg-surface-container border border-outline-variant/20 rounded-lg">
+                  <div class="text-on-surface-variant font-medium mb-1">标签过滤</div>
+                  <code>"cn" in tags</code>
+                </div>
+                <div class="p-2 bg-surface-container border border-outline-variant/20 rounded-lg">
+                  <div class="text-on-surface-variant font-medium mb-1">
+                    复合逻辑 (仅限 Domain 类型的中国域名)
+                  </div>
+                  <code>type == 2 && "cn" in tags</code>
+                </div>
+                <div class="p-2 bg-surface-container border border-outline-variant/20 rounded-lg">
+                  <div class="text-on-surface-variant font-medium mb-1">正则匹配</div>
+                  <code>domain matches "google"</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-expansion-panel>
 
         <app-discovery-select
           code="network/site/pools"
           label="依赖的数据池"
-          placeholder="搜索地址池..."
+          placeholder="搜索域名池..."
           formControlName="groupIds"
           [multiple]="true"
           required

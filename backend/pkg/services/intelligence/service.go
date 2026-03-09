@@ -102,7 +102,6 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 		return err
 	}
 
-
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

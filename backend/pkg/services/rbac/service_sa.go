@@ -123,7 +123,6 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 		}
 	}
 
-
 	message := fmt.Sprintf("Deleted ServiceAccount: %s (name: %s, enabled: %v, comments: '%s')", existing.ID, existing.Name, existing.Enabled, existing.Comments)
 	if err := rbacrepo.DeleteServiceAccount(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteServiceAccount", id, message, false)

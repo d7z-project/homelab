@@ -189,7 +189,7 @@ export class SiteSyncComponent implements OnInit, OnDestroy {
   goToPool(id?: string) {
     if (!id) return;
     const name = this.groups().get(id);
-    this.router.navigate(['/network/ip'], {
+    this.router.navigate(['/network/site'], {
       queryParams: {
         tab: 'pool',
         search: name || id,

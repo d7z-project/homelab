@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
+
 // ScanDomainsHandler godoc
 // @Summary Scan all DNS domains
 // @Tags network/dns
@@ -84,7 +85,7 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/" + domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
 		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
 		return
 	}
@@ -119,7 +120,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/" + domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
 		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
 		return
 	}

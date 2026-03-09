@@ -90,7 +90,7 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id} [put]
 func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
 		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
@@ -122,7 +122,7 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id}/preview [get]
 func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
 		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
@@ -155,7 +155,7 @@ func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id} [delete]
 func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
 		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
@@ -458,7 +458,7 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id}/entries [post]
 func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
 		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
@@ -495,7 +495,7 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/ip/pools/{id}/entries [delete]
 func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/ip") {
 		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}

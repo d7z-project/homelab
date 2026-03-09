@@ -99,7 +99,7 @@ func TestSuggestResources(t *testing.T) {
 
 		res, err := discovery.SuggestResources(ctxRoot, "network/dns/")
 		assert.NoError(t, err)
-		
+
 		var ids []string
 		for _, r := range res {
 			ids = append(ids, r.FullID)

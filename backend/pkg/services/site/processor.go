@@ -58,7 +58,7 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	if mode == "" {
 		mode = "append"
 	}
-	
+
 	var defaultTags []string
 	if inputs["defaultTags"] != "" {
 		defaultTags = strings.Split(inputs["defaultTags"], ",")

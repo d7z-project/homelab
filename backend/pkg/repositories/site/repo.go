@@ -255,4 +255,3 @@ func ScanSyncPolicies(ctx context.Context, cursor string, limit int, search stri
 		HasMore:    resp.HasMore,
 	}, nil
 }
-

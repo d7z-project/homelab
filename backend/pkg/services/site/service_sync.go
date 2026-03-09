@@ -18,16 +18,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/spf13/afero"
 	"golang.org/x/net/idna"
 )
-
-func generatePolicyID() string {
-	return fmt.Sprintf("sync_%d", time.Now().UnixNano())
-}
 
 type SyncTask struct {
 	ID        string            `json:"id"`
@@ -78,7 +74,7 @@ func (s *SitePoolService) CreateSyncPolicy(ctx context.Context, policy *models.S
 		return fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
 	}
 	if policy.ID == "" {
-		for i := 0; i < 10; i++ { 
+		for i := 0; i < 10; i++ {
 			newID := generatePolicyID()
 			if _, err := repo.GetSyncPolicy(ctx, newID); err != nil {
 				policy.ID = newID
@@ -384,7 +380,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 				if line == "" || strings.HasPrefix(line, "#") {
 					continue
 				}
-				
+
 				eType := uint8(2) // Default domain
 				val := line
 				if strings.HasPrefix(line, "full:") {
@@ -400,7 +396,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 					eType = 1
 					val = strings.TrimPrefix(line, "regexp:")
 				}
-				
+
 				normVal, err := idna.ToASCII(strings.ToLower(val))
 				if err == nil {
 					val = normVal

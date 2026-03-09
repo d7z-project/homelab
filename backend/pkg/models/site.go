@@ -154,7 +154,6 @@ type SitePoolEntry struct {
 type SitePoolEntryRequest struct {
 	Type    uint8    `json:"type"`
 	Value   string   `json:"value"`
-	Tags    []string `json:"tags"`    // 已废弃，由 NewTags 代替
 	OldTags []string `json:"oldTags"` // 被替换的标签（用于编辑场景）
 	NewTags []string `json:"newTags"` // 新增或更新后的标签
 }
@@ -166,11 +165,6 @@ func (req *SitePoolEntryRequest) Bind(r *http.Request) error {
 	}
 	if req.Type > 3 {
 		return errors.New("invalid rule type")
-	}
-
-	// 兼容旧 Tags 字段
-	if len(req.Tags) > 0 && len(req.NewTags) == 0 {
-		req.NewTags = req.Tags
 	}
 
 	for i, t := range req.NewTags {
@@ -189,7 +183,6 @@ type SitePoolPreviewResponse struct {
 	NextCursor string          `json:"nextCursor"` // 下一个 Byte Offset (作为字符串传递)
 	Total      int64           `json:"total"`      // 总条数
 }
-
 
 // SiteAnalysisResult 命中推演结果
 type SiteAnalysisResult struct {

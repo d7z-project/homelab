@@ -168,19 +168,14 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               <td mat-cell *matCellDef="let element">
                 <div class="flex flex-wrap gap-1 py-1">
                   @for (t of element.tags; track t) {
-                    <span
-                      class="px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-tight"
-                      [class.bg-primary/10]="!t.startsWith('_')"
-                      [class.border-primary/20]="!t.startsWith('_')"
-                      [class.text-primary]="!t.startsWith('_')"
-                      [class.bg-surface-container-high]="t.startsWith('_')"
-                      [class.text-outline]="t.startsWith('_')"
-                      [class.border-outline-variant]="t.startsWith('_')"
-                      [matTooltip]="t.startsWith('_') ? '系统保留标签' : ''"
-                      >{{ t | uppercase }}</span
-                    >
+                    @if (!t.startsWith('_')) {
+                      <span
+                        class="px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-tight bg-primary/10 border-primary/20 text-primary"
+                        >{{ t | uppercase }}</span
+                      >
+                    }
                   }
-                  @if (!element.tags || element.tags.length === 0) {
+                  @if (!hasUserTags(element)) {
                     <span class="text-outline/30 text-[10px] italic">未设置标签</span>
                   }
                 </div>
@@ -202,7 +197,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   mat-icon-button
                   color="warn"
                   (click)="deleteEntry(element)"
-                  matTooltip="删除"
+                  matTooltip="永久删除 (含内部标签记录不可删除)"
+                  [disabled]="hasInternalTags(element)"
                 >
                   <mat-icon class="text-sm!">delete</mat-icon>
                 </button>
@@ -399,5 +395,13 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
           this.submitting.set(false);
         },
       });
+  }
+
+  hasUserTags(entry: ModelsSitePoolEntry): boolean {
+    return (entry.tags || []).some((t) => !t.startsWith('_'));
+  }
+
+  hasInternalTags(entry: ModelsSitePoolEntry): boolean {
+    return (entry.tags || []).some((t) => t.startsWith('_'));
   }
 }

@@ -37,7 +37,7 @@ func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 
 	domainsResp, _ := dnsrepo.ScanDomains(ctx, "", 10000, "")
 	allResp, _ := dnsrepo.ScanRecords(ctx, "", "", 100000, "")
-	
+
 	domainMap := make(map[string]map[string]map[string]interface{})
 	if allResp != nil {
 		for _, r := range allResp.Items {

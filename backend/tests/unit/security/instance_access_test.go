@@ -16,7 +16,7 @@ func TestInstanceLevelRBAC(t *testing.T) {
 
 	// 1. 准备基础数据
 	ctxRoot := tests.SetupMockRootContext()
-	
+
 	// 创建两个 IP 池
 	poolA := &models.IPGroup{ID: "pool-a", Name: "Pool A"}
 	poolB := &models.IPGroup{ID: "pool-b", Name: "Pool B"}

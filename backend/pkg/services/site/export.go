@@ -242,12 +242,12 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 		if task.Format == "json" {
 			f.WriteString("[\n")
 		}
-		
+
 		var geositeGroups map[string][]ParsedGeoSiteEntry
 		if task.Format == "v2ray-dat" {
 			geositeGroups = make(map[string][]ParsedGeoSiteEntry)
 		}
-		
+
 		firstItem := true
 		totalRead := int64(0)
 

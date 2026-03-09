@@ -92,13 +92,13 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*mo
 		}
 
 		db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
-		
+
 		// 注意：Audit 存入时 Key 是 "Timestamp-UUID"，List 默认升序。
 		// 但审计日志通常需要倒序（最新在前）。
 		// 因为 KV.ListCursor 暂不支持逆序，我们仍然需要获取该月数据并内存倒序。
 		// 优化：如果该月数据巨大，这仍然有压力。但由于是按月分片，通常可控。
 		items, _ := db.List(ctx, "")
-		
+
 		// 内存倒序处理
 		for j := len(items) - 1; j >= 0; j-- {
 			item := items[j]

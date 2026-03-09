@@ -78,7 +78,7 @@ func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id} [delete]
 func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
 		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
@@ -101,7 +101,7 @@ func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id}/preview [get]
 func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
 		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
@@ -130,7 +130,7 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id}/entries [post]
 func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
 		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
@@ -157,7 +157,7 @@ func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/site/pools/{id}/entries [delete]
 func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/" + id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site/"+id) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/site") {
 		HandleError(w, r, fmt.Errorf("%w: network/site/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}

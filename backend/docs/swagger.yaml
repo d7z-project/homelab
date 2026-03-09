@@ -633,11 +633,6 @@ definitions:
         items:
           type: string
         type: array
-      tags:
-        description: 已废弃，由 NewTags 代替
-        items:
-          type: string
-        type: array
       type:
         type: integer
       value:

@@ -6431,13 +6431,6 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "tags": {
-                    "description": "已废弃，由 NewTags 代替",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "type": {
                     "type": "integer"
                 },

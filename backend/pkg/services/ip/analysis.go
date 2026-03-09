@@ -159,6 +159,9 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 					// 尝试作为同步策略查找
 					if policy, err := repo.GetSyncPolicy(ctx, tid); err == nil && policy.Name != "" {
 						displayTag = "策略: " + policy.Name
+					} else {
+						// 如果无法解析为策略名称，则隐藏该内部标签
+						continue
 					}
 				}
 
@@ -167,7 +170,6 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 					finalTags = append(finalTags, displayTag)
 				}
 			}
-
 			common.SortTags(finalTags)
 			return &models.IPAnalysisResult{
 				Matched: true,

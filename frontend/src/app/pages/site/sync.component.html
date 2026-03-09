@@ -12,7 +12,7 @@
       <!-- Data Info Bar -->
       <app-page-header
         title="同步策略"
-        subtitle="管理 IP 地址池的自动同步任务"
+        subtitle="管理域名池的自动同步任务"
         icon="sync"
         [total]="total()"
         unit="个策略"
@@ -87,7 +87,7 @@
               <a
                 class="inline-flex items-center justify-center gap-1 text-primary hover:text-primary/80 hover:underline cursor-pointer transition-all font-medium"
                 (click)="goToPool(element.targetGroupId)"
-                [matTooltip]="'点击查看地址池: ' + element.targetGroupId"
+                [matTooltip]="'点击查看域名池: ' + element.targetGroupId"
               >
                 <mat-icon class="w-4! h-4! text-[14px]!">storage</mat-icon>
                 <span class="text-sm">{{ getGroupName(element.targetGroupId) }}</span>

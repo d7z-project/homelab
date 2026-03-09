@@ -311,31 +311,40 @@
                         >
                           @for (a of siteResult()?.dns?.a; track a.ip) {
                             <div
-                              class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group"
+                              class="flex flex-col gap-1.5 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group"
                             >
-                              <div class="flex-1 flex items-center gap-4 min-w-0">
-                                <span
-                                  class="text-lg font-mono font-black text-primary clickable-link"
-                                  (click)="pivotSearch(a.ip)"
-                                  >{{ a.ip }}</span
-                                >
+                              <!-- Line 1: ASN + IP Title -->
+                              <div class="flex items-center gap-3">
                                 <span
                                   class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0"
                                   >AS{{ a.asn }}</span
                                 >
-                                <span class="text-sm text-outline truncate opacity-80">{{
-                                  a.org
-                                }}</span>
+                                <span
+                                  class="text-base sm:text-lg font-mono font-black text-primary clickable-link truncate flex-1"
+                                  (click)="pivotSearch(a.ip)"
+                                  [matTooltip]="a.ip"
+                                  >{{ a.ip }}</span
+                                >
                               </div>
-                              <div class="flex flex-col items-end gap-1 shrink-0">
+                              <!-- Line 2: Operator -->
+                              <div
+                                class="text-[11px] sm:text-sm text-outline font-medium opacity-80 truncate"
+                              >
+                                {{ a.org }}
+                              </div>
+                              <!-- Line 3: Geo Tags -->
+                              <div class="flex flex-wrap gap-2">
                                 @if (a.country) {
                                   <span
-                                    class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
                                     >{{ a.country }}</span
                                   >
                                 }
                                 @if (a.city) {
-                                  <span class="text-xs font-bold">{{ a.city }}</span>
+                                  <span
+                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                    >{{ a.city }}</span
+                                  >
                                 }
                                 @if (!a.country && !a.city) {
                                   <span class="text-[10px] text-outline opacity-40 italic"
@@ -347,36 +356,44 @@
                           }
                           @for (aaaa of siteResult()?.dns?.aaaa; track aaaa.ip) {
                             <div
-                              class="flex items-center gap-4 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors"
+                              class="flex flex-col gap-1.5 p-4 border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors group"
                             >
-                              <div class="flex-1 flex items-center gap-4 min-w-0">
-                                <span
-                                  class="text-base font-mono font-black text-secondary clickable-link truncate"
-                                  (click)="pivotSearch(aaaa.ip)"
-                                  [matTooltip]="aaaa.ip"
-                                  >{{ aaaa.ip }}</span
-                                >
+                              <!-- Line 1: ASN + IPv6 Title -->
+                              <div class="flex items-center gap-3">
                                 <span
                                   class="px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-bold uppercase shrink-0"
                                   >AS{{ aaaa.asn }}</span
                                 >
-                                <span class="text-sm text-outline truncate opacity-80">{{
-                                  aaaa.org
-                                }}</span>
-                              </div>
-                              <div class="flex flex-col items-end gap-1 shrink-0">
                                 <span
-                                  class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-black border border-outline-variant/30"
+                                  class="text-sm sm:text-base font-mono font-black text-secondary clickable-link truncate flex-1"
+                                  (click)="pivotSearch(aaaa.ip)"
+                                  [matTooltip]="aaaa.ip"
+                                  >{{ aaaa.ip }}</span
+                                >
+                              </div>
+                              <!-- Line 2: Operator -->
+                              <div
+                                class="text-[11px] sm:text-sm text-outline font-medium opacity-80 truncate"
+                              >
+                                {{ aaaa.org }}
+                              </div>
+                              <!-- Line 3: Tags -->
+                              <div class="flex flex-wrap gap-2">
+                                <span
+                                  class="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-high text-outline font-black border border-outline-variant/30"
                                   >IPv6</span
                                 >
                                 @if (aaaa.country) {
                                   <span
-                                    class="text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
                                     >{{ aaaa.country }}</span
                                   >
                                 }
                                 @if (aaaa.city) {
-                                  <span class="text-xs font-bold">{{ aaaa.city }}</span>
+                                  <span
+                                    class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-bold border border-outline-variant/30"
+                                    >{{ aaaa.city }}</span
+                                  >
                                 }
                                 @if (!aaaa.country && !aaaa.city) {
                                   <span class="text-[10px] text-outline opacity-40 italic"

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
-	iprepo "homelab/pkg/repositories/ip"
 	repo "homelab/pkg/repositories/site"
 	"homelab/pkg/services/ip"
 	"io"
@@ -155,8 +154,11 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, domain string, groupIDs []
 				displayTag := t
 				if strings.HasPrefix(tid, "_") {
 					// 尝试作为同步策略查找
-					if policy, err := iprepo.GetSyncPolicy(ctx, tid); err == nil && policy.Name != "" {
+					if policy, err := repo.GetSyncPolicy(ctx, tid); err == nil && policy.Name != "" {
 						displayTag = "策略: " + policy.Name
+					} else {
+						// 如果无法解析为策略名称，则隐藏该内部标签
+						continue
 					}
 				}
 

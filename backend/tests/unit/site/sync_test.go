@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"bytes"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"homelab/pkg/services/site"
@@ -9,7 +10,6 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-	"bytes"
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +119,7 @@ func TestSiteSyncPolicy_GeoSite(t *testing.T) {
 
 	err = service.Sync(ctx, policy.ID)
 	assert.NoError(t, err)
-	
+
 	time.Sleep(300 * time.Millisecond)
 
 	res, err := service.PreviewPool(ctx, group.ID, "", 10, "")

@@ -105,7 +105,9 @@ import { NetworkSiteService, ModelsSiteSyncPolicy, ModelsSiteGroup } from '../..
             </div>
           }
 
-          @if (form.get('format')?.value === 'v2ray-dat' || form.get('format')?.value === 'geosite') {
+          @if (
+            form.get('format')?.value === 'v2ray-dat' || form.get('format')?.value === 'geosite'
+          ) {
             <div class="space-y-4">
               <div class="flex items-center justify-between">
                 <span class="text-sm">导入全部分类</span>
@@ -169,8 +171,8 @@ import { NetworkSiteService, ModelsSiteSyncPolicy, ModelsSiteGroup } from '../..
 
         <app-discovery-select
           code="network/site/pools"
-          label="目标地址池"
-          placeholder="搜索地址池..."
+          label="目标域名池"
+          placeholder="搜索域名池..."
           formControlName="targetGroupId"
           required
         ></app-discovery-select>
