@@ -109,13 +109,17 @@
 
               <div [class.opacity-20]="hitTestLoading()">
                 @if (ipResult()?.matched) {
-                  <div class="bg-green-600 text-white p-4 text-center">
-                    <div
-                      class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80"
-                    >
-                      IP 前缀匹配 (LPM)
-                    </div>
-                    <div class="text-xl font-mono font-medium">{{ ipResult()?.cidr }}</div>
+                  <div class="flex flex-col divide-y divide-white/10">
+                    @for (match of ipResult()?.matches; track match.cidr) {
+                      <div class="bg-green-600 text-white p-4 text-center">
+                        <div
+                          class="text-[10px] uppercase font-bold tracking-tighter opacity-80 text-white/80"
+                        >
+                          IP 前缀匹配 (LPM)
+                        </div>
+                        <div class="text-xl font-mono font-medium">{{ match.cidr }}</div>
+                      </div>
+                    }
                   </div>
                 }
                 @if (siteResult()?.matched) {
@@ -172,12 +176,34 @@
                     <mat-icon class="w-5! h-5! text-[20px]!">local_offer</mat-icon>
                     <span class="text-sm font-bold uppercase tracking-widest">研判属性标签</span>
                   </div>
-                  <div class="flex flex-wrap gap-2">
-                    @for (tag of ipResult()?.tags || siteResult()?.tags; track tag) {
-                      <span
-                        class="px-3 py-1 rounded-full bg-primary text-white text-xs font-bold shadow-sm"
-                        >{{ tag }}</span
-                      >
+                  <div class="flex flex-col gap-4">
+                    @if (ipResult()?.matched) {
+                      @for (match of ipResult()?.matches; track match.cidr) {
+                        <div class="flex flex-col gap-2">
+                          @if ((ipResult()?.matches?.length || 0) > 1) {
+                            <div class="text-[10px] font-bold text-primary uppercase opacity-60">
+                              {{ match.cidr }}
+                            </div>
+                          }
+                          <div class="flex flex-wrap gap-2">
+                            @for (tag of match.tags; track tag) {
+                              <span
+                                class="px-3 py-1 rounded-full bg-primary text-white text-xs font-bold shadow-sm"
+                                >{{ tag }}</span
+                              >
+                            }
+                          </div>
+                        </div>
+                      }
+                    } @else if (siteResult()?.matched) {
+                      <div class="flex flex-wrap gap-2">
+                        @for (tag of siteResult()?.tags; track tag) {
+                          <span
+                            class="px-3 py-1 rounded-full bg-primary text-white text-xs font-bold shadow-sm"
+                            >{{ tag }}</span
+                          >
+                        }
+                      </div>
                     }
                   </div>
                 </div>

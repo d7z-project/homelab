@@ -88,6 +88,7 @@ func DeleteDomain(ctx context.Context, id string) error {
 
 func ScanDomains(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Domain], error) {
 	db := common.DB.Child("network/dns", "domains")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -111,6 +112,7 @@ func ScanDomains(ctx context.Context, cursor string, limit int, search string) (
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -119,6 +121,7 @@ func ScanDomains(ctx context.Context, cursor string, limit int, search string) (
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 
@@ -166,6 +169,7 @@ func DeleteRecord(ctx context.Context, id string) error {
 
 func ScanRecords(ctx context.Context, domainID string, cursor string, limit int, search string) (*models.PaginationResponse[models.Record], error) {
 	db := common.DB.Child("network/dns", "records")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -189,6 +193,7 @@ func ScanRecords(ctx context.Context, domainID string, cursor string, limit int,
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -197,6 +202,7 @@ func ScanRecords(ctx context.Context, domainID string, cursor string, limit int,
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 

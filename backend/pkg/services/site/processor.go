@@ -81,12 +81,12 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	if format == "text" {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
-			if line == "" || strings.HasPrefix(line, "#") {
+			line := scanner.Text()
+			if common.IsComment(line) {
 				continue
 			}
 
-			entry := parseTextRule(line)
+			entry := parseTextRule(strings.TrimSpace(line))
 			entry.Tags = defaultTags
 
 			// Normalize

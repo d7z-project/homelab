@@ -79,6 +79,16 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*mo
 	nextCursor := ""
 	hasMore := false
 
+	total := int64(0)
+	for _, ym := range yearMonths {
+		parts := strings.Split(ym, "-")
+		if len(parts) == 2 {
+			db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
+			c, _ := db.Count(ctx)
+			total += int64(c)
+		}
+	}
+
 	// 从最新月份开始逆序查找
 	for i := len(yearMonths) - 1; i >= 0; i-- {
 		ym := yearMonths[i]
@@ -141,6 +151,7 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*mo
 		Items:      logs,
 		NextCursor: nextCursor,
 		HasMore:    hasMore,
+		Total:      total,
 	}, nil
 }
 

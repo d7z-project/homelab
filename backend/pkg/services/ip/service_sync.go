@@ -112,7 +112,12 @@ func (s *IPPoolService) ScanSyncPolicies(ctx context.Context, cursor string, lim
 			}
 		}
 	}
-	return res, nil
+	return &models.PaginationResponse[models.IPSyncPolicy]{
+		Items:      res.Items,
+		NextCursor: res.NextCursor,
+		HasMore:    res.HasMore,
+		Total:      res.Total,
+	}, nil
 }
 
 func (s *IPPoolService) Sync(ctx context.Context, id string) error {
@@ -410,7 +415,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 					continue
 				}
 				ipStr := strings.TrimSpace(row[ipIdx])
-				if ipStr == "" || strings.HasPrefix(ipStr, "#") {
+				if common.IsComment(ipStr) {
 					continue
 				}
 
@@ -464,8 +469,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 				default:
 				}
 
-				line = strings.TrimSpace(line)
-				if line == "" || strings.HasPrefix(line, "#") {
+				if common.IsComment(line) {
 					continue
 				}
 				prefix, err := netip.ParsePrefix(line)

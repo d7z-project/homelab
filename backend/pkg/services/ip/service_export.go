@@ -66,7 +66,34 @@ func (s *IPPoolService) GetExport(ctx context.Context, id string) (*models.IPExp
 }
 
 func (s *IPPoolService) ScanExports(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPExport], error) {
-	return repo.ScanExports(ctx, cursor, limit, search)
+	res, err := repo.ScanExports(ctx, cursor, limit*2, search)
+	if err != nil {
+		return nil, err
+	}
+
+	var filtered []models.IPExport
+	perms := commonauth.PermissionsFromContext(ctx)
+	for _, e := range res.Items {
+		resource := "network/ip/export/" + e.ID
+		if perms.IsAllowed("network/ip") || perms.IsAllowed(resource) {
+			filtered = append(filtered, e)
+		}
+		if len(filtered) >= limit {
+			return &models.PaginationResponse[models.IPExport]{
+				Items:      filtered,
+				NextCursor: res.NextCursor,
+				HasMore:    res.HasMore,
+				Total:      res.Total,
+			}, nil
+		}
+	}
+
+	return &models.PaginationResponse[models.IPExport]{
+		Items:      filtered,
+		NextCursor: res.NextCursor,
+		HasMore:    res.HasMore,
+		Total:      res.Total,
+	}, nil
 }
 
 func (s *IPPoolService) PreviewExport(ctx context.Context, req *models.IPExportPreviewRequest) ([]models.IPPoolEntry, error) {

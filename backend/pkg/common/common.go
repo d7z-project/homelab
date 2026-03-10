@@ -78,6 +78,16 @@ func WithJitter(fn func(), maxDelay time.Duration) {
 	time.AfterFunc(delay, fn)
 }
 
+// IsComment 检查一行文本是否为注释行（以 #, ;, //, ! 开头）
+func IsComment(line string) bool {
+	line = strings.TrimSpace(line)
+	return line == "" ||
+		strings.HasPrefix(line, "#") ||
+		strings.HasPrefix(line, ";") ||
+		strings.HasPrefix(line, "//") ||
+		strings.HasPrefix(line, "!")
+}
+
 var ErrNotFound = errors.New("resource not found")
 var ErrBadRequest = errors.New("bad request")
 

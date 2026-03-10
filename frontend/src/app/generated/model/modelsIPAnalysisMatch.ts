@@ -7,12 +7,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsIPAnalysisMatch } from './modelsIPAnalysisMatch';
 
-export interface ModelsIPAnalysisResult {
-  matched?: boolean;
+export interface ModelsIPAnalysisMatch {
   /**
-   * 所有命中的网段及其标签
+   * 命中的具体网段
    */
-  matches?: Array<ModelsIPAnalysisMatch>;
+  cidr?: string;
+  /**
+   * 命中的 Tags
+   */
+  tags?: Array<string>;
 }

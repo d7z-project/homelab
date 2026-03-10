@@ -130,6 +130,7 @@ func (s *IPPoolService) ScanGroups(ctx context.Context, cursor string, limit int
 				Items:      filtered,
 				NextCursor: res.NextCursor,
 				HasMore:    res.HasMore,
+				Total:      res.Total,
 			}, nil
 		}
 	}
@@ -138,5 +139,6 @@ func (s *IPPoolService) ScanGroups(ctx context.Context, cursor string, limit int
 		Items:      filtered,
 		NextCursor: res.NextCursor,
 		HasMore:    res.HasMore,
+		Total:      res.Total,
 	}, nil
 }

@@ -30,6 +30,7 @@ model/modelsDiscoverResult.ts
 model/modelsDnsExportResponse.ts
 model/modelsDomain.ts
 model/modelsExportDomain.ts
+model/modelsIPAnalysisMatch.ts
 model/modelsIPAnalysisResult.ts
 model/modelsIPExport.ts
 model/modelsIPExportPreviewRequest.ts

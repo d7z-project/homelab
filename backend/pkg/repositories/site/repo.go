@@ -71,6 +71,7 @@ func DeleteGroup(ctx context.Context, id string) error {
 
 func ScanGroups(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteGroup], error) {
 	db := common.DB.Child("network", "site", "groups")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -94,6 +95,7 @@ func ScanGroups(ctx context.Context, cursor string, limit int, search string) (*
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -101,6 +103,7 @@ func ScanGroups(ctx context.Context, cursor string, limit int, search string) (*
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 
@@ -146,6 +149,7 @@ func DeleteExport(ctx context.Context, id string) error {
 
 func ScanExports(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteExport], error) {
 	db := common.DB.Child("network", "site", "exports")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -169,6 +173,7 @@ func ScanExports(ctx context.Context, cursor string, limit int, search string) (
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -177,6 +182,7 @@ func ScanExports(ctx context.Context, cursor string, limit int, search string) (
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 
@@ -222,6 +228,7 @@ func DeleteSyncPolicy(ctx context.Context, id string) error {
 
 func ScanSyncPolicies(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.SiteSyncPolicy], error) {
 	db := common.DB.Child("network", "site", "policies")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -245,6 +252,7 @@ func ScanSyncPolicies(ctx context.Context, cursor string, limit int, search stri
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -253,5 +261,6 @@ func ScanSyncPolicies(ctx context.Context, cursor string, limit int, search stri
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }

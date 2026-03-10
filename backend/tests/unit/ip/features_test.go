@@ -168,25 +168,51 @@ func TestIPAnalysisEngine(t *testing.T) {
 	manager := ip.NewExportManager(analysis)
 	service := ip.NewIPPoolService(analysis, manager)
 
-	// 1. Create group and mock data
+	// 1. Create groups and mock data
 	group := &models.IPGroup{ID: "pool_analysis", Name: "Analysis Pool"}
 	_ = service.CreateGroup(ctx, group)
+	group2 := &models.IPGroup{ID: "pool_analysis_2", Name: "Analysis Pool 2"}
+	_ = service.CreateGroup(ctx, group2)
 
 	common.FS = afero.NewMemMapFs()
 	common.FS.MkdirAll("network/ip/pools", 0755)
 	codec := ip.NewCodec()
+
 	f, _ := common.FS.Create("network/ip/pools/pool_analysis.bin")
 	_ = codec.WritePool(f, []string{"malicious"}, []ip.Entry{
-		{Prefix: netip.MustParsePrefix("1.2.3.4/32"), TagIndices: []uint32{0}},
+		{Prefix: netip.MustParsePrefix("1.2.3.0/24"), TagIndices: []uint32{0}},
 	})
 	f.Close()
 
-	// 2. Test HitTest
-	res, err := analysis.HitTest(ctx, "1.2.3.4", []string{"pool_analysis"})
+	f2, _ := common.FS.Create("network/ip/pools/pool_analysis_2.bin")
+	_ = codec.WritePool(f2, []string{"threat"}, []ip.Entry{
+		{Prefix: netip.MustParsePrefix("1.2.3.4/32"), TagIndices: []uint32{0}},
+	})
+	f2.Close()
+
+	// 2. Test HitTest (Multiple Matches)
+	res, err := analysis.HitTest(ctx, "1.2.3.4", []string{"pool_analysis", "pool_analysis_2"})
 	assert.NoError(t, err)
 	assert.True(t, res.Matched)
-	assert.Equal(t, "1.2.3.4/32", res.CIDR)
-	assert.Contains(t, res.Tags, "malicious")
+	assert.Len(t, res.Matches, 2)
+
+	// Verify both matches exist
+	match1Found := false
+	match2Found := false
+	for _, m := range res.Matches {
+		if m.CIDR == "1.2.3.0/24" {
+			match1Found = true
+			assert.Contains(t, m.Tags, "地址池: Analysis Pool")
+			assert.Contains(t, m.Tags, "malicious")
+		}
+		if m.CIDR == "1.2.3.4/32" {
+			match2Found = true
+			assert.Contains(t, m.Tags, "地址池: Analysis Pool 2")
+			assert.Contains(t, m.Tags, "threat")
+		}
+	}
+	assert.True(t, match1Found)
+	assert.True(t, match2Found)
 
 	res2, err := analysis.HitTest(ctx, "8.8.8.8", []string{"pool_analysis"})
 	assert.NoError(t, err)

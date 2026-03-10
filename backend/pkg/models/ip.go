@@ -173,11 +173,16 @@ type IPPoolPreviewResponse struct {
 	Total      int64         `json:"total"`      // 总条数
 }
 
+// IPAnalysisMatch IP 命中条目
+type IPAnalysisMatch struct {
+	CIDR string   `json:"cidr"` // 命中的具体网段
+	Tags []string `json:"tags"` // 命中的 Tags
+}
+
 // IPAnalysisResult IP 命中推演结果
 type IPAnalysisResult struct {
-	Matched bool     `json:"matched"`
-	CIDR    string   `json:"cidr"` // 命中的具体网段
-	Tags    []string `json:"tags"` // 命中的 Tags
+	Matched bool              `json:"matched"`
+	Matches []IPAnalysisMatch `json:"matches"` // 所有命中的网段及其标签
 }
 
 // IPHitTestRequest IP 命中推演请求

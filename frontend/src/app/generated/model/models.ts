@@ -13,6 +13,7 @@ export * from './modelsDiscoverResult';
 export * from './modelsDnsExportResponse';
 export * from './modelsDomain';
 export * from './modelsExportDomain';
+export * from './modelsIPAnalysisMatch';
 export * from './modelsIPAnalysisResult';
 export * from './modelsIPExport';
 export * from './modelsIPExportPreviewRequest';

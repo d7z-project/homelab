@@ -47,9 +47,9 @@ func ScanAllSources(ctx context.Context) ([]models.IntelligenceSource, error) {
 	}
 	return res, nil
 }
-
 func ScanSources(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IntelligenceSource], error) {
 	db := common.DB.Child("network", "intelligence", "sources")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -61,10 +61,10 @@ func ScanSources(ctx context.Context, cursor string, limit int, search string) (
 	res := make([]models.IntelligenceSource, 0)
 	search = strings.ToLower(search)
 	for _, v := range resp.Pairs {
-		var s models.IntelligenceSource
-		if err := json.Unmarshal([]byte(v.Value), &s); err == nil {
-			if search == "" || strings.Contains(strings.ToLower(s.Name), search) || strings.Contains(strings.ToLower(s.ID), search) {
-				res = append(res, s)
+		var source models.IntelligenceSource
+		if err := json.Unmarshal([]byte(v.Value), &source); err == nil {
+			if search == "" || strings.Contains(strings.ToLower(source.Name), search) || strings.Contains(strings.ToLower(source.ID), search) {
+				res = append(res, source)
 			}
 		}
 		if len(res) >= limit {
@@ -72,13 +72,16 @@ func ScanSources(ctx context.Context, cursor string, limit int, search string) (
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
+
 	return &models.PaginationResponse[models.IntelligenceSource]{
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 

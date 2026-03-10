@@ -41,6 +41,7 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 
 func ScanWorkflows(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Workflow], error) {
 	db := common.DB.Child("system", "actions", "workflows")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -63,6 +64,7 @@ func ScanWorkflows(ctx context.Context, cursor string, limit int, search string)
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    true, // We reached the limit, there might be more
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -70,6 +72,7 @@ func ScanWorkflows(ctx context.Context, cursor string, limit int, search string)
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 
@@ -131,6 +134,7 @@ func ScanAllTaskInstances(ctx context.Context) ([]models.TaskInstance, error) {
 
 func ScanTaskInstances(ctx context.Context, cursor string, limit int, search string, workflowId string) (*models.PaginationResponse[models.TaskInstance], error) {
 	db := common.DB.Child("system", "actions", "instances")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -156,6 +160,7 @@ func ScanTaskInstances(ctx context.Context, cursor string, limit int, search str
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -163,6 +168,7 @@ func ScanTaskInstances(ctx context.Context, cursor string, limit int, search str
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 

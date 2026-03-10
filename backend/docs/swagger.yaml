@@ -144,17 +144,25 @@ definitions:
           type: object
         type: object
     type: object
-  models.IPAnalysisResult:
+  models.IPAnalysisMatch:
     properties:
       cidr:
         description: 命中的具体网段
         type: string
-      matched:
-        type: boolean
       tags:
         description: 命中的 Tags
         items:
           type: string
+        type: array
+    type: object
+  models.IPAnalysisResult:
+    properties:
+      matched:
+        type: boolean
+      matches:
+        description: 所有命中的网段及其标签
+        items:
+          $ref: '#/definitions/models.IPAnalysisMatch'
         type: array
     type: object
   models.IPExport:

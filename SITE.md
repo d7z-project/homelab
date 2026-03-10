@@ -47,7 +47,7 @@
 ### 2.3 辅助研判能力 (Analysis Utilities)
 - **并发安全的全局缓存**: 使用 `atomic.Value` 维护的内存匹配引擎。
 - **命中推演 (Hit Test)**: 提供沙盒 API，输入域名返回匹配详情：
-    - **返回项**: `Matched (bool)`, `RuleType`, `Pattern (命中原形)`, `Tags (关联标签组)`。
+    - **返回项**: `Matched (bool)`, `RuleType`, `Pattern (命中原形)`, `Tags (关联标签组)``。`
     - **匹配策略**: 采取“全量命中”原则。若一个域名同时被 `keyword:goog` 和 `domain:google.com` 命中，接口应返回所有命中规则的 Tags 交集/并集（取决于配置）。
 
 ---
@@ -56,7 +56,7 @@
 
 ### 3.1 VFS 二进制格式 (Tagged Site Binary Format)
 参考 v2ray 规则索引设计的自定义流式格式：
-- **Header (64 bytes)**: 
+- **Header (64 bytes)**:
     - `Magic [4]byte` ("SITE") | `Version uint8` | `EntryCount uint32` | `Checksum [32]byte` | `DictOffset uint64`。
 - **Dictionary Block**: 存储所有去重后的 Tags 字符串。格式：`[Count uint32] + [ [Len uint16][String] ... ]`。
 - **Payload (Streaming Entries)**:
@@ -65,7 +65,7 @@
     - `[TagCount uint8]` + `[TagIndices []uint32]`
 
 ### 3.2 内存匹配引擎 (Domain Matching Engine)
-- **Domain Trie (域名后缀树)**: 
+- **Domain Trie (域名后缀树)**:
     - 核心结构。将域名按段拆分并倒序插入（如 `com.google.www`）。
     - 每个节点携带 `Tags` 载体。匹配时从根向下遍历，记录路径上所有的 `domain` 命中和终点的 `full` 命中。
 - **Aho-Corasick 自动机**: 处理所有 `keyword` 规则，实现一次性 O(N) 扫描。
@@ -77,7 +77,7 @@
 
 ### 4.1 处理器：`site/pool/import`
 - **逻辑**: 解析外部列表，执行规整化。
-- **格式支持**: 
+- **格式支持**:
     - `geosite`: 解析标准 `geosite.dat`（需处理多 Tag 拆分）。
     - `text`: 每行一个规则，支持前缀识别（如 `full:google.com`）。
 - **并发与锁调度**: **全局任务串行**，防止百万级域名解析导致内存雪崩。

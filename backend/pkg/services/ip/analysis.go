@@ -132,6 +132,7 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 		}
 	}
 
+	var allMatches []models.IPAnalysisMatch
 	for _, gid := range groupIDs {
 		trie, err := e.GetTrie(ctx, gid)
 		if err != nil {
@@ -171,12 +172,19 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 				}
 			}
 			common.SortTags(finalTags)
-			return &models.IPAnalysisResult{
-				Matched: true,
-				CIDR:    prefix.String(),
-				Tags:    finalTags,
-			}, nil
+			allMatches = append(allMatches, models.IPAnalysisMatch{
+				CIDR: prefix.String(),
+				Tags: finalTags,
+			})
 		}
+	}
+
+	if len(allMatches) > 0 {
+		result := &models.IPAnalysisResult{
+			Matched: true,
+			Matches: allMatches,
+		}
+		return result, nil
 	}
 
 	return &models.IPAnalysisResult{Matched: false}, nil

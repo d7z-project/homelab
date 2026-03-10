@@ -83,6 +83,7 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 
 func ScanServiceAccounts(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.ServiceAccount], error) {
 	db := common.DB.Child("auth", "serviceaccounts")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -105,6 +106,7 @@ func ScanServiceAccounts(ctx context.Context, cursor string, limit int, search s
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -112,6 +114,7 @@ func ScanServiceAccounts(ctx context.Context, cursor string, limit int, search s
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 
@@ -171,6 +174,7 @@ func DeleteRole(ctx context.Context, id string) error {
 
 func ScanRoles(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Role], error) {
 	db := common.DB.Child("auth", "roles")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -194,6 +198,7 @@ func ScanRoles(ctx context.Context, cursor string, limit int, search string) (*m
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -201,6 +206,7 @@ func ScanRoles(ctx context.Context, cursor string, limit int, search string) (*m
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 
@@ -242,6 +248,7 @@ func DeleteRoleBinding(ctx context.Context, id string) error {
 
 func ScanRoleBindings(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.RoleBinding], error) {
 	db := common.DB.Child("auth", "rolebindings")
+	count, _ := db.Count(ctx)
 	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(limit * 5),
 		Cursor: cursor,
@@ -264,6 +271,7 @@ func ScanRoleBindings(ctx context.Context, cursor string, limit int, search stri
 				Items:      res,
 				NextCursor: v.Key,
 				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
+				Total:      int64(count),
 			}, nil
 		}
 	}
@@ -271,6 +279,7 @@ func ScanRoleBindings(ctx context.Context, cursor string, limit int, search stri
 		Items:      res,
 		NextCursor: resp.Cursor,
 		HasMore:    resp.HasMore,
+		Total:      int64(count),
 	}, nil
 }
 

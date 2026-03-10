@@ -376,8 +376,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 				default:
 				}
 
-				line = strings.TrimSpace(line)
-				if line == "" || strings.HasPrefix(line, "#") {
+				if common.IsComment(line) {
 					continue
 				}
 

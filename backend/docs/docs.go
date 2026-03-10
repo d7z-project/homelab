@@ -5691,21 +5691,33 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IPAnalysisResult": {
+        "models.IPAnalysisMatch": {
             "type": "object",
             "properties": {
                 "cidr": {
                     "description": "命中的具体网段",
                     "type": "string"
                 },
-                "matched": {
-                    "type": "boolean"
-                },
                 "tags": {
                     "description": "命中的 Tags",
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                }
+            }
+        },
+        "models.IPAnalysisResult": {
+            "type": "object",
+            "properties": {
+                "matched": {
+                    "type": "boolean"
+                },
+                "matches": {
+                    "description": "所有命中的网段及其标签",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.IPAnalysisMatch"
                     }
                 }
             }
