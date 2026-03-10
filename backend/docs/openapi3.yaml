@@ -3105,6 +3105,117 @@ paths:
       summary: Preview site pool data (cursor-based)
       tags:
       - network/site
+  /network/site/sync:
+    get:
+      parameters:
+      - description: Cursor
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: Limit
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Search by name
+        in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_network_site_sync_get_200_response"
+          description: OK
+      summary: Scan all site sync policies
+      tags:
+      - network/site
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SiteSyncPolicy"
+        description: Site Sync Policy
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.SiteSyncPolicy"
+          description: OK
+      summary: Create a site sync policy
+      tags:
+      - network/site
+      x-codegen-request-body-name: policy
+  /network/site/sync/{id}:
+    delete:
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Delete a site sync policy
+      tags:
+      - network/site
+    put:
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/models.SiteSyncPolicy"
+        description: Site Sync Policy
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/models.SiteSyncPolicy"
+          description: OK
+      summary: Update a site sync policy
+      tags:
+      - network/site
+      x-codegen-request-body-name: policy
+  /network/site/sync/{id}/trigger:
+    post:
+      parameters:
+      - description: Policy ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: success
+      summary: Trigger a site sync policy execution
+      tags:
+      - network/site
   /ping:
     get:
       description: Returns pong if the server is alive
@@ -4084,6 +4195,7 @@ components:
         org: org
         ip: ip
         location: location
+        label: label
         asn: 0
       properties:
         asn:
@@ -4093,6 +4205,9 @@ components:
         country:
           type: string
         ip:
+          type: string
+        label:
+          description: 附加标识 (如 NS 主机名)
           type: string
         location:
           description: "\"lat,lon\""
@@ -4553,6 +4668,10 @@ components:
           items:
             type: string
           type: array
+        ns:
+          items:
+            $ref: "#/components/schemas/models.IPInfoResponse"
+          type: array
         soa:
           items:
             type: string
@@ -4655,11 +4774,6 @@ components:
           items:
             type: string
           type: array
-        tags:
-          description: 已废弃，由 NewTags 代替
-          items:
-            type: string
-          type: array
         type:
           type: integer
         value:
@@ -4691,6 +4805,67 @@ components:
         total:
           description: 总条数
           type: integer
+      type: object
+    models.SiteSyncPolicy:
+      example:
+        cron: cron
+        lastRunAt: lastRunAt
+        errorMessage: errorMessage
+        format: format
+        description: description
+        enabled: true
+        mode: mode
+        sourceUrl: sourceUrl
+        createdAt: createdAt
+        name: name
+        progress: 6.027456183070403
+        targetGroupId: targetGroupId
+        id: id
+        config:
+          key: config
+        lastStatus: "{}"
+        updatedAt: updatedAt
+      properties:
+        config:
+          additionalProperties:
+            type: string
+          description: 格式特定的配置
+          type: object
+        createdAt:
+          type: string
+        cron:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        errorMessage:
+          type: string
+        format:
+          description: "\"text\", \"geosite\""
+          type: string
+        id:
+          type: string
+        lastRunAt:
+          type: string
+        lastStatus:
+          allOf:
+          - $ref: "#/components/schemas/models.TaskStatus"
+          description: "\"success\", \"failed\""
+          type: object
+        mode:
+          description: "\"overwrite\", \"append\""
+          type: string
+        name:
+          type: string
+        progress:
+          type: number
+        sourceUrl:
+          type: string
+        targetGroupId:
+          type: string
+        updatedAt:
+          type: string
       type: object
     models.Step:
       example:
@@ -5557,6 +5732,54 @@ components:
           name: name
           description: description
           id: id
+          updatedAt: updatedAt
+    _network_site_sync_get_200_response:
+      allOf:
+      - $ref: "#/components/schemas/common.CursorResponse"
+      - properties:
+          items:
+            items:
+              $ref: "#/components/schemas/models.SiteSyncPolicy"
+            type: array
+        type: object
+      example:
+        nextCursor: nextCursor
+        total: 0
+        hasMore: true
+        items:
+        - cron: cron
+          lastRunAt: lastRunAt
+          errorMessage: errorMessage
+          format: format
+          description: description
+          enabled: true
+          mode: mode
+          sourceUrl: sourceUrl
+          createdAt: createdAt
+          name: name
+          progress: 6.027456183070403
+          targetGroupId: targetGroupId
+          id: id
+          config:
+            key: config
+          lastStatus: "{}"
+          updatedAt: updatedAt
+        - cron: cron
+          lastRunAt: lastRunAt
+          errorMessage: errorMessage
+          format: format
+          description: description
+          enabled: true
+          mode: mode
+          sourceUrl: sourceUrl
+          createdAt: createdAt
+          name: name
+          progress: 6.027456183070403
+          targetGroupId: targetGroupId
+          id: id
+          config:
+            key: config
+          lastStatus: "{}"
           updatedAt: updatedAt
     _rbac_rolebindings_get_200_response:
       allOf:
