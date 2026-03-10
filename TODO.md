@@ -1,47 +1,74 @@
-/# Network Site 增强功能实现计划 (Implementation Plan for Network Site Enhancements)
+# 资源 Meta 与 Status 逻辑分离设计方案 (Generation 驱动 + 冲突域分离)
 
-为了实现与 `network/ip` 模块的功能对等，并满足对 `geosite.dat` 的导入导出需求，建议按以下结构进行开发。
+## 1. 背景与动机
+为了实现配置与状态的解耦，并提供类 Kubernetes 的强一致性与乐观并发控制（OCC），本方案采用双计数器架构。
+- **架构清晰**：通过泛型容器物理隔离配置（Meta）与状态（Status）。
+- **冲突域分离**：用户的配置修改（Meta）与系统的状态更新（Status）不应互相阻塞。
+- **单调版本指纹**：放弃不可靠的时间戳，采用单调递增的整数 `Generation` 作为版本指纹。
+- **平滑路径**：移除路径中的中置版本号，采用扁平路径以优化前缀扫描性能。
 
-## [x] 1. 核心协议支持 (Protobuf / V2Ray)
-- **目标**: 在不引入重量级依赖的情况下，支持 `geosite.dat` 的二进制编解码。
-- **文件**: `backend/pkg/services/site/v2ray_pb.go`
-- **内容**:
-    - 使用 `google.golang.org/protobuf/encoding/protowire` 手动处理 Protobuf 字段。
-    - 实现 `BuildV2RayGeoSite(w io.Writer, sites map[string][]models.SitePoolEntry)`。
-    - 实现 `ParseV2RayGeoSite(data []byte, targetCategory string, importAll bool) ([]parsedGeoSiteEntry, error)`。
-    - 映射规则类型：Plain(0)->Keyword, Regex(1)->Regex, Domain(2)->Domain, Full(3)->Full。
+## 2. 存储拓扑与模型设计
 
-## [x] 2. 增强导入功能 (Import Processor)
-- **目标**: 支持从本地或上传的 `geosite.dat` 文件导入域名规则。
-- **文件**: `backend/pkg/services/site/processor.go`
-- **变更**:
-    - 在 `ImportProcessor.Execute` 中实装 `format == "geosite"` 的分支。
-    - 支持从参数中获取 `category`（即 v2ray 中的 country_code），若未指定则导入全部并以 category 作为 Tag。
-    - 保持现有的 Punycode 转换与清洗逻辑。
+### 2.1 存储路径
+- **路径规则**: `{prefix...}/{id}` (例如：`network/ip/example1`)
 
-## [x] 3. 增强导出功能 (Dynamic Export)
-- **目标**: 支持将域名池内容导出为标准的 `geosite.dat` 格式。
-- **文件**: `backend/pkg/services/site/export.go`
-- **变更**:
-    - 在 `runExport` 任务中增加 `v2ray-dat` 格式支持。
-    - 逻辑：按 Tag 对匹配的域名进行分组，每个 Tag 映射为一个 `GeoSite` 类别。
-    - 调用 `BuildV2RayGeoSite` 生成二进制流。
+### 2.2 资源容器结构 (`Resource[M, S]`)
+```go
+type Resource[M any, S any] struct {
+    ID              string `json:"id"`
+    Meta            M      `json:"meta"`
+    Status          S      `json:"status"`
+    Generation      int64  `json:"generation"`      // 配置版本：仅在 Meta 变更时递增
+    ResourceVersion int64  `json:"resourceVersion"` // 对象总版本：任何变更（Meta/Status）均递增
+}
+```
 
-## [x] 4. 引入同步策略 (Sync Policy) - 可选增强
-- **目标**: 支持定时从远程 URL（如 GitHub 上的社区 geosite 列表）同步数据。
-- **文件**:
-    - `backend/pkg/models/site.go`: 定义 `SiteSyncPolicy` 结构体（包含 SourceURL, Cron, Mode, Format 等）。
-    - `backend/pkg/repositories/site/repo.go`: 实现同步策略的 CRUD。
-    - `backend/pkg/services/site/service_sync.go`: 实现 `SyncManager`，负责 Cron 调度与异步下载解析。
-- **支持格式**: `text` (每行一个), `geosite` (v2ray dat)。
+## 3. 逻辑架构设计
 
-## [x] 5. 前端适配 (Frontend)
-- **目标**: 在 UI 上提供导出选项与同步配置界面。
-- **变更**:
-    - `frontend/src/app/pages/site`: 在导出对话框中增加 `V2Ray Dat (geosite.dat)` 选项。
-    - (若实现同步) 增加“同步策略”管理页面。
+### 3.1 冲突检测逻辑 (Conflict Resolution)
+- **Meta 更新 (PatchMeta)**: 强制校验 `Generation`。若请求携带的 `Generation > 0` 且不一致，返回 `409 Conflict`。更新后 `Generation` 与 `ResourceVersion` 均递增。
+- **Status 更新 (UpdateStatus)**: 非阻塞写入，不校验 `Generation`。仅递增 `ResourceVersion`。
 
----
-**审核要点**:
-1. `v2ray_pb.go` 是否需要单独提取到 `pkg/common` 以供 `ip` 和 `site` 共用部分逻辑？（建议保留在各自目录，因为 GeoIP 和 GeoSite 的 Protobuf 结构虽相似但定义不同）。
-2. 子域消除逻辑 (`Subdomain Deduplication`) 是否应在 `geosite` 导出时强制开启？（建议开启，以减小文件体积）。
+### 3.2 多级校验体系 (Validation Strategy)
+为了确保数据一致性并解耦业务逻辑，采用以下三层校验：
+
+| 维度 | 校验主体 | 职责范围 | 触发时机 |
+| :--- | :--- | :--- | :--- |
+| **1. Schema (格式)** | `DTO` (render.Binder) | 必填项、正则、枚举范围、字段预处理。 | API 参数绑定 |
+| **2. Integrity (自洽性)** | `Meta` (ConfigValidator) | 内部逻辑矛盾校验（不依赖外部 DB）。 | 仓库层写入前 |
+| **3. Business (业务)** | `Service` 层 | 全局冲突检查、权限校验、引用存在性。 | 调用仓库前 |
+
+#### 3.2.1 仓库层“最后的防线”
+`BaseRepository` 在执行 `Save` 或 `PatchMeta` 时，必须通过类型断言自动调用 `Meta.Validate(ctx)`。
+- 若校验失败，必须回滚 `db.Cow` 事务并返回 `400 Bad Request` 相关的包装错误。
+
+## 4. 核心接口定义
+```go
+// ConfigValidator 定义了 Meta 模型必须实现的自洽性校验
+type ConfigValidator interface {
+    // Validate 执行不依赖外部环境的内部逻辑校验
+    Validate(ctx context.Context) error
+}
+```
+
+## 5. 实施路线图
+
+### 第一阶段：基础设施实现
+- [ ] 在 `pkg/models/` 定义 `Resource[M, S]` 容器及 `ConfigValidator` 接口。
+- [ ] 在 `pkg/common/` 实现 `BaseRepository[M, S]`，在 `db.Cow` 闭包内集成：
+    - `Generation` 冲突检测。
+    - 自动触发 `ConfigValidator.Validate()`。
+- [ ] 封装标准的错误类型：`ErrConflict` (409) 和 `ErrInvalidConfig` (400)。
+
+### 第二阶段：业务模型重构 (全新系统，不考虑迁移)
+- [ ] **IP 模块**: 重构 `IPPool` 结构，实现 `Validate` 接口校验 CIDR/Gateway 匹配逻辑。
+- [ ] **Site 模块**: 重构同步策略，确保状态上报不干扰策略编辑。
+
+### 第三阶段：Service 层适配
+- [ ] 调整 `Update` 逻辑，要求调用方从 DTO 获取并传递 `Generation`。
+- [ ] 确保业务逻辑校验（如 IP 冲突）在调用 `PatchMeta` 之前完成。
+
+## 6. 优势总结
+- **强一致性**：`Generation` 确保并发编辑时不会覆盖他人工作。
+- **数据合法性**：三层校验确保非法配置无法落地。
+- **高性能写**：冲突域分离避免了高频状态更新阻塞用户配置修改。
