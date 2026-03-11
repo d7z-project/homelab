@@ -79,7 +79,7 @@ func (m *TriggerManager) InitTriggers(ctx context.Context) error {
 
 	count := 0
 	for _, wf := range workflows {
-		if wf.Enabled && wf.CronEnabled && wf.CronExpr != "" {
+		if wf.Meta.Enabled && wf.Meta.CronEnabled && wf.Meta.CronExpr != "" {
 			m.addCronJob(wf)
 			count++
 		}
@@ -99,7 +99,7 @@ func (m *TriggerManager) UpdateTriggers(wf models.Workflow) {
 	}
 
 	// Add new if enabled
-	if wf.Enabled && wf.CronEnabled && wf.CronExpr != "" {
+	if wf.Meta.Enabled && wf.Meta.CronEnabled && wf.Meta.CronExpr != "" {
 		m.addCronJob(wf)
 	}
 }
@@ -117,16 +117,16 @@ func (m *TriggerManager) RemoveTriggers(workflowID string) {
 func (m *TriggerManager) addCronJob(wf models.Workflow) {
 	lockKey := "workflow_cron_" + wf.ID
 	id := wf.ID
-	entryID, err := common.AddDistributedCronJob(m.cron, wf.CronExpr, lockKey, func() {
+	entryID, err := common.AddDistributedCronJob(m.cron, wf.Meta.CronExpr, lockKey, func() {
 		// fetch latest workflow from db to avoid stale struct capture and missed updates
 		latestWf, err := repo.GetWorkflow(context.Background(), id)
-		if err != nil || !latestWf.Enabled || !latestWf.CronEnabled {
+		if err != nil || !latestWf.Meta.Enabled || !latestWf.Meta.CronEnabled {
 			return
 		}
 
-		log.Printf("Triggering cron job for workflow: %s (%s)", latestWf.Name, latestWf.ID)
+		log.Printf("Triggering cron job for workflow: %s (%s)", latestWf.Meta.Name, latestWf.ID)
 		// Use the configured ServiceAccount for execution
-		_, err = TriggerWorkflow(context.Background(), latestWf, latestWf.ServiceAccountID, "Cron", nil)
+		_, err = TriggerWorkflow(context.Background(), latestWf, latestWf.Meta.ServiceAccountID, "Cron", nil)
 		if err != nil {
 			log.Printf("Failed to trigger cron job for %s: %v", latestWf.ID, err)
 		}

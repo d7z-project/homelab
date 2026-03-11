@@ -24,12 +24,12 @@ func TestSiteExportCascadeDeleteAndCleanup(t *testing.T) {
 	service := site.NewSitePoolService(engine, manager)
 
 	// Create Group
-	group := &models.SiteGroup{Name: "Cascade Pool"}
+	group := &models.SiteGroup{ID: "cascade-pool", Meta: models.SiteGroupV1Meta{Name: "Cascade Pool"}}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
 
 	// Create Export
-	export := &models.SiteExport{Name: "Cascade Export", Rule: "true", GroupIDs: []string{group.ID}}
+	export := &models.SiteExport{Meta: models.SiteExportV1Meta{Name: "Cascade Export", Rule: "true", GroupIDs: []string{group.ID}}}
 	err = service.CreateExport(ctx, export)
 	assert.NoError(t, err)
 

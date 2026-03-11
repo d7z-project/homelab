@@ -110,7 +110,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 		t.Error("Expected ServiceAccount to be enabled by default")
 	}
 	sa.Meta.Enabled = false
-	_, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
+	sa, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
 	if err != nil {
 		t.Fatalf("UpdateServiceAccount (disable) failed: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	sa.Meta.Enabled = true
-	_, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
+	sa, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
 	if err != nil {
 		t.Fatalf("UpdateServiceAccount (enable) failed: %v", err)
 	}

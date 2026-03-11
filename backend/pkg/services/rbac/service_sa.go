@@ -10,10 +10,12 @@ import (
 	rbacrepo "homelab/pkg/repositories/rbac"
 	authservice "homelab/pkg/services/auth"
 	"homelab/pkg/services/discovery"
-	"strings"
 )
 
 func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*models.ServiceAccount, error) {
+	if sa.ID == "" {
+		return nil, errors.New("ServiceAccount ID is required")
+	}
 	if err := sa.Bind(nil); err != nil {
 		return nil, err
 	}
@@ -39,16 +41,24 @@ func CreateServiceAccount(ctx context.Context, sa *models.ServiceAccount) (*mode
 	sa.Meta.Token = authservice.HashToken(plainToken)
 	sa.Meta.Enabled = true
 
+	err := rbacrepo.ServiceAccountRepo.Cow(ctx, sa.ID, func(res *models.Resource[models.ServiceAccountV1Meta, models.ServiceAccountV1Status]) error {
+		res.Meta = sa.Meta
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
+
 	message := fmt.Sprintf("Created ServiceAccount: %s (id: %s, enabled: %v)", sa.Meta.Name, sa.ID, sa.Meta.Enabled)
-	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
+	if err != nil {
 		commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.ID, message, false)
 		return nil, err
 	}
 	commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.ID, message, true)
 
 	// Set back plain token for the response
-	sa.Meta.Token = plainToken
-	return sa, nil
+	updated, _ := rbacrepo.GetServiceAccount(ctx, sa.ID)
+	updated.Meta.Token = plainToken
+	return updated, nil
 }
 
 func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAccount) (*models.ServiceAccount, error) {
@@ -58,38 +68,22 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *models.ServiceAcco
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
-	if sa.ID != id {
-		return nil, errors.New("id in body does not match path")
-	}
 
-	existing, err := rbacrepo.GetServiceAccount(ctx, id)
+	err := rbacrepo.ServiceAccountRepo.PatchMeta(ctx, id, sa.Generation, func(m *models.ServiceAccountV1Meta) {
+		m.Name = sa.Meta.Name
+		m.Enabled = sa.Meta.Enabled
+		m.Comments = sa.Meta.Comments
+	})
+
+	message := fmt.Sprintf("Updated ServiceAccount %s", id)
 	if err != nil {
-		return nil, errors.New("ServiceAccount not found")
-	}
-
-	if sa.Meta.Token == "" {
-		sa.Meta.Token = existing.Meta.Token
-	}
-
-	sa.ID = id
-	changes := []string{}
-	if existing.Meta.Name != sa.Meta.Name {
-		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Meta.Name, sa.Meta.Name))
-	}
-	if existing.Meta.Enabled != sa.Meta.Enabled {
-		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Meta.Enabled, sa.Meta.Enabled))
-	}
-	if existing.Meta.Comments != sa.Meta.Comments {
-		changes = append(changes, "comments updated")
-	}
-
-	message := fmt.Sprintf("Updated ServiceAccount %s: %s", sa.ID, strings.Join(changes, ", "))
-	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.ID, message, false)
+		commonaudit.FromContext(ctx).Log("UpdateServiceAccount", id, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("UpdateServiceAccount", sa.ID, message, true)
-	return sa, nil
+
+	updated, _ := rbacrepo.GetServiceAccount(ctx, id)
+	commonaudit.FromContext(ctx).Log("UpdateServiceAccount", id, message, true)
+	return updated, nil
 }
 
 func DeleteServiceAccount(ctx context.Context, id string) error {
@@ -136,26 +130,23 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*models.ServiceAc
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
-	sa, err := rbacrepo.GetServiceAccount(ctx, id)
-	if err != nil {
-		return nil, errors.New("service account not found")
-	}
 
-	token, err := authservice.CreateSAToken(sa.ID)
+	var plainToken string
+	err := rbacrepo.ServiceAccountRepo.PatchMeta(ctx, id, 0, func(m *models.ServiceAccountV1Meta) {
+		token, _ := authservice.CreateSAToken(id)
+		plainToken = token
+		m.Token = authservice.HashToken(plainToken)
+	})
+
+	message := fmt.Sprintf("Reset token for ServiceAccount: %s", id)
 	if err != nil {
+		commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", id, message, false)
 		return nil, err
 	}
 
-	plainToken := token
-	sa.Meta.Token = authservice.HashToken(plainToken)
+	updated, _ := rbacrepo.GetServiceAccount(ctx, id)
+	commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", id, message, true)
 
-	message := fmt.Sprintf("Reset token for ServiceAccount: %s", sa.ID)
-	if err := rbacrepo.SaveServiceAccount(ctx, sa); err != nil {
-		commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", sa.ID, message, false)
-		return nil, err
-	}
-	commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", sa.ID, message, true)
-
-	sa.Meta.Token = plainToken
-	return sa, nil
+	updated.Meta.Token = plainToken
+	return updated, nil
 }

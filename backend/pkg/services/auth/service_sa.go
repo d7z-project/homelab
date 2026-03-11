@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"homelab/pkg/common"
+	"homelab/pkg/models"
 	rbacrepo "homelab/pkg/repositories/rbac"
 	"time"
 
@@ -26,11 +27,9 @@ func UpdateSALastUsed(saID string) {
 
 	go func() {
 		ctx := context.Background()
-		sa, err := rbacrepo.GetServiceAccount(ctx, saID)
-		if err == nil && sa != nil {
-			sa.Status.LastUsedAt = now.Format(time.RFC3339)
-			_ = rbacrepo.SaveServiceAccount(ctx, sa)
-		}
+		_ = rbacrepo.ServiceAccountRepo.UpdateStatus(ctx, saID, func(status *models.ServiceAccountV1Status) {
+			status.LastUsedAt = now.Format(time.RFC3339)
+		})
 	}()
 }
 

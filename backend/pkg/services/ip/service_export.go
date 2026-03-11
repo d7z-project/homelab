@@ -10,6 +10,7 @@ import (
 	repo "homelab/pkg/repositories/ip"
 	"io"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/expr-lang/expr"
@@ -20,9 +21,7 @@ func (s *IPPoolService) CreateExport(ctx context.Context, export *models.IPExpor
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
 		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
 	}
-	if export.ID == "" {
-		export.ID = uuid.NewString()
-	}
+	export.ID = uuid.NewString()
 	export.Status.CreatedAt = time.Now()
 	export.Status.UpdatedAt = time.Now()
 	err := repo.ExportRepo.Cow(ctx, export.ID, func(res *models.IPExport) error { res.Meta = export.Meta; res.Status = export.Status; return nil })
@@ -35,13 +34,10 @@ func (s *IPPoolService) UpdateExport(ctx context.Context, export *models.IPExpor
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
-	old, err := repo.ExportRepo.Get(ctx, export.ID)
-	if err != nil {
-		return err
-	}
-	export.Status.CreatedAt = old.Status.CreatedAt
-	export.Status.UpdatedAt = time.Now()
-	err = repo.ExportRepo.Cow(ctx, export.ID, func(res *models.IPExport) error { res.Meta = export.Meta; res.Status = export.Status; return nil })
+
+	err := repo.ExportRepo.PatchMeta(ctx, export.ID, export.Generation, func(m *models.IPExportV1Meta) {
+		*m = export.Meta
+	})
 	commonaudit.FromContext(ctx).Log("UpdateIPExport", export.Meta.Name, "Updated", err == nil)
 	return err
 }
@@ -62,38 +58,29 @@ func (s *IPPoolService) DeleteExport(ctx context.Context, id string) error {
 }
 
 func (s *IPPoolService) GetExport(ctx context.Context, id string) (*models.IPExport, error) {
+	resource := "network/ip/export/" + id
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) && !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
+	}
 	return repo.ExportRepo.Get(ctx, id)
 }
 
 func (s *IPPoolService) ScanExports(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPExport], error) {
-	res, err := repo.ExportRepo.List(ctx, cursor, limit*2, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var filtered []models.IPExport
 	perms := commonauth.PermissionsFromContext(ctx)
-	for _, e := range res.Items {
-		resource := "network/ip/export/" + e.ID
-		if perms.IsAllowed("network/ip") || perms.IsAllowed(resource) {
-			filtered = append(filtered, e)
+	hasGlobal := perms.IsAllowed("network/ip")
+	search = strings.ToLower(search)
+
+	filter := func(e *models.IPExport) bool {
+		if !hasGlobal && !perms.IsAllowed("network/ip/export/"+e.ID) {
+			return false
 		}
-		if len(filtered) >= limit {
-			return &models.PaginationResponse[models.IPExport]{
-				Items:      filtered,
-				NextCursor: res.NextCursor,
-				HasMore:    res.HasMore,
-				Total:      res.Total,
-			}, nil
+		if search != "" {
+			return strings.Contains(strings.ToLower(e.Meta.Name), search) || strings.Contains(strings.ToLower(e.ID), search)
 		}
+		return true
 	}
 
-	return &models.PaginationResponse[models.IPExport]{
-		Items:      filtered,
-		NextCursor: res.NextCursor,
-		HasMore:    res.HasMore,
-		Total:      res.Total,
-	}, nil
+	return repo.ExportRepo.List(ctx, cursor, limit, filter)
 }
 
 func (s *IPPoolService) PreviewExport(ctx context.Context, req *models.IPExportPreviewRequest) ([]models.IPPoolEntry, error) {

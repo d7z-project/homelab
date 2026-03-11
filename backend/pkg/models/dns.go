@@ -9,8 +9,9 @@ import (
 )
 
 type DomainV1Meta struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
+	Name        string `json:"name"`
+	Enabled     bool   `json:"enabled"`
+	Description string `json:"description"`
 }
 
 func (m *DomainV1Meta) Validate(ctx context.Context) error {

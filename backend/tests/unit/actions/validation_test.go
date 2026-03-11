@@ -36,12 +36,10 @@ func TestActionsRegexValidation(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 
 	// Create common service account for tests
-	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
-	}})
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 
 	t.Run("Variable Regex Validation", func(t *testing.T) {
-		workflow := &models.Workflow{
-			ID:               "regex-var-wf",
+		workflow := &models.Workflow{ID: "regex-var-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Regex Var Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -52,9 +50,9 @@ func TestActionsRegexValidation(t *testing.T) {
 				},
 			},
 			Steps: []models.Step{
-				{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "env is ${{ vars.env }}"}},
+				{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "env is ${{ vars.env  }}"}},
 			},
-		}
+		}}
 
 		ctx := tests.SetupMockRootContext()
 
@@ -65,7 +63,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		} else {
 			for i := 0; i < 50; i++ {
 				instance, _ := actions.GetTaskInstance(ctx, instanceID)
-				if instance != nil && (instance.Status == "Success" || instance.Status == "Failed") {
+				if instance != nil && (instance.Status.Status == "Success" || instance.Status.Status == "Failed") {
 					break
 				}
 				time.Sleep(10 * time.Millisecond)
@@ -80,8 +78,7 @@ func TestActionsRegexValidation(t *testing.T) {
 	})
 
 	t.Run("Step Parameter Regex Validation", func(t *testing.T) {
-		workflow := &models.Workflow{
-			ID:               "regex-param-wf",
+		workflow := &models.Workflow{ID: "regex-param-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Regex Param Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -94,7 +91,7 @@ func TestActionsRegexValidation(t *testing.T) {
 					},
 				},
 			},
-		}
+		}}
 
 		ctx := tests.SetupMockRootContext()
 		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
@@ -106,23 +103,22 @@ func TestActionsRegexValidation(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 10; i++ {
 			instance, _ = actions.GetTaskInstance(ctx, instanceID)
-			if instance != nil && instance.Status != "Running" {
+			if instance != nil && instance.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		if instance == nil || instance.Status != "Failed" {
-			t.Errorf("Expected status Failed due to regex mismatch, got %v", instance.Status)
+		if instance == nil || instance.Status.Status != "Failed" {
+			t.Errorf("Expected status Failed due to regex mismatch, got %v", instance.Status.Status)
 		}
-		if instance.Error == "" || !strings.Contains(instance.Error, "does not match required format") {
-			t.Errorf("Expected regex validation error message, got: %q", instance.Error)
+		if instance.Status.Error == "" || !strings.Contains(instance.Status.Error, "does not match required format") {
+			t.Errorf("Expected regex validation error message, got: %q", instance.Status.Error)
 		}
 	})
 
 	t.Run("Failure Step Index Persistence", func(t *testing.T) {
-		workflow := &models.Workflow{
-			ID:               "fail-step-wf",
+		workflow := &models.Workflow{ID: "fail-step-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Fail Step Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -143,7 +139,7 @@ func TestActionsRegexValidation(t *testing.T) {
 					Params: map[string]string{"message": "step 3"},
 				},
 			},
-		}
+		}}
 
 		ctx := tests.SetupMockRootContext()
 		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
@@ -155,36 +151,35 @@ func TestActionsRegexValidation(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(ctx, instanceID)
-			if instance != nil && instance.Status != "Running" {
+			if instance != nil && instance.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		if instance == nil || instance.Status != "Failed" {
-			t.Fatalf("Expected status Failed, got %v", instance.Status)
+		if instance == nil || instance.Status.Status != "Failed" {
+			t.Fatalf("Expected status Failed, got %v", instance.Status.Status)
 		}
 
 		// CurrentStep should be 2 (s2 failed), not 4 (len(Steps) + 1)
-		if instance.CurrentStep != 2 {
-			t.Errorf("Expected CurrentStep to be 2 (failed step index), got %d", instance.CurrentStep)
+		if instance.Status.CurrentStep != 2 {
+			t.Errorf("Expected CurrentStep to be 2 (failed step index), got %d", instance.Status.CurrentStep)
 		}
 	})
 
 	t.Run("ValidateWorkflow Parameter Regex", func(t *testing.T) {
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Invalid Param WF",
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
-				{
-					ID:   "s1",
+				{ID: "s1", 
 					Type: "core/sleep",
 					Params: map[string]string{
 						"duration": "invalid",
 					},
 				},
 			},
-		}
+		}}
 
 		ctx := tests.SetupMockRootContext()
 		err := actions.ValidateWorkflow(ctx, workflow)
@@ -195,10 +190,10 @@ func TestActionsRegexValidation(t *testing.T) {
 		}
 
 		// Template variable should bypass static validation
-		workflow.Vars = map[string]models.VarDefinition{
+		workflow.Meta.Vars = map[string]models.VarDefinition{
 			"timeout": {Required: true},
 		}
-		workflow.Steps[0].Params["duration"] = "${{ vars.timeout }}"
+		workflow.Meta.Steps[0].Params["duration"] = "${{ vars.timeout }}"
 		err = actions.ValidateWorkflow(ctx, workflow)
 		if err != nil {
 			t.Errorf("Expected ValidateWorkflow to skip validation for template variable, but it failed: %v", err)
@@ -209,11 +204,9 @@ func TestActionsRegexValidation(t *testing.T) {
 		teardown := tests.SetupTestDB()
 		defer teardown()
 
-		_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
-		}})
+		_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 
-		workflow := &models.Workflow{
-			ID:               "optional-regex-wf",
+		workflow := &models.Workflow{ID: "optional-regex-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Optional Regex Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -233,23 +226,25 @@ func TestActionsRegexValidation(t *testing.T) {
 					},
 				},
 			},
-		}
+		}}
 
 		ctx := tests.SetupMockRootContext()
 
 		// Create a dummy workflow to satisfy lookup validation
-		dummyWf := &models.Workflow{
+		dummyWf := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Dummy",
 			ServiceAccountID: "sa",
-			Steps:            []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hi"}}},
-		}
+			Steps: []models.Step{
+				{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hi"}},
+			},
+		}}
 		var errWf error
 		dummyWf, errWf = actions.CreateWorkflow(ctx, dummyWf)
 		if errWf != nil {
 			t.Fatalf("Failed to create dummy workflow: %v", errWf)
 		}
 
-		workflow.Steps[0].Params["workflow_id"] = dummyWf.ID
+		workflow.Meta.Steps[0].Params["workflow_id"] = dummyWf.ID
 
 		// 1. Test ValidateWorkflow (Step Parameters)
 		err := actions.ValidateWorkflow(ctx, workflow)
@@ -267,7 +262,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		} else if err == nil {
 			for i := 0; i < 50; i++ {
 				instance, _ := actions.GetTaskInstance(ctx, instanceID2)
-				if instance != nil && (instance.Status == "Success" || instance.Status == "Failed") {
+				if instance != nil && (instance.Status.Status == "Success" || instance.Status.Status == "Failed") {
 					break
 				}
 				time.Sleep(10 * time.Millisecond)
@@ -282,8 +277,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		ctx = tests.SetupMockRootContext()
 
 		// Re-create common service account for this subtest since DB was reset
-		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
-		}})
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 
 		// Register a test lookup
 		discovery.Register("test/colors", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
@@ -303,17 +297,16 @@ func TestActionsRegexValidation(t *testing.T) {
 		// Define a processor that uses this lookup
 		actions.Register(&LookupTestProcessor{})
 
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Lookup Test WF",
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
-				{
-					ID:     "s1",
+				{ID: "s1", 
 					Type:   "test/lookup",
 					Params: map[string]string{"color": "red"},
 				},
 			},
-		}
+		}}
 
 		// 1. Valid lookup value
 		err := actions.ValidateWorkflow(ctx, workflow)
@@ -322,7 +315,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		}
 
 		// 2. Invalid lookup value
-		workflow.Steps[0].Params["color"] = "green"
+		workflow.Meta.Steps[0].Params["color"] = "green"
 		err = actions.ValidateWorkflow(ctx, workflow)
 		if err == nil {
 			t.Error("Expected error for invalid lookup value, got nil")
@@ -331,8 +324,8 @@ func TestActionsRegexValidation(t *testing.T) {
 		}
 
 		// 3. Template variable should bypass lookup validation
-		workflow.Steps[0].Params["color"] = "${{ vars.fav_color }}"
-		workflow.Vars = map[string]models.VarDefinition{
+		workflow.Meta.Steps[0].Params["color"] = "${{ vars.fav_color }}"
+		workflow.Meta.Vars = map[string]models.VarDefinition{
 			"fav_color": {Required: true},
 		}
 		err = actions.ValidateWorkflow(ctx, workflow)
@@ -348,30 +341,30 @@ func TestActionsRegexValidation(t *testing.T) {
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 		actions.Register(&tests.MockProcessor{})
 
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name: "Output Test", ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock", Params: map[string]string{"input_val": "x"}},
 				{ID: "s2", Type: "core/logger", Params: map[string]string{"message": ""}},
 			},
-		}
+		}}
 
 		// 1. Strict Check: Reference unknown output key (should fail)
-		workflow.Steps[1].Params["message"] = "${{ steps.s1.outputs.invalid_key }}"
+		workflow.Meta.Steps[1].Params["message"] = "${{ steps.s1.outputs.invalid_key }}"
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err == nil || !strings.Contains(err.Error(), "references unknown output 'invalid_key'") {
 			t.Errorf("Expected error for unknown output key, got: %v", err)
 		}
 
 		// 2. Optional Check: Reference unknown output key with '?' (should pass)
-		workflow.Steps[1].Params["message"] = "${{ steps.s1.outputs.invalid_key ? }}"
+		workflow.Meta.Steps[1].Params["message"] = "${{ steps.s1.outputs.invalid_key ? }}"
 		err = actions.ValidateWorkflow(ctx, workflow)
 		if err != nil {
 			t.Errorf("Expected success for optional unknown output key, got: %v", err)
 		}
 
 		// 3. Temporal Check with Optional: Reference future step even with '?' (should fail)
-		workflow.Steps[0].Params["input_val"] = "${{ steps.s2.outputs.status ? }}"
+		workflow.Meta.Steps[0].Params["input_val"] = "${{ steps.s2.outputs.status ? }}"
 		err = actions.ValidateWorkflow(ctx, workflow)
 		if err == nil || !strings.Contains(err.Error(), "references unknown or future step 's2'") {
 			t.Errorf("Expected error for future step reference even with '?', got: %v", err)
@@ -385,16 +378,14 @@ func TestActionsRegexValidation(t *testing.T) {
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 
 		wfID := "recursive_wf"
-		workflow := &models.Workflow{
-			ID: wfID, Name: "Recursion", ServiceAccountID: "sa",
+		workflow := &models.Workflow{ID: "recursive_wf", Meta: models.WorkflowV1Meta{Name: "Recursion", ServiceAccountID: "sa",
 			Steps: []models.Step{
-				{
-					ID:     "call_self",
+				{ID: "s1", 
 					Type:   "core/workflow_call",
 					Params: map[string]string{"workflow_id": wfID},
 				},
 			},
-		}
+		}}
 
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err == nil || !strings.Contains(err.Error(), "recursive workflow call detected") {
@@ -408,13 +399,13 @@ func TestActionsRegexValidation(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "task_1", Meta: models.WorkflowV1Meta{
 			Name: "Duplicate ID", ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{ID: "task_1", Type: "core/logger", Params: map[string]string{"message": "a"}},
 				{ID: "task_1", Type: "core/logger", Params: map[string]string{"message": "b"}},
 			},
-		}
+		}}
 
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err == nil || !strings.Contains(err.Error(), "duplicate ID 'task_1'") {

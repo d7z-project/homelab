@@ -31,6 +31,11 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPS
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
 		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
 	}
+
+	if policy.ID != "" && !strings.HasPrefix(policy.ID, "sync_") {
+		return fmt.Errorf("%w: id for sync policy must start with 'sync_'", common.ErrBadRequest)
+	}
+
 	if policy.ID == "" {
 		for i := 0; i < 10; i++ { // 最多重试 10 次
 			newID := generatePolicyID()
@@ -58,18 +63,19 @@ func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *models.IPS
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
 		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
 	}
-	old, err := repo.SyncPolicyRepo.Get(ctx, policy.ID)
-	if err != nil {
-		return err
-	}
-	policy.Status.CreatedAt = old.Status.CreatedAt
-	policy.Status.UpdatedAt = time.Now()
-	err = repo.SyncPolicyRepo.Cow(ctx, policy.ID, func(res *models.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
+
+	err := repo.SyncPolicyRepo.PatchMeta(ctx, policy.ID, policy.Generation, func(m *models.IPSyncPolicyV1Meta) {
+		*m = policy.Meta
+	})
+
 	if err == nil {
-		if policy.Meta.Enabled {
-			s.addCronJob(*policy)
-		} else {
-			s.removeCronJob(policy.ID)
+		updated, _ := repo.SyncPolicyRepo.Get(ctx, policy.ID)
+		if updated != nil {
+			if updated.Meta.Enabled {
+				s.addCronJob(*updated)
+			} else {
+				s.removeCronJob(updated.ID)
+			}
 		}
 		common.NotifyCluster(ctx, common.EventIPSyncPolicyChanged, policy.ID)
 	}
@@ -78,6 +84,9 @@ func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *models.IPS
 }
 
 func (s *IPPoolService) DeleteSyncPolicy(ctx context.Context, id string) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
+	}
 	old, err := repo.SyncPolicyRepo.Get(ctx, id)
 	if err != nil {
 		return err
@@ -92,10 +101,16 @@ func (s *IPPoolService) DeleteSyncPolicy(ctx context.Context, id string) error {
 }
 
 func (s *IPPoolService) GetSyncPolicy(ctx context.Context, id string) (*models.IPSyncPolicy, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return nil, fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
+	}
 	return repo.SyncPolicyRepo.Get(ctx, id)
 }
 
 func (s *IPPoolService) ScanSyncPolicies(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPSyncPolicy], error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
+		return nil, fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
+	}
 	res, err := repo.SyncPolicyRepo.List(ctx, cursor, limit, nil)
 	if err != nil {
 		return nil, err
@@ -112,12 +127,7 @@ func (s *IPPoolService) ScanSyncPolicies(ctx context.Context, cursor string, lim
 			}
 		}
 	}
-	return &models.PaginationResponse[models.IPSyncPolicy]{
-		Items:      res.Items,
-		NextCursor: res.NextCursor,
-		HasMore:    res.HasMore,
-		Total:      res.Total,
-	}, nil
+	return res, nil
 }
 
 func (s *IPPoolService) Sync(ctx context.Context, id string) error {

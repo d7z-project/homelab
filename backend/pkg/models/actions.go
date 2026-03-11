@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,9 +23,8 @@ type VarDefinition struct {
 	RegexBackend  string `json:"regexBackend"`  // 后端校验正则 (可选)
 }
 
-// Workflow 代表一个预定义的任务编排模板
-type Workflow struct {
-	ID               string                   `json:"id"`
+// WorkflowV1Meta 代表一个预定义的任务编排模板的配置
+type WorkflowV1Meta struct {
 	Name             string                   `json:"name"`
 	Description      string                   `json:"description"`
 	Enabled          bool                     `json:"enabled"`          // 是否启用 (禁用时 Cron/Webhook/手动 均不可触发)
@@ -36,42 +36,31 @@ type Workflow struct {
 	WebhookToken     string                   `json:"webhookToken"`     // Webhook 触发令牌
 	Vars             map[string]VarDefinition `json:"vars"`             // 工作流启动时接受的变量定义
 	Steps            []Step                   `json:"steps"`
-	CreatedAt        time.Time                `json:"createdAt"`
-	UpdatedAt        time.Time                `json:"updatedAt"`
 }
 
-func (w *Workflow) Bind(r *http.Request) error {
-	w.Name = strings.TrimSpace(w.Name)
-	if w.Name == "" {
-		return errors.New("workflow name is required")
-	}
-	if w.ServiceAccountID == "" {
-		return errors.New("service account is required")
-	}
-
-	// Validate Variable Keys
-	for k, v := range w.Vars {
+func (m *WorkflowV1Meta) Validate(ctx context.Context) error {
+	for k, v := range m.Vars {
 		if !ActionIdRegex.MatchString(k) {
 			return fmt.Errorf("invalid variable key '%s': only lowercase letters, numbers and underscores are allowed", k)
 		}
-		if w.CronEnabled && v.Required && v.Default == "" {
+		if m.CronEnabled && v.Required && v.Default == "" {
 			return fmt.Errorf("cron job cannot be enabled when workflow has required variable without default: %s", k)
 		}
 	}
 
-	if w.CronEnabled {
+	if m.CronEnabled {
 		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-		if _, err := parser.Parse(w.CronExpr); err != nil {
+		if _, err := parser.Parse(m.CronExpr); err != nil {
 			return fmt.Errorf("invalid cron expression: %v", err)
 		}
 	}
 
-	if len(w.Steps) == 0 {
+	if len(m.Steps) == 0 {
 		return errors.New("at least one step is required")
 	}
 
 	stepIDs := make(map[string]bool)
-	for i, step := range w.Steps {
+	for i, step := range m.Steps {
 		if step.ID == "" {
 			return fmt.Errorf("step %d: ID is required", i+1)
 		}
@@ -90,6 +79,25 @@ func (w *Workflow) Bind(r *http.Request) error {
 	return nil
 }
 
+func (m *WorkflowV1Meta) Bind(r *http.Request) error {
+	m.Name = strings.TrimSpace(m.Name)
+	if m.Name == "" {
+		return errors.New("workflow name is required")
+	}
+	if m.ServiceAccountID == "" {
+		return errors.New("service account is required")
+	}
+	return nil
+}
+
+type WorkflowV1Status struct {
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// Workflow 代表一个预定义的任务编排模板
+type Workflow = Resource[WorkflowV1Meta, WorkflowV1Status]
+
 // Step 代表 Workflow 中的一个步骤
 type Step struct {
 	ID     string            `json:"id"`     // 步骤 ID，用于 ${{ steps.ID.outputs.key }}
@@ -105,34 +113,42 @@ type StepTiming struct {
 	FinishedAt *time.Time `json:"finishedAt,omitempty"`
 }
 
-// TaskInstance 代表一个正在执行或已完成的任务实例
-type TaskInstance struct {
-	ID               string              `json:"id"`
-	WorkflowID       string              `json:"workflowId"`
-	Status           TaskStatus          `json:"status"`           // Pending, Running, Success, Failed, Cancelled
-	CurrentStep      int                 `json:"currentStep"`      // 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
-	Trigger          string              `json:"trigger"`          // Manual, Cron, Webhook
-	UserID           string              `json:"userId"`           // 触发者 ID
-	ServiceAccountID string              `json:"serviceAccountId"` // 执行该工作流时使用的身份 (Impersonation)
-	Inputs           map[string]string   `json:"inputs"`           // 实际传入的变量值
-	Workspace        string              `json:"workspace"`
-	StartedAt        time.Time           `json:"startedAt"`
-	FinishedAt       *time.Time          `json:"finishedAt,omitempty"`
-	Error            string              `json:"error,omitempty"`
-	Outputs          map[string]string   `json:"outputs"`     // 任务最终输出
-	Logs             []LogEntry          `json:"logs"`        // 任务日志
-	Steps            []Step              `json:"steps"`       // 运行时的步骤快照 (防篡改)
-	StepTimings      map[int]*StepTiming `json:"stepTimings"` // 步骤执行耗时追踪
+type TaskInstanceV1Meta struct {
+	WorkflowID       string            `json:"workflowId"`
+	Trigger          string            `json:"trigger"`          // Manual, Cron, Webhook
+	UserID           string            `json:"userId"`           // 触发者 ID
+	ServiceAccountID string            `json:"serviceAccountId"` // 执行该工作流时使用的身份 (Impersonation)
+	Inputs           map[string]string `json:"inputs"`           // 实际传入的变量值
+	Workspace        string            `json:"workspace"`
+	Steps            []Step            `json:"steps"` // 运行时的步骤快照 (防篡改)
 }
+
+func (m *TaskInstanceV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+func (m *TaskInstanceV1Meta) Bind(r *http.Request) error {
+	return nil
+}
+
+type TaskInstanceV1Status struct {
+	Status      TaskStatus          `json:"status"`      // Pending, Running, Success, Failed, Cancelled
+	CurrentStep int                 `json:"currentStep"` // 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
+	StartedAt   time.Time           `json:"startedAt"`
+	FinishedAt  *time.Time          `json:"finishedAt,omitempty"`
+	Error       string              `json:"error,omitempty"`
+	Outputs     map[string]string   `json:"outputs"`     // 任务最终输出
+	Logs        []LogEntry          `json:"logs"`        // 任务日志
+	StepTimings map[int]*StepTiming `json:"stepTimings"` // 步骤执行耗时追踪
+}
+
+// TaskInstance 代表一个正在执行或已完成的任务实例
+type TaskInstance = Resource[TaskInstanceV1Meta, TaskInstanceV1Status]
 
 type LogEntry struct {
 	Timestamp time.Time `json:"timestamp"`
 	StepID    string    `json:"stepId"` // 关联的步骤 ID，空字符串代表引擎级日志
 	Message   string    `json:"message"`
-}
-
-func (t *TaskInstance) Bind(r *http.Request) error {
-	return nil
 }
 
 // ParamDefinition 描述一个参数的规格

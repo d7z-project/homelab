@@ -7,12 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsServiceAccountV1Meta } from './modelsServiceAccountV1Meta';
+import { ModelsServiceAccountV1Status } from './modelsServiceAccountV1Status';
 
 export interface ModelsServiceAccount {
-  comments?: string;
-  enabled?: boolean;
+  /**
+   * Configuration version, increments only on Meta changes
+   */
+  generation?: number;
   id?: string;
-  lastUsedAt?: string;
-  name?: string;
-  token?: string;
+  meta?: ModelsServiceAccountV1Meta;
+  /**
+   * Total object version, increments on any change (Meta/Status)
+   */
+  resourceVersion?: number;
+  status?: ModelsServiceAccountV1Status;
 }

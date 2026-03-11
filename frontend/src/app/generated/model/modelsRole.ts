@@ -7,11 +7,18 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsPolicyRule } from './modelsPolicyRule';
+import { ModelsRoleV1Meta } from './modelsRoleV1Meta';
 
 export interface ModelsRole {
-  comments?: string;
+  /**
+   * Configuration version, increments only on Meta changes
+   */
+  generation?: number;
   id?: string;
-  name?: string;
-  rules?: Array<ModelsPolicyRule>;
+  meta?: ModelsRoleV1Meta;
+  /**
+   * Total object version, increments on any change (Meta/Status)
+   */
+  resourceVersion?: number;
+  status?: object;
 }

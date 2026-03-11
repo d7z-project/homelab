@@ -15,8 +15,14 @@ import (
 )
 
 func ScanRecords(ctx context.Context, domainID string, cursor string, limit int, search string) (*models.PaginationResponse[models.Record], error) {
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/dns") {
-		return nil, fmt.Errorf("%w: network/dns", commonauth.ErrPermissionDenied)
+	dom, err := dnsrepo.DomainRepo.Get(ctx, domainID)
+	if err != nil {
+		return nil, err
+	}
+
+	perms := commonauth.PermissionsFromContext(ctx)
+	if !perms.IsAllowed("network/dns") && !perms.IsAllowed("network/dns/"+dom.Meta.Name) {
+		return nil, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, dom.Meta.Name)
 	}
 	return dnsrepo.ScanRecords(ctx, domainID, cursor, limit, search)
 }
@@ -87,31 +93,41 @@ func UpdateRecord(ctx context.Context, id string, record *models.Record) (*model
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resNew)
 	}
 
-	record.ID = id
-	record.Meta.DomainID = existing.Meta.DomainID
-	if existing.Meta.Type == "SOA" {
-		if record.Meta.Type != "SOA" || record.Meta.Name != "@" {
-			return nil, errors.New("invalid SOA update")
-		}
-		m, r, _, err := parseSOA(record.Meta.Value)
-		if err != nil {
-			return nil, err
-		}
-		record.Meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, r, incrementSerial(existing.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
-		record.Meta.Enabled = true
-	}
 	if err := validateRecord(ctx, record); err != nil {
 		return nil, err
 	}
-	if err := dnsrepo.RecordRepo.Cow(ctx, record.ID, func(res *models.Record) error { res.Meta = record.Meta; res.Status = record.Status; return nil }); err != nil {
+
+	err = dnsrepo.RecordRepo.PatchMeta(ctx, id, record.Generation, func(meta *models.RecordV1Meta) {
+		meta.Name = record.Meta.Name
+		meta.Type = record.Meta.Type
+		meta.Value = record.Meta.Value
+		meta.TTL = record.Meta.TTL
+		meta.Enabled = record.Meta.Enabled
+		meta.Comments = record.Meta.Comments
+
+		if existing.Meta.Type == "SOA" {
+			// SOA specific logic handled inside patch to ensure atomicity and correct versioning
+			meta.Name = "@"
+			meta.Type = "SOA"
+			meta.Enabled = true
+			if mName, rName, _, err := parseSOA(record.Meta.Value); err == nil {
+				meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", mName, rName, incrementSerial(existing.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+			}
+		}
+	})
+
+	if err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateRecord", record.Meta.Name+"."+dom.Meta.Name, "Failed", false)
 		return nil, err
 	}
+
 	if existing.Meta.Type != "SOA" {
 		updateSOASerial(ctx, dom.ID)
 	}
+
+	updated, _ := dnsrepo.RecordRepo.Get(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateRecord", record.Meta.Name+"."+dom.Meta.Name, "Updated", true)
-	return record, nil
+	return updated, nil
 }
 
 func DeleteRecord(ctx context.Context, id string) error {

@@ -7,19 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsSiteExportV1Meta } from './modelsSiteExportV1Meta';
+import { ModelsSiteExportV1Status } from './modelsSiteExportV1Status';
 
 export interface ModelsSiteExport {
-  createdAt?: string;
-  description?: string;
   /**
-   * 依赖的域名池 ID 列表
+   * Configuration version, increments only on Meta changes
    */
-  groupIds?: Array<string>;
+  generation?: number;
   id?: string;
-  name?: string;
+  meta?: ModelsSiteExportV1Meta;
   /**
-   * go-expr 表达式
+   * Total object version, increments on any change (Meta/Status)
    */
-  rule?: string;
-  updatedAt?: string;
+  resourceVersion?: number;
+  status?: ModelsSiteExportV1Status;
 }

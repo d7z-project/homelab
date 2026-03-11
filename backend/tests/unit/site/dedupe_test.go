@@ -26,7 +26,7 @@ func TestSiteExportDeduplication(t *testing.T) {
 	service := site.NewSitePoolService(nil, nil)
 
 	// 1. Setup pool with redundant rules
-	group := &models.SiteGroup{Name: "Dedupe Pool"}
+	group := &models.SiteGroup{ID: "dedupe-pool", Meta: models.SiteGroupV1Meta{Name: "Dedupe Pool"}}
 	_ = service.CreateGroup(ctx, group)
 
 	// rules:
@@ -41,9 +41,11 @@ func TestSiteExportDeduplication(t *testing.T) {
 	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "bing.com", NewTags: []string{"tag4"}}, "add")
 
 	export := &models.SiteExport{
-		Name:     "Dedupe Export",
-		Rule:     "true",
-		GroupIDs: []string{group.ID},
+		Meta: models.SiteExportV1Meta{
+			Name:     "Dedupe Export",
+			Rule:     "true",
+			GroupIDs: []string{group.ID},
+		},
 	}
 	_ = service.CreateExport(ctx, export)
 

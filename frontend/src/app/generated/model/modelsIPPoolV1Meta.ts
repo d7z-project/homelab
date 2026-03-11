@@ -8,18 +8,7 @@
  * Do not edit the class manually.
  */
 
-export interface ModelsIPGroup {
-  /**
-   * 数据指纹，用于缓存失效
-   */
-  checksum?: string;
-  createdAt?: string;
+export interface ModelsIPPoolV1Meta {
   description?: string;
-  /**
-   * 池中条目总数
-   */
-  entryCount?: number;
-  id?: string;
   name?: string;
-  updatedAt?: string;
 }

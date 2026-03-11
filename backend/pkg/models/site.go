@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,11 +12,10 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-var siteIDRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
+var siteIDRegex = regexp.MustCompile(`^[a-z0-9_\-]+$`)
 
-// SiteSyncPolicy 代表一个域名数据同步策略
-type SiteSyncPolicy struct {
-	ID            string            `json:"id"`
+// SiteSyncPolicyV1Meta 代表一个域名数据同步策略的配置
+type SiteSyncPolicyV1Meta struct {
 	Name          string            `json:"name"`
 	Description   string            `json:"description"`
 	SourceURL     string            `json:"sourceUrl"`
@@ -25,49 +25,57 @@ type SiteSyncPolicy struct {
 	TargetGroupID string            `json:"targetGroupId"`
 	Cron          string            `json:"cron"`
 	Enabled       bool              `json:"enabled"`
-	CreatedAt     time.Time         `json:"createdAt"`
-	UpdatedAt     time.Time         `json:"updatedAt"`
-	LastRunAt     time.Time         `json:"lastRunAt"`
-	LastStatus    TaskStatus        `json:"lastStatus"` // "success", "failed"
-	Progress      float64           `json:"progress"`
-	ErrorMessage  string            `json:"errorMessage"`
 }
 
-func (p *SiteSyncPolicy) Bind(r *http.Request) error {
-	p.Name = strings.TrimSpace(p.Name)
-	if p.Name == "" {
+func (m *SiteSyncPolicyV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+func (m *SiteSyncPolicyV1Meta) Bind(r *http.Request) error {
+	m.Name = strings.TrimSpace(m.Name)
+	if m.Name == "" {
 		return errors.New("name is required")
 	}
-	if p.ID != "" && !siteIDRegex.MatchString(p.ID) {
-		return fmt.Errorf("invalid id format: %s", p.ID)
-	}
-	p.SourceURL = strings.TrimSpace(p.SourceURL)
-	if p.SourceURL == "" {
+	m.SourceURL = strings.TrimSpace(m.SourceURL)
+	if m.SourceURL == "" {
 		return errors.New("sourceUrl is required")
 	}
-	if p.TargetGroupID == "" {
+	if m.TargetGroupID == "" {
 		return errors.New("targetGroupId is required")
 	}
-	p.Cron = strings.TrimSpace(p.Cron)
-	if p.Cron != "" {
+	m.Cron = strings.TrimSpace(m.Cron)
+	if m.Cron != "" {
 		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-		if _, err := parser.Parse(p.Cron); err != nil {
+		if _, err := parser.Parse(m.Cron); err != nil {
 			return fmt.Errorf("invalid cron expression: %w", err)
 		}
 	} else {
 		return errors.New("cron expression is required")
 	}
-	if p.Format == "" {
-		p.Format = "text"
+	if m.Format == "" {
+		m.Format = "text"
 	}
-	if p.Mode == "" {
-		p.Mode = "overwrite"
+	if m.Mode == "" {
+		m.Mode = "overwrite"
 	}
-	if p.Config == nil {
-		p.Config = make(map[string]string)
+	if m.Config == nil {
+		m.Config = make(map[string]string)
 	}
 	return nil
 }
+
+// SiteSyncPolicyV1Status 代表域名同步策略的状态
+type SiteSyncPolicyV1Status struct {
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+	LastRunAt    time.Time  `json:"lastRunAt"`
+	LastStatus   TaskStatus `json:"lastStatus"` // "success", "failed"
+	Progress     float64    `json:"progress"`
+	ErrorMessage string     `json:"errorMessage"`
+}
+
+// SiteSyncPolicy 代表一个域名同步策略资源
+type SiteSyncPolicy = Resource[SiteSyncPolicyV1Meta, SiteSyncPolicyV1Status]
 
 // RuleType 定义
 const (
@@ -77,55 +85,69 @@ const (
 	RuleTypeFull    uint8 = 3
 )
 
-// SiteGroup 代表一个域名池的元数据
-type SiteGroup struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Checksum    string    `json:"checksum"`   // 数据指纹
-	EntryCount  int64     `json:"entryCount"` // 条目总数
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+// SiteGroupV1Meta 代表一个域名池的配置
+type SiteGroupV1Meta struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
-func (g *SiteGroup) Bind(r *http.Request) error {
-	g.Name = strings.TrimSpace(g.Name)
-	if g.Name == "" {
+func (m *SiteGroupV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+func (m *SiteGroupV1Meta) Bind(r *http.Request) error {
+	m.Name = strings.TrimSpace(m.Name)
+	if m.Name == "" {
 		return errors.New("name is required")
-	}
-	if g.ID != "" && !siteIDRegex.MatchString(g.ID) {
-		return fmt.Errorf("invalid id format: %s", g.ID)
 	}
 	return nil
 }
 
-// SiteExport 代表一个动态导出规则
-type SiteExport struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Rule        string    `json:"rule"`     // go-expr 表达式
-	GroupIDs    []string  `json:"groupIds"` // 依赖的域名池 ID 列表
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+// SiteGroupV1Status 代表一个域名池的状态
+type SiteGroupV1Status struct {
+	Checksum   string    `json:"checksum"`   // 数据指纹
+	EntryCount int64     `json:"entryCount"` // 条目总数
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
-func (e *SiteExport) Bind(r *http.Request) error {
-	e.Name = strings.TrimSpace(e.Name)
-	if e.Name == "" {
+// SiteGroup 代表一个域名池资源
+type SiteGroup = Resource[SiteGroupV1Meta, SiteGroupV1Status]
+
+// SiteExportV1Meta 代表一个动态导出规则的配置
+type SiteExportV1Meta struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Rule        string   `json:"rule"`     // go-expr 表达式
+	GroupIDs    []string `json:"groupIds"` // 依赖的域名池 ID 列表
+}
+
+func (m *SiteExportV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+func (m *SiteExportV1Meta) Bind(r *http.Request) error {
+	m.Name = strings.TrimSpace(m.Name)
+	if m.Name == "" {
 		return errors.New("name is required")
 	}
-	if e.ID != "" && !siteIDRegex.MatchString(e.ID) {
-		return fmt.Errorf("invalid id format: %s", e.ID)
-	}
-	if e.Rule == "" {
+	if m.Rule == "" {
 		return errors.New("rule expression is required")
 	}
-	if len(e.GroupIDs) == 0 {
+	if len(m.GroupIDs) == 0 {
 		return errors.New("at least one source group is required")
 	}
 	return nil
 }
+
+// SiteExportV1Status 代表一个动态导出规则的状态
+type SiteExportV1Status struct {
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// SiteExport 代表一个动态导出规则资源
+type SiteExport = Resource[SiteExportV1Meta, SiteExportV1Status]
 
 // SiteExportPreviewRequest 动态导出预览请求
 type SiteExportPreviewRequest struct {

@@ -7,57 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsTaskStatus } from './modelsTaskStatus';
-import { ModelsStep } from './modelsStep';
-import { ModelsLogEntry } from './modelsLogEntry';
-import { ModelsStepTiming } from './modelsStepTiming';
+import { ModelsTaskInstanceV1Status } from './modelsTaskInstanceV1Status';
+import { ModelsTaskInstanceV1Meta } from './modelsTaskInstanceV1Meta';
 
 export interface ModelsTaskInstance {
   /**
-   * 当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)
+   * Configuration version, increments only on Meta changes
    */
-  currentStep?: number;
-  error?: string;
-  finishedAt?: string;
+  generation?: number;
   id?: string;
+  meta?: ModelsTaskInstanceV1Meta;
   /**
-   * 实际传入的变量值
+   * Total object version, increments on any change (Meta/Status)
    */
-  inputs?: { [key: string]: string };
-  /**
-   * 任务日志
-   */
-  logs?: Array<ModelsLogEntry>;
-  /**
-   * 任务最终输出
-   */
-  outputs?: { [key: string]: string };
-  /**
-   * 执行该工作流时使用的身份 (Impersonation)
-   */
-  serviceAccountId?: string;
-  startedAt?: string;
-  /**
-   * Pending, Running, Success, Failed, Cancelled
-   */
-  status?: ModelsTaskStatus;
-  /**
-   * 步骤执行耗时追踪
-   */
-  stepTimings?: { [key: string]: ModelsStepTiming };
-  /**
-   * 运行时的步骤快照 (防篡改)
-   */
-  steps?: Array<ModelsStep>;
-  /**
-   * Manual, Cron, Webhook
-   */
-  trigger?: string;
-  /**
-   * 触发者 ID
-   */
-  userId?: string;
-  workflowId?: string;
-  workspace?: string;
+  resourceVersion?: number;
+  status?: ModelsTaskInstanceV1Status;
 }
-export namespace ModelsTaskInstance {}

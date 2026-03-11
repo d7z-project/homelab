@@ -28,8 +28,8 @@ func TestSiteSecurity(t *testing.T) {
 	service := site.NewSitePoolService(analysis, nil)
 
 	// 2. Setup Site Pools
-	group1 := &models.SiteGroup{ID: "site-pool-1", Name: "Pool 1"}
-	group2 := &models.SiteGroup{ID: "site-pool-2", Name: "Pool 2"}
+	group1 := &models.SiteGroup{ID: "site-pool-1", Meta: models.SiteGroupV1Meta{Name: "Pool 1"}}
+	group2 := &models.SiteGroup{ID: "site-pool-2", Meta: models.SiteGroupV1Meta{Name: "Pool 2"}}
 
 	_ = service.CreateGroup(ctxRoot, group1)
 	_ = service.CreateGroup(ctxRoot, group2)

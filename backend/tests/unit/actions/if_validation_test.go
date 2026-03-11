@@ -15,8 +15,7 @@ func TestActionsIfValidation(t *testing.T) {
 	defer teardown()
 
 	// Create common service account for tests
-	_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
-	}})
+	_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 
 	// Register mock processor needed for complex if validation
 	actions.Register(&tests.MockProcessor{})
@@ -24,7 +23,7 @@ func TestActionsIfValidation(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 
 	t.Run("Valid If Condition with Variables", func(t *testing.T) {
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Valid If WF",
 			ServiceAccountID: "sa",
 			Vars: map[string]models.VarDefinition{
@@ -38,7 +37,7 @@ func TestActionsIfValidation(t *testing.T) {
 					Params: map[string]string{"message": "running in prod"},
 				},
 			},
-		}
+		}}
 
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err != nil {
@@ -47,7 +46,7 @@ func TestActionsIfValidation(t *testing.T) {
 	})
 
 	t.Run("Invalid If Condition Syntax", func(t *testing.T) {
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Invalid Syntax WF",
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
@@ -58,7 +57,7 @@ func TestActionsIfValidation(t *testing.T) {
 					Params: map[string]string{"message": "msg"},
 				},
 			},
-		}
+		}}
 
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err == nil {
@@ -69,7 +68,7 @@ func TestActionsIfValidation(t *testing.T) {
 	})
 
 	t.Run("Reference to Future Step", func(t *testing.T) {
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Future Step Ref WF",
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
@@ -85,7 +84,7 @@ func TestActionsIfValidation(t *testing.T) {
 					Params: map[string]string{"message": "s2"},
 				},
 			},
-		}
+		}}
 
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err == nil {
@@ -96,7 +95,7 @@ func TestActionsIfValidation(t *testing.T) {
 	})
 
 	t.Run("Reference to Unknown Variable", func(t *testing.T) {
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Unknown Var WF",
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
@@ -107,7 +106,7 @@ func TestActionsIfValidation(t *testing.T) {
 					Params: map[string]string{"message": "msg"},
 				},
 			},
-		}
+		}}
 
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err == nil {
@@ -118,7 +117,7 @@ func TestActionsIfValidation(t *testing.T) {
 	})
 
 	t.Run("Complex Valid If Condition", func(t *testing.T) {
-		workflow := &models.Workflow{
+		workflow := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "Complex If WF",
 			ServiceAccountID: "sa",
 			Vars: map[string]models.VarDefinition{
@@ -137,7 +136,7 @@ func TestActionsIfValidation(t *testing.T) {
 					Params: map[string]string{"message": "msg"},
 				},
 			},
-		}
+		}}
 
 		err := actions.ValidateWorkflow(ctx, workflow)
 		if err != nil {

@@ -37,7 +37,7 @@ func init() {
 							if idPrefix == "" || strings.HasPrefix(wf.ID, idPrefix) {
 								res = append(res, models.DiscoverResult{
 									FullID: "workflows/" + wf.ID,
-									Name:   "Workflow: " + wf.Name,
+									Name:   "Workflow: " + wf.Meta.Name,
 									Final:  true,
 								})
 							}
@@ -69,13 +69,13 @@ func init() {
 			if !hasGlobal && !perms.IsAllowed("actions/"+wf.ID) {
 				continue
 			}
-			if search != "" && !strings.Contains(strings.ToLower(wf.ID), search) && !strings.Contains(strings.ToLower(wf.Name), search) {
+			if search != "" && !strings.Contains(strings.ToLower(wf.ID), search) && !strings.Contains(strings.ToLower(wf.Meta.Name), search) {
 				continue
 			}
 			items = append(items, models.LookupItem{
 				ID:          wf.ID,
-				Name:        wf.Name,
-				Description: wf.Description,
+				Name:        wf.Meta.Name,
+				Description: wf.Meta.Description,
 			})
 		}
 		return discovery.Paginate(items, cursor, limit), nil
@@ -87,8 +87,8 @@ func init() {
 			return nil
 		}
 		for _, wf := range workflows {
-			if wf.ServiceAccountID == id {
-				return fmt.Errorf("ServiceAccount '%s' is used by workflow '%s'", id, wf.Name)
+			if wf.Meta.ServiceAccountID == id {
+				return fmt.Errorf("ServiceAccount '%s' is used by workflow '%s'", id, wf.Meta.Name)
 			}
 		}
 		return nil

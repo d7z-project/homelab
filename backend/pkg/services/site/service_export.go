@@ -16,23 +16,44 @@ import (
 )
 
 func (s *SitePoolService) CreateExport(ctx context.Context, export *models.SiteExport) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
+		return fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
+	}
 	export.ID = uuid.NewString()
-	export.CreatedAt = time.Now()
-	export.UpdatedAt = time.Now()
-	return repo.SaveExport(ctx, export)
+
+	err := repo.ExportRepo.Cow(ctx, export.ID, func(res *models.Resource[models.SiteExportV1Meta, models.SiteExportV1Status]) error {
+		res.Meta = export.Meta
+		res.Status.CreatedAt = time.Now()
+		res.Status.UpdatedAt = time.Now()
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
+
+	if err == nil {
+		updated, _ := repo.GetExport(ctx, export.ID)
+		if updated != nil {
+			*export = *updated
+		}
+	}
+	return err
 }
 
 func (s *SitePoolService) UpdateExport(ctx context.Context, export *models.SiteExport) error {
-	old, err := repo.GetExport(ctx, export.ID)
-	if err != nil {
-		return err
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
+		return fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
 	}
-	export.CreatedAt = old.CreatedAt
-	export.UpdatedAt = time.Now()
-	return repo.SaveExport(ctx, export)
+
+	err := repo.ExportRepo.PatchMeta(ctx, export.ID, export.Generation, func(meta *models.SiteExportV1Meta) {
+		*meta = export.Meta
+	})
+	return err
 }
 
 func (s *SitePoolService) DeleteExport(ctx context.Context, id string) error {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
+		return fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
+	}
 	if s.exportManager != nil {
 		s.exportManager.DeleteTasksByExportID(id)
 	}
@@ -40,6 +61,9 @@ func (s *SitePoolService) DeleteExport(ctx context.Context, id string) error {
 }
 
 func (s *SitePoolService) GetExport(ctx context.Context, id string) (*models.SiteExport, error) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
+		return nil, fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
+	}
 	return repo.GetExport(ctx, id)
 }
 

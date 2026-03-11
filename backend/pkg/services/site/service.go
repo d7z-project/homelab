@@ -23,10 +23,10 @@ func init() {
 			return nil, err
 		}
 		for _, g := range resp.Items {
-			if prefix == "" || strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Name, prefix) {
+			if prefix == "" || strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Meta.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: g.ID,
-					Name:   g.Name,
+					Name:   g.Meta.Name,
 					Final:  true,
 				})
 			}
@@ -46,8 +46,8 @@ func init() {
 			if hasGlobal || perms.IsAllowed("network/site/"+g.ID) {
 				items = append(items, models.LookupItem{
 					ID:          g.ID,
-					Name:        g.Name,
-					Description: g.Description,
+					Name:        g.Meta.Name,
+					Description: g.Meta.Description,
 				})
 			}
 		}
@@ -86,7 +86,7 @@ func NewSitePoolService(engine *AnalysisEngine, em *ExportManager) *SitePoolServ
 			s.removeCronJob(policyID)
 			return
 		}
-		if policy.Enabled {
+		if policy.Meta.Enabled {
 			s.addCronJob(*policy)
 		} else {
 			s.removeCronJob(policyID)
@@ -124,10 +124,10 @@ func (s *SitePoolService) Start(ctx context.Context) {
 		status := t.GetStatus()
 		if status == models.TaskStatusFailed || status == models.TaskStatusCancelled {
 			p, err := repo.GetSyncPolicy(sysCtx, t.GetID())
-			if err == nil && (p.LastStatus == models.TaskStatusRunning || p.LastStatus == models.TaskStatusPending) {
-				p.LastStatus = status
-				p.ErrorMessage = t.Error
-				p.LastRunAt = time.Now()
+			if err == nil && (p.Status.LastStatus == models.TaskStatusRunning || p.Status.LastStatus == models.TaskStatusPending) {
+				p.Status.LastStatus = status
+				p.Status.ErrorMessage = t.Error
+				p.Status.LastRunAt = time.Now()
 				_ = repo.SaveSyncPolicy(sysCtx, p)
 			}
 		} else if status == models.TaskStatusPending || status == models.TaskStatusRunning {
@@ -138,7 +138,7 @@ func (s *SitePoolService) Start(ctx context.Context) {
 	policies, _ := repo.ScanSyncPolicies(sysCtx, "", 1000, "")
 	if policies != nil {
 		for _, p := range policies.Items {
-			if p.Enabled {
+			if p.Meta.Enabled {
 				s.addCronJob(p)
 			}
 		}
@@ -154,7 +154,7 @@ func (s *SitePoolService) addCronJob(p models.SiteSyncPolicy) {
 	}
 
 	lockKey := "site_sync_" + p.ID
-	id, err := common.AddDistributedCronJob(s.cron, p.Cron, lockKey, func() {
+	id, err := common.AddDistributedCronJob(s.cron, p.Meta.Cron, lockKey, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 		ctx = commonauth.WithAuth(ctx, &commonauth.AuthContext{

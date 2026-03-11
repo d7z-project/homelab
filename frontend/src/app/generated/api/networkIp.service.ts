@@ -34,11 +34,11 @@ import { ModelsIPExportPreviewRequest } from '../model/modelsIPExportPreviewRequ
 // @ts-ignore
 import { ModelsIPExportTriggerResponse } from '../model/modelsIPExportTriggerResponse';
 // @ts-ignore
-import { ModelsIPGroup } from '../model/modelsIPGroup';
-// @ts-ignore
 import { ModelsIPHitTestRequest } from '../model/modelsIPHitTestRequest';
 // @ts-ignore
 import { ModelsIPInfoResponse } from '../model/modelsIPInfoResponse';
+// @ts-ignore
+import { ModelsIPPool } from '../model/modelsIPPool';
 // @ts-ignore
 import { ModelsIPPoolEntry } from '../model/modelsIPPoolEntry';
 // @ts-ignore
@@ -1951,7 +1951,7 @@ export class NetworkIpService extends BaseService {
    */
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1959,10 +1959,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPGroup>;
+  ): Observable<ModelsIPPool>;
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1970,10 +1970,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPGroup>>;
+  ): Observable<HttpResponse<ModelsIPPool>>;
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1981,10 +1981,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPGroup>>;
+  ): Observable<HttpEvent<ModelsIPPool>>;
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2044,7 +2044,7 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/pools/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPGroup>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<ModelsIPPool>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: group,
       responseType: <any>responseType_,
@@ -2065,7 +2065,7 @@ export class NetworkIpService extends BaseService {
    * @param options additional options
    */
   public networkIpPoolsPost(
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -2073,9 +2073,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPGroup>;
+  ): Observable<ModelsIPPool>;
   public networkIpPoolsPost(
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -2083,9 +2083,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPGroup>>;
+  ): Observable<HttpResponse<ModelsIPPool>>;
   public networkIpPoolsPost(
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -2093,9 +2093,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPGroup>>;
+  ): Observable<HttpEvent<ModelsIPPool>>;
   public networkIpPoolsPost(
-    group: ModelsIPGroup,
+    group: ModelsIPPool,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2150,7 +2150,7 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/pools`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPGroup>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<ModelsIPPool>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: group,
       responseType: <any>responseType_,

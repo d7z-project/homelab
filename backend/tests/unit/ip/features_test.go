@@ -22,7 +22,7 @@ func TestIPExportCRUD(t *testing.T) {
 	service := ip.NewIPPoolService(analysis, manager)
 	ctx := tests.SetupMockRootContext()
 
-	export := &models.IPExport{ID: "test_export", Meta: models.IPExportV1Meta{
+	export := &models.IPExport{Meta: models.IPExportV1Meta{
 		Name:     "Test Export",
 		Rule:     "true",
 		GroupIDs: []string{"pool1"}},
@@ -31,9 +31,10 @@ func TestIPExportCRUD(t *testing.T) {
 	// Create
 	err := service.CreateExport(ctx, export)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, export.ID)
 
 	// Get
-	e, err := service.GetExport(ctx, "test_export")
+	e, err := service.GetExport(ctx, export.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, "Test Export", e.Meta.Name)
 
@@ -41,21 +42,21 @@ func TestIPExportCRUD(t *testing.T) {
 	res, err := service.ScanExports(ctx, "", 10, "")
 	assert.NoError(t, err)
 	assert.Len(t, res.Items, 1)
-	assert.Equal(t, "test_export", res.Items[0].ID)
+	assert.Equal(t, export.ID, res.Items[0].ID)
 
 	// Update
 	e.Meta.Name = "Updated Export"
 	err = service.UpdateExport(ctx, e)
 	assert.NoError(t, err)
 
-	e2, _ := service.GetExport(ctx, "test_export")
+	e2, _ := service.GetExport(ctx, export.ID)
 	assert.Equal(t, "Updated Export", e2.Meta.Name)
 
 	// Delete
-	err = service.DeleteExport(ctx, "test_export")
+	err = service.DeleteExport(ctx, export.ID)
 	assert.NoError(t, err)
 
-	_, err = service.GetExport(ctx, "test_export")
+	_, err = service.GetExport(ctx, export.ID)
 	assert.Error(t, err)
 }
 
@@ -87,7 +88,7 @@ func TestIPExportManager(t *testing.T) {
 	f.Close()
 
 	// 2. Create export configuration
-	export := &models.IPExport{ID: "export1", Meta: models.IPExportV1Meta{
+	export := &models.IPExport{Meta: models.IPExportV1Meta{
 		Name:     "Export 1",
 		Rule:     `"cn" in tags`,
 		GroupIDs: []string{"pool1"}},
@@ -95,7 +96,7 @@ func TestIPExportManager(t *testing.T) {
 	_ = service.CreateExport(ctx, export)
 
 	// 3. Trigger export (text)
-	taskID, err := manager.TriggerExport(ctx, "export1", "text")
+	taskID, err := manager.TriggerExport(ctx, export.ID, "text")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, taskID)
 
@@ -119,24 +120,26 @@ func TestIPExportManager(t *testing.T) {
 	assert.True(t, exists)
 
 	// Trigger export (json)
-	taskIDJson, _ := manager.TriggerExport(ctx, "export1", "json")
+	taskIDJson, _ := manager.TriggerExport(ctx, export.ID, "json")
 	for i := 0; i < 50; i++ {
-		if manager.GetTask(taskIDJson).Status == models.TaskStatusSuccess {
+		t := manager.GetTask(taskIDJson)
+		if t != nil && t.Status == models.TaskStatusSuccess {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	assert.True(t, manager.GetTask(taskIDJson).Status == models.TaskStatusSuccess)
+	assert.Equal(t, models.TaskStatusSuccess, manager.GetTask(taskIDJson).Status)
 
 	// Trigger export (yaml)
-	taskIDYaml, _ := manager.TriggerExport(ctx, "export1", "yaml")
+	taskIDYaml, _ := manager.TriggerExport(ctx, export.ID, "yaml")
 	for i := 0; i < 50; i++ {
-		if manager.GetTask(taskIDYaml).Status == models.TaskStatusSuccess {
+		t := manager.GetTask(taskIDYaml)
+		if t != nil && t.Status == models.TaskStatusSuccess {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	assert.True(t, manager.GetTask(taskIDYaml).Status == models.TaskStatusSuccess)
+	assert.Equal(t, models.TaskStatusSuccess, manager.GetTask(taskIDYaml).Status)
 
 	// Allow background saveTasks to complete before teardown
 	for i := 0; i < 50; i++ {
@@ -261,7 +264,7 @@ func TestIPExportCancellation(t *testing.T) {
 	_ = codec.WritePool(f, []string{"t"}, dummyEntries)
 	f.Close()
 
-	export := &models.IPExport{ID: "long_export", Meta: models.IPExportV1Meta{
+	export := &models.IPExport{Meta: models.IPExportV1Meta{
 		Name:     "Long Export",
 		Rule:     "true",
 		GroupIDs: []string{"pool1"}},
@@ -269,11 +272,11 @@ func TestIPExportCancellation(t *testing.T) {
 	_ = service.CreateExport(ctx, export)
 
 	// 1. Trigger First
-	taskID1, err := manager.TriggerExport(ctx, "long_export", "text")
+	taskID1, err := manager.TriggerExport(ctx, export.ID, "text")
 	assert.NoError(t, err)
 
 	// 2. Trigger Second immediately
-	taskID2, err := manager.TriggerExport(ctx, "long_export", "text")
+	taskID2, err := manager.TriggerExport(ctx, export.ID, "text")
 	assert.NoError(t, err)
 	assert.NotEqual(t, taskID1, taskID2)
 
@@ -319,10 +322,10 @@ func TestIPExportManualCancellation(t *testing.T) {
 	_ = codec.WritePool(f, []string{"t"}, dummyEntries)
 	f.Close()
 
-	export := &models.IPExport{ID: "long_export", Meta: models.IPExportV1Meta{Name: "Long Export", Rule: "true", GroupIDs: []string{"pool1"}}}
+	export := &models.IPExport{Meta: models.IPExportV1Meta{Name: "Long Export", Rule: "true", GroupIDs: []string{"pool1"}}}
 	_ = service.CreateExport(ctx, export)
 
-	taskID, _ := manager.TriggerExport(ctx, "long_export", "text")
+	taskID, _ := manager.TriggerExport(ctx, export.ID, "text")
 
 	// Wait for Running
 	for i := 0; i < 50; i++ {

@@ -15,12 +15,12 @@ func GetTaskLogs(ctx context.Context, id string) ([]models.LogEntry, error) {
 	}
 
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.WorkflowID) {
-		return nil, fmt.Errorf("permission denied: actions/%s", instance.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.Meta.WorkflowID) {
+		return nil, fmt.Errorf("permission denied: actions/%s", instance.Meta.WorkflowID)
 	}
 
 	// Read all logs from VFS
-	logs, err := ReadAllTaskLogs(instance.WorkflowID, id)
+	logs, err := ReadAllTaskLogs(instance.Meta.WorkflowID, id)
 	if err != nil {
 		return []models.LogEntry{}, nil
 	}
@@ -35,9 +35,9 @@ func GetStepLogs(ctx context.Context, id string, stepIndex int, offset int) ([]m
 	}
 
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.WorkflowID) {
-		return nil, 0, fmt.Errorf("permission denied: actions/%s", instance.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.Meta.WorkflowID) {
+		return nil, 0, fmt.Errorf("permission denied: actions/%s", instance.Meta.WorkflowID)
 	}
 
-	return ReadStepLogs(instance.WorkflowID, id, stepIndex, offset)
+	return ReadStepLogs(instance.Meta.WorkflowID, id, stepIndex, offset)
 }

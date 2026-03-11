@@ -73,6 +73,11 @@ func (s *SitePoolService) CreateSyncPolicy(ctx context.Context, policy *models.S
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
 		return fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
 	}
+
+	if policy.ID != "" && !strings.HasPrefix(policy.ID, "sync_") {
+		return fmt.Errorf("%w: id for sync policy must start with 'sync_'", common.ErrBadRequest)
+	}
+
 	if policy.ID == "" {
 		for i := 0; i < 10; i++ {
 			newID := generatePolicyID()
@@ -85,14 +90,27 @@ func (s *SitePoolService) CreateSyncPolicy(ctx context.Context, policy *models.S
 			return fmt.Errorf("failed to generate unique policy ID")
 		}
 	}
-	policy.CreatedAt = time.Now()
-	policy.UpdatedAt = time.Now()
-	err := repo.SaveSyncPolicy(ctx, policy)
-	if err == nil && policy.Enabled {
-		s.addCronJob(*policy)
+
+	err := repo.SyncPolicyRepo.Cow(ctx, policy.ID, func(res *models.Resource[models.SiteSyncPolicyV1Meta, models.SiteSyncPolicyV1Status]) error {
+		res.Meta = policy.Meta
+		res.Status.CreatedAt = time.Now()
+		res.Status.UpdatedAt = time.Now()
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
+
+	if err == nil {
+		updated, _ := repo.GetSyncPolicy(ctx, policy.ID)
+		if updated != nil {
+			*policy = *updated
+			if policy.Meta.Enabled {
+				s.addCronJob(*policy)
+			}
+		}
 		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, policy.ID)
 	}
-	commonaudit.FromContext(ctx).Log("CreateSiteSyncPolicy", policy.Name, "Created", err == nil)
+	commonaudit.FromContext(ctx).Log("CreateSiteSyncPolicy", policy.Meta.Name, "Created", err == nil)
 	return err
 }
 
@@ -100,22 +118,23 @@ func (s *SitePoolService) UpdateSyncPolicy(ctx context.Context, policy *models.S
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/site") {
 		return fmt.Errorf("%w: network/site", commonauth.ErrPermissionDenied)
 	}
-	old, err := repo.GetSyncPolicy(ctx, policy.ID)
-	if err != nil {
-		return err
-	}
-	policy.CreatedAt = old.CreatedAt
-	policy.UpdatedAt = time.Now()
-	err = repo.SaveSyncPolicy(ctx, policy)
+
+	err := repo.SyncPolicyRepo.PatchMeta(ctx, policy.ID, policy.Generation, func(meta *models.SiteSyncPolicyV1Meta) {
+		*meta = policy.Meta
+	})
+
 	if err == nil {
-		if policy.Enabled {
-			s.addCronJob(*policy)
-		} else {
-			s.removeCronJob(policy.ID)
+		updated, _ := repo.GetSyncPolicy(ctx, policy.ID)
+		if updated != nil {
+			if updated.Meta.Enabled {
+				s.addCronJob(*updated)
+			} else {
+				s.removeCronJob(updated.ID)
+			}
 		}
 		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, policy.ID)
 	}
-	commonaudit.FromContext(ctx).Log("UpdateSiteSyncPolicy", policy.Name, "Updated", err == nil)
+	commonaudit.FromContext(ctx).Log("UpdateSiteSyncPolicy", policy.Meta.Name, "Updated", err == nil)
 	return err
 }
 
@@ -129,7 +148,7 @@ func (s *SitePoolService) DeleteSyncPolicy(ctx context.Context, id string) error
 		s.removeCronJob(id)
 		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, id)
 	}
-	commonaudit.FromContext(ctx).Log("DeleteSiteSyncPolicy", old.Name, "Deleted", err == nil)
+	commonaudit.FromContext(ctx).Log("DeleteSiteSyncPolicy", old.Meta.Name, "Deleted", err == nil)
 	return err
 }
 
@@ -147,9 +166,9 @@ func (s *SitePoolService) ScanSyncPolicies(ctx context.Context, cursor string, l
 		if t, ok := s.syncTasks.GetTask(res.Items[i].ID); ok {
 			status := t.GetStatus()
 			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
-				res.Items[i].LastStatus = status
-				res.Items[i].ErrorMessage = t.Error
-				res.Items[i].Progress = t.GetProgress()
+				res.Items[i].Status.LastStatus = status
+				res.Items[i].Status.ErrorMessage = t.Error
+				res.Items[i].Status.Progress = t.GetProgress()
 			}
 		}
 	}
@@ -174,7 +193,7 @@ func (s *SitePoolService) Sync(ctx context.Context, id string) error {
 				s.syncTasks.CancelTask(id)
 				release()
 			} else {
-				return fmt.Errorf("sync is already in progress for policy: %s", policy.Name)
+				return fmt.Errorf("sync is already in progress for policy: %s", policy.Meta.Name)
 			}
 		}
 	}
@@ -186,8 +205,8 @@ func (s *SitePoolService) Sync(ctx context.Context, id string) error {
 	}
 	s.syncTasks.AddTask(task)
 
-	policy.LastStatus = models.TaskStatusPending
-	policy.LastRunAt = time.Now()
+	policy.Status.LastStatus = models.TaskStatusPending
+	policy.Status.LastRunAt = time.Now()
 	_ = repo.SaveSyncPolicy(ctx, policy)
 
 	if common.Subscriber != nil {
@@ -203,7 +222,7 @@ func (s *SitePoolService) Sync(ctx context.Context, id string) error {
 		}()
 	}
 
-	commonaudit.FromContext(ctx).Log("TriggerSiteSync", policy.Name, "Triggered Asynchronously", true)
+	commonaudit.FromContext(ctx).Log("TriggerSiteSync", policy.Meta.Name, "Triggered Asynchronously", true)
 	return nil
 }
 
@@ -221,7 +240,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 			return finalErr
 		}
 
-		policy.LastStatus = models.TaskStatusRunning
+		policy.Status.LastStatus = models.TaskStatusRunning
 		_ = repo.SaveSyncPolicy(taskCtx, policy)
 
 		defer func() {
@@ -229,31 +248,31 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 				return
 			}
 			if errors.Is(taskCtx.Err(), context.Canceled) {
-				policy.LastStatus = models.TaskStatusCancelled
-				policy.ErrorMessage = "Task cancelled manually"
+				policy.Status.LastStatus = models.TaskStatusCancelled
+				policy.Status.ErrorMessage = "Task cancelled manually"
 			} else if finalErr != nil {
-				policy.LastStatus = models.TaskStatusFailed
-				policy.ErrorMessage = finalErr.Error()
+				policy.Status.LastStatus = models.TaskStatusFailed
+				policy.Status.ErrorMessage = finalErr.Error()
 			} else {
-				policy.LastStatus = models.TaskStatusSuccess
-				policy.ErrorMessage = ""
+				policy.Status.LastStatus = models.TaskStatusSuccess
+				policy.Status.ErrorMessage = ""
 			}
-			policy.LastRunAt = time.Now()
+			policy.Status.LastRunAt = time.Now()
 			_ = repo.SaveSyncPolicy(context.Background(), policy)
-			commonaudit.FromContext(taskCtx).Log("SiteSyncExecute", policy.Name, "Finished", finalErr == nil)
+			commonaudit.FromContext(taskCtx).Log("SiteSyncExecute", policy.Meta.Name, "Finished", finalErr == nil)
 		}()
 
-		if policy.Config == nil {
-			policy.Config = make(map[string]string)
+		if policy.Meta.Config == nil {
+			policy.Meta.Config = make(map[string]string)
 		}
 
-		err = validateSourceURL(policy.SourceURL, policy)
+		err = validateSourceURL(policy.Meta.SourceURL, policy)
 		if err != nil {
 			finalErr = err
 			return err
 		}
 
-		req, err := http.NewRequestWithContext(taskCtx, "GET", policy.SourceURL, nil)
+		req, err := http.NewRequestWithContext(taskCtx, "GET", policy.Meta.SourceURL, nil)
 		if err != nil {
 			finalErr = err
 			return err
@@ -294,7 +313,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 		tagMap := make(map[string]uint32)
 
 		tagMapping := make(map[string]string)
-		if mStr := policy.Config["tagMapping"]; mStr != "" {
+		if mStr := policy.Meta.Config["tagMapping"]; mStr != "" {
 			_ = json.Unmarshal([]byte(mStr), &tagMapping)
 		}
 
@@ -325,8 +344,8 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 			}
 		}
 
-		if policy.Format == "geosite" || policy.Format == "v2ray-dat" {
-			targetCategory := policy.Config["category"]
+		if policy.Meta.Format == "geosite" || policy.Meta.Format == "v2ray-dat" {
+			targetCategory := policy.Meta.Config["category"]
 			importAll := targetCategory == "" || targetCategory == "*" || targetCategory == "all"
 
 			var data []byte
@@ -355,7 +374,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 				return err
 			}
 
-			additionalTags := strings.Split(policy.Config["tags"], ",")
+			additionalTags := strings.Split(policy.Meta.Config["tags"], ",")
 			var globalTagIdxs []uint32
 			for _, t := range additionalTags {
 				t = strings.TrimSpace(t)
@@ -412,7 +431,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 		}
 
 		var release func()
-		release, err = s.lockPool(taskCtx, policy.TargetGroupID)
+		release, err = s.lockPool(taskCtx, policy.Meta.TargetGroupID)
 		if err != nil {
 			finalErr = err
 			return err
@@ -420,15 +439,15 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 		defer release()
 
 		var group *models.SiteGroup
-		group, err = repo.GetGroup(taskCtx, policy.TargetGroupID)
+		group, err = repo.GetGroup(taskCtx, policy.Meta.TargetGroupID)
 		if err != nil {
 			finalErr = err
 			return err
 		}
 
 		_ = common.FS.MkdirAll(PoolsDir, 0755)
-		poolPath := filepath.Join(PoolsDir, policy.TargetGroupID+".bin")
-		tempFile := filepath.Join(PoolsDir, policy.TargetGroupID+".bin.tmp")
+		poolPath := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin")
+		tempFile := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin.tmp")
 
 		if exists, _ := afero.Exists(common.FS, poolPath); exists {
 			var pf afero.File
@@ -458,7 +477,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 						}
 					}
 
-					if isFromThisPolicy && policy.Mode == "overwrite" {
+					if isFromThisPolicy && policy.Meta.Mode == "overwrite" {
 						if !hasOtherPolicy {
 							continue
 						} else {
@@ -515,17 +534,19 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 		}
 		hf := sha256.New()
 		hf.Write(content)
-
-		group.EntryCount = int64(len(finalEntries))
-		group.UpdatedAt = time.Now()
-		group.Checksum = hex.EncodeToString(hf.Sum(nil))
+		checksum := hex.EncodeToString(hf.Sum(nil))
+		count := int64(len(finalEntries))
 
 		if err := common.FS.Rename(tempFile, poolPath); err != nil {
 			finalErr = err
 			return err
 		}
 
-		err = repo.SaveGroup(taskCtx, group)
+		err = repo.GroupRepo.UpdateStatus(taskCtx, group.ID, func(status *models.SiteGroupV1Status) {
+			status.EntryCount = count
+			status.UpdatedAt = time.Now()
+			status.Checksum = checksum
+		})
 		if err == nil {
 			notifySitePoolChanged(taskCtx, group.ID)
 		}

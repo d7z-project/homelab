@@ -50,7 +50,7 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 		return nil, err
 	}
 	resource := "network/dns/" + domain.Meta.Name
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) && !commonauth.PermissionsFromContext(ctx).IsAllowed("network/dns") {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
@@ -64,10 +64,16 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 	}
 
 	domain.ID = uuid.New().String()
-	domain.Status.CreatedAt = time.Now()
-	domain.Status.UpdatedAt = time.Now()
+	err := dnsrepo.DomainRepo.Cow(ctx, domain.ID, func(res *models.Resource[models.DomainV1Meta, models.DomainV1Status]) error {
+		res.Meta = domain.Meta
+		res.Status.CreatedAt = time.Now()
+		res.Status.UpdatedAt = time.Now()
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
 
-	if err := dnsrepo.DomainRepo.Cow(ctx, domain.ID, func(res *models.Domain) error { res.Meta = domain.Meta; res.Status = domain.Status; return nil }); err != nil {
+	if err != nil {
 		commonaudit.FromContext(ctx).Log("CreateDomain", domain.Meta.Name, "Failed: "+err.Error(), false)
 		return nil, err
 	}
@@ -84,10 +90,16 @@ func CreateDomain(ctx context.Context, domain *models.Domain) (*models.Domain, e
 			Comments: "System generated SOA",
 		},
 	}
-	_ = dnsrepo.RecordRepo.Cow(ctx, defaultSOA.ID, func(res *models.Record) error { res.Meta = defaultSOA.Meta; res.Status = defaultSOA.Status; return nil })
+	_ = dnsrepo.RecordRepo.Cow(ctx, defaultSOA.ID, func(res *models.Resource[models.RecordV1Meta, models.RecordV1Status]) error {
+		res.Meta = defaultSOA.Meta
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
 
 	commonaudit.FromContext(ctx).Log("CreateDomain", domain.Meta.Name, "Created", true)
-	return domain, nil
+	updated, _ := dnsrepo.DomainRepo.Get(ctx, domain.ID)
+	return updated, nil
 }
 
 func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*models.Domain, error) {
@@ -103,17 +115,19 @@ func UpdateDomain(ctx context.Context, id string, domain *models.Domain) (*model
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	domain.ID = id
-	domain.Meta.Name = existing.Meta.Name
-	domain.Status.CreatedAt = existing.Status.CreatedAt
-	domain.Status.UpdatedAt = time.Now()
+	err = dnsrepo.DomainRepo.PatchMeta(ctx, id, domain.Generation, func(m *models.DomainV1Meta) {
+		// Only description is really editable for domain itself, name is immutable
+		m.Description = domain.Meta.Description
+	})
 
-	if err := dnsrepo.DomainRepo.Cow(ctx, domain.ID, func(res *models.Domain) error { res.Meta = domain.Meta; res.Status = domain.Status; return nil }); err != nil {
+	if err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Meta.Name, "Failed: "+err.Error(), false)
 		return nil, err
 	}
+
+	updated, _ := dnsrepo.DomainRepo.Get(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Meta.Name, "Updated", true)
-	return domain, nil
+	return updated, nil
 }
 
 func DeleteDomain(ctx context.Context, id string) error {

@@ -30,8 +30,8 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 		}
 		actions.Register(mock)
 
-		workflow := &models.Workflow{
-			ID: "multi-interp-wf", Name: "Multi Interp", Enabled: true, ServiceAccountID: "sa",
+		workflow := &models.Workflow{ID: "multi-interp-wf", Meta: models.WorkflowV1Meta{
+			Name: "Multi Interp", Enabled: true, ServiceAccountID: "sa",
 			Vars: map[string]models.VarDefinition{"prefix": {Required: true}},
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock", Params: map[string]string{"input_val": "step1"}},
@@ -43,14 +43,14 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 					},
 				},
 			},
-		}
+		}}
 
 		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", map[string]string{"prefix": "val"}, "")
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, instanceID)
-			if inst != nil && inst.Status != "Running" {
+			if inst != nil && inst.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -63,8 +63,8 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 	})
 
 	t.Run("Conditional Branching based on Status", func(t *testing.T) {
-		workflow := &models.Workflow{
-			ID: "branch-wf", Name: "Branching", Enabled: true, ServiceAccountID: "sa",
+		workflow := &models.Workflow{ID: "branch-wf", Meta: models.WorkflowV1Meta{
+			Name: "Branching", Enabled: true, ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{
 					ID:     "s1",
@@ -75,7 +75,7 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 				{
 					ID:     "s2",
 					Type:   "core/logger",
-					If:     `${{ steps.s1.status }} == false`, // Should run
+					If:     `${{ steps.s1.status  }}== false`, // Should run
 					Params: map[string]string{"message": "s2"},
 				},
 				{
@@ -85,27 +85,27 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 					Params: map[string]string{"message": "s3"},
 				},
 			},
-		}
+		}}
 
 		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, instanceID)
-			if inst != nil && inst.Status != "Running" {
+			if inst != nil && inst.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
 		inst, _ := actions.GetTaskInstance(ctx, instanceID)
-		if inst.CurrentStep < 2 {
-			t.Errorf("Workflow didn't progress enough, current step: %d", inst.CurrentStep)
+		if inst.Status.CurrentStep < 2 {
+			t.Errorf("Workflow didn't progress enough, current step: %d", inst.Status.CurrentStep)
 		}
 	})
 
 	t.Run("Stop Pipeline on Fatal Error", func(t *testing.T) {
-		workflow := &models.Workflow{
-			ID: "fatal-wf", Name: "Fatal Stop", Enabled: true, ServiceAccountID: "sa",
+		workflow := &models.Workflow{ID: "fatal-wf", Meta: models.WorkflowV1Meta{
+			Name: "Fatal Stop", Enabled: true, ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{
 					ID:     "s1",
@@ -119,30 +119,30 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 					Params: map[string]string{"message": "unreachable"},
 				},
 			},
-		}
+		}}
 
 		instanceID, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(ctx, instanceID)
-			if instance != nil && instance.Status != "Running" {
+			if instance != nil && instance.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		if instance.Status != "Failed" {
-			t.Errorf("Expected workflow to fail, got %s", instance.Status)
+		if instance.Status.Status != "Failed" {
+			t.Errorf("Expected workflow to fail, got %s", instance.Status.Status)
 		}
-		if instance.CurrentStep != 1 {
-			t.Errorf("Expected CurrentStep to be 1, got %d", instance.CurrentStep)
+		if instance.Status.CurrentStep != 1 {
+			t.Errorf("Expected CurrentStep to be 1, got %d", instance.Status.CurrentStep)
 		}
 	})
 
 	t.Run("Context Cancellation Aborts Execution", func(t *testing.T) {
-		workflow := &models.Workflow{
-			ID: "cancel-wf", Name: "Cancellation", Enabled: true, ServiceAccountID: "sa",
+		workflow := &models.Workflow{ID: "cancel-wf", Meta: models.WorkflowV1Meta{
+			Name: "Cancellation", Enabled: true, ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{
 					ID:     "s1",
@@ -155,7 +155,7 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 					Params: map[string]string{"message": "unreachable"},
 				},
 			},
-		}
+		}}
 
 		instanceID, err := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		if err != nil {
@@ -172,14 +172,14 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(ctx, instanceID)
-			if instance != nil && (instance.Status == "Cancelled" || instance.Status == "Failed") {
+			if instance != nil && (instance.Status.Status == "Cancelled" || instance.Status.Status == "Failed") {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		if instance.Status != "Cancelled" {
-			t.Errorf("Expected status Cancelled, got %s", instance.Status)
+		if instance.Status.Status != "Cancelled" {
+			t.Errorf("Expected status Cancelled, got %s", instance.Status.Status)
 		}
 	})
 }

@@ -5,6 +5,7 @@ import (
 	"homelab/pkg/models"
 	"homelab/pkg/services/site"
 	"homelab/tests"
+	"fmt"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -21,18 +22,18 @@ func TestSitePoolCascadeDeleteAndDependencies(t *testing.T) {
 	service := site.NewSitePoolService(engine, nil)
 
 	// 1. Create a Pool
-	group := &models.SiteGroup{ID: "test_site_pool", Name: "Test Site Pool"}
+	group := &models.SiteGroup{ID: "test_site_pool", Meta: models.SiteGroupV1Meta{Name: "Test Site Pool"}}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
 
 	// Create dummy data file
-	_ = afero.WriteFile(common.FS, "network/site/pools/test_site_pool.bin", []byte("dummy"), 0644)
+	_ = afero.WriteFile(common.FS, fmt.Sprintf("network/site/pools/%s.bin", group.ID), []byte("dummy"), 0644)
 
 	// 2. Test Export Dependency
-	export := &models.SiteExport{Name: "Dep Site Export", Rule: "true", GroupIDs: []string{"test_site_pool"}}
+	export := &models.SiteExport{Meta: models.SiteExportV1Meta{Name: "Dep Site Export", Rule: "true", GroupIDs: []string{group.ID}}}
 	_ = service.CreateExport(ctx, export)
 
-	err = service.DeleteGroup(ctx, "test_site_pool")
+	err = service.DeleteGroup(ctx, group.ID)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "referenced by export")
 
@@ -41,16 +42,16 @@ func TestSitePoolCascadeDeleteAndDependencies(t *testing.T) {
 
 	// 3. Test Successful Deletion and Cache Clearing
 	// Fill cache
-	_, _ = engine.GetMatcher(ctx, "test_site_pool")
+	_, _ = engine.GetMatcher(ctx, group.ID)
 
-	err = service.DeleteGroup(ctx, "test_site_pool")
+	err = service.DeleteGroup(ctx, group.ID)
 	assert.NoError(t, err)
 
 	// Verify file deleted
-	exists, _ := afero.Exists(common.FS, "network/site/pools/test_site_pool.bin")
+	exists, _ := afero.Exists(common.FS, fmt.Sprintf("network/site/pools/%s.bin", group.ID))
 	assert.False(t, exists)
 
 	// Verify group deleted from DB
-	_, err = service.GetGroup(ctx, "test_site_pool")
+	_, err = service.GetGroup(ctx, group.ID)
 	assert.Error(t, err)
 }

@@ -7,46 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsVarDefinition } from './modelsVarDefinition';
-import { ModelsStep } from './modelsStep';
+import { ModelsWorkflowV1Status } from './modelsWorkflowV1Status';
+import { ModelsWorkflowV1Meta } from './modelsWorkflowV1Meta';
 
 export interface ModelsWorkflow {
-  createdAt?: string;
   /**
-   * 是否启用定时触发
+   * Configuration version, increments only on Meta changes
    */
-  cronEnabled?: boolean;
-  /**
-   * Crontab 表达式
-   */
-  cronExpr?: string;
-  description?: string;
-  /**
-   * 是否启用 (禁用时 Cron/Webhook/手动 均不可触发)
-   */
-  enabled?: boolean;
+  generation?: number;
   id?: string;
-  name?: string;
+  meta?: ModelsWorkflowV1Meta;
   /**
-   * 执行该工作流时使用的身份 (必填)
+   * Total object version, increments on any change (Meta/Status)
    */
-  serviceAccountId?: string;
-  steps?: Array<ModelsStep>;
-  /**
-   * 超时时间 (秒)，默认 7200 (2h)，0 为不超时
-   */
-  timeout?: number;
-  updatedAt?: string;
-  /**
-   * 工作流启动时接受的变量定义
-   */
-  vars?: { [key: string]: ModelsVarDefinition };
-  /**
-   * 是否启用 Webhook 触发
-   */
-  webhookEnabled?: boolean;
-  /**
-   * Webhook 触发令牌
-   */
-  webhookToken?: string;
+  resourceVersion?: number;
+  status?: ModelsWorkflowV1Status;
 }

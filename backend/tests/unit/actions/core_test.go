@@ -33,8 +33,7 @@ func TestActionsEngine(t *testing.T) {
 			val := inputs["input_val"]
 			return map[string]string{"out_val": val + "_processed"}, nil
 		}
-		workflow := &models.Workflow{
-			ID:               "test-wf",
+		workflow := &models.Workflow{ID: "test-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Test Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -54,7 +53,7 @@ func TestActionsEngine(t *testing.T) {
 					Params: map[string]string{"input_val": "${{ steps.step1.outputs.out_val }}"},
 				},
 			},
-		}
+		}}
 
 		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "test-user", workflow, "Manual", nil, "")
 		if err != nil {
@@ -65,7 +64,7 @@ func TestActionsEngine(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
-			if instance != nil && instance.Status != "Running" {
+			if instance != nil && instance.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -74,8 +73,8 @@ func TestActionsEngine(t *testing.T) {
 		if instance == nil {
 			t.Fatal("Instance not found")
 		}
-		if instance.Status != "Success" {
-			t.Errorf("Expected status Success, got %s (Error: %s)", instance.Status, instance.Error)
+		if instance.Status.Status != "Success" {
+			t.Errorf("Expected status Success, got %s (Error: %s)", instance.Status.Status, instance.Status.Error)
 		}
 	})
 
@@ -94,8 +93,7 @@ func TestActionsEngine(t *testing.T) {
 			return nil, nil
 		}
 
-		workflow := &models.Workflow{
-			ID:               "if-wf",
+		workflow := &models.Workflow{ID: "if-wf", Meta: models.WorkflowV1Meta{
 			Name:             "If Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -113,7 +111,7 @@ func TestActionsEngine(t *testing.T) {
 					Params: map[string]string{"input_val": "skip_me"},
 				},
 			},
-		}
+		}}
 
 		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err != nil {
@@ -123,7 +121,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for completion
 		for i := 0; i < 10; i++ {
 			inst, _ := actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
-			if inst != nil && inst.Status == "Success" {
+			if inst != nil && inst.Status.Status == "Success" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -145,15 +143,14 @@ func TestActionsEngine(t *testing.T) {
 			return nil, nil
 		}
 
-		workflow := &models.Workflow{
-			ID:               "concurrent-wf",
+		workflow := &models.Workflow{ID: "concurrent-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Concurrent Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock"},
 			},
-		}
+		}}
 
 		// Start first instance
 		id1, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
@@ -181,8 +178,7 @@ func TestActionsEngine(t *testing.T) {
 			}
 		}
 
-		workflow := &models.Workflow{
-			ID:               "timeout-wf",
+		workflow := &models.Workflow{ID: "timeout-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Timeout Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -190,7 +186,7 @@ func TestActionsEngine(t *testing.T) {
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock"},
 			},
-		}
+		}}
 
 		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err != nil {
@@ -201,14 +197,14 @@ func TestActionsEngine(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 30; i++ {
 			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
-			if instance != nil && (instance.Status == "Failed" || instance.Status == "Cancelled") {
+			if instance != nil && (instance.Status.Status == "Failed" || instance.Status.Status == "Cancelled") {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
-		if instance == nil || (instance.Status != "Failed" && instance.Status != "Cancelled") {
-			t.Errorf("Expected status Failed/Cancelled due to timeout, got %v", instance.Status)
+		if instance == nil || (instance.Status.Status != "Failed" && instance.Status.Status != "Cancelled") {
+			t.Errorf("Expected status Failed/Cancelled due to timeout, got %v", instance.Status.Status)
 		}
 	})
 
@@ -219,8 +215,7 @@ func TestActionsEngine(t *testing.T) {
 			return map[string]string{"result": inputs["input_val"] + "-ok"}, nil
 		}
 
-		workflow := &models.Workflow{
-			ID:               "var-wf",
+		workflow := &models.Workflow{ID: "var-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Var Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -232,11 +227,11 @@ func TestActionsEngine(t *testing.T) {
 				{
 					ID:     "s1",
 					Type:   "test/mock",
-					Name:   "Running for ${{ vars.target }}",
+					Name:   "Running for ${{ vars.target  }}",
 					Params: map[string]string{"input_val": "${{ vars.target }}-${{ vars.opt ?}}-${{ vars.not_exist ?}}-${{ vars.not_exist2 }}"},
 				},
 			},
-		}
+		}}
 
 		inputs := map[string]string{"target": "PROD", "opt": "yes"}
 		instanceID, err := actions.TriggerWorkflow(tests.SetupMockRootContext(), workflow, "root", "Manual", inputs)
@@ -248,14 +243,14 @@ func TestActionsEngine(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
-			if instance != nil && instance.Status == "Success" {
+			if instance != nil && instance.Status.Status == "Success" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		if instance == nil || instance.Status != "Success" {
-			t.Fatalf("Workflow failed: %v", instance.Error)
+		if instance == nil || instance.Status.Status != "Success" {
+			t.Fatalf("Workflow failed: %v", instance.Status.Error)
 		}
 	})
 
@@ -268,8 +263,7 @@ func TestActionsEngine(t *testing.T) {
 			return nil, nil
 		}
 
-		workflow := &models.Workflow{
-			ID:               "opt-wf",
+		workflow := &models.Workflow{ID: "opt-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Optional Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
@@ -277,10 +271,10 @@ func TestActionsEngine(t *testing.T) {
 				{
 					ID:     "s1",
 					Type:   "test/mock",
-					Params: map[string]string{"input_val": "val:${{ vars.missing ?}}-end"},
+					Params: map[string]string{"input_val": "val:${{ vars.missing ? }}-end"},
 				},
 			},
-		}
+		}}
 
 		instanceID, err := actions.TriggerWorkflow(tests.SetupMockRootContext(), workflow, "root", "Manual", nil)
 		if err != nil {
@@ -290,7 +284,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for completion
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
-			if inst != nil && inst.Status == "Success" {
+			if inst != nil && inst.Status.Status == "Success" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -309,15 +303,14 @@ func TestActionsEngine(t *testing.T) {
 			panic("intentional panic for testing")
 		}
 
-		workflow := &models.Workflow{
-			ID:               "panic-wf",
+		workflow := &models.Workflow{ID: "panic-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Panic Workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa",
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock"},
 			},
-		}
+		}}
 
 		instanceID, err := actions.GlobalExecutor.Execute(tests.SetupMockRootContext(), "root", workflow, "Manual", nil, "")
 		if err != nil {
@@ -328,16 +321,16 @@ func TestActionsEngine(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
-			if instance != nil && instance.Status == "Failed" {
+			if instance != nil && instance.Status.Status == "Failed" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		if instance == nil || instance.Status != "Failed" {
-			t.Errorf("Expected status Failed due to panic, got %v", instance.Status)
+		if instance == nil || instance.Status.Status != "Failed" {
+			t.Errorf("Expected status Failed due to panic, got %v", instance.Status.Status)
 		}
-		if instance.Error == "" {
+		if instance.Status.Error == "" {
 			t.Error("Expected error message to be recorded")
 		}
 	})
@@ -346,11 +339,13 @@ func TestActionsEngine(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 		workflow := &models.Workflow{
-			ID:               "status-wf",
-			Name:             "Status Workflow",
-			ServiceAccountID: "sa",
-			Enabled:          false, // Disabled
-			Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},
+			ID: "status-wf",
+			Meta: models.WorkflowV1Meta{
+				Name:             "Status Workflow",
+				ServiceAccountID: "sa",
+				Enabled:          false, // Disabled
+				Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},
+			},
 		}
 
 		// 1. TriggerWorkflow (simulating Cron/Webhook) should fail
@@ -373,12 +368,14 @@ func TestActionsEngine(t *testing.T) {
 
 		// Invalid Var Key (contains capitals)
 		wf1 := &models.Workflow{
-			Name:             "Invalid Var",
-			ServiceAccountID: "sa",
-			Vars: map[string]models.VarDefinition{
-				"Invalid_Key": {Required: true},
+			Meta: models.WorkflowV1Meta{
+				Name:             "Invalid Var",
+				ServiceAccountID: "sa",
+				Vars: map[string]models.VarDefinition{
+					"Invalid_Key": {Required: true},
+				},
+				Steps: []models.Step{{ID: "s1", Type: "test/mock"}},
 			},
-			Steps: []models.Step{{ID: "s1", Type: "test/mock"}},
 		}
 		err := actions.ValidateWorkflow(ctx, wf1)
 		if err == nil {
@@ -387,10 +384,12 @@ func TestActionsEngine(t *testing.T) {
 
 		// Invalid Step ID (contains capitals)
 		wf2 := &models.Workflow{
-			Name:             "Invalid Step",
-			ServiceAccountID: "sa",
-			Steps: []models.Step{
-				{ID: "Step_1", Type: "test/mock"},
+			Meta: models.WorkflowV1Meta{
+				Name:             "Invalid Step",
+				ServiceAccountID: "sa",
+				Steps: []models.Step{
+					{ID: "Step_1", Type: "test/mock"},
+				},
 			},
 		}
 		err = actions.ValidateWorkflow(ctx, wf2)
@@ -400,13 +399,15 @@ func TestActionsEngine(t *testing.T) {
 
 		// Valid
 		wf3 := &models.Workflow{
-			Name:             "Valid Workflow",
-			ServiceAccountID: "sa",
-			Vars: map[string]models.VarDefinition{
-				"valid_key_123": {Required: true},
-			},
-			Steps: []models.Step{
-				{ID: "valid_step_id", Type: "test/mock"},
+			Meta: models.WorkflowV1Meta{
+				Name:             "Valid Workflow",
+				ServiceAccountID: "sa",
+				Vars: map[string]models.VarDefinition{
+					"valid_key_123": {Required: true},
+				},
+				Steps: []models.Step{
+					{ID: "valid_step_id", Type: "test/mock"},
+				},
 			},
 		}
 		err = actions.ValidateWorkflow(ctx, wf3)
@@ -417,8 +418,8 @@ func TestActionsEngine(t *testing.T) {
 
 	t.Run("RBAC Filtering", func(t *testing.T) {
 		// Create 2 workflows (IDs will be generated)
-		wf1 := &models.Workflow{Name: "WF 1", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
-		wf2 := &models.Workflow{Name: "WF 2", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}
+		wf1 := &models.Workflow{Meta: models.WorkflowV1Meta{Name: "WF 1", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}}
+		wf2 := &models.Workflow{Meta: models.WorkflowV1Meta{Name: "WF 2", Enabled: true, ServiceAccountID: "sa", Steps: []models.Step{{ID: "s1", Type: "test/mock"}}}}
 		var err error
 		wf1, err = actions.CreateWorkflow(tests.SetupMockRootContext(), wf1)
 		if err != nil {
@@ -451,12 +452,14 @@ func TestActionsEngine(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 		wf := &models.Workflow{
-			ID:               "webhook-wf",
-			Name:             "Webhook WF",
-			Enabled:          true,
-			ServiceAccountID: "sa",
-			WebhookEnabled:   true,
-			Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},
+			ID: "webhook-wf",
+			Meta: models.WorkflowV1Meta{
+				Name:             "Webhook WF",
+				Enabled:          true,
+				ServiceAccountID: "sa",
+				WebhookEnabled:   true,
+				Steps:            []models.Step{{ID: "s1", Type: "test/mock"}},
+			},
 		}
 		var err error
 		wf, err = actions.CreateWorkflow(tests.SetupMockRootContext(), wf)
@@ -464,7 +467,7 @@ func TestActionsEngine(t *testing.T) {
 			t.Fatalf("Create failed: %v", err)
 		}
 
-		initialToken := wf.WebhookToken
+		initialToken := wf.Meta.WebhookToken
 		if initialToken == "" {
 			t.Fatal("Initial token should be generated")
 		}
@@ -481,7 +484,7 @@ func TestActionsEngine(t *testing.T) {
 
 		// Verify in repo
 		updated, _ := actions.GetWorkflow(tests.SetupMockRootContext(), wf.ID)
-		if updated.WebhookToken != newToken {
+		if updated.Meta.WebhookToken != newToken {
 			t.Error("Token in repo does not match new token")
 		}
 	})
@@ -490,16 +493,18 @@ func TestActionsEngine(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 		workflow := &models.Workflow{
-			ID:               "log-wf",
-			Name:             "Log Workflow",
-			Enabled:          true,
-			ServiceAccountID: "sa",
-			Steps: []models.Step{
-				{
-					ID:     "step1",
-					Type:   "core/logger",
-					Name:   "Step 1",
-					Params: map[string]string{"message": "Hello from Step 1"},
+			ID: "log-wf",
+			Meta: models.WorkflowV1Meta{
+				Name:             "Log Workflow",
+				Enabled:          true,
+				ServiceAccountID: "sa",
+				Steps: []models.Step{
+					{
+						ID:     "step1",
+						Type:   "core/logger",
+						Name:   "Step 1",
+						Params: map[string]string{"message": "Hello from Step 1"},
+					},
 				},
 			},
 		}
@@ -512,13 +517,13 @@ func TestActionsEngine(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(ctx, instanceID)
-			if instance != nil && instance.Status != "Running" {
+			if instance != nil && instance.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
-		if instance == nil || instance.Status != "Success" {
+		if instance == nil || instance.Status.Status != "Success" {
 			t.Fatalf("Instance failed or not found: %v", instance)
 		}
 
@@ -560,15 +565,17 @@ func TestActionsEngine(t *testing.T) {
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 		largeMessage := strings.Repeat("A", 128*1024) // 128KB
 		workflow := &models.Workflow{
-			ID:               "large-log-wf",
-			Name:             "Large Log Workflow",
-			Enabled:          true,
-			ServiceAccountID: "sa",
-			Steps: []models.Step{
-				{
-					ID:     "step1",
-					Type:   "core/logger",
-					Params: map[string]string{"message": largeMessage},
+			ID: "large-log-wf",
+			Meta: models.WorkflowV1Meta{
+				Name:             "Large Log Workflow",
+				Enabled:          true,
+				ServiceAccountID: "sa",
+				Steps: []models.Step{
+					{
+						ID:     "step1",
+						Type:   "core/logger",
+						Params: map[string]string{"message": largeMessage},
+					},
 				},
 			},
 		}
@@ -580,7 +587,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for completion
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, instanceID)
-			if inst != nil && inst.Status == "Success" {
+			if inst != nil && inst.Status.Status == "Success" {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -608,15 +615,17 @@ func TestActionsEngine(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 		workflow := &models.Workflow{
-			ID:               "pop-wf",
-			Name:             "Pop Workflow",
-			Enabled:          true,
-			ServiceAccountID: "sa",
-			Steps: []models.Step{
-				{
-					ID:     "s1",
-					Type:   "core/logger",
-					Params: map[string]string{"message": "pop test"},
+			ID: "pop-wf",
+			Meta: models.WorkflowV1Meta{
+				Name:             "Pop Workflow",
+				Enabled:          true,
+				ServiceAccountID: "sa",
+				Steps: []models.Step{
+					{
+						ID:     "s1",
+						Type:   "core/logger",
+						Params: map[string]string{"message": "pop test"},
+					},
 				},
 			},
 		}
@@ -628,7 +637,7 @@ func TestActionsEngine(t *testing.T) {
 		// Wait for completion
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, instanceID)
-			if inst != nil && inst.Status == "Success" {
+			if inst != nil && inst.Status.Status == "Success" {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -640,8 +649,8 @@ func TestActionsEngine(t *testing.T) {
 			t.Fatalf("GetTaskInstance failed: %v", err)
 		}
 
-		if len(inst.Logs) > 0 {
-			t.Logf("Confirmed: GetTaskInstance populated %d logs", len(inst.Logs))
+		if len(inst.Status.Logs) > 0 {
+			t.Logf("Confirmed: GetTaskInstance populated %d logs", len(inst.Status.Logs))
 		} else {
 			t.Errorf("GetTaskInstance did NOT populate logs")
 		}
@@ -651,18 +660,20 @@ func TestActionsEngine(t *testing.T) {
 		ctx := tests.SetupMockRootContext()
 		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 		workflow := &models.Workflow{
-			ID:               "del-wf",
-			Name:             "Delete Workflow",
-			Enabled:          true,
-			ServiceAccountID: "sa",
-			Steps:            []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "test"}}},
+			ID: "del-wf",
+			Meta: models.WorkflowV1Meta{
+				Name:             "Delete Workflow",
+				Enabled:          true,
+				ServiceAccountID: "sa",
+				Steps:            []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "test"}}},
+			},
 		}
 		id, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 
 		// Wait for completion
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, id)
-			if inst != nil && inst.Status == "Success" {
+			if inst != nil && inst.Status.Status == "Success" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -683,7 +694,7 @@ func TestActionsEngine(t *testing.T) {
 		id2, _ := actions.GlobalExecutor.Execute(ctx, "root", workflow, "Manual", nil, "")
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, id2)
-			if inst != nil && inst.Status == "Success" {
+			if inst != nil && inst.Status.Status == "Success" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)

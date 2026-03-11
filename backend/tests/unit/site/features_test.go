@@ -70,7 +70,7 @@ func TestSiteAnalysisEngine(t *testing.T) {
 	service := site.NewSitePoolService(engine, nil)
 
 	// Create pool and entries
-	group := &models.SiteGroup{Name: "Analysis Pool"}
+	group := &models.SiteGroup{ID: "analysis-pool", Meta: models.SiteGroupV1Meta{Name: "Analysis Pool"}}
 	_ = service.CreateGroup(ctx, group)
 
 	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "google.com", NewTags: []string{"search"}}, "add")
@@ -107,15 +107,15 @@ func TestSiteExportManager(t *testing.T) {
 	service := site.NewSitePoolService(analysis, manager)
 
 	// Setup data
-	group := &models.SiteGroup{Name: "Pool 1"}
+	group := &models.SiteGroup{ID: "pool-1", Meta: models.SiteGroupV1Meta{Name: "Pool 1"}}
 	_ = service.CreateGroup(ctx, group)
 	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "a.com", NewTags: []string{"cn"}}, "add")
 	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 3, Value: "b.com", NewTags: []string{"us"}}, "add")
 
-	export := &models.SiteExport{
+	export := &models.SiteExport{Meta: models.SiteExportV1Meta{
 		Name:     "Export 1",
 		Rule:     `"cn" in tags`,
-		GroupIDs: []string{group.ID},
+		GroupIDs: []string{group.ID}},
 	}
 	_ = service.CreateExport(ctx, export)
 
@@ -170,7 +170,7 @@ func TestSiteImportProcessor(t *testing.T) {
 	service := site.NewSitePoolService(nil, nil)
 	site.RegisterSiteProcessors(service)
 
-	group := &models.SiteGroup{Name: "Import Pool"}
+	group := &models.SiteGroup{ID: "import-pool", Meta: models.SiteGroupV1Meta{Name: "Import Pool"}}
 	_ = service.CreateGroup(ctx, group)
 
 	// Create mock file
@@ -198,7 +198,7 @@ func TestSiteImportProcessor(t *testing.T) {
 
 	// Verify
 	g, _ := service.GetGroup(ctx, group.ID)
-	assert.Equal(t, int64(4), g.EntryCount)
+	assert.Equal(t, int64(4), g.Status.EntryCount)
 
 	preview, _ := service.PreviewPool(ctx, group.ID, "", 10, "")
 	assert.Len(t, preview.Entries, 4)
@@ -212,7 +212,7 @@ func TestSitePreviewSearch(t *testing.T) {
 
 	service := site.NewSitePoolService(nil, nil)
 
-	group := &models.SiteGroup{ID: "search_pool", Name: "Search Pool"}
+	group := &models.SiteGroup{ID: "search_pool", Meta: models.SiteGroupV1Meta{Name: "Search Pool"}}
 	_ = service.CreateGroup(ctx, group)
 
 	_ = service.ManagePoolEntry(ctx, group.ID, &models.SitePoolEntryRequest{Type: 2, Value: "microsoft.com", NewTags: []string{"work"}}, "add")

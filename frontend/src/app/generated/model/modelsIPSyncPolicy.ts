@@ -7,36 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsTaskStatus } from './modelsTaskStatus';
+import { ModelsIPSyncPolicyV1Meta } from './modelsIPSyncPolicyV1Meta';
+import { ModelsIPSyncPolicyV1Status } from './modelsIPSyncPolicyV1Status';
 
 export interface ModelsIPSyncPolicy {
   /**
-   * 格式特定的配置
+   * Configuration version, increments only on Meta changes
    */
-  config?: { [key: string]: string };
-  createdAt?: string;
-  cron?: string;
-  description?: string;
-  enabled?: boolean;
-  errorMessage?: string;
-  /**
-   * \"text\", \"geoip\"
-   */
-  format?: string;
+  generation?: number;
   id?: string;
-  lastRunAt?: string;
+  meta?: ModelsIPSyncPolicyV1Meta;
   /**
-   * \"success\", \"failed\"
+   * Total object version, increments on any change (Meta/Status)
    */
-  lastStatus?: ModelsTaskStatus;
-  /**
-   * \"overwrite\", \"append\"
-   */
-  mode?: string;
-  name?: string;
-  progress?: number;
-  sourceUrl?: string;
-  targetGroupId?: string;
-  updatedAt?: string;
+  resourceVersion?: number;
+  status?: ModelsIPSyncPolicyV1Status;
 }
-export namespace ModelsIPSyncPolicy {}

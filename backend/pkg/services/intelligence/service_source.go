@@ -15,47 +15,48 @@ import (
 )
 
 func (s *IntelligenceService) CreateSource(ctx context.Context, source *models.IntelligenceSource) error {
-	source.ID = uuid.NewString()
-	source.Status.Status = models.TaskStatusSuccess
-	if err := repo.SourceRepo.Cow(ctx, source.ID, func(res *models.IntelligenceSource) error { res.Meta = source.Meta; res.Status = source.Status; return nil }); err != nil {
-		return err
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/intelligence") {
+		return fmt.Errorf("%w: network/intelligence", commonauth.ErrPermissionDenied)
 	}
-	s.updateCronJob(*source)
-	common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, source.ID)
-	return nil
+	source.ID = uuid.NewString()
+
+	err := repo.SourceRepo.Cow(ctx, source.ID, func(res *models.Resource[models.IntelligenceSourceV1Meta, models.IntelligenceSourceV1Status]) error {
+		res.Meta = source.Meta
+		res.Status.Status = models.TaskStatusSuccess
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
+
+	if err == nil {
+		updated, _ := repo.SourceRepo.Get(ctx, source.ID)
+		if updated != nil {
+			*source = *updated
+			s.updateCronJob(*source)
+		}
+		common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, source.ID)
+	}
+	return err
 }
 
 func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.IntelligenceSource) error {
-	existing, err := repo.SourceRepo.Get(ctx, source.ID)
-	if err != nil {
-		return ErrSourceNotFound
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/intelligence") {
+		return fmt.Errorf("%w: network/intelligence", commonauth.ErrPermissionDenied)
 	}
 
-	// 优先保留内存中的运行状态，防止更新元数据时覆盖正在进行的同步进度
-	if t, ok := s.tasks.GetTask(source.ID); ok {
-		status := t.GetStatus()
-		if status == models.TaskStatusRunning || status == models.TaskStatusPending {
-			source.Status.Status = status
-			source.Status.ErrorMessage = t.Error
-			source.Status.Progress = t.GetProgress()
-		} else {
-			source.Status = existing.Status
-			source.Status.ErrorMessage = existing.Status.ErrorMessage
+	err := repo.SourceRepo.PatchMeta(ctx, source.ID, source.Generation, func(m *models.IntelligenceSourceV1Meta) {
+		*m = source.Meta
+	})
+
+	if err == nil {
+		updated, _ := repo.SourceRepo.Get(ctx, source.ID)
+		if updated != nil {
+			s.updateCronJob(*updated)
 		}
-	} else {
-		source.Status = existing.Status
-		source.Status.ErrorMessage = existing.Status.ErrorMessage
+		common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, source.ID)
+		commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Meta.Name, "Success", true)
 	}
-	source.Status.LastUpdatedAt = existing.Status.LastUpdatedAt
-
-	if err := repo.SourceRepo.Cow(ctx, source.ID, func(res *models.IntelligenceSource) error { res.Meta = source.Meta; res.Status = source.Status; return nil }); err != nil {
-		return err
-	}
-
-	s.updateCronJob(*source)
-	common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, source.ID)
-	commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Meta.Name, "Success", true)
-	return nil
+	return err
 }
 
 func (s *IntelligenceService) ScanSources(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IntelligenceSource], error) {

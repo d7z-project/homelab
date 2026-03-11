@@ -65,7 +65,7 @@ func TestSiteService(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	group := &models.SiteGroup{Name: "Test Site Pool"}
+	group := &models.SiteGroup{ID: "test-site-pool", Meta: models.SiteGroupV1Meta{Name: "Test Site Pool"}}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, group.ID)

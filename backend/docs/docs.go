@@ -3015,7 +3015,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.IPGroup"
+                                                "$ref": "#/definitions/models.IPPool"
                                             }
                                         }
                                     }
@@ -3054,7 +3054,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPGroup"
+                            "$ref": "#/definitions/models.IPPool"
                         }
                     }
                 ],
@@ -3062,7 +3062,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPGroup"
+                            "$ref": "#/definitions/models.IPPool"
                         }
                     },
                     "400": {
@@ -3117,7 +3117,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPGroup"
+                            "$ref": "#/definitions/models.IPPool"
                         }
                     }
                 ],
@@ -3125,7 +3125,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPGroup"
+                            "$ref": "#/definitions/models.IPPool"
                         }
                     },
                     "400": {
@@ -5651,27 +5651,43 @@ const docTemplate = `{
         "models.Domain": {
             "type": "object",
             "properties": {
-                "comments": {
-                    "description": "备注说明",
-                    "type": "string"
-                },
-                "createdAt": {
-                    "description": "创建时间",
-                    "type": "string"
-                },
-                "enabled": {
-                    "description": "是否启用",
-                    "type": "boolean"
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
+                "meta": {
+                    "$ref": "#/definitions/models.DomainV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.DomainV1Status"
+                }
+            }
+        },
+        "models.DomainV1Meta": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
                 "name": {
-                    "description": "域名名称 (e.g., example.com)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.DomainV1Status": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
                     "type": "string"
                 },
                 "updatedAt": {
-                    "description": "更新时间",
                     "type": "string"
                 }
             }
@@ -5683,11 +5699,30 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "records": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "object",
-                        "additionalProperties": true
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ExportRecord"
                     }
+                }
+            }
+        },
+        "models.ExportRecord": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "ttl": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         },
@@ -5725,31 +5760,22 @@ const docTemplate = `{
         "models.IPExport": {
             "type": "object",
             "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "groupIds": {
-                    "description": "依赖的 IP 池 ID 列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string"
+                "meta": {
+                    "$ref": "#/definitions/models.IPExportV1Meta"
                 },
-                "rule": {
-                    "description": "go-expr 表达式",
-                    "type": "string"
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
                 },
-                "updatedAt": {
-                    "type": "string"
+                "status": {
+                    "$ref": "#/definitions/models.IPExportV1Status"
                 }
             }
         },
@@ -5775,27 +5801,32 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IPGroup": {
+        "models.IPExportV1Meta": {
             "type": "object",
             "properties": {
-                "checksum": {
-                    "description": "数据指纹，用于缓存失效",
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
-                "entryCount": {
-                    "description": "池中条目总数",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
+                "groupIds": {
+                    "description": "依赖的 IP 池 ID 列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "description": "go-expr 表达式",
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPExportV1Status": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
                     "type": "string"
                 },
                 "updatedAt": {
@@ -5842,6 +5873,28 @@ const docTemplate = `{
                 },
                 "org": {
                     "type": "string"
+                }
+            }
+        },
+        "models.IPPool": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.IPPoolV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.IPPoolV1Status"
                 }
             }
         },
@@ -5898,7 +5951,59 @@ const docTemplate = `{
                 }
             }
         },
+        "models.IPPoolV1Meta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPPoolV1Status": {
+            "type": "object",
+            "properties": {
+                "checksum": {
+                    "description": "数据指纹，用于缓存失效",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "entryCount": {
+                    "description": "池中条目总数",
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "models.IPSyncPolicy": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.IPSyncPolicyV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.IPSyncPolicyV1Status"
+                }
+            }
+        },
+        "models.IPSyncPolicyV1Meta": {
             "type": "object",
             "properties": {
                 "config": {
@@ -5907,9 +6012,6 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
-                },
-                "createdAt": {
-                    "type": "string"
                 },
                 "cron": {
                     "type": "string"
@@ -5920,14 +6022,32 @@ const docTemplate = `{
                 "enabled": {
                     "type": "boolean"
                 },
-                "errorMessage": {
-                    "type": "string"
-                },
                 "format": {
                     "description": "\"text\", \"geoip\"",
                     "type": "string"
                 },
-                "id": {
+                "mode": {
+                    "description": "\"overwrite\", \"append\"",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sourceUrl": {
+                    "type": "string"
+                },
+                "targetGroupId": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IPSyncPolicyV1Status": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "errorMessage": {
                     "type": "string"
                 },
                 "lastRunAt": {
@@ -5941,21 +6061,8 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "mode": {
-                    "description": "\"overwrite\", \"append\"",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
                 "progress": {
                     "type": "number"
-                },
-                "sourceUrl": {
-                    "type": "string"
-                },
-                "targetGroupId": {
-                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -5963,6 +6070,28 @@ const docTemplate = `{
             }
         },
         "models.IntelligenceSource": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.IntelligenceSourceV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.IntelligenceSourceV1Status"
+                }
+            }
+        },
+        "models.IntelligenceSourceV1Meta": {
             "type": "object",
             "properties": {
                 "autoUpdate": {
@@ -5980,16 +6109,25 @@ const docTemplate = `{
                 "enabled": {
                     "type": "boolean"
                 },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "asn, city, country",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IntelligenceSourceV1Status": {
+            "type": "object",
+            "properties": {
                 "errorMessage": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "string"
-                },
                 "lastUpdatedAt": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 },
                 "progress": {
@@ -6002,13 +6140,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.TaskStatus"
                         }
                     ]
-                },
-                "type": {
-                    "description": "asn, city, country",
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
                 }
             }
         },
@@ -6108,42 +6239,56 @@ const docTemplate = `{
         "models.Record": {
             "type": "object",
             "properties": {
-                "comments": {
-                    "description": "备注说明",
-                    "type": "string"
-                },
-                "domainId": {
-                    "description": "关联的域名 ID",
-                    "type": "string"
-                },
-                "enabled": {
-                    "description": "是否启用",
-                    "type": "boolean"
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
+                "meta": {
+                    "$ref": "#/definitions/models.RecordV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.RecordV1Status"
+                }
+            }
+        },
+        "models.RecordV1Meta": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "string"
+                },
+                "domainId": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
                 "name": {
-                    "description": "记录名 (e.g., @, www, api)",
                     "type": "string"
                 },
                 "priority": {
-                    "description": "优先级 (仅用于 MX 和 SRV)",
                     "type": "integer"
                 },
                 "ttl": {
-                    "description": "生存时间 (秒)",
                     "type": "integer"
                 },
                 "type": {
-                    "description": "记录类型 (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)",
                     "type": "string"
                 },
                 "value": {
-                    "description": "记录值 (e.g., 192.168.1.1)",
                     "type": "string"
                 }
             }
+        },
+        "models.RecordV1Status": {
+            "type": "object"
         },
         "models.ResourcePermissions": {
             "type": "object",
@@ -6170,31 +6315,52 @@ const docTemplate = `{
         "models.Role": {
             "type": "object",
             "properties": {
-                "comments": {
-                    "type": "string"
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string"
+                "meta": {
+                    "$ref": "#/definitions/models.RoleV1Meta"
                 },
-                "rules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.PolicyRule"
-                    }
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.RoleV1Status"
                 }
             }
         },
         "models.RoleBinding": {
             "type": "object",
             "properties": {
-                "enabled": {
-                    "type": "boolean"
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.RoleBindingV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.RoleBindingV1Status"
+                }
+            }
+        },
+        "models.RoleBindingV1Meta": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
@@ -6209,6 +6375,29 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.RoleBindingV1Status": {
+            "type": "object"
+        },
+        "models.RoleV1Meta": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PolicyRule"
+                    }
+                }
+            }
+        },
+        "models.RoleV1Status": {
+            "type": "object"
         },
         "models.RunWorkflowRequest": {
             "type": "object",
@@ -6228,22 +6417,46 @@ const docTemplate = `{
         "models.ServiceAccount": {
             "type": "object",
             "properties": {
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.ServiceAccountV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.ServiceAccountV1Status"
+                }
+            }
+        },
+        "models.ServiceAccountV1Meta": {
+            "type": "object",
+            "properties": {
                 "comments": {
                     "type": "string"
                 },
                 "enabled": {
                     "type": "boolean"
                 },
-                "id": {
-                    "type": "string"
-                },
-                "lastUsedAt": {
-                    "type": "string"
-                },
                 "name": {
                     "type": "string"
                 },
                 "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ServiceAccountV1Status": {
+            "type": "object",
+            "properties": {
+                "lastUsedAt": {
                     "type": "string"
                 }
             }
@@ -6348,31 +6561,22 @@ const docTemplate = `{
         "models.SiteExport": {
             "type": "object",
             "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "groupIds": {
-                    "description": "依赖的域名池 ID 列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string"
+                "meta": {
+                    "$ref": "#/definitions/models.SiteExportV1Meta"
                 },
-                "rule": {
-                    "description": "go-expr 表达式",
-                    "type": "string"
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
                 },
-                "updatedAt": {
-                    "type": "string"
+                "status": {
+                    "$ref": "#/definitions/models.SiteExportV1Status"
                 }
             }
         },
@@ -6390,7 +6594,73 @@ const docTemplate = `{
                 }
             }
         },
+        "models.SiteExportV1Meta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "groupIds": {
+                    "description": "依赖的域名池 ID 列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "description": "go-expr 表达式",
+                    "type": "string"
+                }
+            }
+        },
+        "models.SiteExportV1Status": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "models.SiteGroup": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.SiteGroupV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.SiteGroupV1Status"
+                }
+            }
+        },
+        "models.SiteGroupV1Meta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SiteGroupV1Status": {
             "type": "object",
             "properties": {
                 "checksum": {
@@ -6400,18 +6670,9 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "description": {
-                    "type": "string"
-                },
                 "entryCount": {
                     "description": "条目总数",
                     "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -6483,15 +6744,34 @@ const docTemplate = `{
         "models.SiteSyncPolicy": {
             "type": "object",
             "properties": {
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.SiteSyncPolicyV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.SiteSyncPolicyV1Status"
+                }
+            }
+        },
+        "models.SiteSyncPolicyV1Meta": {
+            "type": "object",
+            "properties": {
                 "config": {
                     "description": "格式特定的配置",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
-                },
-                "createdAt": {
-                    "type": "string"
                 },
                 "cron": {
                     "type": "string"
@@ -6502,14 +6782,32 @@ const docTemplate = `{
                 "enabled": {
                     "type": "boolean"
                 },
-                "errorMessage": {
-                    "type": "string"
-                },
                 "format": {
                     "description": "\"text\", \"geosite\"",
                     "type": "string"
                 },
-                "id": {
+                "mode": {
+                    "description": "\"overwrite\", \"append\"",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sourceUrl": {
+                    "type": "string"
+                },
+                "targetGroupId": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SiteSyncPolicyV1Status": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "errorMessage": {
                     "type": "string"
                 },
                 "lastRunAt": {
@@ -6523,21 +6821,8 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "mode": {
-                    "description": "\"overwrite\", \"append\"",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
                 "progress": {
                     "type": "number"
-                },
-                "sourceUrl": {
-                    "type": "string"
-                },
-                "targetGroupId": {
-                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -6629,35 +6914,30 @@ const docTemplate = `{
         "models.TaskInstance": {
             "type": "object",
             "properties": {
-                "currentStep": {
-                    "description": "当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)",
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "finishedAt": {
-                    "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
+                "meta": {
+                    "$ref": "#/definitions/models.TaskInstanceV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.TaskInstanceV1Status"
+                }
+            }
+        },
+        "models.TaskInstanceV1Meta": {
+            "type": "object",
+            "properties": {
                 "inputs": {
                     "description": "实际传入的变量值",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "logs": {
-                    "description": "任务日志",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.LogEntry"
-                    }
-                },
-                "outputs": {
-                    "description": "任务最终输出",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
@@ -6666,24 +6946,6 @@ const docTemplate = `{
                 "serviceAccountId": {
                     "description": "执行该工作流时使用的身份 (Impersonation)",
                     "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Pending, Running, Success, Failed, Cancelled",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.TaskStatus"
-                        }
-                    ]
-                },
-                "stepTimings": {
-                    "description": "步骤执行耗时追踪",
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/models.StepTiming"
-                    }
                 },
                 "steps": {
                     "description": "运行时的步骤快照 (防篡改)",
@@ -6705,6 +6967,53 @@ const docTemplate = `{
                 },
                 "workspace": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TaskInstanceV1Status": {
+            "type": "object",
+            "properties": {
+                "currentStep": {
+                    "description": "当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)",
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "finishedAt": {
+                    "type": "string"
+                },
+                "logs": {
+                    "description": "任务日志",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.LogEntry"
+                    }
+                },
+                "outputs": {
+                    "description": "任务最终输出",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Pending, Running, Success, Failed, Cancelled",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TaskStatus"
+                        }
+                    ]
+                },
+                "stepTimings": {
+                    "description": "步骤执行耗时追踪",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.StepTiming"
+                    }
                 }
             }
         },
@@ -6768,9 +7077,28 @@ const docTemplate = `{
         "models.Workflow": {
             "type": "object",
             "properties": {
-                "createdAt": {
+                "generation": {
+                    "description": "Configuration version, increments only on Meta changes",
+                    "type": "integer"
+                },
+                "id": {
                     "type": "string"
                 },
+                "meta": {
+                    "$ref": "#/definitions/models.WorkflowV1Meta"
+                },
+                "resourceVersion": {
+                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.WorkflowV1Status"
+                }
+            }
+        },
+        "models.WorkflowV1Meta": {
+            "type": "object",
+            "properties": {
                 "cronEnabled": {
                     "description": "是否启用定时触发",
                     "type": "boolean"
@@ -6785,9 +7113,6 @@ const docTemplate = `{
                 "enabled": {
                     "description": "是否启用 (禁用时 Cron/Webhook/手动 均不可触发)",
                     "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -6806,9 +7131,6 @@ const docTemplate = `{
                     "description": "超时时间 (秒)，默认 7200 (2h)，0 为不超时",
                     "type": "integer"
                 },
-                "updatedAt": {
-                    "type": "string"
-                },
                 "vars": {
                     "description": "工作流启动时接受的变量定义",
                     "type": "object",
@@ -6822,6 +7144,17 @@ const docTemplate = `{
                 },
                 "webhookToken": {
                     "description": "Webhook 触发令牌",
+                    "type": "string"
+                }
+            }
+        },
+        "models.WorkflowV1Status": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }

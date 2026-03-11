@@ -20,19 +20,22 @@ func TestActionsFailAndStatus(t *testing.T) {
 
 	t.Run("Step Fail True - Continue on Error", func(t *testing.T) {
 		workflow := &models.Workflow{
-			ID: "fail-test-wf", Name: "Fail Test", Enabled: true, ServiceAccountID: "sa",
-			Steps: []models.Step{
+			ID: "fail-test-wf",
+			Meta: models.WorkflowV1Meta{
+				Name: "Fail Test", Enabled: true, ServiceAccountID: "sa",
+				Steps: []models.Step{
 				{
-					ID:     "s1",
-					Type:   "core/fail", // This step will fail
-					Params: map[string]string{"message": "intentional"},
-					Fail:   true, // Allow error
-				},
+						ID:     "s1",
+						Type:   "core/fail", // This step will fail
+						Params: map[string]string{"message": "intentional"},
+						Fail:   true, // Allow error
+					},
 				{
-					ID:     "s2",
-					Type:   "core/logger",
-					If:     `${{ steps.s1.status }} == false`, // Reference status
-					Params: map[string]string{"message": "s1 failed as expected"},
+						ID:     "s2",
+						Type:   "core/logger",
+						If:     `${{ steps.s1.status  }}== false`, // Reference status
+						Params: map[string]string{"message": "s1 failed as expected"},
+					},
 				},
 			},
 		}
@@ -46,30 +49,33 @@ func TestActionsFailAndStatus(t *testing.T) {
 		var instance *models.TaskInstance
 		for i := 0; i < 20; i++ {
 			instance, _ = actions.GetTaskInstance(ctx, instanceID)
-			if instance != nil && instance.Status != "Running" {
+			if instance != nil && instance.Status.Status != models.TaskStatusRunning {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
-		if instance == nil || instance.Status != "Success" {
-			t.Fatalf("Expected status Success due to fail:true, got %v (Error: %s)", instance.Status, instance.Error)
+		if instance == nil || instance.Status.Status != models.TaskStatusSuccess {
+			t.Fatalf("Expected status Success due to fail:true, got %v (Error: %s)", instance.Status.Status, instance.Status.Error)
 		}
 	})
 
 	t.Run("Step Status Mapping in Params", func(t *testing.T) {
 		workflow := &models.Workflow{
-			ID: "status-map-wf", Name: "Status Map", Enabled: true, ServiceAccountID: "sa",
-			Steps: []models.Step{
+			ID: "status-map-wf",
+			Meta: models.WorkflowV1Meta{
+				Name: "Status Map", Enabled: true, ServiceAccountID: "sa",
+				Steps: []models.Step{
 				{
-					ID:     "s1",
-					Type:   "core/logger",
-					Params: map[string]string{"message": "hi"},
-				},
+						ID:     "s1",
+						Type:   "core/logger",
+						Params: map[string]string{"message": "hi"},
+					},
 				{
-					ID:     "s2",
-					Type:   "test/mock",
-					Params: map[string]string{"input_val": "status is ${{ steps.s1.status }}"},
+						ID:     "s2",
+						Type:   "test/mock",
+						Params: map[string]string{"input_val": "status is ${{ steps.s1.status  }}"},
+					},
 				},
 			},
 		}
@@ -89,7 +95,7 @@ func TestActionsFailAndStatus(t *testing.T) {
 		// Wait for completion
 		for i := 0; i < 20; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, instanceID)
-			if inst != nil && inst.Status != "Running" {
+			if inst != nil && inst.Status.Status != models.TaskStatusRunning {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)

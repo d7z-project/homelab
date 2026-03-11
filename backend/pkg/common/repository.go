@@ -239,3 +239,20 @@ func (r *BaseRepository[M, S]) List(ctx context.Context, cursor string, limit in
 		Total:      int64(count),
 	}, nil
 }
+
+// ListAll returns all resources in the repository.
+func (r *BaseRepository[M, S]) ListAll(ctx context.Context) ([]models.Resource[M, S], error) {
+	db := r.childDB()
+	items, err := db.List(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	res := make([]models.Resource[M, S], 0, len(items))
+	for _, v := range items {
+		var item models.Resource[M, S]
+		if err := json.Unmarshal([]byte(v.Value), &item); err == nil {
+			res = append(res, item)
+		}
+	}
+	return res, nil
+}

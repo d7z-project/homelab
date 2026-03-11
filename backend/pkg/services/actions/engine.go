@@ -64,13 +64,13 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 		return "", fmt.Errorf("failed to check for running instances: %w", err)
 	}
 	for _, inst := range instances {
-		if inst.WorkflowID == workflow.ID && (inst.Status == "Running" || inst.Status == "Pending") {
+		if inst.Meta.WorkflowID == workflow.ID && (inst.Status.Status == "Running" || inst.Status.Status == "Pending") {
 			// 健壮性：探测锁状态。如果能拿到锁，说明之前的执行者已挂
 			lockKey := "action:task:" + inst.ID
 			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
 				// 能拿到锁，说明是僵死状态，我们手动清理并允许新任务开始
-				inst.Status = "Failed"
-				inst.Error = "Interrupted by system restart or node failure"
+				inst.Status.Status = models.TaskStatusFailed
+				inst.Status.Error = "Interrupted by system restart or node failure"
 				_ = repo.SaveTaskInstance(ctx, &inst)
 				release()
 				continue
@@ -85,19 +85,23 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 	}
 
 	instance := &models.TaskInstance{
-		ID:               instanceID,
-		WorkflowID:       workflow.ID,
-		Status:           "Running",
-		Trigger:          trigger,
-		UserID:           userID,
-		ServiceAccountID: workflow.ServiceAccountID,
-		Inputs:           inputs,
-		StartedAt:        time.Now(),
-		Outputs:          make(map[string]string),
-		Steps:            make([]models.Step, len(workflow.Steps)),
-		StepTimings:      make(map[int]*models.StepTiming),
+		ID: instanceID,
+		Meta: models.TaskInstanceV1Meta{
+			WorkflowID:       workflow.ID,
+			Trigger:          trigger,
+			UserID:           userID,
+			ServiceAccountID: workflow.Meta.ServiceAccountID,
+			Inputs:           inputs,
+			Steps:            make([]models.Step, len(workflow.Meta.Steps)),
+		},
+		Status: models.TaskInstanceV1Status{
+			Status:      models.TaskStatusRunning,
+			StartedAt:   time.Now(),
+			Outputs:     make(map[string]string),
+			StepTimings: make(map[int]*models.StepTiming),
+		},
 	}
-	copy(instance.Steps, workflow.Steps)
+	copy(instance.Meta.Steps, workflow.Meta.Steps)
 
 	// Update activeWorkflows with the real instance ID
 	e.activeWorkflows.Store(workflow.ID, instance.ID)
@@ -107,7 +111,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
 	}
-	instance.Workspace = workspace
+	instance.Meta.Workspace = workspace
 
 	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
 		_ = actionsFS.RemoveAll(workspace)
@@ -117,9 +121,9 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *models.
 
 	// 2. Timeout logic
 	timeout := DefaultTimeout
-	if workflow.Timeout > 0 {
-		timeout = time.Duration(workflow.Timeout) * time.Second
-	} else if workflow.Timeout < 0 {
+	if workflow.Meta.Timeout > 0 {
+		timeout = time.Duration(workflow.Meta.Timeout) * time.Second
+	} else if workflow.Meta.Timeout < 0 {
 		timeout = 0
 	}
 
@@ -161,8 +165,8 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 	defer release()
 
 	defer func() {
-		finalStepIdx := len(instance.Steps) + 1
-		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
+		finalStepIdx := len(instance.Meta.Steps) + 1
+		if t, ok := instance.Status.StepTimings[instance.Status.CurrentStep]; ok {
 			if t.FinishedAt == nil {
 				now := time.Now()
 				t.FinishedAt = &now
@@ -173,39 +177,39 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 			err := fmt.Errorf("panic recovered: %v\n%s", r, string(debug.Stack()))
 			e.fail(instance, err, logger)
 		}
-		if instance.Workspace != "" {
+		if instance.Meta.Workspace != "" {
 			logger.Logf("Cleaning up workspace...")
-			_ = actionsFS.RemoveAll(instance.Workspace)
+			_ = actionsFS.RemoveAll(instance.Meta.Workspace)
 		}
-		if instance.Status == "Running" {
-			instance.Status = "Success"
-			instance.CurrentStep = finalStepIdx
+		if instance.Status.Status == "Running" {
+			instance.Status.Status = "Success"
+			instance.Status.CurrentStep = finalStepIdx
 			now := time.Now()
-			instance.FinishedAt = &now
+			instance.Status.FinishedAt = &now
 			logger.Log("Workflow completed")
 		} else {
-			logger.Logf("Execution ended: %s", instance.Status)
+			logger.Logf("Execution ended: %s", instance.Status.Status)
 		}
-		instance.StepTimings[finalStepIdx] = &models.StepTiming{StartedAt: time.Now()}
+		instance.Status.StepTimings[finalStepIdx] = &models.StepTiming{StartedAt: time.Now()}
 		now := time.Now()
-		instance.StepTimings[finalStepIdx].FinishedAt = &now
+		instance.Status.StepTimings[finalStepIdx].FinishedAt = &now
 		e.updateInstanceState(instance, logger)
 		cancel()
 		e.runningTasks.Delete(instance.ID)
 		logger.Close()
 	}()
 
-	instance.CurrentStep = 0
-	instance.StepTimings[0] = &models.StepTiming{StartedAt: time.Now()}
+	instance.Status.CurrentStep = 0
+	instance.Status.StepTimings[0] = &models.StepTiming{StartedAt: time.Now()}
 	logger.SetStep(0)
 	logger.Log("Initializing workflow")
 	e.updateInstanceState(instance, logger)
 
 	// 前置校验: 确认执行身份 (ServiceAccount) 仍然存在
-	if instance.ServiceAccountID != "" && instance.ServiceAccountID != "root" {
-		saExists, err := discovery.Verify(commonauth.SystemContext(), "rbac/serviceaccounts", instance.ServiceAccountID)
+	if instance.Meta.ServiceAccountID != "" && instance.Meta.ServiceAccountID != "root" {
+		saExists, err := discovery.Verify(commonauth.SystemContext(), "rbac/serviceaccounts", instance.Meta.ServiceAccountID)
 		if err != nil || !saExists {
-			e.fail(instance, fmt.Errorf("service account '%s' no longer exists, workflow cannot execute", instance.ServiceAccountID), logger)
+			e.fail(instance, fmt.Errorf("service account '%s' no longer exists, workflow cannot execute", instance.Meta.ServiceAccountID), logger)
 			return
 		}
 	}
@@ -213,23 +217,23 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 	stepOutputs := make(map[string]map[string]string)
 	stepStatuses := make(map[string]bool)
 
-	for i, step := range instance.Steps {
-		if t, ok := instance.StepTimings[instance.CurrentStep]; ok {
+	for i, step := range instance.Meta.Steps {
+		if t, ok := instance.Status.StepTimings[instance.Status.CurrentStep]; ok {
 			if t.FinishedAt == nil {
 				now := time.Now()
 				t.FinishedAt = &now
 			}
 		}
 
-		instance.CurrentStep = i + 1
-		instance.StepTimings[instance.CurrentStep] = &models.StepTiming{StartedAt: time.Now()}
-		logger.SetStep(instance.CurrentStep)
+		instance.Status.CurrentStep = i + 1
+		instance.Status.StepTimings[instance.Status.CurrentStep] = &models.StepTiming{StartedAt: time.Now()}
+		logger.SetStep(instance.Status.CurrentStep)
 		e.updateInstanceState(instance, logger)
 
 		// Create impersonated context for this step
 		// This ensures all repo calls and processor logic respect the SA permissions
 		impersonatedCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
-			ID:   instance.ServiceAccountID,
+			ID:   instance.Meta.ServiceAccountID,
 			Type: "sa",
 		})
 
@@ -242,7 +246,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 
 		// 1. Evaluate 'if' condition
 		if step.If != "" {
-			shouldRun, err := e.evaluateIf(step.If, stepOutputs, stepStatuses, instance.Inputs)
+			shouldRun, err := e.evaluateIf(step.If, stepOutputs, stepStatuses, instance.Meta.Inputs)
 			if err != nil {
 				e.fail(instance, fmt.Errorf("invalid if condition in step %s: %v", step.ID, err), logger)
 				return
@@ -257,7 +261,7 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		// 2. Resolve inputs
 		inputs := make(map[string]string)
 		for k, v := range step.Params {
-			inputs[k] = e.resolveVariables(v, stepOutputs, stepStatuses, instance.Inputs)
+			inputs[k] = e.resolveVariables(v, stepOutputs, stepStatuses, instance.Meta.Inputs)
 		}
 
 		// 3. Execute Processor
@@ -303,9 +307,9 @@ func (e *Executor) run(ctx context.Context, instance *models.TaskInstance, workf
 		taskCtx := &TaskContext{
 			WorkflowID:       workflow.ID,
 			InstanceID:       instance.ID,
-			Workspace:        afero.NewBasePathFs(actionsFS, instance.Workspace),
-			UserID:           instance.UserID,
-			ServiceAccountID: workflow.ServiceAccountID,
+			Workspace:        afero.NewBasePathFs(actionsFS, instance.Meta.Workspace),
+			UserID:           instance.Meta.UserID,
+			ServiceAccountID: workflow.Meta.ServiceAccountID,
 			Context:          impersonatedCtx, // Use impersonated context
 			CancelFunc:       cancel,
 			Logger:           logger,
@@ -458,15 +462,15 @@ func (e *Executor) evaluateIf(condition string, stepOutputs map[string]map[strin
 
 func (e *Executor) fail(instance *models.TaskInstance, err error, logger *TaskLogger) {
 	if errors.Is(err, context.Canceled) {
-		instance.Status = "Cancelled"
+		instance.Status.Status = "Cancelled"
 	} else {
-		instance.Status = "Failed"
+		instance.Status.Status = "Failed"
 	}
-	instance.Error = err.Error()
+	instance.Status.Error = err.Error()
 	now := time.Now()
-	instance.FinishedAt = &now
+	instance.Status.FinishedAt = &now
 	e.updateInstanceState(instance, logger)
-	logger.Logf("Workflow %s: %v", instance.Status, err)
+	logger.Logf("Workflow %s: %v", instance.Status.Status, err)
 }
 
 func (e *Executor) Cancel(instanceID string) bool {

@@ -10,14 +10,13 @@ import (
 	repo "homelab/pkg/repositories/ip"
 	"path/filepath"
 	"slices"
+	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func (s *IPPoolService) CreateGroup(ctx context.Context, group *models.IPPool) error {
 	if group.ID == "" {
-		group.ID = uuid.NewString()
+		return fmt.Errorf("%w: id is required for IP pool", common.ErrBadRequest)
 	}
 	resource := "network/ip/" + group.ID
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
@@ -119,26 +118,18 @@ func (s *IPPoolService) LookupGroup(ctx context.Context, id string) (interface{}
 
 func (s *IPPoolService) ScanGroups(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPPool], error) {
 	perms := commonauth.PermissionsFromContext(ctx)
+	hasGlobal := perms.IsAllowed("network/ip")
+	search = strings.ToLower(search)
 
 	filter := func(p *models.IPPool) bool {
-		if !perms.IsAllowed("network/ip") && !perms.IsAllowed("network/ip/"+p.ID) {
+		if !hasGlobal && !perms.IsAllowed("network/ip/"+p.ID) {
 			return false
 		}
 		if search != "" {
-			// case-insensitive search logic might be needed here. Not fully implemented locally, let's keep it simple.
-			// The old implementation used strings.Contains with ToLower.
-			// Let's implement it for Meta.Name and ID
-			return true // Will re-implement search in another replace to avoid chunk errors
+			return strings.Contains(strings.ToLower(p.Meta.Name), search) || strings.Contains(strings.ToLower(p.ID), search)
 		}
 		return true
 	}
-
-	searchLower := ""
-	if search != "" {
-		searchLower = search
-	}
-
-	_ = searchLower
 
 	return repo.PoolRepo.List(ctx, cursor, limit, filter)
 }

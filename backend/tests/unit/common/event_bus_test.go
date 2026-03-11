@@ -121,7 +121,7 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 	actions.Register(&tests.MockProcessor{})
 
 	t.Run("CreateWorkflowRegistersLocalCron", func(t *testing.T) {
-		wf := &models.Workflow{
+		wf := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "cron-sync-test",
 			Enabled:          true,
 			CronEnabled:      true,
@@ -130,7 +130,7 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock", Params: map[string]string{}},
 			},
-		}
+		}}
 
 		created, err := actions.CreateWorkflow(ctx, wf)
 		if err != nil {
@@ -143,7 +143,7 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 
 		// Verify the cron job was registered
 		// We can verify indirectly by updating and checking no error
-		created.Name = "cron-sync-test-updated"
+		created.Meta.Name = "cron-sync-test-updated"
 		_, err = actions.UpdateWorkflow(ctx, created.ID, created)
 		if err != nil {
 			t.Fatalf("Failed to update workflow: %v", err)
@@ -151,7 +151,7 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 	})
 
 	t.Run("DisableCronViaUpdate", func(t *testing.T) {
-		wf := &models.Workflow{
+		wf := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "disable-cron-test",
 			Enabled:          true,
 			CronEnabled:      true,
@@ -160,7 +160,7 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock", Params: map[string]string{}},
 			},
-		}
+		}}
 
 		created, err := actions.CreateWorkflow(ctx, wf)
 		if err != nil {
@@ -168,18 +168,18 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 		}
 
 		// Disable cron
-		created.CronEnabled = false
+		created.Meta.CronEnabled = false
 		updated, err := actions.UpdateWorkflow(ctx, created.ID, created)
 		if err != nil {
 			t.Fatalf("Failed to update workflow: %v", err)
 		}
-		if updated.CronEnabled {
+		if updated.Meta.CronEnabled {
 			t.Error("Expected CronEnabled to be false after update")
 		}
 	})
 
 	t.Run("DeleteWorkflowRemovesTrigger", func(t *testing.T) {
-		wf := &models.Workflow{
+		wf := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{
 			Name:             "delete-trigger-test",
 			Enabled:          true,
 			CronEnabled:      true,
@@ -188,7 +188,7 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock", Params: map[string]string{}},
 			},
-		}
+		}}
 
 		created, err := actions.CreateWorkflow(ctx, wf)
 		if err != nil {
@@ -224,15 +224,14 @@ func TestDistributedExecutorConcurrencyCheck(t *testing.T) {
 	})
 
 	t.Run("RejectConcurrentExecution", func(t *testing.T) {
-		wf := &models.Workflow{
-			ID:               "concurrent-test-wf",
+		wf := &models.Workflow{ID: "concurrent-test-wf", Meta: models.WorkflowV1Meta{
 			Name:             "Concurrent Test",
 			Enabled:          true,
 			ServiceAccountID: "sa_exec",
 			Steps: []models.Step{
 				{ID: "s1", Type: "test/mock", Params: map[string]string{}},
 			},
-		}
+		}}
 
 		// First execution should succeed
 		id1, err := actions.GlobalExecutor.Execute(ctx, "root", wf, "Manual", nil, "")
@@ -252,7 +251,7 @@ func TestDistributedExecutorConcurrencyCheck(t *testing.T) {
 		// Wait for first to complete
 		for i := 0; i < 30; i++ {
 			inst, _ := actions.GetTaskInstance(ctx, id1)
-			if inst != nil && inst.Status != "Running" {
+			if inst != nil && inst.Status.Status != "Running" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)

@@ -7,36 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsTaskStatus } from './modelsTaskStatus';
+import { ModelsSiteSyncPolicyV1Meta } from './modelsSiteSyncPolicyV1Meta';
+import { ModelsSiteSyncPolicyV1Status } from './modelsSiteSyncPolicyV1Status';
 
 export interface ModelsSiteSyncPolicy {
   /**
-   * 格式特定的配置
+   * Configuration version, increments only on Meta changes
    */
-  config?: { [key: string]: string };
-  createdAt?: string;
-  cron?: string;
-  description?: string;
-  enabled?: boolean;
-  errorMessage?: string;
-  /**
-   * \"text\", \"geosite\"
-   */
-  format?: string;
+  generation?: number;
   id?: string;
-  lastRunAt?: string;
+  meta?: ModelsSiteSyncPolicyV1Meta;
   /**
-   * \"success\", \"failed\"
+   * Total object version, increments on any change (Meta/Status)
    */
-  lastStatus?: ModelsTaskStatus;
-  /**
-   * \"overwrite\", \"append\"
-   */
-  mode?: string;
-  name?: string;
-  progress?: number;
-  sourceUrl?: string;
-  targetGroupId?: string;
-  updatedAt?: string;
+  resourceVersion?: number;
+  status?: ModelsSiteSyncPolicyV1Status;
 }
-export namespace ModelsSiteSyncPolicy {}

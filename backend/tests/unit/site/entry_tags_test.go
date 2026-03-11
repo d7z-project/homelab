@@ -19,7 +19,7 @@ func TestSiteEntryTagsGranularUpdate(t *testing.T) {
 
 	service := site.NewSitePoolService(nil, nil)
 
-	group := &models.SiteGroup{ID: "tag_test", Name: "Tag Test"}
+	group := &models.SiteGroup{ID: "tag_test", Meta: models.SiteGroupV1Meta{Name: "Tag Test"}}
 	_ = service.CreateGroup(ctx, group)
 
 	t.Run("Prevent manual creation of internal tags", func(t *testing.T) {

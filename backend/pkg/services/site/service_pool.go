@@ -150,9 +150,9 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	hf := sha256.New()
 	hf.Write(content)
 
-	group.EntryCount = int64(len(entries))
-	group.UpdatedAt = time.Now()
-	group.Checksum = hex.EncodeToString(hf.Sum(nil))
+	group.Status.EntryCount = int64(len(entries))
+	group.Status.UpdatedAt = time.Now()
+	group.Status.Checksum = hex.EncodeToString(hf.Sum(nil))
 
 	if err := common.FS.Rename(tempFile, poolPath); err != nil {
 		return err

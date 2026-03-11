@@ -465,7 +465,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	var target *models.Workflow
 	for _, wf := range res.Items {
-		if wf.WebhookEnabled && wf.WebhookToken == token {
+		if wf.Meta.WebhookEnabled && wf.Meta.WebhookToken == token {
 			target = &wf
 			break
 		}
@@ -485,7 +485,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Asynchronous execution
-	instanceID, err := actions.TriggerWorkflow(r.Context(), target, target.ServiceAccountID, "Webhook", inputs)
+	instanceID, err := actions.TriggerWorkflow(r.Context(), target, target.Meta.ServiceAccountID, "Webhook", inputs)
 	if err != nil {
 		errStr := err.Error()
 		if strings.Contains(errStr, "is disabled") {

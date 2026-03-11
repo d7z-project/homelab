@@ -7,27 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsDomainV1Meta } from './modelsDomainV1Meta';
+import { ModelsDomainV1Status } from './modelsDomainV1Status';
 
 export interface ModelsDomain {
   /**
-   * 备注说明
+   * Configuration version, increments only on Meta changes
    */
-  comments?: string;
-  /**
-   * 创建时间
-   */
-  createdAt?: string;
-  /**
-   * 是否启用
-   */
-  enabled?: boolean;
+  generation?: number;
   id?: string;
+  meta?: ModelsDomainV1Meta;
   /**
-   * 域名名称 (e.g., example.com)
+   * Total object version, increments on any change (Meta/Status)
    */
-  name?: string;
-  /**
-   * 更新时间
-   */
-  updatedAt?: string;
+  resourceVersion?: number;
+  status?: ModelsDomainV1Status;
 }

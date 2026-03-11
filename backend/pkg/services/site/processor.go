@@ -69,7 +69,7 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 		return nil, err
 	}
 
-	ctx.Logger.Logf("Importing site data to pool %s...", group.Name)
+	ctx.Logger.Logf("Importing site data to pool %s...", group.Meta.Name)
 
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -201,15 +201,19 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	tf.Close()
 	_ = common.FS.Rename(tempFile, poolPath)
 
-	group.EntryCount = int64(len(entries))
-	group.UpdatedAt = time.Now()
 	hf := sha256.New()
 	content, _ := afero.ReadFile(common.FS, poolPath)
 	hf.Write(content)
-	group.Checksum = hex.EncodeToString(hf.Sum(nil))
-	_ = repo.SaveGroup(ctx.Context, group)
+	checksum := hex.EncodeToString(hf.Sum(nil))
+	count := int64(len(entries))
 
-	ctx.Logger.Logf("Import finished. Total entries: %d", group.EntryCount)
+	_ = repo.GroupRepo.UpdateStatus(ctx.Context, groupID, func(status *models.SiteGroupV1Status) {
+		status.EntryCount = count
+		status.UpdatedAt = time.Now()
+		status.Checksum = checksum
+	})
+
+	ctx.Logger.Logf("Import finished. Total entries: %d", count)
 	return nil, nil
 }
 

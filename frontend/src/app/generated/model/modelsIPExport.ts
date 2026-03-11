@@ -7,19 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsIPExportV1Status } from './modelsIPExportV1Status';
+import { ModelsIPExportV1Meta } from './modelsIPExportV1Meta';
 
 export interface ModelsIPExport {
-  createdAt?: string;
-  description?: string;
   /**
-   * 依赖的 IP 池 ID 列表
+   * Configuration version, increments only on Meta changes
    */
-  groupIds?: Array<string>;
+  generation?: number;
   id?: string;
-  name?: string;
+  meta?: ModelsIPExportV1Meta;
   /**
-   * go-expr 表达式
+   * Total object version, increments on any change (Meta/Status)
    */
-  rule?: string;
-  updatedAt?: string;
+  resourceVersion?: number;
+  status?: ModelsIPExportV1Status;
 }

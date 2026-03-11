@@ -210,7 +210,7 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 	defer m.wg.Done()
 
 	m.core.RunTask(bgCtx, taskID, func(taskCtx context.Context, task *ExportTask) error {
-		program, err := expr.Compile(e.Rule, expr.Env(map[string]interface{}{
+		program, err := expr.Compile(e.Meta.Rule, expr.Env(map[string]interface{}{
 			"tags":   []string{},
 			"domain": "",
 			"type":   uint8(0),
@@ -220,10 +220,10 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 		}
 
 		totalEntries := int64(0)
-		for _, gid := range e.GroupIDs {
+		for _, gid := range e.Meta.GroupIDs {
 			g, _ := repo.GetGroup(taskCtx, gid)
 			if g != nil {
-				totalEntries += g.EntryCount
+				totalEntries += g.Status.EntryCount
 			}
 		}
 		if totalEntries == 0 {
@@ -251,7 +251,7 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 		firstItem := true
 		totalRead := int64(0)
 
-		for _, gid := range e.GroupIDs {
+		for _, gid := range e.Meta.GroupIDs {
 			poolPath := filepath.Join(PoolsDir, gid+".bin")
 			pf, err := common.FS.Open(poolPath)
 			if err != nil {

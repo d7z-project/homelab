@@ -47,10 +47,10 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 
 	// 准备一个简单的 Workflow
-	wf := &models.Workflow{
-		ID: "async-wf", Name: "Async Workflow", Enabled: true, ServiceAccountID: "sa",
+	wf := &models.Workflow{ID: "async-wf", Meta: models.WorkflowV1Meta{
+		Name: "Async Workflow", Enabled: true, ServiceAccountID: "sa",
 		Steps: []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hello"}}},
-	}
+	}}
 	_ = repo.SaveWorkflow(ctx, wf)
 
 	t.Run("Trigger_Returns_Pending_Immediately", func(t *testing.T) {
@@ -65,8 +65,8 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		if inst == nil {
 			t.Fatal("Instance not found in DB")
 		}
-		if inst.Status != "Pending" {
-			t.Errorf("Expected status Pending immediately after trigger, got %s", inst.Status)
+		if inst.Status.Status != "Pending" {
+			t.Errorf("Expected status Pending immediately after trigger, got %s", inst.Status.Status)
 		}
 
 		// 检查消息队列是否收到了执行信号
@@ -90,8 +90,8 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 
 		// 此时状态依然应该是 Pending
 		inst, _ := repo.GetTaskInstance(ctx, instanceID)
-		if inst.Status != "Pending" {
-			t.Errorf("Expected status Pending before handling signal, got %s", inst.Status)
+		if inst.Status.Status != "Pending" {
+			t.Errorf("Expected status Pending before handling signal, got %s", inst.Status.Status)
 		}
 
 		// 执行信号分发 (模拟 TriggerManager 接收到信号)
@@ -101,7 +101,7 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		success := false
 		for i := 0; i < 50; i++ {
 			inst, _ = repo.GetTaskInstance(ctx, instanceID)
-			if inst.Status == "Success" {
+			if inst.Status.Status == "Success" {
 				success = true
 				break
 			}
@@ -109,7 +109,7 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		}
 
 		if !success {
-			t.Errorf("Workflow did not complete after signal handling, current status: %s, error: %s", inst.Status, inst.Error)
+			t.Errorf("Workflow did not complete after signal handling, current status: %s, error: %s", inst.Status.Status, inst.Status.Error)
 		}
 	})
 
@@ -134,14 +134,14 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 		var inst *models.TaskInstance
 		for i := 0; i < 50; i++ {
 			inst, _ = repo.GetTaskInstance(ctx, instanceID)
-			if inst.Status == "Success" || inst.Status == "Failed" {
+			if inst.Status.Status == "Success" || inst.Status.Status == "Failed" {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		if inst.Status != "Success" {
-			t.Errorf("Workflow should have finished successfully, got %s", inst.Status)
+		if inst.Status.Status != "Success" {
+			t.Errorf("Workflow should have finished successfully, got %s", inst.Status.Status)
 		}
 	})
 }

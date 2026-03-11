@@ -7,19 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsSiteGroupV1Meta } from './modelsSiteGroupV1Meta';
+import { ModelsSiteGroupV1Status } from './modelsSiteGroupV1Status';
 
 export interface ModelsSiteGroup {
   /**
-   * 数据指纹
+   * Configuration version, increments only on Meta changes
    */
-  checksum?: string;
-  createdAt?: string;
-  description?: string;
-  /**
-   * 条目总数
-   */
-  entryCount?: number;
+  generation?: number;
   id?: string;
-  name?: string;
-  updatedAt?: string;
+  meta?: ModelsSiteGroupV1Meta;
+  /**
+   * Total object version, increments on any change (Meta/Status)
+   */
+  resourceVersion?: number;
+  status?: ModelsSiteGroupV1Status;
 }

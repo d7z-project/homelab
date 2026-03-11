@@ -7,26 +7,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsTaskStatus } from './modelsTaskStatus';
+import { ModelsIntelligenceSourceV1Status } from './modelsIntelligenceSourceV1Status';
+import { ModelsIntelligenceSourceV1Meta } from './modelsIntelligenceSourceV1Meta';
 
 export interface ModelsIntelligenceSource {
-  autoUpdate?: boolean;
-  config?: { [key: string]: string };
-  cron?: string;
-  enabled?: boolean;
-  errorMessage?: string;
+  /**
+   * Configuration version, increments only on Meta changes
+   */
+  generation?: number;
   id?: string;
-  lastUpdatedAt?: string;
-  name?: string;
-  progress?: number;
+  meta?: ModelsIntelligenceSourceV1Meta;
   /**
-   * Ready, Downloading, Error
+   * Total object version, increments on any change (Meta/Status)
    */
-  status?: ModelsTaskStatus;
-  /**
-   * asn, city, country
-   */
-  type?: string;
-  url?: string;
+  resourceVersion?: number;
+  status?: ModelsIntelligenceSourceV1Status;
 }
-export namespace ModelsIntelligenceSource {}

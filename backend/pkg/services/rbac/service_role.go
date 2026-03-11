@@ -8,15 +8,12 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	rbacrepo "homelab/pkg/repositories/rbac"
-	"strings"
 
 	"github.com/google/uuid"
 )
 
 func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
-	if role.ID == "" {
-		role.ID = uuid.New().String()
-	}
+	role.ID = uuid.New().String()
 	if err := role.Bind(nil); err != nil {
 		return nil, err
 	}
@@ -29,13 +26,22 @@ func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 		return nil, errors.New("Role ID already exists")
 	}
 
+	err := rbacrepo.RoleRepo.Cow(ctx, role.ID, func(res *models.Resource[models.RoleV1Meta, models.RoleV1Status]) error {
+		res.Meta = role.Meta
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
+
 	message := fmt.Sprintf("Created Role: %s (id: %s) with rules: %+v", role.Meta.Name, role.ID, role.Meta.Rules)
-	if err := rbacrepo.SaveRole(ctx, role); err != nil {
+	if err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRole", role.ID, message, false)
 		return nil, err
 	}
 	commonaudit.FromContext(ctx).Log("CreateRole", role.ID, message, true)
-	return role, nil
+
+	updated, _ := rbacrepo.GetRole(ctx, role.ID)
+	return updated, nil
 }
 
 func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role, error) {
@@ -46,35 +52,20 @@ func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
-	release, err := lockRBAC(ctx, "role:"+id)
+	err := rbacrepo.RoleRepo.PatchMeta(ctx, id, role.Generation, func(m *models.RoleV1Meta) {
+		m.Name = role.Meta.Name
+		m.Rules = role.Meta.Rules
+	})
+
+	message := fmt.Sprintf("Updated Role %s", id)
 	if err != nil {
+		commonaudit.FromContext(ctx).Log("UpdateRole", id, message, false)
 		return nil, err
 	}
-	defer release()
 
-	if role.ID != id {
-		return nil, errors.New("id in body does not match path")
-	}
-
-	existing, err := rbacrepo.GetRole(ctx, id)
-	if err != nil {
-		return nil, errors.New("Role not found")
-	}
-
-	role.ID = id
-	changes := []string{}
-	if existing.Meta.Name != role.Meta.Name {
-		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Meta.Name, role.Meta.Name))
-	}
-	changes = append(changes, fmt.Sprintf("rules updated: %+v -> %+v", existing.Meta.Rules, role.Meta.Rules))
-
-	message := fmt.Sprintf("Updated Role: %s: %s", role.ID, strings.Join(changes, ", "))
-	if err := rbacrepo.SaveRole(ctx, role); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateRole", role.ID, message, false)
-		return nil, err
-	}
-	commonaudit.FromContext(ctx).Log("UpdateRole", role.ID, message, true)
-	return role, nil
+	updated, _ := rbacrepo.GetRole(ctx, id)
+	commonaudit.FromContext(ctx).Log("UpdateRole", id, message, true)
+	return updated, nil
 }
 
 func DeleteRole(ctx context.Context, id string) error {

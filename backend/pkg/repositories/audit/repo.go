@@ -15,12 +15,20 @@ import (
 )
 
 func getAuditDB(t time.Time) kv.KV {
+	db := common.DB
+	if db == nil {
+		return nil
+	}
 	year := t.Format("2006")
 	month := t.Format("01")
-	return common.DB.Child("system", "audit", "data", year, month)
+	return db.Child("system", "audit", "data", year, month)
 }
 
 func SaveLog(ctx context.Context, log *models.AuditLog) error {
+	db := common.DB
+	if db == nil {
+		return nil
+	}
 	var t time.Time
 	var err error
 
@@ -40,21 +48,28 @@ func SaveLog(ctx context.Context, log *models.AuditLog) error {
 
 	// Update index for this year-month
 	yearMonth := t.Format("2006-01")
-	indexDB := common.DB.Child("system", "audit", "index")
+	indexDB := db.Child("system", "audit", "index")
 	_, _ = indexDB.PutIfNotExists(ctx, yearMonth, "1", kv.TTLKeep)
 
-	db := getAuditDB(t)
+	auditDB := getAuditDB(t)
+	if auditDB == nil {
+		return nil
+	}
 	key := fmt.Sprintf("%s-%s", log.Timestamp, log.ID)
 	data, err := json.Marshal(log)
 	if err != nil {
 		return err
 	}
 
-	return db.Put(ctx, key, string(data), kv.TTLKeep)
+	return auditDB.Put(ctx, key, string(data), kv.TTLKeep)
 }
 
 func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.AuditLog], error) {
-	indexDB := common.DB.Child("system", "audit", "index")
+	db := common.DB
+	if db == nil {
+		return nil, nil
+	}
+	indexDB := db.Child("system", "audit", "index")
 	indexItems, _ := indexDB.List(ctx, "")
 
 	var yearMonths []string
@@ -83,8 +98,8 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*mo
 	for _, ym := range yearMonths {
 		parts := strings.Split(ym, "-")
 		if len(parts) == 2 {
-			db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
-			c, _ := db.Count(ctx)
+			dataDB := db.Child("system", "audit", "data", parts[0], parts[1])
+			c, _ := dataDB.Count(ctx)
 			total += int64(c)
 		}
 	}
@@ -101,13 +116,13 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*mo
 			continue
 		}
 
-		db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
+		dataDB := db.Child("system", "audit", "data", parts[0], parts[1])
 
 		// 注意：Audit 存入时 Key 是 "Timestamp-UUID"，List 默认升序。
 		// 但审计日志通常需要倒序（最新在前）。
 		// 因为 KV.ListCursor 暂不支持逆序，我们仍然需要获取该月数据并内存倒序。
 		// 优化：如果该月数据巨大，这仍然有压力。但由于是按月分片，通常可控。
-		items, _ := db.List(ctx, "")
+		items, _ := dataDB.List(ctx, "")
 
 		// 内存倒序处理
 		for j := len(items) - 1; j >= 0; j-- {
@@ -156,16 +171,20 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*mo
 }
 
 func CleanupLogs(ctx context.Context, days int) (int, error) {
+	db := common.DB
+	if db == nil {
+		return 0, nil
+	}
 	cutoff := time.Now().AddDate(0, 0, -days)
-	indexDB := common.DB.Child("system", "audit", "index")
+	indexDB := db.Child("system", "audit", "index")
 	indexItems, _ := indexDB.List(ctx, "")
 
 	deletedCount := 0
 	for _, item := range indexItems {
 		parts := strings.Split(item.Key, "-")
 		if len(parts) == 2 {
-			db := common.DB.Child("system", "audit", "data", parts[0], parts[1])
-			logs, _ := db.List(ctx, "")
+			dataDB := db.Child("system", "audit", "data", parts[0], parts[1])
+			logs, _ := dataDB.List(ctx, "")
 
 			monthHasRecords := false
 			for _, logItem := range logs {
@@ -173,7 +192,7 @@ func CleanupLogs(ctx context.Context, days int) (int, error) {
 				if err := json.Unmarshal([]byte(logItem.Value), &log); err == nil {
 					t, err := time.Parse(time.RFC3339, log.Timestamp)
 					if err == nil && t.Before(cutoff) {
-						db.Delete(ctx, logItem.Key)
+						dataDB.Delete(ctx, logItem.Key)
 						deletedCount++
 					} else {
 						monthHasRecords = true

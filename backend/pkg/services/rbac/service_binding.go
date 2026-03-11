@@ -8,7 +8,6 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	"homelab/pkg/models"
 	rbacrepo "homelab/pkg/repositories/rbac"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -33,23 +32,25 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 		}
 	}
 
-	if rb.ID == "" {
-		rb.ID = uuid.New().String()
-	}
+	rb.ID = uuid.New().String()
 
-	existing, _ := rbacrepo.GetRoleBinding(ctx, rb.ID)
-	if existing != nil {
-		return nil, errors.New("RoleBinding ID already exists")
-	}
+	err := rbacrepo.BindingRepo.Cow(ctx, rb.ID, func(res *models.Resource[models.RoleBindingV1Meta, models.RoleBindingV1Status]) error {
+		res.Meta = rb.Meta
+		res.Generation = 1
+		res.ResourceVersion = 1
+		return nil
+	})
 
 	message := fmt.Sprintf("Created RoleBinding: %s (id: %s, SA: %s, Roles: %v, enabled: %v)",
 		rb.Meta.Name, rb.ID, rb.Meta.ServiceAccountID, rb.Meta.RoleIDs, rb.Meta.Enabled)
-	if err := rbacrepo.SaveRoleBinding(ctx, rb); err != nil {
+	if err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.ID, message, false)
 		return nil, err
 	}
 	commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.ID, message, true)
-	return rb, nil
+
+	updated, _ := rbacrepo.GetRoleBinding(ctx, rb.ID)
+	return updated, nil
 }
 
 func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (*models.RoleBinding, error) {
@@ -58,14 +59,6 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 	}
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
-	}
-	if rb.ID != id {
-		return nil, errors.New("id in body does not match path")
-	}
-
-	existing, err := rbacrepo.GetRoleBinding(ctx, id)
-	if err != nil {
-		return nil, errors.New("RoleBinding not found")
 	}
 
 	// Verify ServiceAccount exists
@@ -80,27 +73,19 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 		}
 	}
 
-	rb.ID = id
-	changes := []string{}
-	if existing.Meta.Name != rb.Meta.Name {
-		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Meta.Name, rb.Meta.Name))
-	}
-	if existing.Meta.Enabled != rb.Meta.Enabled {
-		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Meta.Enabled, rb.Meta.Enabled))
-	}
-	if existing.Meta.ServiceAccountID != rb.Meta.ServiceAccountID {
-		changes = append(changes, fmt.Sprintf("SA: %s -> %s", existing.Meta.ServiceAccountID, rb.Meta.ServiceAccountID))
-	}
-	changes = append(changes, fmt.Sprintf("roles: %v -> %v", existing.Meta.RoleIDs, rb.Meta.RoleIDs))
+	err := rbacrepo.BindingRepo.PatchMeta(ctx, id, rb.Generation, func(m *models.RoleBindingV1Meta) {
+		*m = rb.Meta
+	})
 
-	message := fmt.Sprintf("Updated RoleBinding %s: %s", rb.ID, strings.Join(changes, ", "))
-
-	if err := rbacrepo.SaveRoleBinding(ctx, rb); err != nil {
-		commonaudit.FromContext(ctx).Log("UpdateRoleBinding", rb.ID, message, false)
+	message := fmt.Sprintf("Updated RoleBinding %s", id)
+	if err != nil {
+		commonaudit.FromContext(ctx).Log("UpdateRoleBinding", id, message, false)
 		return nil, err
 	}
-	commonaudit.FromContext(ctx).Log("UpdateRoleBinding", rb.ID, message, true)
-	return rb, nil
+
+	updated, _ := rbacrepo.GetRoleBinding(ctx, id)
+	commonaudit.FromContext(ctx).Log("UpdateRoleBinding", id, message, true)
+	return updated, nil
 }
 
 func DeleteRoleBinding(ctx context.Context, id string) error {

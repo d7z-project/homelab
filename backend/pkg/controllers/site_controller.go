@@ -510,11 +510,36 @@ func TriggerSiteSyncHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "sync started")
 }
 
+// UpdateSiteGroupHandler godoc
+// @Summary Update a site group
+// @Tags network/site
+// @Accept json
+// @Produce json
+// @Param id path string true "Group ID"
+// @Param group body models.SiteGroup true "Site Group"
+// @Success 200 {object} models.SiteGroup
+// @Router /network/site/pools/{id} [put]
+func UpdateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var group models.SiteGroup
+	if err := render.Bind(r, &group); err != nil {
+		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	group.ID = id
+	if err := sitePoolService.UpdateGroup(r.Context(), &group); err != nil {
+		HandleError(w, r, err)
+		return
+	}
+	common.Success(w, r, group)
+}
+
 func SiteRouter(r chi.Router) {
 	r.Route("/network/site", func(r chi.Router) {
 		r.Route("/pools", func(r chi.Router) {
 			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ScanSiteGroupsHandler)
 			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteGroupHandler)
+			r.With(middlewares.RequirePermission("update", "network/site")).Put("/{id}", UpdateSiteGroupHandler)
 			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteGroupHandler)
 			r.With(middlewares.RequirePermission("get", "network/site")).Get("/{id}/preview", PreviewSitePoolHandler)
 			r.With(middlewares.RequirePermission("update", "network/site")).Post("/{id}/entries", ManageSitePoolEntryHandler)

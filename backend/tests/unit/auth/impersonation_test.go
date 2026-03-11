@@ -45,8 +45,7 @@ func TestImpersonation(t *testing.T) {
 	actions.Register(mock)
 
 	// 3. Define Workflow with SA
-	workflow := &models.Workflow{
-		ID:               "impersonation-wf",
+	workflow := &models.Workflow{ID: "impersonation-wf", Meta: models.WorkflowV1Meta{
 		Name:             "Impersonation Test Workflow",
 		Enabled:          true,
 		ServiceAccountID: saID,
@@ -57,7 +56,7 @@ func TestImpersonation(t *testing.T) {
 				Name: "Check Identity",
 			},
 		},
-	}
+	}}
 
 	// 4. Trigger workflow as a different user
 	triggerUserID := "human-trigger-user"
@@ -75,14 +74,14 @@ func TestImpersonation(t *testing.T) {
 	var instance *models.TaskInstance
 	for i := 0; i < 50; i++ {
 		instance, _ = actions.GetTaskInstance(tests.SetupMockRootContext(), instanceID)
-		if instance != nil && (instance.Status == "Success" || instance.Status == "Failed") {
+		if instance != nil && (instance.Status.Status == "Success" || instance.Status.Status == "Failed") {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	if instance == nil || instance.Status != "Success" {
-		t.Fatalf("Workflow execution failed or timed out: %v (Error: %s)", instance.Status, instance.Error)
+	if instance == nil || instance.Status.Status != "Success" {
+		t.Fatalf("Workflow execution failed or timed out: %v (Error: %s)", instance.Status.Status, instance.Status.Error)
 	}
 
 	// 6. Verify Impersonation Result
@@ -101,7 +100,7 @@ func TestImpersonation(t *testing.T) {
 	}
 
 	// Ensure the original triggerer is still recorded in instance but NOT in execution context
-	if instance.UserID != triggerUserID {
-		t.Errorf("Original triggerer lost: expected %s, got %s", triggerUserID, instance.UserID)
+	if instance.Meta.UserID != triggerUserID {
+		t.Errorf("Original triggerer lost: expected %s, got %s", triggerUserID, instance.Meta.UserID)
 	}
 }

@@ -103,8 +103,8 @@ func TestSitePoolSecurityInstanceLevel(t *testing.T) {
 	service := site.NewSitePoolService(analysis, nil)
 
 	// 2. Setup Site Pools
-	group1 := &models.SiteGroup{Name: "Pool 1"}
-	group2 := &models.SiteGroup{Name: "Pool 2"}
+	group1 := &models.SiteGroup{ID: "pool-1", Meta: models.SiteGroupV1Meta{Name: "Pool 1"}}
+	group2 := &models.SiteGroup{ID: "pool-2", Meta: models.SiteGroupV1Meta{Name: "Pool 2"}}
 
 	err = service.CreateGroup(ctxRoot, group1)
 	if err != nil {
@@ -178,8 +178,8 @@ func TestSecurityInstanceLevel(t *testing.T) {
 	}
 
 	// 2. Setup Workflows
-	wf1 := &models.Workflow{Name: "Workflow 1", ServiceAccountID: sa.ID, Steps: []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hi"}}}}
-	wf2 := &models.Workflow{Name: "Workflow 2", ServiceAccountID: sa.ID, Steps: []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hi"}}}}
+	wf1 := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{Name: "Workflow 1", ServiceAccountID: sa.ID, Steps: []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hi"}}}}}
+	wf2 := &models.Workflow{ID: "s1", Meta: models.WorkflowV1Meta{Name: "Workflow 2", ServiceAccountID: sa.ID, Steps: []models.Step{{ID: "s1", Type: "core/logger", Params: map[string]string{"message": "hi"}}}}}
 
 	wf1, err = actions.CreateWorkflow(ctxRoot, wf1)
 	if err != nil {

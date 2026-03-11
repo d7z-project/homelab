@@ -22,7 +22,7 @@ func TestSiteSyncPolicy(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 
 	// 1. Create Target Group
-	group := &models.SiteGroup{Name: "Target Pool"}
+	group := &models.SiteGroup{ID: "target-pool", Meta: models.SiteGroupV1Meta{Name: "Target Pool"}}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
 
@@ -33,7 +33,7 @@ func TestSiteSyncPolicy(t *testing.T) {
 	defer ts.Close()
 
 	// 3. Create Sync Policy
-	policy := &models.SiteSyncPolicy{
+	policy := &models.SiteSyncPolicy{Meta: models.SiteSyncPolicyV1Meta{
 		Name:          "Test Sync",
 		TargetGroupID: group.ID,
 		SourceURL:     ts.URL,
@@ -42,7 +42,7 @@ func TestSiteSyncPolicy(t *testing.T) {
 		Cron:          "@every 1h",
 		Config:        map[string]string{"tags": "tag1,tag2"},
 		Enabled:       true,
-	}
+	}}
 	err = service.CreateSyncPolicy(ctx, policy)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, policy.ID)
@@ -60,13 +60,13 @@ func TestSiteSyncPolicy(t *testing.T) {
 	assert.Len(t, res.Entries, 4)
 
 	// 6. Test Update / Delete
-	policy.Name = "Updated Sync"
+	policy.Meta.Name = "Updated Sync"
 	err = service.UpdateSyncPolicy(ctx, policy)
 	assert.NoError(t, err)
 
 	p2, err := service.GetSyncPolicy(ctx, policy.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, "Updated Sync", p2.Name)
+	assert.Equal(t, "Updated Sync", p2.Meta.Name)
 
 	// Scan policies
 	scanRes, err := service.ScanSyncPolicies(ctx, "", 10, "")
@@ -86,7 +86,7 @@ func TestSiteSyncPolicy_GeoSite(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 	common.FS = afero.NewMemMapFs()
 
-	group := &models.SiteGroup{Name: "Target Pool 2"}
+	group := &models.SiteGroup{ID: "target-pool-2", Meta: models.SiteGroupV1Meta{Name: "Target Pool 2"}}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
 
@@ -106,13 +106,13 @@ func TestSiteSyncPolicy_GeoSite(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	policy := &models.SiteSyncPolicy{
+	policy := &models.SiteSyncPolicy{Meta: models.SiteSyncPolicyV1Meta{
 		Name:          "Test GeoSite Sync",
 		TargetGroupID: group.ID,
 		SourceURL:     ts.URL,
 		Format:        "geosite",
 		Mode:          "append",
-		Config:        map[string]string{"category": "cn"},
+		Config:        map[string]string{"category": "cn"}},
 	}
 	err = service.CreateSyncPolicy(ctx, policy)
 	assert.NoError(t, err)

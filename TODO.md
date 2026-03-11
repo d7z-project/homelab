@@ -80,8 +80,8 @@ type ConfigValidator interface {
 - [x] **DNS 模块**: 重构 `Domain` 和 `Record` 结构，实现 `Validate` 接口校验域名格式。
 - [x] **Intelligence 模块**: 重构 `IntelligenceSource` 结构，实现 `Validate` 接口。
 - [x] **RBAC 模块**: 重构 `Role`, `ServiceAccount`, `RoleBinding` 结构，实现 `Validate` 接口。
-- [ ] **Site 模块**: 重构 `SiteGroup`, `SiteSyncPolicy` 等资源。
-- [ ] **Actions 模块**: 重构 `Workflow` 结构。
+- [x] **Site 模块**: 重构 `SiteGroup`, `SiteSyncPolicy` 等资源。
+- [x] **Actions 模块**: 重构 `Workflow` 结构。
 
 ### 第三阶段：Service 层适配
 

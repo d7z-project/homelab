@@ -7,39 +7,18 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ModelsRecordV1Meta } from './modelsRecordV1Meta';
 
 export interface ModelsRecord {
   /**
-   * 备注说明
+   * Configuration version, increments only on Meta changes
    */
-  comments?: string;
-  /**
-   * 关联的域名 ID
-   */
-  domainId?: string;
-  /**
-   * 是否启用
-   */
-  enabled?: boolean;
+  generation?: number;
   id?: string;
+  meta?: ModelsRecordV1Meta;
   /**
-   * 记录名 (e.g., @, www, api)
+   * Total object version, increments on any change (Meta/Status)
    */
-  name?: string;
-  /**
-   * 优先级 (仅用于 MX 和 SRV)
-   */
-  priority?: number;
-  /**
-   * 生存时间 (秒)
-   */
-  ttl?: number;
-  /**
-   * 记录类型 (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)
-   */
-  type?: string;
-  /**
-   * 记录值 (e.g., 192.168.1.1)
-   */
-  value?: string;
+  resourceVersion?: number;
+  status?: object;
 }

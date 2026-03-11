@@ -14,7 +14,7 @@ import (
 
 func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID string, triggerSource string, inputs map[string]string) (string, error) {
 	// manual trigger is also blocked if workflow is disabled
-	if !workflow.Enabled {
+	if !workflow.Meta.Enabled {
 		return "", fmt.Errorf("workflow is disabled")
 	}
 
@@ -30,7 +30,7 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 		inputs = make(map[string]string)
 	}
 	finalInputs := make(map[string]string)
-	for k, def := range workflow.Vars {
+	for k, def := range workflow.Meta.Vars {
 		val, ok := inputs[k]
 		if !ok || val == "" {
 			if def.Required && def.Default == "" {
@@ -58,19 +58,23 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 
 	instanceID := fmt.Sprintf("%s%d", TaskPrefix, time.Now().UnixNano())
 	instance := &models.TaskInstance{
-		ID:               instanceID,
-		WorkflowID:       workflow.ID,
-		Status:           "Pending",
-		Trigger:          triggerSource,
-		UserID:           userID,
-		ServiceAccountID: workflow.ServiceAccountID,
-		Inputs:           finalInputs,
-		StartedAt:        time.Now(),
-		Outputs:          make(map[string]string),
-		Steps:            make([]models.Step, len(workflow.Steps)),
-		StepTimings:      make(map[int]*models.StepTiming),
+		ID: instanceID,
+		Meta: models.TaskInstanceV1Meta{
+			WorkflowID:       workflow.ID,
+			Trigger:          triggerSource,
+			UserID:           userID,
+			ServiceAccountID: workflow.Meta.ServiceAccountID,
+			Inputs:           finalInputs,
+			Steps:            make([]models.Step, len(workflow.Meta.Steps)),
+		},
+		Status: models.TaskInstanceV1Status{
+			Status:      models.TaskStatusPending,
+			StartedAt:   time.Now(),
+			Outputs:     make(map[string]string),
+			StepTimings: make(map[int]*models.StepTiming),
+		},
 	}
-	copy(instance.Steps, workflow.Steps)
+	copy(instance.Meta.Steps, workflow.Meta.Steps)
 
 	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
 		return "", fmt.Errorf("failed to save pending instance: %v", err)
@@ -90,7 +94,7 @@ func TriggerWorkflow(ctx context.Context, workflow *models.Workflow, userID stri
 		_, _ = GlobalExecutor.Execute(ctx, userID, workflow, triggerSource, finalInputs, instanceID)
 	}
 
-	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Name, instanceID)
+	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Meta.Name, instanceID)
 	commonaudit.FromContext(ctx).Log("TriggerWorkflow", workflow.ID, message, true)
 	return instanceID, nil
 }
@@ -138,16 +142,16 @@ func GetTaskInstance(ctx context.Context, id string) (*models.TaskInstance, erro
 		return nil, err
 	}
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.WorkflowID) {
-		return nil, fmt.Errorf("permission denied: actions/%s", inst.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.Meta.WorkflowID) {
+		return nil, fmt.Errorf("permission denied: actions/%s", inst.Meta.WorkflowID)
 	}
 
 	// Populate logs from all parts
-	logs, _ := ReadAllTaskLogs(inst.WorkflowID, id)
+	logs, _ := ReadAllTaskLogs(inst.Meta.WorkflowID, id)
 	if logs != nil {
-		inst.Logs = logs
+		inst.Status.Logs = logs
 	} else {
-		inst.Logs = []models.LogEntry{}
+		inst.Status.Logs = []models.LogEntry{}
 	}
 
 	return inst, nil
@@ -163,11 +167,11 @@ func ScanTaskInstances(ctx context.Context, cursor string, limit int, search str
 	}
 	for i := range res.Items {
 		// Populate logs from all parts
-		logs, _ := ReadAllTaskLogs(res.Items[i].WorkflowID, res.Items[i].ID)
+		logs, _ := ReadAllTaskLogs(res.Items[i].Meta.WorkflowID, res.Items[i].ID)
 		if logs != nil {
-			res.Items[i].Logs = logs
+			res.Items[i].Status.Logs = logs
 		} else {
-			res.Items[i].Logs = []models.LogEntry{}
+			res.Items[i].Status.Logs = []models.LogEntry{}
 		}
 	}
 	return res, nil
@@ -180,12 +184,12 @@ func DeleteTaskInstance(ctx context.Context, id string) error {
 	}
 
 	// Permission check for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.WorkflowID) {
-		return fmt.Errorf("%w: actions/%s (write access required)", commonauth.ErrPermissionDenied, inst.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.Meta.WorkflowID) {
+		return fmt.Errorf("%w: actions/%s (write access required)", commonauth.ErrPermissionDenied, inst.Meta.WorkflowID)
 	}
 
 	// Don't allow deleting running tasks
-	if inst.Status == "Running" {
+	if inst.Status.Status == "Running" {
 		return fmt.Errorf("cannot delete a running task instance")
 	}
 
@@ -194,7 +198,7 @@ func DeleteTaskInstance(ctx context.Context, id string) error {
 	}
 
 	// Also remove logs
-	_ = RemoveTaskLogs(inst.WorkflowID, id)
+	_ = RemoveTaskLogs(inst.Meta.WorkflowID, id)
 	return nil
 }
 
@@ -210,14 +214,14 @@ func CleanupTaskInstances(ctx context.Context, days int) (int, error) {
 
 	for _, inst := range all {
 		// Only cleanup instances we have permission for
-		if !perms.IsAllowed("actions/" + inst.WorkflowID) {
+		if !perms.IsAllowed("actions/" + inst.Meta.WorkflowID) {
 			continue
 		}
 
 		// Only cleanup non-running instances older than cutoff
-		if inst.Status != "Running" && inst.StartedAt.Before(cutoff) {
+		if inst.Status.Status != "Running" && inst.Status.StartedAt.Before(cutoff) {
 			_ = repo.DeleteTaskInstance(ctx, inst.ID)
-			_ = RemoveTaskLogs(inst.WorkflowID, inst.ID)
+			_ = RemoveTaskLogs(inst.Meta.WorkflowID, inst.ID)
 			count++
 		}
 	}
@@ -231,8 +235,8 @@ func CancelTaskInstance(ctx context.Context, id string) error {
 	}
 
 	// Check permission for the parent workflow
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.WorkflowID) {
-		return fmt.Errorf("%w: actions/%s (write access required)", commonauth.ErrPermissionDenied, instance.WorkflowID)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.Meta.WorkflowID) {
+		return fmt.Errorf("%w: actions/%s (write access required)", commonauth.ErrPermissionDenied, instance.Meta.WorkflowID)
 	}
 
 	message := fmt.Sprintf("Requested cancellation of task instance %s", id)
@@ -246,10 +250,10 @@ func CancelTaskInstance(ctx context.Context, id string) error {
 		commonaudit.FromContext(ctx).Log("CancelTask", id, message+" Error: instance not found", false)
 		return err
 	}
-	if instance.Status == "Running" {
-		instance.Status = "Cancelled"
+	if instance.Status.Status == "Running" {
+		instance.Status.Status = "Cancelled"
 		now := time.Now()
-		instance.FinishedAt = &now
+		instance.Status.FinishedAt = &now
 		if err := repo.SaveTaskInstance(ctx, instance); err != nil {
 			commonaudit.FromContext(ctx).Log("CancelTask", id, message+" Error: "+err.Error(), false)
 			return err
