@@ -24,12 +24,12 @@ func TestIPExportCascadeDeleteAndCleanup(t *testing.T) {
 	service := ip.NewIPPoolService(engine, manager)
 
 	// Create Group
-	group := &models.IPGroup{Name: "Cascade Pool"}
+	group := &models.IPPool{Meta: models.IPPoolV1Meta{Name: "Cascade Pool"}}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
 
 	// Create Export
-	export := &models.IPExport{Name: "Cascade Export", Rule: "true", GroupIDs: []string{group.ID}}
+	export := &models.IPExport{Meta: models.IPExportV1Meta{Name: "Cascade Export", Rule: "true", GroupIDs: []string{group.ID}}}
 	err = service.CreateExport(ctx, export)
 	assert.NoError(t, err)
 

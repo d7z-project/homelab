@@ -33,7 +33,7 @@ func NewMMDBManager(sources []models.IntelligenceSource) *MMDBManager {
 
 	// 首次全量加载 (在注册事件之前，由调用方查询 DB 传入)
 	for _, src := range sources {
-		if src.Enabled {
+		if src.Meta.Enabled {
 			m.reloadOne(src)
 		}
 	}
@@ -42,10 +42,7 @@ func NewMMDBManager(sources []models.IntelligenceSource) *MMDBManager {
 	common.RegisterEventHandler(common.EventMMDBUpdate, func(ctx context.Context, payload models.MMDBUpdatePayload) {
 		m.mu.Lock()
 		defer m.mu.Unlock()
-		m.reloadOne(models.IntelligenceSource{
-			ID:   payload.ID,
-			Type: payload.Type,
-		})
+		m.reloadOne(models.IntelligenceSource{ID: payload.ID, Meta: models.IntelligenceSourceV1Meta{Type: payload.Type}})
 	})
 
 	return m
@@ -56,7 +53,7 @@ func (m *MMDBManager) reloadOne(src models.IntelligenceSource) {
 	path := fmt.Sprintf("%s/%s.mmdb", MMDBDir, src.ID)
 	reader := m.loadReader(path)
 	if reader != nil {
-		switch src.Type {
+		switch src.Meta.Type {
 		case "asn":
 			m.asn[src.ID] = reader
 		case "city":

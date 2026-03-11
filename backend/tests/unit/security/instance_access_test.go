@@ -18,14 +18,14 @@ func TestInstanceLevelRBAC(t *testing.T) {
 	ctxRoot := tests.SetupMockRootContext()
 
 	// 创建两个 IP 池
-	poolA := &models.IPGroup{ID: "pool-a", Name: "Pool A"}
-	poolB := &models.IPGroup{ID: "pool-b", Name: "Pool B"}
+	poolA := &models.IPPool{ID: "pool-a", Meta: models.IPPoolV1Meta{Name: "Pool A"}}
+	poolB := &models.IPPool{ID: "pool-b", Meta: models.IPPoolV1Meta{Name: "Pool B"}}
 	_ = ipService.CreateGroup(ctxRoot, poolA)
 	_ = ipService.CreateGroup(ctxRoot, poolB)
 
 	// 创建两个域名 (DNS 仍支持包级方法或需同样 Setup)
-	domA := &models.Domain{Name: "domain-a.com"}
-	domB := &models.Domain{Name: "domain-b.com"}
+	domA := &models.Domain{Meta: models.DomainV1Meta{Name: "domain-a.com"}}
+	domB := &models.Domain{Meta: models.DomainV1Meta{Name: "domain-b.com"}}
 	_ = domA.Bind(nil)
 	_ = domB.Bind(nil)
 	da, _ := dns.CreateDomain(ctxRoot, domA)
@@ -38,12 +38,12 @@ func TestInstanceLevelRBAC(t *testing.T) {
 		})
 
 		// 应该允许更新 pool-a
-		poolA.Name = "Updated Pool A"
+		poolA.Meta.Name = "Updated Pool A"
 		err := ipService.UpdateGroup(userCtx, poolA)
 		assert.NoError(t, err)
 
 		// 应该拒绝更新 pool-b (即使没有全局权限)
-		poolB.Name = "Illegal Update"
+		poolB.Meta.Name = "Illegal Update"
 		err = ipService.UpdateGroup(userCtx, poolB)
 		assert.ErrorIs(t, err, commonauth.ErrPermissionDenied)
 		assert.Contains(t, err.Error(), "network/ip/pool-b")

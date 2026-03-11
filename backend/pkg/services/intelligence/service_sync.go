@@ -17,7 +17,7 @@ import (
 )
 
 func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
-	source, err := repo.GetSource(ctx, id)
+	source, err := repo.SourceRepo.Get(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 				s.tasks.CancelTask(id)
 				release()
 			} else {
-				return fmt.Errorf("sync is already in progress for source: %s", source.Name)
+				return fmt.Errorf("sync is already in progress for source: %s", source.Meta.Name)
 			}
 		}
 	}
@@ -45,11 +45,11 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 	}
 	s.tasks.AddTask(task)
 
-	source.Status = models.TaskStatusRunning
-	source.ErrorMessage = ""
-	_ = repo.SaveSource(ctx, source)
+	source.Status.Status = models.TaskStatusRunning
+	source.Status.ErrorMessage = ""
+	_ = repo.SourceRepo.Cow(ctx, source.ID, func(res *models.IntelligenceSource) error { res.Meta = source.Meta; res.Status = source.Status; return nil })
 
-	commonaudit.FromContext(ctx).Log("SyncIntelligence", source.Name, "Started", true)
+	commonaudit.FromContext(ctx).Log("SyncIntelligence", source.Meta.Name, "Started", true)
 
 	go s.runDownload(context.Background(), id)
 	return nil
@@ -57,7 +57,7 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 
 func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 	s.tasks.RunTask(bgCtx, id, func(taskCtx context.Context, task *SyncTask) error {
-		source, err := repo.GetSource(taskCtx, id)
+		source, err := repo.SourceRepo.Get(taskCtx, id)
 		var finalErr error
 		defer func() {
 			// 这里必须使用 Background 因为 taskCtx 已经被 Cancel 了，如果用 taskCtx 会导致 DB 操作失败
@@ -66,15 +66,15 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 				return
 			}
 			if errors.Is(taskCtx.Err(), context.Canceled) {
-				source.Status = models.TaskStatusCancelled
-				source.ErrorMessage = "Task cancelled manually"
+				source.Status.Status = models.TaskStatusCancelled
+				source.Status.ErrorMessage = "Task cancelled manually"
 			} else if finalErr != nil {
-				source.Status = models.TaskStatusFailed
-				source.ErrorMessage = finalErr.Error()
+				source.Status.Status = models.TaskStatusFailed
+				source.Status.ErrorMessage = finalErr.Error()
 			} else {
-				source.Status = models.TaskStatusSuccess
-				source.ErrorMessage = ""
-				source.LastUpdatedAt = time.Now()
+				source.Status.Status = models.TaskStatusSuccess
+				source.Status.ErrorMessage = ""
+				source.Status.LastUpdatedAt = time.Now()
 			}
 			_ = repo.SaveSource(context.Background(), source)
 		}()
@@ -86,10 +86,10 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 
 		// SSRF 校验
 		allowPrivate := false
-		if source.Config != nil && source.Config["allowPrivate"] == "true" {
+		if source.Meta.Config != nil && source.Meta.Config["allowPrivate"] == "true" {
 			allowPrivate = true
 		}
-		if err := common.ValidateURL(source.URL, allowPrivate); err != nil {
+		if err := common.ValidateURL(source.Meta.URL, allowPrivate); err != nil {
 			finalErr = err
 			return finalErr
 		}
@@ -104,7 +104,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 			// 消息被静默丢弃，MMDB Reload 永远无法被触发。
 			common.NotifyCluster(context.Background(), common.EventMMDBUpdate, models.MMDBUpdatePayload{
 				ID:   source.ID,
-				Type: source.Type,
+				Type: source.Meta.Type,
 			})
 		}
 		return finalErr
@@ -112,7 +112,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 }
 
 func (s *IntelligenceService) downloadFile(ctx context.Context, source *models.IntelligenceSource, task *SyncTask) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", source.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", source.Meta.URL, nil)
 	if err != nil {
 		return err
 	}

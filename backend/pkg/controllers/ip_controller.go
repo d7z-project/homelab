@@ -34,7 +34,7 @@ func InitIPControllers(service *ipservice.IPPoolService, engine *ipservice.Analy
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.IPGroup}
+// @Success 200 {object} common.CursorResponse{items=[]models.IPPool}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/pools [get]
@@ -54,15 +54,15 @@ func ScanGroupsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Accept json
 // @Produce json
-// @Param group body models.IPGroup true "IP Group"
-// @Success 200 {object} models.IPGroup
+// @Param group body models.IPPool true "IP Group"
+// @Success 200 {object} models.IPPool
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
 // @Router /network/ip/pools [post]
 func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
-	var group models.IPGroup
+	var group models.IPPool
 	if err := render.Bind(r, &group); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -80,8 +80,8 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param group body models.IPGroup true "IP Group"
-// @Success 200 {object} models.IPGroup
+// @Param group body models.IPPool true "IP Group"
+// @Success 200 {object} models.IPPool
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -94,7 +94,7 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, fmt.Errorf("%w: network/ip/%s", commonauth.ErrPermissionDenied, id))
 		return
 	}
-	var group models.IPGroup
+	var group models.IPPool
 	if err := render.Bind(r, &group); err != nil {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return

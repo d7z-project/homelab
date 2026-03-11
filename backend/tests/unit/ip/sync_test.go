@@ -28,14 +28,14 @@ func TestIPSyncLogic(t *testing.T) {
 	service := ip.NewIPPoolService(nil, nil)
 	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
 
-	group := &models.IPGroup{ID: "test_pool", Name: "Test Pool"}
+	group := &models.IPPool{ID: "test_pool", Meta: models.IPPoolV1Meta{Name: "Test Pool"}}
 	_ = service.CreateGroup(ctx, group)
 
 	syncAndWait := func(id string) {
 		_ = service.Sync(ctx, id)
 		for i := 0; i < 50; i++ {
 			p, _ := service.GetSyncPolicy(ctx, id)
-			if p != nil && (p.LastStatus == models.TaskStatusSuccess || p.LastStatus == models.TaskStatusFailed) {
+			if p != nil && (p.Status.LastStatus == models.TaskStatusSuccess || p.Status.LastStatus == models.TaskStatusFailed) {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -50,9 +50,8 @@ func TestIPSyncLogic(t *testing.T) {
 		}))
 		defer server1.Close()
 
-		policy1 := &models.IPSyncPolicy{
-			ID: "_p1", Name: "P1", SourceURL: server1.URL, Format: "text", Mode: "overwrite", TargetGroupID: "test_pool",
-			Config: map[string]string{"allowPrivate": "true"},
+		policy1 := &models.IPSyncPolicy{ID: "_p1", Meta: models.IPSyncPolicyV1Meta{ Name: "P1", SourceURL: server1.URL, Format: "text", Mode: "overwrite", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy1)
 		syncAndWait("_p1")
@@ -63,9 +62,8 @@ func TestIPSyncLogic(t *testing.T) {
 		}))
 		defer server2.Close()
 
-		policy2 := &models.IPSyncPolicy{
-			ID: "_p2", Name: "P2", SourceURL: server2.URL, Format: "text", Mode: "overwrite", TargetGroupID: "test_pool",
-			Config: map[string]string{"allowPrivate": "true"},
+		policy2 := &models.IPSyncPolicy{ID: "_p2", Meta: models.IPSyncPolicyV1Meta{ Name: "P2", SourceURL: server2.URL, Format: "text", Mode: "overwrite", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy2)
 		syncAndWait("_p2")
@@ -79,7 +77,7 @@ func TestIPSyncLogic(t *testing.T) {
 			fmt.Fprintln(w, "1.1.1.100/32")
 		}))
 		defer server1_v2.Close()
-		policy1.SourceURL = server1_v2.URL
+		policy1.Meta.SourceURL = server1_v2.URL
 		_ = service.UpdateSyncPolicy(ctx, policy1)
 		syncAndWait("_p1")
 
@@ -103,16 +101,14 @@ func TestIPSyncLogic(t *testing.T) {
 		}))
 		defer serverAgg.Close()
 
-		policyA := &models.IPSyncPolicy{
-			ID: "_pa", Name: "PA", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
-			Config: map[string]string{"tags": "SOURCE_A", "allowPrivate": "true"},
+		policyA := &models.IPSyncPolicy{ID: "_pa", Meta: models.IPSyncPolicyV1Meta{ Name: "PA", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
+			Config: map[string]string{"tags": "SOURCE_A", "allowPrivate": "true"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyA)
 		syncAndWait("_pa")
 
-		policyB := &models.IPSyncPolicy{
-			ID: "_pb", Name: "PB", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
-			Config: map[string]string{"tags": "SOURCE_B", "allowPrivate": "true"},
+		policyB := &models.IPSyncPolicy{ID: "_pb", Meta: models.IPSyncPolicyV1Meta{ Name: "PB", SourceURL: serverAgg.URL, Format: "text", TargetGroupID: "test_pool",
+			Config: map[string]string{"tags": "SOURCE_B", "allowPrivate": "true"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyB)
 		syncAndWait("_pb")
@@ -135,9 +131,8 @@ func TestIPSyncLogic(t *testing.T) {
 		}))
 		defer serverApp.Close()
 
-		policyApp := &models.IPSyncPolicy{
-			ID: "_papp", Name: "PApp", SourceURL: serverApp.URL, Format: "text", Mode: "append", TargetGroupID: "test_pool",
-			Config: map[string]string{"allowPrivate": "true"},
+		policyApp := &models.IPSyncPolicy{ID: "_papp", Meta: models.IPSyncPolicyV1Meta{ Name: "PApp", SourceURL: serverApp.URL, Format: "text", Mode: "append", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyApp)
 
@@ -156,9 +151,8 @@ func TestIPSyncLogic(t *testing.T) {
 		}))
 		defer serverRem.Close()
 
-		policyRem := &models.IPSyncPolicy{
-			ID: "_prem", Name: "Removal Test", SourceURL: serverRem.URL, Format: "text",
-			Mode: "overwrite", TargetGroupID: "test_pool", Config: map[string]string{"tags": "tag_a", "allowPrivate": "true"},
+		policyRem := &models.IPSyncPolicy{ID: "_prem", Meta: models.IPSyncPolicyV1Meta{ Name: "Removal Test", SourceURL: serverRem.URL, Format: "text",
+			Mode: "overwrite", TargetGroupID: "test_pool", Config: map[string]string{"tags": "tag_a", "allowPrivate": "true"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyRem)
 		syncAndWait("_prem")
@@ -167,7 +161,7 @@ func TestIPSyncLogic(t *testing.T) {
 		assert.Contains(t, res.Entries[0].Tags, "tag_a")
 
 		// 2. 模拟源数据更新：修改配置，将标签改为 tag_b
-		policyRem.Config["tags"] = "tag_b"
+		policyRem.Meta.Config["tags"] = "tag_b"
 		_ = service.UpdateSyncPolicy(ctx, policyRem)
 		syncAndWait("_prem")
 
@@ -185,9 +179,8 @@ func TestIPSyncLogic(t *testing.T) {
 		}))
 		defer serverCSV.Close()
 
-		policyCSV := &models.IPSyncPolicy{
-			ID: "csv_policy", Name: "CSV", SourceURL: serverCSV.URL, Format: "csv", TargetGroupID: "test_pool",
-			Config: map[string]string{"allowPrivate": "true", "ipColumn": "0", "tagColumn": "1"},
+		policyCSV := &models.IPSyncPolicy{ID: "csv_policy", Meta: models.IPSyncPolicyV1Meta{ Name: "CSV", SourceURL: serverCSV.URL, Format: "csv", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true", "ipColumn": "0", "tagColumn": "1"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyCSV)
 		syncAndWait("csv_policy")
@@ -204,9 +197,8 @@ func TestIPSyncLogic(t *testing.T) {
 		}))
 		defer serverDat.Close()
 
-		policyDat := &models.IPSyncPolicy{
-			ID: "v2ray_policy", Name: "V2Ray", SourceURL: serverDat.URL, Format: "geoip-dat", TargetGroupID: "test_pool",
-			Config: map[string]string{"allowPrivate": "true", "code": "CN"},
+		policyDat := &models.IPSyncPolicy{ID: "v2ray_policy", Meta: models.IPSyncPolicyV1Meta{ Name: "V2Ray", SourceURL: serverDat.URL, Format: "geoip-dat", TargetGroupID: "test_pool",
+			Config: map[string]string{"allowPrivate": "true", "code": "CN"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policyDat)
 		syncAndWait("v2ray_policy")
@@ -216,18 +208,17 @@ func TestIPSyncLogic(t *testing.T) {
 	})
 
 	t.Run("SSRF Protection", func(t *testing.T) {
-		ssrfPolicy := &models.IPSyncPolicy{
-			ID: "ssrf", Name: "SSRF", SourceURL: "http://192.168.1.1/ips.txt",
+		ssrfPolicy := &models.IPSyncPolicy{ID: "ssrf", Meta: models.IPSyncPolicyV1Meta{ Name: "SSRF", SourceURL: "http://192.168.1.1/ips.txt",
 			TargetGroupID: "test_pool", Format: "text",
-		}
+		}}
 		_ = service.CreateSyncPolicy(ctx, ssrfPolicy)
 		_ = service.Sync(ctx, "ssrf")
 
 		// 稍微等等异步执行报错
 		time.Sleep(200 * time.Millisecond)
 		p, _ := service.GetSyncPolicy(ctx, "ssrf")
-		assert.Equal(t, models.TaskStatusFailed, p.LastStatus)
-		assert.Contains(t, p.ErrorMessage, "SSRF detected")
+		assert.Equal(t, models.TaskStatusFailed, p.Status.LastStatus)
+		assert.Contains(t, p.Status.ErrorMessage, "SSRF detected")
 	})
 }
 
@@ -238,7 +229,7 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 	service := ip.NewIPPoolService(nil, nil)
 
 	t.Run("Reconcile Zombie Sync Task", func(t *testing.T) {
-		policy := &models.IPSyncPolicy{ID: "zombie_p", Name: "Zombie"}
+		policy := &models.IPSyncPolicy{ID: "zombie_p", Meta: models.IPSyncPolicyV1Meta{ Name: "Zombie"}}
 		_ = service.CreateSyncPolicy(ctx, policy)
 
 		// 模拟一个假装正在跑的任务（通过 TaskManager 直接注入）
@@ -268,13 +259,12 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 		}))
 		defer server.Close()
 
-		group := &models.IPGroup{ID: "p_cancel", Name: "Cancel Pool"}
+		group := &models.IPPool{ID: "p_cancel", Meta: models.IPPoolV1Meta{Name: "Cancel Pool"}}
 		_ = service.CreateGroup(ctx, group)
 
-		policy := &models.IPSyncPolicy{
-			ID: "cancel_p", Name: "Cancel", SourceURL: server.URL,
+		policy := &models.IPSyncPolicy{ID: "cancel_p", Meta: models.IPSyncPolicyV1Meta{ Name: "Cancel", SourceURL: server.URL,
 			TargetGroupID: "p_cancel", Format: "text",
-			Config: map[string]string{"allowPrivate": "true"},
+			Config: map[string]string{"allowPrivate": "true"}},
 		}
 		_ = service.CreateSyncPolicy(ctx, policy)
 
@@ -284,7 +274,7 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 		// 等待进入 Running 状态
 		for i := 0; i < 50; i++ {
 			p, _ := service.GetSyncPolicy(ctx, "cancel_p")
-			if p.LastStatus == models.TaskStatusRunning {
+			if p.Status.LastStatus == models.TaskStatusRunning {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -297,11 +287,11 @@ func TestIPSyncFrameworkIntegration(t *testing.T) {
 		var pFinal *models.IPSyncPolicy
 		for i := 0; i < 50; i++ {
 			pFinal, _ = service.GetSyncPolicy(ctx, "cancel_p")
-			if pFinal.LastStatus == models.TaskStatusCancelled || pFinal.LastStatus == models.TaskStatusFailed {
+			if pFinal.Status.LastStatus == models.TaskStatusCancelled || pFinal.Status.LastStatus == models.TaskStatusFailed {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
-		assert.Equal(t, models.TaskStatusCancelled, pFinal.LastStatus)
+		assert.Equal(t, models.TaskStatusCancelled, pFinal.Status.LastStatus)
 	})
 }

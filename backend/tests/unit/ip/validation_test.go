@@ -11,27 +11,27 @@ func TestIPModelValidation(t *testing.T) {
 	t.Run("IPGroup Validation", func(t *testing.T) {
 		tests := []struct {
 			name    string
-			group   models.IPGroup
+			group   models.IPPool
 			wantErr bool
 		}{
 			{
 				name:    "Valid Group",
-				group:   models.IPGroup{ID: "valid_id", Name: "Valid Name"},
+				group:   models.IPPool{ID: "valid_id", Meta: models.IPPoolV1Meta{Name: "Valid Name"}},
 				wantErr: false,
 			},
 			{
 				name:    "Invalid ID - Uppercase",
-				group:   models.IPGroup{ID: "InvalidID", Name: "Name"},
+				group:   models.IPPool{ID: "InvalidID", Meta: models.IPPoolV1Meta{Name: "Name"}},
 				wantErr: true,
 			},
 			{
 				name:    "Invalid ID - Special Chars",
-				group:   models.IPGroup{ID: "id@123", Name: "Name"},
+				group:   models.IPPool{ID: "id@123", Meta: models.IPPoolV1Meta{Name: "Name"}},
 				wantErr: true,
 			},
 			{
 				name:    "Empty Name",
-				group:   models.IPGroup{ID: "valid_id", Name: "   "},
+				group:   models.IPPool{ID: "valid_id", Meta: models.IPPoolV1Meta{Name: "   "}},
 				wantErr: true,
 			},
 		}
@@ -56,30 +56,27 @@ func TestIPModelValidation(t *testing.T) {
 		}{
 			{
 				name: "Valid Export",
-				export: models.IPExport{
-					ID:       "valid_export",
+				export: models.IPExport{ID: "need_fix", Meta: models.IPExportV1Meta{
 					Name:     "Valid Name",
 					Rule:     "true",
-					GroupIDs: []string{"g1"},
+					GroupIDs: []string{"g1"}},
 				},
 				wantErr: false,
 			},
 			{
 				name: "Missing Rule",
-				export: models.IPExport{
-					ID:       "valid_export",
+				export: models.IPExport{ID: "need_fix", Meta: models.IPExportV1Meta{
 					Name:     "Name",
-					GroupIDs: []string{"g1"},
+					GroupIDs: []string{"g1"}},
 				},
 				wantErr: true,
 			},
 			{
 				name: "Missing Groups",
-				export: models.IPExport{
-					ID:   "valid_export",
+				export: models.IPExport{ID: "need_fix", Meta: models.IPExportV1Meta{
 					Name: "Name",
 					Rule: "true",
-				},
+				}},
 				wantErr: true,
 			},
 		}

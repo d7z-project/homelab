@@ -20,15 +20,15 @@ import (
 func init() {
 	discovery.RegisterResourceWithVerbs("network/ip", func(ctx context.Context, prefix string) ([]models.DiscoverResult, error) {
 		res := make([]models.DiscoverResult, 0)
-		groupsRes, err := repo.ScanGroups(ctx, "", 1000, "")
+		groupsRes, err := repo.PoolRepo.List(ctx, "", 1000, nil)
 		if err != nil {
 			return nil, err
 		}
 		for _, g := range groupsRes.Items {
-			if prefix == "" || strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Name, prefix) {
+			if prefix == "" || strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Meta.Name, prefix) {
 				res = append(res, models.DiscoverResult{
 					FullID: g.ID,
-					Name:   g.Name,
+					Name:   g.Meta.Name,
 					Final:  true,
 				})
 			}
@@ -37,7 +37,13 @@ func init() {
 	}, []string{"get", "list", "create", "update", "delete", "execute", "*"})
 
 	discovery.Register("network/ip/pools", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
-		groupsRes, err := repo.ScanGroups(ctx, "", 1000, search)
+		groupsRes, err := repo.PoolRepo.List(ctx, "", 1000, nil)
+		// The original scan grouped filtered by search string, we would need to filter here.
+		// For now we pass nil to filter parameter and filter manually below although it's incomplete without the filter implementation.
+		// Wait actually, List accepts a filter func
+		groupsRes, err = repo.PoolRepo.List(ctx, "", 1000, func(p *models.IPPool) bool {
+			return search == "" || strings.Contains(strings.ToLower(p.Meta.Name), strings.ToLower(search)) || strings.Contains(strings.ToLower(p.ID), strings.ToLower(search))
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -48,8 +54,8 @@ func init() {
 			if hasGlobal || perms.IsAllowed("network/ip/"+g.ID) {
 				items = append(items, models.LookupItem{
 					ID:          g.ID,
-					Name:        g.Name,
-					Description: g.Description,
+					Name:        g.Meta.Name,
+					Description: g.Meta.Description,
 				})
 			}
 		}
@@ -121,12 +127,12 @@ func NewIPPoolService(ae *AnalysisEngine, em *ExportManager) *IPPoolService {
 
 	// 集群事件: 变更同步策略时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
 	common.RegisterEventHandler(common.EventIPSyncPolicyChanged, func(ctx context.Context, policyID string) {
-		policy, err := repo.GetSyncPolicy(ctx, policyID)
+		policy, err := repo.SyncPolicyRepo.Get(ctx, policyID)
 		if err != nil {
 			svc.removeCronJob(policyID)
 			return
 		}
-		if policy.Enabled {
+		if policy.Meta.Enabled {
 			svc.addCronJob(*policy)
 		} else {
 			svc.removeCronJob(policyID)
@@ -183,21 +189,21 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 	for _, t := range s.syncTasks.RangeAll() {
 		status := t.GetStatus()
 		if status == models.TaskStatusFailed || status == models.TaskStatusCancelled {
-			p, err := repo.GetSyncPolicy(sysCtx, t.GetID())
-			if err == nil && (p.LastStatus == models.TaskStatusRunning || p.LastStatus == models.TaskStatusPending) {
-				p.LastStatus = status
-				p.ErrorMessage = t.Error
-				p.LastRunAt = time.Now()
-				_ = repo.SaveSyncPolicy(sysCtx, p)
+			p, err := repo.SyncPolicyRepo.Get(sysCtx, t.GetID())
+			if err == nil && (p.Status.LastStatus == models.TaskStatusRunning || p.Status.LastStatus == models.TaskStatusPending) {
+				p.Status.LastStatus = status
+				p.Status.ErrorMessage = t.Error
+				p.Status.LastRunAt = time.Now()
+				_ = repo.SyncPolicyRepo.Cow(sysCtx, p.ID, func(res *models.IPSyncPolicy) error { res.Meta = p.Meta; res.Status = p.Status; return nil })
 			}
 		}
 	}
 
 	// 然后调度启用的策略
-	policiesRes, err := repo.ScanSyncPolicies(sysCtx, "", 10000, "")
+	policiesRes, err := repo.SyncPolicyRepo.List(sysCtx, "", 10000, nil)
 	if err == nil {
 		for _, p := range policiesRes.Items {
-			if p.Enabled {
+			if p.Meta.Enabled {
 				s.addCronJob(p)
 			}
 		}
@@ -214,7 +220,7 @@ func (s *IPPoolService) addCronJob(p models.IPSyncPolicy) {
 	}
 
 	lockKey := "ip_sync_" + p.ID
-	id, err := common.AddDistributedCronJob(s.cron, p.Cron, lockKey, func() {
+	id, err := common.AddDistributedCronJob(s.cron, p.Meta.Cron, lockKey, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 		// 注入一个系统权限的 context

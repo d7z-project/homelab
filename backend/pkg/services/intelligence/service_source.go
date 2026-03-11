@@ -16,8 +16,8 @@ import (
 
 func (s *IntelligenceService) CreateSource(ctx context.Context, source *models.IntelligenceSource) error {
 	source.ID = uuid.NewString()
-	source.Status = models.TaskStatusSuccess
-	if err := repo.SaveSource(ctx, source); err != nil {
+	source.Status.Status = models.TaskStatusSuccess
+	if err := repo.SourceRepo.Cow(ctx, source.ID, func(res *models.IntelligenceSource) error { res.Meta = source.Meta; res.Status = source.Status; return nil }); err != nil {
 		return err
 	}
 	s.updateCronJob(*source)
@@ -26,7 +26,7 @@ func (s *IntelligenceService) CreateSource(ctx context.Context, source *models.I
 }
 
 func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.IntelligenceSource) error {
-	existing, err := repo.GetSource(ctx, source.ID)
+	existing, err := repo.SourceRepo.Get(ctx, source.ID)
 	if err != nil {
 		return ErrSourceNotFound
 	}
@@ -35,26 +35,26 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *models.I
 	if t, ok := s.tasks.GetTask(source.ID); ok {
 		status := t.GetStatus()
 		if status == models.TaskStatusRunning || status == models.TaskStatusPending {
-			source.Status = status
-			source.ErrorMessage = t.Error
-			source.Progress = t.GetProgress()
+			source.Status.Status = status
+			source.Status.ErrorMessage = t.Error
+			source.Status.Progress = t.GetProgress()
 		} else {
 			source.Status = existing.Status
-			source.ErrorMessage = existing.ErrorMessage
+			source.Status.ErrorMessage = existing.Status.ErrorMessage
 		}
 	} else {
 		source.Status = existing.Status
-		source.ErrorMessage = existing.ErrorMessage
+		source.Status.ErrorMessage = existing.Status.ErrorMessage
 	}
-	source.LastUpdatedAt = existing.LastUpdatedAt
+	source.Status.LastUpdatedAt = existing.Status.LastUpdatedAt
 
-	if err := repo.SaveSource(ctx, source); err != nil {
+	if err := repo.SourceRepo.Cow(ctx, source.ID, func(res *models.IntelligenceSource) error { res.Meta = source.Meta; res.Status = source.Status; return nil }); err != nil {
 		return err
 	}
 
 	s.updateCronJob(*source)
 	common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, source.ID)
-	commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Name, "Success", true)
+	commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Meta.Name, "Success", true)
 	return nil
 }
 
@@ -72,9 +72,9 @@ func (s *IntelligenceService) ScanSources(ctx context.Context, cursor string, li
 		if t, ok := s.tasks.GetTask(res.Items[i].ID); ok {
 			status := t.GetStatus()
 			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
-				res.Items[i].Status = status
-				res.Items[i].ErrorMessage = t.Error
-				res.Items[i].Progress = t.GetProgress()
+				res.Items[i].Status.Status = status
+				res.Items[i].Status.ErrorMessage = t.Error
+				res.Items[i].Status.Progress = t.GetProgress()
 			}
 		}
 	}
@@ -83,7 +83,7 @@ func (s *IntelligenceService) ScanSources(ctx context.Context, cursor string, li
 }
 
 func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error {
-	src, _ := repo.GetSource(ctx, id)
+	src, _ := repo.SourceRepo.Get(ctx, id)
 	if err := repo.DeleteSource(ctx, id); err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error
 	if src != nil {
 		common.NotifyCluster(ctx, common.EventMMDBUpdate, models.MMDBUpdatePayload{
 			ID:   id,
-			Type: src.Type,
+			Type: src.Meta.Type,
 		})
 	}
 	return nil

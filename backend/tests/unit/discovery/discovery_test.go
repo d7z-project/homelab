@@ -95,7 +95,7 @@ func TestSuggestResources(t *testing.T) {
 	t.Run("Module level with slash", func(t *testing.T) {
 		// Prepare a domain for DNS discovery
 		ctxRoot := tests.SetupMockRootContext()
-		_, _ = dnsservice.CreateDomain(ctxRoot, &models.Domain{Name: "example.com"})
+		_, _ = dnsservice.CreateDomain(ctxRoot, &models.Domain{Meta: models.DomainV1Meta{Name: "example.com"}})
 
 		res, err := discovery.SuggestResources(ctxRoot, "network/dns/")
 		assert.NoError(t, err)

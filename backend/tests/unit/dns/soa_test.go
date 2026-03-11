@@ -18,9 +18,9 @@ func TestSOARecordLogic(t *testing.T) {
 	ctx := auth.WithPermissions(context.Background(), perms)
 
 	// 1. Create domain and check if SOA is automatically created
-	domain, err := dnsservice.CreateDomain(ctx, &models.Domain{
+	domain, err := dnsservice.CreateDomain(ctx, &models.Domain{Meta: models.DomainV1Meta{
 		Name: "soa-test.com",
-	})
+	}})
 	if err != nil {
 		t.Fatalf("CreateDomain failed: %v", err)
 	}
@@ -32,7 +32,7 @@ func TestSOARecordLogic(t *testing.T) {
 
 	var soaRecord *models.Record
 	for _, r := range resp.Items {
-		if r.Type == "SOA" {
+		if r.Meta.Type == "SOA" {
 			soaRecord = &r
 			break
 		}
@@ -42,17 +42,17 @@ func TestSOARecordLogic(t *testing.T) {
 		t.Fatal("Expected SOA record to be created automatically, but not found")
 	}
 
-	if !strings.Contains(soaRecord.Value, "ns1.soa-test.com.") {
-		t.Errorf("Expected default MNAME ns1.soa-test.com. in SOA, got %s", soaRecord.Value)
+	if !strings.Contains(soaRecord.Meta.Value, "ns1.soa-test.com.") {
+		t.Errorf("Expected default MNAME ns1.soa-test.com. in SOA, got %s", soaRecord.Meta.Value)
 	}
 
 	// 2. Try to create another SOA record (should fail)
-	_, err = dnsservice.CreateRecord(ctx, &models.Record{
+	_, err = dnsservice.CreateRecord(ctx, &models.Record{Meta: models.RecordV1Meta{
 		DomainID: domain.ID,
 		Name:     "@",
 		Type:     "SOA",
 		Value:    "ns2.other.com. admin.soa-test.com. 2026030301 7200 3600 1209600 3600",
-	})
+	}})
 	if err == nil {
 		t.Error("Expected error when manually creating SOA record, but got nil")
 	}
@@ -65,30 +65,30 @@ func TestSOARecordLogic(t *testing.T) {
 
 	// 4. Update SOA record (only MNAME and RNAME)
 	updatedSOA := *soaRecord
-	updatedSOA.Value = "ns2.new-master.com. new-admin.soa-test.com. 9999999999 1 1 1 1"
+	updatedSOA.Meta.Value = "ns2.new-master.com. new-admin.soa-test.com. 9999999999 1 1 1 1"
 	res, err := dnsservice.UpdateRecord(ctx, soaRecord.ID, &updatedSOA)
 	if err != nil {
 		t.Fatalf("UpdateRecord (SOA) failed: %v", err)
 	}
 
-	if !strings.HasPrefix(res.Value, "ns2.new-master.com. new-admin.soa-test.com.") {
-		t.Errorf("Expected updated MNAME and RNAME, got %s", res.Value)
+	if !strings.HasPrefix(res.Meta.Value, "ns2.new-master.com. new-admin.soa-test.com.") {
+		t.Errorf("Expected updated MNAME and RNAME, got %s", res.Meta.Value)
 	}
-	if strings.Contains(res.Value, "9999999999") {
+	if strings.Contains(res.Meta.Value, "9999999999") {
 		t.Error("System-maintained SERIAL was overridden by user")
 	}
-	if strings.HasSuffix(res.Value, "1 1 1 1") {
+	if strings.HasSuffix(res.Meta.Value, "1 1 1 1") {
 		t.Error("System-maintained REFRESH/RETRY/EXPIRE/MINIMUM were overridden by user")
 	}
 
 	// 5. Create another record and check if SOA serial increments
-	initialSerial := strings.Fields(res.Value)[2]
-	_, err = dnsservice.CreateRecord(ctx, &models.Record{
+	initialSerial := strings.Fields(res.Meta.Value)[2]
+	_, err = dnsservice.CreateRecord(ctx, &models.Record{Meta: models.RecordV1Meta{
 		DomainID: domain.ID,
 		Name:     "www",
 		Type:     "A",
 		Value:    "1.2.3.4",
-	})
+	}})
 	if err != nil {
 		t.Fatalf("CreateRecord failed: %v", err)
 	}
@@ -96,8 +96,8 @@ func TestSOARecordLogic(t *testing.T) {
 	// Re-fetch SOA
 	resp2, _ := dnsservice.ScanRecords(ctx, domain.ID, "", 10, "")
 	for _, r := range resp2.Items {
-		if r.Type == "SOA" {
-			newSerial := strings.Fields(r.Value)[2]
+		if r.Meta.Type == "SOA" {
+			newSerial := strings.Fields(r.Meta.Value)[2]
 			if newSerial <= initialSerial {
 				t.Errorf("Expected SOA serial to increment, but it didn't: %s -> %s", initialSerial, newSerial)
 			}

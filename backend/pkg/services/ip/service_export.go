@@ -23,10 +23,10 @@ func (s *IPPoolService) CreateExport(ctx context.Context, export *models.IPExpor
 	if export.ID == "" {
 		export.ID = uuid.NewString()
 	}
-	export.CreatedAt = time.Now()
-	export.UpdatedAt = time.Now()
-	err := repo.SaveExport(ctx, export)
-	commonaudit.FromContext(ctx).Log("CreateIPExport", export.Name, "Created", err == nil)
+	export.Status.CreatedAt = time.Now()
+	export.Status.UpdatedAt = time.Now()
+	err := repo.ExportRepo.Cow(ctx, export.ID, func(res *models.IPExport) error { res.Meta = export.Meta; res.Status = export.Status; return nil })
+	commonaudit.FromContext(ctx).Log("CreateIPExport", export.Meta.Name, "Created", err == nil)
 	return err
 }
 
@@ -35,14 +35,14 @@ func (s *IPPoolService) UpdateExport(ctx context.Context, export *models.IPExpor
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
-	old, err := repo.GetExport(ctx, export.ID)
+	old, err := repo.ExportRepo.Get(ctx, export.ID)
 	if err != nil {
 		return err
 	}
-	export.CreatedAt = old.CreatedAt
-	export.UpdatedAt = time.Now()
-	err = repo.SaveExport(ctx, export)
-	commonaudit.FromContext(ctx).Log("UpdateIPExport", export.Name, "Updated", err == nil)
+	export.Status.CreatedAt = old.Status.CreatedAt
+	export.Status.UpdatedAt = time.Now()
+	err = repo.ExportRepo.Cow(ctx, export.ID, func(res *models.IPExport) error { res.Meta = export.Meta; res.Status = export.Status; return nil })
+	commonaudit.FromContext(ctx).Log("UpdateIPExport", export.Meta.Name, "Updated", err == nil)
 	return err
 }
 
@@ -56,17 +56,17 @@ func (s *IPPoolService) DeleteExport(ctx context.Context, id string) error {
 	if s.exportManager != nil {
 		s.exportManager.DeleteTasksByExportID(id)
 	}
-	err := repo.DeleteExport(ctx, id)
+	err := repo.ExportRepo.Delete(ctx, id)
 	commonaudit.FromContext(ctx).Log("DeleteIPExport", id, "Deleted", err == nil)
 	return err
 }
 
 func (s *IPPoolService) GetExport(ctx context.Context, id string) (*models.IPExport, error) {
-	return repo.GetExport(ctx, id)
+	return repo.ExportRepo.Get(ctx, id)
 }
 
 func (s *IPPoolService) ScanExports(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPExport], error) {
-	res, err := repo.ScanExports(ctx, cursor, limit*2, search)
+	res, err := repo.ExportRepo.List(ctx, cursor, limit*2, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -148,5 +148,5 @@ func (s *IPPoolService) PreviewExport(ctx context.Context, req *models.IPExportP
 }
 
 func (s *IPPoolService) LookupExport(ctx context.Context, id string) (interface{}, error) {
-	return repo.GetExport(ctx, id)
+	return repo.ExportRepo.Get(ctx, id)
 }

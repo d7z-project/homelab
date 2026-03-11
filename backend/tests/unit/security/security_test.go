@@ -18,8 +18,8 @@ func TestDNSListPermissionFiltering(t *testing.T) {
 	adminCtx := auth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
 
 	// Create two domains
-	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Name: "public.com"})
-	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Name: "private.com"})
+	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Meta: models.DomainV1Meta{Name: "public.com"}})
+	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Meta: models.DomainV1Meta{Name: "private.com"}})
 
 	// Context with permission only for public.com
 	userCtx := auth.WithPermissions(context.Background(), &models.ResourcePermissions{
@@ -38,10 +38,10 @@ func TestDNSListPermissionFiltering(t *testing.T) {
 
 	foundPublic := false
 	for _, d := range res.Items {
-		if d.Name == "private.com" {
+		if d.Meta.Name == "private.com" {
 			t.Error("User saw private.com without permission")
 		}
-		if d.Name == "public.com" {
+		if d.Meta.Name == "public.com" {
 			foundPublic = true
 		}
 	}
@@ -56,8 +56,8 @@ func TestDNSExportPermissionFiltering(t *testing.T) {
 
 	adminCtx := auth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
 
-	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Name: "public.com", Enabled: true})
-	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Name: "private.com", Enabled: true})
+	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Meta: models.DomainV1Meta{Name: "public.com", Enabled: true}})
+	_, _ = dnsservice.CreateDomain(adminCtx, &models.Domain{Meta: models.DomainV1Meta{Name: "private.com", Enabled: true}})
 
 	userCtx := auth.WithPermissions(context.Background(), &models.ResourcePermissions{
 		AllowedInstances: []string{"network/dns/public.com"},

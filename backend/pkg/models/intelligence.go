@@ -1,28 +1,40 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
 	"time"
 )
 
-type IntelligenceSource struct {
-	ID            string            `json:"id"`
-	Name          string            `json:"name"`
-	Type          string            `json:"type"` // asn, city, country
-	URL           string            `json:"url"`
-	Enabled       bool              `json:"enabled"`
-	AutoUpdate    bool              `json:"autoUpdate"`
-	UpdateCron    string            `json:"cron"`
-	LastUpdatedAt time.Time         `json:"lastUpdatedAt"`
-	Status        TaskStatus        `json:"status"` // Ready, Downloading, Error
-	Progress      float64           `json:"progress"`
-	ErrorMessage  string            `json:"errorMessage"`
-	Config        map[string]string `json:"config"`
+// IntelligenceSourceV1Meta represents the configuration of an Intelligence Source
+type IntelligenceSourceV1Meta struct {
+	Name       string            `json:"name"`
+	Type       string            `json:"type"` // asn, city, country
+	URL        string            `json:"url"`
+	Enabled    bool              `json:"enabled"`
+	AutoUpdate bool              `json:"autoUpdate"`
+	UpdateCron string            `json:"cron"`
+	Config     map[string]string `json:"config"`
 }
 
-func (s *IntelligenceSource) Bind(r *http.Request) error {
+func (m *IntelligenceSourceV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+// IntelligenceSourceV1Status represents the status of an Intelligence Source
+type IntelligenceSourceV1Status struct {
+	LastUpdatedAt time.Time  `json:"lastUpdatedAt"`
+	Status        TaskStatus `json:"status"` // Ready, Downloading, Error
+	Progress      float64    `json:"progress"`
+	ErrorMessage  string     `json:"errorMessage"`
+}
+
+// IntelligenceSource represents an Intelligence Source resource
+type IntelligenceSource = Resource[IntelligenceSourceV1Meta, IntelligenceSourceV1Status]
+
+func (s *IntelligenceSourceV1Meta) Bind(r *http.Request) error {
 	s.Name = strings.TrimSpace(s.Name)
 	if s.Name == "" {
 		return errors.New("name is required")

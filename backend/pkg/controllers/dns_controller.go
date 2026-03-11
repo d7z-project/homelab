@@ -85,8 +85,8 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
 		return
 	}
 	var updated models.Domain
@@ -120,8 +120,8 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+		HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
 		return
 	}
 	if err := dnsservice.DeleteDomain(r.Context(), id); err != nil {
@@ -149,8 +149,8 @@ func ScanRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	if domainID != "" {
 		domain, err := dnsservice.GetDomain(r.Context(), domainID)
 		if err == nil {
-			if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-				HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+			if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+				HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
 				return
 			}
 		}
@@ -184,10 +184,10 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	domain, err := dnsservice.GetDomain(r.Context(), record.DomainID)
+	domain, err := dnsservice.GetDomain(r.Context(), record.Meta.DomainID)
 	if err == nil {
-		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
 			return
 		}
 	}
@@ -220,10 +220,10 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	domain, err := dnsservice.GetDomain(r.Context(), record.DomainID)
+	domain, err := dnsservice.GetDomain(r.Context(), record.Meta.DomainID)
 	if err == nil {
-		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
 			return
 		}
 	}
@@ -258,10 +258,10 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
-	domain, err := dnsservice.GetDomain(r.Context(), record.DomainID)
+	domain, err := dnsservice.GetDomain(r.Context(), record.Meta.DomainID)
 	if err == nil {
-		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Name))
+		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
+			HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
 			return
 		}
 	}

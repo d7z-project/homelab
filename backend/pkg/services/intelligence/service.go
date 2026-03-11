@@ -85,7 +85,7 @@ func NewIntelligenceService(mmdb *ip.MMDBManager) *IntelligenceService {
 
 	// 集群事件: 变更数据源时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
 	common.RegisterEventHandler(common.EventIntelligenceSourceChanged, func(ctx context.Context, sourceID string) {
-		src, err := repo.GetSource(ctx, sourceID)
+		src, err := repo.SourceRepo.Get(ctx, sourceID)
 		if err != nil {
 			s.removeCronJob(sourceID)
 			return
@@ -111,17 +111,17 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 		status := t.GetStatus()
 		if status == models.TaskStatusFailed || status == models.TaskStatusCancelled {
 			src, err := repo.GetSource(ctx, t.GetID())
-			if err == nil && (src.Status == models.TaskStatusRunning || src.Status == models.TaskStatusPending) {
-				src.Status = status
-				src.ErrorMessage = t.Error
-				_ = repo.SaveSource(ctx, src)
+			if err == nil && (src.Status.Status == models.TaskStatusRunning || src.Status.Status == models.TaskStatusPending) {
+				src.Status.Status = status
+				src.Status.ErrorMessage = t.Error
+				_ = repo.SourceRepo.Cow(ctx, src.ID, func(res *models.IntelligenceSource) error { res.Meta = src.Meta; res.Status = src.Status; return nil })
 			}
 		}
 	}
 
 	for i := range sources {
 		src := &sources[i]
-		if src.AutoUpdate && src.UpdateCron != "" {
+		if src.Meta.AutoUpdate && src.Meta.UpdateCron != "" {
 			s.addCronJob(*src)
 		}
 	}

@@ -34,7 +34,7 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPS
 	if policy.ID == "" {
 		for i := 0; i < 10; i++ { // 最多重试 10 次
 			newID := generatePolicyID()
-			if _, err := repo.GetSyncPolicy(ctx, newID); err != nil {
+			if _, err := repo.SyncPolicyRepo.Get(ctx, newID); err != nil {
 				policy.ID = newID
 				break
 			}
@@ -43,14 +43,14 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *models.IPS
 			return fmt.Errorf("failed to generate unique policy ID")
 		}
 	}
-	policy.CreatedAt = time.Now()
-	policy.UpdatedAt = time.Now()
-	err := repo.SaveSyncPolicy(ctx, policy)
-	if err == nil && policy.Enabled {
+	policy.Status.CreatedAt = time.Now()
+	policy.Status.UpdatedAt = time.Now()
+	err := repo.SyncPolicyRepo.Cow(ctx, policy.ID, func(res *models.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
+	if err == nil && policy.Meta.Enabled {
 		s.addCronJob(*policy)
 		common.NotifyCluster(ctx, common.EventIPSyncPolicyChanged, policy.ID)
 	}
-	commonaudit.FromContext(ctx).Log("CreateIPSyncPolicy", policy.Name, "Created", err == nil)
+	commonaudit.FromContext(ctx).Log("CreateIPSyncPolicy", policy.Meta.Name, "Created", err == nil)
 	return err
 }
 
@@ -58,45 +58,45 @@ func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *models.IPS
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
 		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
 	}
-	old, err := repo.GetSyncPolicy(ctx, policy.ID)
+	old, err := repo.SyncPolicyRepo.Get(ctx, policy.ID)
 	if err != nil {
 		return err
 	}
-	policy.CreatedAt = old.CreatedAt
-	policy.UpdatedAt = time.Now()
-	err = repo.SaveSyncPolicy(ctx, policy)
+	policy.Status.CreatedAt = old.Status.CreatedAt
+	policy.Status.UpdatedAt = time.Now()
+	err = repo.SyncPolicyRepo.Cow(ctx, policy.ID, func(res *models.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
 	if err == nil {
-		if policy.Enabled {
+		if policy.Meta.Enabled {
 			s.addCronJob(*policy)
 		} else {
 			s.removeCronJob(policy.ID)
 		}
 		common.NotifyCluster(ctx, common.EventIPSyncPolicyChanged, policy.ID)
 	}
-	commonaudit.FromContext(ctx).Log("UpdateIPSyncPolicy", policy.Name, "Updated", err == nil)
+	commonaudit.FromContext(ctx).Log("UpdateIPSyncPolicy", policy.Meta.Name, "Updated", err == nil)
 	return err
 }
 
 func (s *IPPoolService) DeleteSyncPolicy(ctx context.Context, id string) error {
-	old, err := repo.GetSyncPolicy(ctx, id)
+	old, err := repo.SyncPolicyRepo.Get(ctx, id)
 	if err != nil {
 		return err
 	}
-	err = repo.DeleteSyncPolicy(ctx, id)
+	err = repo.SyncPolicyRepo.Delete(ctx, id)
 	if err == nil {
 		s.removeCronJob(id)
 		common.NotifyCluster(ctx, common.EventIPSyncPolicyChanged, id)
 	}
-	commonaudit.FromContext(ctx).Log("DeleteIPSyncPolicy", old.Name, "Deleted", err == nil)
+	commonaudit.FromContext(ctx).Log("DeleteIPSyncPolicy", old.Meta.Name, "Deleted", err == nil)
 	return err
 }
 
 func (s *IPPoolService) GetSyncPolicy(ctx context.Context, id string) (*models.IPSyncPolicy, error) {
-	return repo.GetSyncPolicy(ctx, id)
+	return repo.SyncPolicyRepo.Get(ctx, id)
 }
 
 func (s *IPPoolService) ScanSyncPolicies(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.IPSyncPolicy], error) {
-	res, err := repo.ScanSyncPolicies(ctx, cursor, limit, search)
+	res, err := repo.SyncPolicyRepo.List(ctx, cursor, limit, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -106,9 +106,9 @@ func (s *IPPoolService) ScanSyncPolicies(ctx context.Context, cursor string, lim
 		if t, ok := s.syncTasks.GetTask(res.Items[i].ID); ok {
 			status := t.GetStatus()
 			if status == models.TaskStatusRunning || status == models.TaskStatusPending {
-				res.Items[i].LastStatus = status
-				res.Items[i].ErrorMessage = t.Error
-				res.Items[i].Progress = t.GetProgress()
+				res.Items[i].Status.LastStatus = status
+				res.Items[i].Status.ErrorMessage = t.Error
+				res.Items[i].Status.Progress = t.GetProgress()
 			}
 		}
 	}
@@ -124,7 +124,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("network/ip") {
 		return fmt.Errorf("%w: network/ip", commonauth.ErrPermissionDenied)
 	}
-	policy, err := repo.GetSyncPolicy(ctx, id)
+	policy, err := repo.SyncPolicyRepo.Get(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 				s.syncTasks.CancelTask(id)
 				release()
 			} else {
-				return fmt.Errorf("sync is already in progress for policy: %s", policy.Name)
+				return fmt.Errorf("sync is already in progress for policy: %s", policy.Meta.Name)
 			}
 		}
 	}
@@ -153,9 +153,9 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 	}
 	s.syncTasks.AddTask(task)
 
-	policy.LastStatus = models.TaskStatusPending
-	policy.LastRunAt = time.Now()
-	_ = repo.SaveSyncPolicy(ctx, policy)
+	policy.Status.LastStatus = models.TaskStatusPending
+	policy.Status.LastRunAt = time.Now()
+	_ = repo.SyncPolicyRepo.Cow(ctx, policy.ID, func(res *models.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
 
 	if common.Subscriber != nil {
 		common.NotifyCluster(ctx, common.EventIPSyncRun, id)
@@ -172,7 +172,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 		}()
 	}
 
-	commonaudit.FromContext(ctx).Log("TriggerIPSync", policy.Name, "Triggered Asynchronously", true)
+	commonaudit.FromContext(ctx).Log("TriggerIPSync", policy.Meta.Name, "Triggered Asynchronously", true)
 	return nil
 }
 
@@ -180,14 +180,14 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 	var finalErr error
 	s.syncTasks.RunTask(bgCtx, policyID, func(taskCtx context.Context, task *SyncTask) error {
 		// 重新加载 policy 以获取最新配置
-		policy, err := repo.GetSyncPolicy(taskCtx, policyID)
+		policy, err := repo.SyncPolicyRepo.Get(taskCtx, policyID)
 		if err != nil || policy == nil {
 			finalErr = fmt.Errorf("policy is nil or missing")
 			return finalErr
 		}
 
-		policy.LastStatus = models.TaskStatusRunning
-		_ = repo.SaveSyncPolicy(taskCtx, policy)
+		policy.Status.LastStatus = models.TaskStatusRunning
+		_ = repo.SyncPolicyRepo.Cow(taskCtx, policy.ID, func(res *models.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
 
 		defer func() {
 			if policy == nil {
@@ -195,33 +195,33 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			}
 			// 使用闭包捕获的命名返回值以确保最后的保存
 			if errors.Is(taskCtx.Err(), context.Canceled) {
-				policy.LastStatus = models.TaskStatusCancelled
-				policy.ErrorMessage = "Task cancelled manually"
+				policy.Status.LastStatus = models.TaskStatusCancelled
+				policy.Status.ErrorMessage = "Task cancelled manually"
 			} else if finalErr != nil {
-				policy.LastStatus = models.TaskStatusFailed
-				policy.ErrorMessage = finalErr.Error()
+				policy.Status.LastStatus = models.TaskStatusFailed
+				policy.Status.ErrorMessage = finalErr.Error()
 			} else {
-				policy.LastStatus = models.TaskStatusSuccess
-				policy.ErrorMessage = ""
+				policy.Status.LastStatus = models.TaskStatusSuccess
+				policy.Status.ErrorMessage = ""
 			}
-			policy.LastRunAt = time.Now()
+			policy.Status.LastRunAt = time.Now()
 			_ = repo.SaveSyncPolicy(context.Background(), policy)
-			commonaudit.FromContext(taskCtx).Log("IPSyncExecute", policy.Name, "Finished", finalErr == nil)
+			commonaudit.FromContext(taskCtx).Log("IPSyncExecute", policy.Meta.Name, "Finished", finalErr == nil)
 		}()
 
-		if policy.Config == nil {
-			policy.Config = make(map[string]string)
+		if policy.Meta.Config == nil {
+			policy.Meta.Config = make(map[string]string)
 		}
 
 		// 1. 下载原始数据到临时文件
 		// SSRF 防护：校验 URL
-		err = validateSourceURL(policy.SourceURL, policy)
+		err = validateSourceURL(policy.Meta.SourceURL, policy)
 		if err != nil {
 			finalErr = err
 			return err
 		}
 
-		req, err := http.NewRequestWithContext(taskCtx, "GET", policy.SourceURL, nil)
+		req, err := http.NewRequestWithContext(taskCtx, "GET", policy.Meta.SourceURL, nil)
 		if err != nil {
 			finalErr = err
 			return err
@@ -264,7 +264,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 
 		// 解析标签映射配置
 		tagMapping := make(map[string]string)
-		if mStr := policy.Config["tagMapping"]; mStr != "" {
+		if mStr := policy.Meta.Config["tagMapping"]; mStr != "" {
 			_ = json.Unmarshal([]byte(mStr), &tagMapping)
 		}
 
@@ -296,7 +296,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			}
 		}
 
-		if policy.Format == "geoip" {
+		if policy.Meta.Format == "geoip" {
 			var mdb *maxminddb.Reader
 			mdb, err = maxminddb.Open(tempSrc.Name())
 			if err != nil {
@@ -329,7 +329,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 					idxs = append(idxs, getTagIdx(record.Country.IsoCode))
 				}
 				if record.City.Names != nil {
-					lang := policy.Config["language"]
+					lang := policy.Meta.Config["language"]
 					if lang == "" {
 						lang = "zh-CN"
 					}
@@ -344,8 +344,8 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 				}
 				addEntryToAggregate(prefix, idxs)
 			}
-		} else if policy.Format == "geoip-dat" {
-			targetCode := policy.Config["code"]
+		} else if policy.Meta.Format == "geoip-dat" {
+			targetCode := policy.Meta.Config["code"]
 			importAll := targetCode == "" || targetCode == "*" || targetCode == "all"
 
 			var data []byte
@@ -363,7 +363,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			for _, e := range v2Entries {
 				addEntryToAggregate(e.Prefix, []uint32{internalTagIdx, getTagIdx(e.CountryCode)})
 			}
-		} else if policy.Format == "csv" {
+		} else if policy.Meta.Format == "csv" {
 			var f *os.File
 			f, err = os.Open(tempSrc.Name())
 			if err != nil {
@@ -371,20 +371,20 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			}
 			defer f.Close()
 
-			sep := policy.Config["separator"]
+			sep := policy.Meta.Config["separator"]
 			if sep == "" {
 				sep = ","
 			}
 
-			ipIdx, _ := strconv.Atoi(policy.Config["ipColumn"])
-			tagIdxStr, tagOk := policy.Config["tagColumn"]
+			ipIdx, _ := strconv.Atoi(policy.Meta.Config["ipColumn"])
+			tagIdxStr, tagOk := policy.Meta.Config["tagColumn"]
 			tagCol := -1
 			if tagOk && tagIdxStr != "" {
 				tagCol, _ = strconv.Atoi(tagIdxStr)
 			}
 
 			// 全局附加标签 (支持多个，逗号分隔)
-			additionalTags := strings.Split(policy.Config["tags"], ",")
+			additionalTags := strings.Split(policy.Meta.Config["tags"], ",")
 			var globalTagIdxs []uint32
 			for _, t := range additionalTags {
 				t = strings.TrimSpace(t)
@@ -447,7 +447,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 			}
 
 			// 全局附加标签 (支持多个，逗号分隔)
-			additionalTags := strings.Split(policy.Config["tags"], ",")
+			additionalTags := strings.Split(policy.Meta.Config["tags"], ",")
 			var globalTagIdxs []uint32
 			for _, t := range additionalTags {
 				t = strings.TrimSpace(t)
@@ -492,23 +492,23 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 
 		// 3. 写入目标池
 		var release func()
-		release, err = s.lockPool(taskCtx, policy.TargetGroupID)
+		release, err = s.lockPool(taskCtx, policy.Meta.TargetGroupID)
 		if err != nil {
 			finalErr = err
 			return err
 		}
 		defer release()
 
-		var group *models.IPGroup
-		group, err = repo.GetGroup(taskCtx, policy.TargetGroupID)
+		var group *models.IPPool
+		group, err = repo.PoolRepo.Get(taskCtx, policy.Meta.TargetGroupID)
 		if err != nil {
 			finalErr = err
 			return err
 		}
 
 		_ = common.FS.MkdirAll(PoolsDir, 0755)
-		poolPath := filepath.Join(PoolsDir, policy.TargetGroupID+".bin")
-		tempFile := filepath.Join(PoolsDir, policy.TargetGroupID+".bin.tmp")
+		poolPath := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin")
+		tempFile := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin.tmp")
 
 		// 处理旧数据合并
 		if exists, _ := afero.Exists(common.FS, poolPath); exists {
@@ -542,7 +542,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 						}
 					}
 
-					if isFromThisPolicy && policy.Mode == "overwrite" {
+					if isFromThisPolicy && policy.Meta.Mode == "overwrite" {
 						// 覆盖模式逻辑：
 						if !hasOtherPolicy {
 							// 1. 如果该 CIDR 仅由当前策略维护，则直接跳过（不加入聚合器）
@@ -609,16 +609,21 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 		hf := sha256.New()
 		hf.Write(content)
 
-		group.EntryCount = int64(len(finalEntries))
-		group.UpdatedAt = time.Now()
-		group.Checksum = hex.EncodeToString(hf.Sum(nil))
+		group.Status.EntryCount = int64(len(finalEntries))
+		group.Status.UpdatedAt = time.Now()
+		group.Status.Checksum = hex.EncodeToString(hf.Sum(nil))
 
 		if err := common.FS.Rename(tempFile, poolPath); err != nil {
 			finalErr = err
 			return err
 		}
 
-		err = repo.SaveGroup(taskCtx, group)
+		err = repo.PoolRepo.UpdateStatus(taskCtx, group.ID, func(s *models.IPPoolV1Status) {
+			s.EntryCount = int64(len(finalEntries))
+			s.UpdatedAt = time.Now()
+			s.Checksum = hex.EncodeToString(hf.Sum(nil))
+		})
+
 		if err == nil {
 			notifyIPPoolChanged(taskCtx, group.ID)
 		}

@@ -90,6 +90,8 @@ func IsComment(line string) bool {
 
 var ErrNotFound = errors.New("resource not found")
 var ErrBadRequest = errors.New("bad request")
+var ErrConflict = errors.New("resource conflict")
+var ErrInvalidConfig = errors.New("invalid configuration")
 
 type Response struct {
 	Code    int         `json:"code"`

@@ -109,9 +109,9 @@ func TestIPService(t *testing.T) {
 	service := ip.NewIPPoolService(nil, nil)
 
 	// 1. 创建 Group
-	group := &models.IPGroup{
+	group := &models.IPPool{
 		ID:   "test_group",
-		Name: "Test Group",
+		Meta: models.IPPoolV1Meta{Name: "Test Group"},
 	}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
@@ -119,19 +119,19 @@ func TestIPService(t *testing.T) {
 	// 2. 获取 Group
 	g, err := service.GetGroup(ctx, "test_group")
 	assert.NoError(t, err)
-	assert.Equal(t, "Test Group", g.Name)
+	assert.Equal(t, "Test Group", g.Meta.Name)
 
 	// 3. 更新 Group
-	g.Name = "New Name"
+	g.Meta.Name = "New Name"
 	err = service.UpdateGroup(ctx, g)
 	assert.NoError(t, err)
 	g2, _ := service.GetGroup(ctx, "test_group")
-	assert.Equal(t, "New Name", g2.Name)
+	assert.Equal(t, "New Name", g2.Meta.Name)
 
 	// 4. 列表
 	res, err := service.ScanGroups(ctx, "", 10, "")
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), res.Total) // Scan may not return total
+	assert.Equal(t, int64(1), res.Total) // Scan now returns accurate total
 	assert.Equal(t, "test_group", res.Items[0].ID)
 
 	// 5. Lookup (Discovery)
@@ -156,7 +156,7 @@ func TestIPPreviewCursor(t *testing.T) {
 	service := ip.NewIPPoolService(nil, nil)
 
 	// 1. Create group and many entries
-	group := &models.IPGroup{ID: "cursor_pool", Name: "Cursor Pool"}
+	group := &models.IPPool{ID: "cursor_pool", Meta: models.IPPoolV1Meta{Name: "Cursor Pool"}}
 	_ = service.CreateGroup(ctx, group)
 
 	entries := make([]ip.Entry, 10)

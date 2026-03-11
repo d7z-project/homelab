@@ -22,9 +22,9 @@ func updateSOASerial(ctx context.Context, domainID string) {
 	resp, _ := dnsrepo.ScanRecords(ctx, domainID, "", 100, "")
 	if resp != nil {
 		for _, r := range resp.Items {
-			if r.Type == "SOA" {
-				m, rn, _, _ := parseSOA(r.Value)
-				r.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(r.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+			if r.Meta.Type == "SOA" {
+				m, rn, _, _ := parseSOA(r.Meta.Value)
+				r.Meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(r.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
 				_ = dnsrepo.SaveRecord(ctx, &r)
 				break
 			}

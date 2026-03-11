@@ -123,7 +123,7 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 
 	// 如果没有指定 groupIDs，则查询所有
 	if len(groupIDs) == 0 {
-		res, err := repo.ScanGroups(ctx, "", 1000, "")
+		res, err := repo.PoolRepo.List(ctx, "", 1000, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -142,8 +142,8 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 		if ok {
 			// 1. 获取池名称
 			poolName := gid
-			if group, err := repo.GetGroup(ctx, gid); err == nil && group.Name != "" {
-				poolName = group.Name
+			if group, err := repo.PoolRepo.Get(ctx, gid); err == nil && group.Meta.Name != "" {
+				poolName = group.Meta.Name
 			}
 
 			// 2. 处理标签：去重并转换内部 ID
@@ -158,8 +158,8 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 				displayTag := t
 				if strings.HasPrefix(tid, "_") {
 					// 尝试作为同步策略查找
-					if policy, err := repo.GetSyncPolicy(ctx, tid); err == nil && policy.Name != "" {
-						displayTag = "策略: " + policy.Name
+					if policy, err := repo.SyncPolicyRepo.Get(ctx, tid); err == nil && policy.Meta.Name != "" {
+						displayTag = "策略: " + policy.Meta.Name
 					} else {
 						// 如果无法解析为策略名称，则隐藏该内部标签
 						continue

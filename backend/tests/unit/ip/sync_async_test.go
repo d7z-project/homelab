@@ -42,19 +42,18 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 
 	// 2. 创建一个同步策略和目标池
-	group := &models.IPGroup{ID: "test-group", Name: "Test Group"}
-	_ = repo.SaveGroup(ctx, group)
+	group := &models.IPPool{ID: "test-group", Meta: models.IPPoolV1Meta{Name: "Test Group"}}
+	_ = service.CreateGroup(ctx, group)
 
-	policy := &models.IPSyncPolicy{
-		ID:            "test-policy",
+	policy := &models.IPSyncPolicy{ID: "test-policy", Meta: models.IPSyncPolicyV1Meta{
 		Name:          "Test Policy",
 		Enabled:       true,
 		SourceURL:     "http://localhost/ips.txt",
 		Format:        "text",
 		TargetGroupID: group.ID,
 		Cron:          "0 0 * * *",
-	}
-	_ = repo.SaveSyncPolicy(ctx, policy)
+	}}
+	_ = repo.SyncPolicyRepo.Cow(ctx, policy.ID, func(res *models.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
 
 	t.Run("IPSync_Trigger_Returns_Pending_Immediately", func(t *testing.T) {
 		// 触发同步
@@ -64,9 +63,9 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 		}
 
 		// 验证状态立即变为 pending
-		p, _ := repo.GetSyncPolicy(ctx, policy.ID)
-		if p.LastStatus != models.TaskStatusPending {
-			t.Errorf("Expected status pending, got %s", p.LastStatus)
+		p, _ := repo.SyncPolicyRepo.Get(ctx, policy.ID)
+		if p.Status.LastStatus != models.TaskStatusPending {
+			t.Errorf("Expected status pending, got %s", p.Status.LastStatus)
 		}
 
 		// 验证信号已发出
@@ -85,9 +84,9 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 		_ = service.Sync(ctx, policy.ID)
 
 		// 此时数据库状态应该是 pending
-		p, _ := repo.GetSyncPolicy(ctx, policy.ID)
-		if p.LastStatus != models.TaskStatusPending {
-			t.Fatalf("Policy should be in pending state, got %s", p.LastStatus)
+		p, _ := repo.SyncPolicyRepo.Get(ctx, policy.ID)
+		if p.Status.LastStatus != models.TaskStatusPending {
+			t.Fatalf("Policy should be in pending state, got %s", p.Status.LastStatus)
 		}
 
 		// 执行 Handler (通过 TriggerEvent 模拟集群节点接收)
@@ -96,21 +95,21 @@ func TestIPSyncAsyncDecoupling(t *testing.T) {
 		// 稍微等等框架底层的 goroutine 和 Mutex 完成落盘 (框架包含网络拨号等)
 		// 循环等待因为它是被发配到后台执行的 goroutine
 		for i := 0; i < 20; i++ {
-			p, _ = repo.GetSyncPolicy(ctx, policy.ID)
-			if p.LastStatus != models.TaskStatusPending && p.LastStatus != models.TaskStatusRunning {
+			p, _ = repo.SyncPolicyRepo.Get(ctx, policy.ID)
+			if p.Status.LastStatus != models.TaskStatusPending && p.Status.LastStatus != models.TaskStatusRunning {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
 		// 验证状态已更新（异步完成）
-		p, _ = repo.GetSyncPolicy(ctx, policy.ID)
-		if p.LastStatus == models.TaskStatusPending {
+		p, _ = repo.SyncPolicyRepo.Get(ctx, policy.ID)
+		if p.Status.LastStatus == models.TaskStatusPending {
 			t.Error("Status should have changed from pending after execution")
 		}
 
 		// 验证最后运行时间已更新
-		if p.LastRunAt.IsZero() {
+		if p.Status.LastRunAt.IsZero() {
 			t.Error("LastRunAt should be set")
 		}
 	})

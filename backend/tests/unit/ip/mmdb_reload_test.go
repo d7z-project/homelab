@@ -61,9 +61,9 @@ func TestMMDBIncrementalReload(t *testing.T) {
 	createCityMMDB(t, "src-city", "伦敦")
 
 	manager := ip.NewMMDBManager([]models.IntelligenceSource{
-		{ID: "src-asn-1", Type: "asn", Enabled: true},
-		{ID: "src-asn-2", Type: "asn", Enabled: true},
-		{ID: "src-city", Type: "city", Enabled: true},
+		{ID: "src-asn-1", Meta: models.IntelligenceSourceV1Meta{Type: "asn", Enabled: true}},
+		{ID: "src-asn-2", Meta: models.IntelligenceSourceV1Meta{Type: "asn", Enabled: true}},
+		{ID: "src-city", Meta: models.IntelligenceSourceV1Meta{Type: "city", Enabled: true}},
 	})
 	ctx := context.Background()
 

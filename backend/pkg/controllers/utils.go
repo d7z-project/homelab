@@ -38,6 +38,16 @@ func HandleError(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
+	if errors.Is(err, common.ErrInvalidConfig) {
+		common.Error(w, r, http.StatusBadRequest, 400, err.Error())
+		return
+	}
+
+	if errors.Is(err, common.ErrConflict) {
+		common.Error(w, r, http.StatusConflict, 409, err.Error())
+		return
+	}
+
 	// Default to 500
 	common.InternalServerError(w, r, 500, err.Error())
 }

@@ -44,13 +44,13 @@ func (p *DnsRecordProcessor) Execute(ctx *actions.TaskContext, inputs map[string
 		return nil, fmt.Errorf("user %s does not have permission to modify DNS", ctx.UserID)
 	}
 
-	record := &models.Record{
+	record := &models.Record{Meta: models.RecordV1Meta{
 		DomainID: domainID,
 		Name:     name,
 		Type:     recordType,
 		Value:    value,
 		Enabled:  true,
-	}
+	}}
 
 	// Create a context with full permissions for the internal service call
 	// The service layer itself will perform the final validation

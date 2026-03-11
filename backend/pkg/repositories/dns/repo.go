@@ -2,25 +2,16 @@ package dns
 
 import (
 	"context"
-	"encoding/json"
 	"homelab/pkg/common"
 	"homelab/pkg/models"
 	"strings"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"gopkg.d7z.net/middleware/kv"
 )
 
-var (
-	domainCache *lru.Cache[string, *models.Domain]
-	recordCache *lru.Cache[string, *models.Record]
-)
-
-func init() {
-	domainCache, _ = lru.New[string, *models.Domain](1024)
-	recordCache, _ = lru.New[string, *models.Record](2048)
-}
+var DomainRepo = common.NewBaseRepository[models.DomainV1Meta, models.DomainV1Status]("network", "Domain")
+var RecordRepo = common.NewBaseRepository[models.RecordV1Meta, models.RecordV1Status]("network", "Record")
 
 func GetLastModified() time.Time {
 	val, err := common.DB.Child("network", "dns").Get(context.Background(), "last_modified")
@@ -34,8 +25,6 @@ func GetLastModified() time.Time {
 }
 
 func ClearCache() {
-	domainCache.Purge()
-	recordCache.Purge()
 	updateLastModified()
 }
 
@@ -44,187 +33,61 @@ func updateLastModified() {
 	_ = common.DB.Child("network", "dns").Put(context.Background(), "last_modified", now, kv.TTLKeep)
 }
 
-// Domain Repo
-
 func GetDomain(ctx context.Context, id string) (*models.Domain, error) {
-	if val, ok := domainCache.Get(id); ok {
-		return val, nil
-	}
-	db := common.DB.Child("network/dns", "domains")
-	data, err := db.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	var domain models.Domain
-	if err := json.Unmarshal([]byte(data), &domain); err != nil {
-		return nil, err
-	}
-	domainCache.Add(id, &domain)
-	return &domain, nil
+	return DomainRepo.Get(ctx, id)
 }
 
 func SaveDomain(ctx context.Context, domain *models.Domain) error {
-	db := common.DB.Child("network/dns", "domains")
-	data, err := json.Marshal(domain)
-	if err != nil {
-		return err
-	}
-	err = db.Put(ctx, domain.ID, string(data), kv.TTLKeep)
-	if err == nil {
-		domainCache.Add(domain.ID, domain)
-		updateLastModified()
-	}
-	return err
+	return DomainRepo.Cow(ctx, domain.ID, func(res *models.Domain) error {
+		res.Meta = domain.Meta
+		res.Status = domain.Status
+		return nil
+	})
 }
 
 func DeleteDomain(ctx context.Context, id string) error {
-	_, err := common.DB.Child("network/dns", "domains").Delete(ctx, id)
-	if err == nil {
-		domainCache.Remove(id)
-		updateLastModified()
-	}
-	return err
+	return DomainRepo.Delete(ctx, id)
 }
 
 func ScanDomains(ctx context.Context, cursor string, limit int, search string) (*models.PaginationResponse[models.Domain], error) {
-	db := common.DB.Child("network/dns", "domains")
-	count, _ := db.Count(ctx)
-	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
-		Limit:  int64(limit * 5),
-		Cursor: cursor,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	res := make([]models.Domain, 0)
 	search = strings.ToLower(search)
-	for _, v := range resp.Pairs {
-		var domain models.Domain
-		if err := json.Unmarshal([]byte(v.Value), &domain); err == nil {
-			if search == "" || strings.Contains(strings.ToLower(domain.Name), search) || strings.Contains(strings.ToLower(domain.ID), search) {
-				res = append(res, domain)
-				domainCache.Add(domain.ID, &domain)
-			}
-		}
-		if len(res) >= limit {
-			return &models.PaginationResponse[models.Domain]{
-				Items:      res,
-				NextCursor: v.Key,
-				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
-				Total:      int64(count),
-			}, nil
-		}
-	}
-
-	return &models.PaginationResponse[models.Domain]{
-		Items:      res,
-		NextCursor: resp.Cursor,
-		HasMore:    resp.HasMore,
-		Total:      int64(count),
-	}, nil
+	return DomainRepo.List(ctx, cursor, limit, func(s *models.Domain) bool {
+		return search == "" || strings.Contains(strings.ToLower(s.Meta.Name), search) || strings.Contains(strings.ToLower(s.ID), search)
+	})
 }
 
-// Record Repo
-
 func GetRecord(ctx context.Context, id string) (*models.Record, error) {
-	if val, ok := recordCache.Get(id); ok {
-		return val, nil
-	}
-	db := common.DB.Child("network/dns", "records")
-	data, err := db.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	var record models.Record
-	if err := json.Unmarshal([]byte(data), &record); err != nil {
-		return nil, err
-	}
-	recordCache.Add(id, &record)
-	return &record, nil
+	return RecordRepo.Get(ctx, id)
 }
 
 func SaveRecord(ctx context.Context, record *models.Record) error {
-	db := common.DB.Child("network/dns", "records")
-	data, err := json.Marshal(record)
-	if err != nil {
-		return err
-	}
-	err = db.Put(ctx, record.ID, string(data), kv.TTLKeep)
-	if err == nil {
-		recordCache.Add(record.ID, record)
-		updateLastModified()
-	}
-	return err
+	return RecordRepo.Cow(ctx, record.ID, func(res *models.Record) error {
+		res.Meta = record.Meta
+		res.Status = record.Status
+		return nil
+	})
 }
 
 func DeleteRecord(ctx context.Context, id string) error {
-	_, err := common.DB.Child("network/dns", "records").Delete(ctx, id)
-	if err == nil {
-		recordCache.Remove(id)
-		updateLastModified()
-	}
-	return err
+	return RecordRepo.Delete(ctx, id)
 }
 
 func ScanRecords(ctx context.Context, domainID string, cursor string, limit int, search string) (*models.PaginationResponse[models.Record], error) {
-	db := common.DB.Child("network/dns", "records")
-	count, _ := db.Count(ctx)
-	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
-		Limit:  int64(limit * 5),
-		Cursor: cursor,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	res := make([]models.Record, 0)
 	search = strings.ToLower(search)
-	for _, v := range resp.Pairs {
-		var record models.Record
-		if err := json.Unmarshal([]byte(v.Value), &record); err == nil {
-			if (domainID == "" || record.DomainID == domainID) && (search == "" || strings.Contains(strings.ToLower(record.Name), search) || strings.Contains(strings.ToLower(record.Value), search) || strings.Contains(strings.ToLower(record.ID), search)) {
-				res = append(res, record)
-				recordCache.Add(record.ID, &record)
-			}
-		}
-		if len(res) >= limit {
-			return &models.PaginationResponse[models.Record]{
-				Items:      res,
-				NextCursor: v.Key,
-				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
-				Total:      int64(count),
-			}, nil
-		}
-	}
-
-	return &models.PaginationResponse[models.Record]{
-		Items:      res,
-		NextCursor: resp.Cursor,
-		HasMore:    resp.HasMore,
-		Total:      int64(count),
-	}, nil
+	return RecordRepo.List(ctx, cursor, limit, func(s *models.Record) bool {
+		return (domainID == "" || s.Meta.DomainID == domainID) && (search == "" || strings.Contains(strings.ToLower(s.Meta.Name), search) || strings.Contains(strings.ToLower(s.Meta.Value), search) || strings.Contains(strings.ToLower(s.ID), search))
+	})
 }
 
 func DeleteRecordsByDomain(ctx context.Context, domainID string) error {
-	db := common.DB.Child("network/dns", "records")
-	items, err := db.List(ctx, "")
+	res, err := RecordRepo.List(ctx, "", 100000, func(s *models.Record) bool {
+		return s.Meta.DomainID == domainID
+	})
 	if err != nil {
 		return err
 	}
-	deleted := false
-	for _, v := range items {
-		var record models.Record
-		if err := json.Unmarshal([]byte(v.Value), &record); err == nil {
-			if record.DomainID == domainID {
-				db.Delete(ctx, record.ID)
-				recordCache.Remove(record.ID)
-				deleted = true
-			}
-		}
-	}
-	if deleted {
-		updateLastModified()
+	for _, r := range res.Items {
+		_ = RecordRepo.Delete(ctx, r.ID)
 	}
 	return nil
 }

@@ -77,7 +77,7 @@ func TestIPSecurity(t *testing.T) {
 
 	t.Run("SA with execute permission can trigger export", func(t *testing.T) {
 		// First create an export as root
-		exp := &models.IPExport{Name: "Test Export", Rule: "true"}
+		exp := &models.IPExport{Meta: models.IPExportV1Meta{Name: "Test Export", Rule: "true"}}
 		_ = ipPoolService.CreateExport(ctx, exp)
 
 		// Grant execute permission to SA

@@ -34,7 +34,7 @@ func TestMMDBAdvanced(t *testing.T) {
 
 	// 2. Load MMDB (sources 直接传入构造函数，自动完成首次加载)
 	manager := ip.NewMMDBManager([]models.IntelligenceSource{
-		{ID: "GeoLite2-ASN", Type: "asn", Enabled: true},
+		{ID: "GeoLite2-ASN", Meta: models.IntelligenceSourceV1Meta{Type: "asn", Enabled: true}},
 	})
 
 	// 3. Lookup public IP

@@ -33,7 +33,7 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	}
 	defer release()
 
-	group, err := repo.GetGroup(ctx, groupID)
+	group, err := repo.PoolRepo.Get(ctx, groupID)
 	if err != nil {
 		return err
 	}
@@ -197,15 +197,15 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	hf := sha256.New()
 	hf.Write(content)
 
-	group.EntryCount = int64(len(entries))
-	group.UpdatedAt = time.Now()
-	group.Checksum = hex.EncodeToString(hf.Sum(nil))
-
 	if err := common.FS.Rename(tempFile, poolPath); err != nil {
 		return err
 	}
 
-	err = repo.SaveGroup(ctx, group)
+	err = repo.PoolRepo.UpdateStatus(ctx, group.ID, func(s *models.IPPoolV1Status) {
+		s.EntryCount = int64(len(entries))
+		s.UpdatedAt = time.Now()
+		s.Checksum = hex.EncodeToString(hf.Sum(nil))
+	})
 	if err == nil {
 		notifyIPPoolChanged(ctx, groupID)
 	}

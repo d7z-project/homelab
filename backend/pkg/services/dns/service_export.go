@@ -30,34 +30,36 @@ func ClearCache() {
 
 func ExportAll(ctx context.Context) (*models.DnsExportResponse, error) {
 	perms := commonauth.PermissionsFromContext(ctx)
-	// Entry check: Allow if user has global 'dns' permission OR has specific instance permissions
 	if !perms.AllowedAll && !perms.IsAllowed("network/dns") && len(perms.AllowedInstances) == 0 {
 		return nil, fmt.Errorf("%w: dns", commonauth.ErrPermissionDenied)
 	}
 
-	domainsResp, _ := dnsrepo.ScanDomains(ctx, "", 10000, "")
+	domainsResp, _ := dnsrepo.DomainRepo.List(ctx, "", 10000, nil)
 	allResp, _ := dnsrepo.ScanRecords(ctx, "", "", 100000, "")
 
-	domainMap := make(map[string]map[string]map[string]interface{})
+	recordsByDomain := make(map[string][]models.ExportRecord)
 	if allResp != nil {
 		for _, r := range allResp.Items {
-			if !r.Enabled {
+			if !r.Meta.Enabled {
 				continue
 			}
-			if domainMap[r.DomainID] == nil {
-				domainMap[r.DomainID] = make(map[string]map[string]interface{})
-			}
-			if domainMap[r.DomainID][r.Name] == nil {
-				domainMap[r.DomainID][r.Name] = make(map[string]interface{})
-			}
-			domainMap[r.DomainID][r.Name][r.Type] = r.Value
+			recordsByDomain[r.Meta.DomainID] = append(recordsByDomain[r.Meta.DomainID], models.ExportRecord{
+				Name:     r.Meta.Name,
+				Type:     r.Meta.Type,
+				Value:    r.Meta.Value,
+				TTL:      r.Meta.TTL,
+				Priority: r.Meta.Priority,
+			})
 		}
 	}
 	resp := &models.DnsExportResponse{Domains: make([]models.ExportDomain, 0)}
 	if domainsResp != nil {
 		for _, d := range domainsResp.Items {
-			if d.Enabled && perms.IsAllowed("network/dns/"+d.Name) {
-				resp.Domains = append(resp.Domains, models.ExportDomain{Name: d.Name, Records: domainMap[d.ID]})
+			if d.Meta.Enabled && perms.IsAllowed("network/dns/"+d.Meta.Name) {
+				resp.Domains = append(resp.Domains, models.ExportDomain{
+					Name:    d.Meta.Name,
+					Records: recordsByDomain[d.ID],
+				})
 			}
 		}
 	}

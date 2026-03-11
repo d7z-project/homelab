@@ -35,8 +35,8 @@ func TestIPPoolSecurityInstanceLevel(t *testing.T) {
 	service := ip.NewIPPoolService(ae, em)
 
 	// 2. Setup IP Pools
-	group1 := &models.IPGroup{ID: "pool-1", Name: "Pool 1"}
-	group2 := &models.IPGroup{ID: "pool-2", Name: "Pool 2"}
+	group1 := &models.IPPool{ID: "pool-1", Meta: models.IPPoolV1Meta{Name: "Pool 1"}}
+	group2 := &models.IPPool{ID: "pool-2", Meta: models.IPPoolV1Meta{Name: "Pool 2"}}
 
 	err = service.CreateGroup(ctxRoot, group1)
 	if err != nil {

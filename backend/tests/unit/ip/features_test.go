@@ -22,11 +22,10 @@ func TestIPExportCRUD(t *testing.T) {
 	service := ip.NewIPPoolService(analysis, manager)
 	ctx := tests.SetupMockRootContext()
 
-	export := &models.IPExport{
-		ID:       "test_export",
+	export := &models.IPExport{ID: "test_export", Meta: models.IPExportV1Meta{
 		Name:     "Test Export",
 		Rule:     "true",
-		GroupIDs: []string{"pool1"},
+		GroupIDs: []string{"pool1"}},
 	}
 
 	// Create
@@ -36,7 +35,7 @@ func TestIPExportCRUD(t *testing.T) {
 	// Get
 	e, err := service.GetExport(ctx, "test_export")
 	assert.NoError(t, err)
-	assert.Equal(t, "Test Export", e.Name)
+	assert.Equal(t, "Test Export", e.Meta.Name)
 
 	// List
 	res, err := service.ScanExports(ctx, "", 10, "")
@@ -45,12 +44,12 @@ func TestIPExportCRUD(t *testing.T) {
 	assert.Equal(t, "test_export", res.Items[0].ID)
 
 	// Update
-	e.Name = "Updated Export"
+	e.Meta.Name = "Updated Export"
 	err = service.UpdateExport(ctx, e)
 	assert.NoError(t, err)
 
 	e2, _ := service.GetExport(ctx, "test_export")
-	assert.Equal(t, "Updated Export", e2.Name)
+	assert.Equal(t, "Updated Export", e2.Meta.Name)
 
 	// Delete
 	err = service.DeleteExport(ctx, "test_export")
@@ -74,7 +73,7 @@ func TestIPExportManager(t *testing.T) {
 	service := ip.NewIPPoolService(analysis, manager)
 
 	// 1. Create a group and add some data
-	group := &models.IPGroup{ID: "pool1", Name: "Pool 1"}
+	group := &models.IPPool{ID: "pool1", Meta: models.IPPoolV1Meta{Name: "Pool 1"}}
 	_ = service.CreateGroup(ctx, group)
 
 	// Write mock data to VFS
@@ -88,11 +87,10 @@ func TestIPExportManager(t *testing.T) {
 	f.Close()
 
 	// 2. Create export configuration
-	export := &models.IPExport{
-		ID:       "export1",
+	export := &models.IPExport{ID: "export1", Meta: models.IPExportV1Meta{
 		Name:     "Export 1",
 		Rule:     `"cn" in tags`,
-		GroupIDs: []string{"pool1"},
+		GroupIDs: []string{"pool1"}},
 	}
 	_ = service.CreateExport(ctx, export)
 
@@ -169,9 +167,9 @@ func TestIPAnalysisEngine(t *testing.T) {
 	service := ip.NewIPPoolService(analysis, manager)
 
 	// 1. Create groups and mock data
-	group := &models.IPGroup{ID: "pool_analysis", Name: "Analysis Pool"}
+	group := &models.IPPool{ID: "pool_analysis", Meta: models.IPPoolV1Meta{Name: "Analysis Pool"}}
 	_ = service.CreateGroup(ctx, group)
-	group2 := &models.IPGroup{ID: "pool_analysis_2", Name: "Analysis Pool 2"}
+	group2 := &models.IPPool{ID: "pool_analysis_2", Meta: models.IPPoolV1Meta{Name: "Analysis Pool 2"}}
 	_ = service.CreateGroup(ctx, group2)
 
 	common.FS = afero.NewMemMapFs()
@@ -251,7 +249,7 @@ func TestIPExportCancellation(t *testing.T) {
 	service := ip.NewIPPoolService(analysis, manager)
 
 	// Create pool
-	_ = service.CreateGroup(ctx, &models.IPGroup{ID: "pool1", Name: "Pool 1"})
+	_ = service.CreateGroup(ctx, &models.IPPool{ID: "pool1", Meta: models.IPPoolV1Meta{Name: "Pool 1"}})
 	common.FS = afero.NewMemMapFs()
 	// Write dummy data to prevent fast completion
 	codec := ip.NewCodec()
@@ -263,11 +261,10 @@ func TestIPExportCancellation(t *testing.T) {
 	_ = codec.WritePool(f, []string{"t"}, dummyEntries)
 	f.Close()
 
-	export := &models.IPExport{
-		ID:       "long_export",
+	export := &models.IPExport{ID: "long_export", Meta: models.IPExportV1Meta{
 		Name:     "Long Export",
 		Rule:     "true",
-		GroupIDs: []string{"pool1"},
+		GroupIDs: []string{"pool1"}},
 	}
 	_ = service.CreateExport(ctx, export)
 
@@ -311,7 +308,7 @@ func TestIPExportManualCancellation(t *testing.T) {
 	manager := ip.NewExportManager(analysis)
 	service := ip.NewIPPoolService(analysis, manager)
 
-	_ = service.CreateGroup(ctx, &models.IPGroup{ID: "pool1", Name: "Pool 1"})
+	_ = service.CreateGroup(ctx, &models.IPPool{ID: "pool1", Meta: models.IPPoolV1Meta{Name: "Pool 1"}})
 	common.FS = afero.NewMemMapFs()
 	codec := ip.NewCodec()
 	f, _ := common.FS.Create("network/ip/pools/pool1.bin")
@@ -322,7 +319,7 @@ func TestIPExportManualCancellation(t *testing.T) {
 	_ = codec.WritePool(f, []string{"t"}, dummyEntries)
 	f.Close()
 
-	export := &models.IPExport{ID: "long_export", Name: "Long Export", Rule: "true", GroupIDs: []string{"pool1"}}
+	export := &models.IPExport{ID: "long_export", Meta: models.IPExportV1Meta{Name: "Long Export", Rule: "true", GroupIDs: []string{"pool1"}}}
 	_ = service.CreateExport(ctx, export)
 
 	taskID, _ := manager.TriggerExport(ctx, "long_export", "text")
@@ -362,7 +359,7 @@ func TestManagePoolEntry(t *testing.T) {
 	service := ip.NewIPPoolService(analysis, nil)
 
 	// Create pool
-	group := &models.IPGroup{ID: "pool_entries", Name: "Entry Pool"}
+	group := &models.IPPool{ID: "pool_entries", Meta: models.IPPoolV1Meta{Name: "Entry Pool"}}
 	_ = service.CreateGroup(ctx, group)
 	common.FS = afero.NewMemMapFs()
 

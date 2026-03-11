@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,8 +15,7 @@ import (
 var idRegex = regexp.MustCompile(`^[a-z0-9_\-]+$`)
 
 // IPSyncPolicy 代表一个 IP 数据同步策略
-type IPSyncPolicy struct {
-	ID            string            `json:"id"`
+type IPSyncPolicyV1Meta struct {
 	Name          string            `json:"name"`
 	Description   string            `json:"description"`
 	SourceURL     string            `json:"sourceUrl"`
@@ -25,6 +25,13 @@ type IPSyncPolicy struct {
 	TargetGroupID string            `json:"targetGroupId"`
 	Cron          string            `json:"cron"`
 	Enabled       bool              `json:"enabled"`
+}
+
+func (p *IPSyncPolicyV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+type IPSyncPolicyV1Status struct {
 	CreatedAt     time.Time         `json:"createdAt"`
 	UpdatedAt     time.Time         `json:"updatedAt"`
 	LastRunAt     time.Time         `json:"lastRunAt"`
@@ -33,13 +40,12 @@ type IPSyncPolicy struct {
 	ErrorMessage  string            `json:"errorMessage"`
 }
 
-func (p *IPSyncPolicy) Bind(r *http.Request) error {
+type IPSyncPolicy = Resource[IPSyncPolicyV1Meta, IPSyncPolicyV1Status]
+
+func (p *IPSyncPolicyV1Meta) Bind(r *http.Request) error {
 	p.Name = strings.TrimSpace(p.Name)
 	if p.Name == "" {
 		return errors.New("name is required")
-	}
-	if p.ID != "" && !idRegex.MatchString(p.ID) {
-		return fmt.Errorf("invalid id format: %s", p.ID)
 	}
 	p.SourceURL = strings.TrimSpace(p.SourceURL)
 	if p.SourceURL == "" {
@@ -69,27 +75,37 @@ func (p *IPSyncPolicy) Bind(r *http.Request) error {
 	return nil
 }
 
-// IPGroup 代表一个 IP 池的元数据
-type IPGroup struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Checksum    string    `json:"checksum"`   // 数据指纹，用于缓存失效
-	EntryCount  int64     `json:"entryCount"` // 池中条目总数
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+// IPPoolV1Meta IP池的配置数据
+type IPPoolV1Meta struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
-func (g *IPGroup) Bind(r *http.Request) error {
-	g.Name = strings.TrimSpace(g.Name)
-	if g.Name == "" {
+func (m *IPPoolV1Meta) Bind(r *http.Request) error {
+	m.Name = strings.TrimSpace(m.Name)
+	if m.Name == "" {
 		return errors.New("name is required")
-	}
-	if g.ID != "" && !idRegex.MatchString(g.ID) {
-		return fmt.Errorf("invalid id format: %s", g.ID)
 	}
 	return nil
 }
+
+func (m *IPPoolV1Meta) Validate(ctx context.Context) error {
+	if m.Name == "" {
+		return errors.New("name is required")
+	}
+	return nil
+}
+
+// IPPoolV1Status IP池的状态数据
+type IPPoolV1Status struct {
+	Checksum   string    `json:"checksum"`   // 数据指纹，用于缓存失效
+	EntryCount int64     `json:"entryCount"` // 池中条目总数
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}
+
+// IPPool 代表一个 IP 池资源
+type IPPool = Resource[IPPoolV1Meta, IPPoolV1Status]
 
 // IPPoolEntryRequest 用于新增、修改、删除 IP/CIDR 标签的请求体
 type IPPoolEntryRequest struct {
@@ -117,23 +133,28 @@ func (req *IPPoolEntryRequest) Bind(r *http.Request) error {
 }
 
 // IPExport 代表一个动态导出规则
-type IPExport struct {
-	ID          string    `json:"id"`
+type IPExportV1Meta struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Rule        string    `json:"rule"`     // go-expr 表达式
 	GroupIDs    []string  `json:"groupIds"` // 依赖的 IP 池 ID 列表
+}
+
+func (e *IPExportV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+type IPExportV1Status struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
-func (e *IPExport) Bind(r *http.Request) error {
+type IPExport = Resource[IPExportV1Meta, IPExportV1Status]
+
+func (e *IPExportV1Meta) Bind(r *http.Request) error {
 	e.Name = strings.TrimSpace(e.Name)
 	if e.Name == "" {
 		return errors.New("name is required")
-	}
-	if e.ID != "" && !idRegex.MatchString(e.ID) {
-		return fmt.Errorf("invalid id format: %s", e.ID)
 	}
 	if e.Rule == "" {
 		return errors.New("rule expression is required")

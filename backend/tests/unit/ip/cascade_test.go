@@ -23,7 +23,7 @@ func TestIPPoolCascadeDeleteAndDependencies(t *testing.T) {
 	service := ip.NewIPPoolService(analysisEngine, exportManager)
 
 	// 1. Create a Pool
-	group := &models.IPGroup{ID: "test_pool", Name: "Test Pool"}
+	group := &models.IPPool{ID: "test_pool", Meta: models.IPPoolV1Meta{Name: "Test Pool"}}
 	err := service.CreateGroup(ctx, group)
 	assert.NoError(t, err)
 
@@ -31,7 +31,7 @@ func TestIPPoolCascadeDeleteAndDependencies(t *testing.T) {
 	_ = afero.WriteFile(common.FS, "network/ip/pools/test_pool.bin", []byte("dummy"), 0644)
 
 	// 2. Test Export Dependency
-	export := &models.IPExport{Name: "Dep Export", Rule: "true", GroupIDs: []string{"test_pool"}}
+	export := &models.IPExport{Meta: models.IPExportV1Meta{Name: "Dep Export", Rule: "true", GroupIDs: []string{"test_pool"}}}
 	_ = service.CreateExport(ctx, export)
 
 	err = service.DeleteGroup(ctx, "test_pool")
@@ -42,7 +42,7 @@ func TestIPPoolCascadeDeleteAndDependencies(t *testing.T) {
 	_ = service.DeleteExport(ctx, export.ID)
 
 	// 3. Test Sync Policy Dependency
-	policy := &models.IPSyncPolicy{Name: "Dep Policy", TargetGroupID: "test_pool", Enabled: true, SourceURL: "http://example.com"}
+	policy := &models.IPSyncPolicy{Meta: models.IPSyncPolicyV1Meta{Name: "Dep Policy", TargetGroupID: "test_pool", Enabled: true, SourceURL: "http://example.com"}}
 	_ = service.CreateSyncPolicy(ctx, policy)
 
 	err = service.DeleteGroup(ctx, "test_pool")

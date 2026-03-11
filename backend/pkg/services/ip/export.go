@@ -173,19 +173,19 @@ func (m *ExportManager) CancelTask(id string) bool {
 }
 
 func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, format string) (string, error) {
-	e, err := repo.GetExport(ctx, exportID)
+	e, err := repo.ExportRepo.Get(ctx, exportID)
 	if err != nil {
 		return "", err
 	}
 
 	hf := sha256.New()
-	hf.Write([]byte(e.Rule))
+	hf.Write([]byte(e.Meta.Rule))
 	hf.Write([]byte(format))
-	for _, gid := range e.GroupIDs {
+	for _, gid := range e.Meta.GroupIDs {
 		hf.Write([]byte(gid))
-		g, _ := repo.GetGroup(ctx, gid)
+		g, _ := repo.PoolRepo.Get(ctx, gid)
 		if g != nil {
-			hf.Write([]byte(g.Checksum))
+			hf.Write([]byte(g.Status.Checksum))
 		}
 	}
 	currentChecksum := hex.EncodeToString(hf.Sum(nil))
@@ -248,7 +248,7 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 	defer m.wg.Done()
 
 	m.core.RunTask(bgCtx, taskID, func(taskCtx context.Context, task *ExportTask) error {
-		program, err := expr.Compile(e.Rule, expr.Env(map[string]interface{}{
+		program, err := expr.Compile(e.Meta.Rule, expr.Env(map[string]interface{}{
 			"tags": []string{},
 			"cidr": "",
 			"ip":   "",
@@ -258,10 +258,10 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 		}
 
 		totalEntries := int64(0)
-		for _, gid := range e.GroupIDs {
-			g, _ := repo.GetGroup(taskCtx, gid)
+		for _, gid := range e.Meta.GroupIDs {
+			g, _ := repo.PoolRepo.Get(taskCtx, gid)
 			if g != nil {
-				totalEntries += g.EntryCount
+				totalEntries += g.Status.EntryCount
 			}
 		}
 		if totalEntries == 0 {
@@ -295,7 +295,7 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *model
 			v2rayGroups = make(map[string][]netip.Prefix)
 		}
 
-		for _, gid := range e.GroupIDs {
+		for _, gid := range e.Meta.GroupIDs {
 			poolPath := filepath.Join(PoolsDir, gid+".bin")
 			pf, err := common.FS.Open(poolPath)
 			if err != nil {

@@ -10,15 +10,15 @@ import (
 func (s *IntelligenceService) addCronJob(src models.IntelligenceSource) {
 	id := src.ID
 	lockKey := "intelligence_sync_" + src.ID
-	entryID, err := common.AddDistributedCronJob(s.cron, src.UpdateCron, lockKey, func() {
-		log.Printf("IntelligenceService: running scheduled update for %s (%s)", src.Name, src.ID)
+	entryID, err := common.AddDistributedCronJob(s.cron, src.Meta.UpdateCron, lockKey, func() {
+		log.Printf("IntelligenceService: running scheduled update for %s (%s)", src.Meta.Name, src.ID)
 
 		// The original flow did not populate this task in the tasks engine, let's trigger it properly
 		// so it goes through the proper locking and state tracking mechanism
 		s.SyncSource(context.Background(), id)
 	})
 	if err != nil {
-		log.Printf("IntelligenceService: failed to schedule job for %s: %v", src.Name, err)
+		log.Printf("IntelligenceService: failed to schedule job for %s: %v", src.Meta.Name, err)
 		return
 	}
 	s.entries[id] = entryID
@@ -35,7 +35,7 @@ func (s *IntelligenceService) updateCronJob(src models.IntelligenceSource) {
 	}
 
 	// Add new if enabled
-	if src.AutoUpdate && src.UpdateCron != "" {
+	if src.Meta.AutoUpdate && src.Meta.UpdateCron != "" {
 		s.addCronJob(src)
 	}
 }
