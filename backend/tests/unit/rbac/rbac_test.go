@@ -20,12 +20,12 @@ func TestRBACFullWorkflow(t *testing.T) {
 	saID := "test-sa-01"
 	sa, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{
 		ID:   saID,
-		Name: "Test SA",
+		Meta: models.ServiceAccountV1Meta{Name: "Test SA"},
 	})
 	if err != nil {
 		t.Fatalf("CreateServiceAccount failed: %v", err)
 	}
-	if sa.Token == "" {
+	if sa.Meta.Token == "" {
 		t.Error("Expected token to be generated")
 	}
 	if sa.ID != saID {
@@ -34,11 +34,13 @@ func TestRBACFullWorkflow(t *testing.T) {
 
 	// 2. 创建 Role (UUID 自动生成)
 	role, err := rbacservice.CreateRole(adminCtx, &models.Role{
-		Name: "DNS Manager",
-		Rules: []models.PolicyRule{
-			{
-				Resource: "network/dns/example.com",
-				Verbs:    []string{"get", "update"},
+		Meta: models.RoleV1Meta{
+			Name: "DNS Manager",
+			Rules: []models.PolicyRule{
+				{
+					Resource: "network/dns/example.com",
+					Verbs:    []string{"get", "update"},
+				},
 			},
 		},
 	})
@@ -52,10 +54,12 @@ func TestRBACFullWorkflow(t *testing.T) {
 
 	// 3. 创建 RoleBinding (初始禁用)
 	rb, err := rbacservice.CreateRoleBinding(adminCtx, &models.RoleBinding{
-		Name:             "Test Binding",
-		ServiceAccountID: saID,
-		RoleIDs:          []string{roleID},
-		Enabled:          false,
+		Meta: models.RoleBindingV1Meta{
+			Name:             "Test Binding",
+			ServiceAccountID: saID,
+			RoleIDs:          []string{roleID},
+			Enabled:          false,
+		},
 	})
 	if err != nil {
 		t.Fatalf("CreateRoleBinding failed: %v", err)
@@ -73,11 +77,13 @@ func TestRBACFullWorkflow(t *testing.T) {
 
 	// 5. 启用 Binding 并再次模拟
 	_, err = rbacservice.UpdateRoleBinding(adminCtx, rbID, &models.RoleBinding{
-		ID:               rbID,
-		Name:             "Test Binding",
-		ServiceAccountID: saID,
-		RoleIDs:          []string{roleID},
-		Enabled:          true,
+		ID: rbID,
+		Meta: models.RoleBindingV1Meta{
+			Name:             "Test Binding",
+			ServiceAccountID: saID,
+			RoleIDs:          []string{roleID},
+			Enabled:          true,
+		},
 	})
 	if err != nil {
 		t.Fatalf("UpdateRoleBinding failed: %v", err)
@@ -100,10 +106,10 @@ func TestRBACFullWorkflow(t *testing.T) {
 	}
 
 	// 5.5. 验证 ServiceAccount 启用/禁用
-	if !sa.Enabled {
+	if !sa.Meta.Enabled {
 		t.Error("Expected ServiceAccount to be enabled by default")
 	}
-	sa.Enabled = false
+	sa.Meta.Enabled = false
 	_, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
 	if err != nil {
 		t.Fatalf("UpdateServiceAccount (disable) failed: %v", err)
@@ -115,19 +121,19 @@ func TestRBACFullWorkflow(t *testing.T) {
 		t.Error("Expected no permissions for disabled ServiceAccount")
 	}
 
-	sa.Enabled = true
+	sa.Meta.Enabled = true
 	_, err = rbacservice.UpdateServiceAccount(adminCtx, saID, sa)
 	if err != nil {
 		t.Fatalf("UpdateServiceAccount (enable) failed: %v", err)
 	}
 
 	// 6. 重置 Token 验证
-	oldToken := sa.Token
+	oldToken := sa.Meta.Token
 	resetSA, err := rbacservice.ResetServiceAccountToken(adminCtx, saID)
 	if err != nil {
 		t.Fatalf("Reset token failed: %v", err)
 	}
-	if resetSA.Token == oldToken {
+	if resetSA.Meta.Token == oldToken {
 		t.Error("Token should have changed after reset")
 	}
 
@@ -154,18 +160,18 @@ func TestServiceAccountIDValidation(t *testing.T) {
 	for _, id := range invalidIDs {
 		_, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{
 			ID:   id,
-			Name: "Invalid Test",
+			Meta: models.ServiceAccountV1Meta{Name: "Invalid Test"},
 		})
 		if err == nil {
 			t.Errorf("Expected error for invalid SA ID '%s', but got nil", id)
 		}
 	}
 
-	validIDs := []string{"sa-1", "SA_02", "123-abc"}
+	validIDs := []string{"sa-1", "sa_02", "123-abc"}
 	for _, id := range validIDs {
 		_, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{
 			ID:   id,
-			Name: "Valid Test",
+			Meta: models.ServiceAccountV1Meta{Name: "Valid Test"},
 		})
 		if err != nil {
 			t.Errorf("Expected success for valid SA ID '%s', but got error: %v", id, err)

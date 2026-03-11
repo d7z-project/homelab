@@ -36,10 +36,8 @@ func TestActionsRegexValidation(t *testing.T) {
 	ctx := tests.SetupMockRootContext()
 
 	// Create common service account for tests
-	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{
-		ID:   "sa",
-		Name: "Test SA",
-	})
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
+	}})
 
 	t.Run("Variable Regex Validation", func(t *testing.T) {
 		workflow := &models.Workflow{
@@ -211,10 +209,8 @@ func TestActionsRegexValidation(t *testing.T) {
 		teardown := tests.SetupTestDB()
 		defer teardown()
 
-		_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{
-			ID:   "sa",
-			Name: "Test SA",
-		})
+		_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
+		}})
 
 		workflow := &models.Workflow{
 			ID:               "optional-regex-wf",
@@ -286,10 +282,8 @@ func TestActionsRegexValidation(t *testing.T) {
 		ctx = tests.SetupMockRootContext()
 
 		// Re-create common service account for this subtest since DB was reset
-		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{
-			ID:   "sa",
-			Name: "Test SA",
-		})
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
+		}})
 
 		// Register a test lookup
 		discovery.Register("test/colors", func(ctx context.Context, search string, cursor string, limit int) (*models.PaginationResponse[models.LookupItem], error) {
@@ -351,7 +345,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		teardown := tests.SetupTestDB()
 		defer teardown()
 		ctx := tests.SetupMockRootContext()
-		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 		actions.Register(&tests.MockProcessor{})
 
 		workflow := &models.Workflow{
@@ -388,7 +382,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		teardown := tests.SetupTestDB()
 		defer teardown()
 		ctx := tests.SetupMockRootContext()
-		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 
 		wfID := "recursive_wf"
 		workflow := &models.Workflow{
@@ -412,7 +406,7 @@ func TestActionsRegexValidation(t *testing.T) {
 		teardown := tests.SetupTestDB()
 		defer teardown()
 		ctx := tests.SetupMockRootContext()
-		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+		_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 
 		workflow := &models.Workflow{
 			Name: "Duplicate ID", ServiceAccountID: "sa",

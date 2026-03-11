@@ -44,7 +44,7 @@ func TestActionsAsyncDecoupling(t *testing.T) {
 	actions.GlobalTriggerManager.Start()
 
 	// 准备环境
-	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "Test SA"})
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA"}})
 
 	// 准备一个简单的 Workflow
 	wf := &models.Workflow{

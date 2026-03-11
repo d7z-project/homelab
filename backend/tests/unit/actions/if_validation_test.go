@@ -15,10 +15,8 @@ func TestActionsIfValidation(t *testing.T) {
 	defer teardown()
 
 	// Create common service account for tests
-	_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{
-		ID:   "sa",
-		Name: "Test SA",
-	})
+	_, _ = rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
+	}})
 
 	// Register mock processor needed for complex if validation
 	actions.Register(&tests.MockProcessor{})

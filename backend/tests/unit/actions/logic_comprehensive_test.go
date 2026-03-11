@@ -15,7 +15,7 @@ func TestActionsComprehensiveLogic(t *testing.T) {
 	defer teardown()
 
 	ctx := tests.SetupMockRootContext()
-	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 
 	// Ensure MockProcessor is registered (it's in actions_test.go)
 	actions.Register(&tests.MockProcessor{})

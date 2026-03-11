@@ -97,6 +97,23 @@ func (r *BaseRepository[M, S]) Cow(ctx context.Context, id string, mutate func(*
 	return fmt.Errorf("%w: failed to update resource %s after %d retries", ErrConflict, id, retries)
 }
 
+// Save persists a full resource, automatically incrementing ResourceVersion.
+func (r *BaseRepository[M, S]) Save(ctx context.Context, res *models.Resource[M, S]) error {
+	// Type assertion for validation
+	if validator, ok := any(res.Meta).(models.ConfigValidator); ok {
+		if err := validator.Validate(ctx); err != nil {
+			return fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+		}
+	}
+
+	res.ResourceVersion++
+	newData, err := json.Marshal(res)
+	if err != nil {
+		return err
+	}
+	return r.childDB().Put(ctx, res.ID, string(newData), kv.TTLKeep)
+}
+
 func isNotFound(err error) bool {
 	// Simple heuristic since kv.ErrKeyNotFound is used, but error wrapping could obfuscate it
 	if err == nil {

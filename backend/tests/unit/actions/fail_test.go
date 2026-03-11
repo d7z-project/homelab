@@ -15,7 +15,7 @@ func TestActionsFailAndStatus(t *testing.T) {
 	defer teardown()
 
 	ctx := tests.SetupMockRootContext()
-	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Name: "SA"})
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa", Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 	actions.Register(&tests.MockProcessor{})
 
 	t.Run("Step Fail True - Continue on Error", func(t *testing.T) {

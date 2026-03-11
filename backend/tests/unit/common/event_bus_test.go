@@ -115,7 +115,7 @@ func TestWorkflowTriggerClusterSync(t *testing.T) {
 	defer teardown()
 
 	ctx := tests.SetupMockRootContext()
-	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa_trigger", Name: "SA Trigger"})
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa_trigger", Meta: models.ServiceAccountV1Meta{Name: "SA Trigger"}})
 
 	// Register mock processor
 	actions.Register(&tests.MockProcessor{})
@@ -213,7 +213,7 @@ func TestDistributedExecutorConcurrencyCheck(t *testing.T) {
 	defer teardown()
 
 	ctx := tests.SetupMockRootContext()
-	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa_exec", Name: "SA Exec"})
+	_, _ = rbac.CreateServiceAccount(ctx, &models.ServiceAccount{ID: "sa_exec", Meta: models.ServiceAccountV1Meta{Name: "SA Exec"}})
 
 	actions.Register(&tests.MockProcessor{
 		ExecuteFunc: func(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {

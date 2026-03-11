@@ -79,12 +79,15 @@ type ConfigValidator interface {
 - [x] **IP 模块**: 重构 `IPPool` 结构，实现 `Validate` 接口校验 CIDR/Gateway 匹配逻辑。
 - [x] **DNS 模块**: 重构 `Domain` 和 `Record` 结构，实现 `Validate` 接口校验域名格式。
 - [x] **Intelligence 模块**: 重构 `IntelligenceSource` 结构，实现 `Validate` 接口。
-- [ ] **Site 模块**: 重构同步策略，确保状态上报不干扰策略编辑。
+- [x] **RBAC 模块**: 重构 `Role`, `ServiceAccount`, `RoleBinding` 结构，实现 `Validate` 接口。
+- [ ] **Site 模块**: 重构 `SiteGroup`, `SiteSyncPolicy` 等资源。
+- [ ] **Actions 模块**: 重构 `Workflow` 结构。
 
 ### 第三阶段：Service 层适配
 
-- [ ] 调整 `Update` 逻辑，要求调用方从 DTO 获取并传递 `Generation`。
-- [ ] 确保业务逻辑校验（如 IP 冲突）在调用 `PatchMeta` 之前完成。
+- [x] 调整 `Update` 逻辑，要求调用方从 DTO 获取并传递 `Generation` (在主要模块中已完成)。
+- [x] 确保业务逻辑校验（如 IP 冲突）在调用 `PatchMeta` 之前完成。
+- [x] 统一仓库层 `Save`/`PatchMeta` 的校验逻辑。
 
 ## 6. 优势总结
 

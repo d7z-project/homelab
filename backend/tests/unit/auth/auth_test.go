@@ -73,14 +73,12 @@ func TestServiceAccountAuth(t *testing.T) {
 	common.Opts.JWTSecret = "test-secret"
 
 	// 1. Create SA
-	sa, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{
-		ID:   "test-sa",
-		Name: "Test SA",
-	})
+	sa, err := rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{ID: "test-sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA",
+	}})
 	if err != nil {
 		t.Fatalf("CreateServiceAccount failed: %v", err)
 	}
-	token := sa.Token
+	token := sa.Meta.Token
 
 	// 2. Verify SA Token
 	saID, err := authservice.VerifySAToken(ctx, token)
@@ -98,7 +96,7 @@ func TestServiceAccountAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResetServiceAccountToken failed: %v", err)
 	}
-	newToken := newSA.Token
+	newToken := newSA.Meta.Token
 
 	// 5. Verify old token (should fail matching)
 	if authservice.IsSAEnabled(ctx, "test-sa", token) {
@@ -111,7 +109,7 @@ func TestServiceAccountAuth(t *testing.T) {
 	}
 
 	// 7. Disable SA
-	newSA.Enabled = false
+	newSA.Meta.Enabled = false
 	_, err = rbacservice.UpdateServiceAccount(adminCtx, "test-sa", newSA)
 	if err != nil {
 		t.Fatalf("UpdateServiceAccount failed: %v", err)

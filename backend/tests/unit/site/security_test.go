@@ -1,104 +1,75 @@
 package site_test
 
 import (
-	"homelab/pkg/common"
-	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/controllers"
+	"context"
+	"homelab/pkg/common/auth"
 	"homelab/pkg/models"
+	authservice "homelab/pkg/services/auth"
 	"homelab/pkg/services/rbac"
 	"homelab/pkg/services/site"
 	"homelab/tests"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSiteSecurity(t *testing.T) {
-	cleanup := tests.SetupTestDB()
-	defer cleanup()
-	common.FS = afero.NewMemMapFs()
+	teardown := tests.SetupTestDB()
+	defer teardown()
 
-	engine := site.NewAnalysisEngine(nil)
-	siteExportManager := site.NewExportManager(engine)
-	sitePoolService := site.NewSitePoolService(engine, siteExportManager)
-	controllers.InitSiteControllers(sitePoolService, engine, siteExportManager)
+	ctxRoot := tests.SetupMockRootContext()
 
-	r := chi.NewRouter()
-	controllers.SiteRouter(r)
-
-	// Create a Service Account and a Role with limited permissions
-	ctx := tests.SetupMockRootContext()
-	sa := &models.ServiceAccount{ID: "test-sa-site", Name: "Test SA Site", Enabled: true}
-	_, _ = rbac.CreateServiceAccount(ctx, sa)
-
-	// Role 1: Can only list pools
-	roleRead := &models.Role{
-		ID:   "role-read-site",
-		Name: "Read Only Site",
-		Rules: []models.PolicyRule{
-			{Resource: "network/site", Verbs: []string{"list"}},
-		},
+	// 1. Create a ServiceAccount
+	sa, err := rbac.CreateServiceAccount(ctxRoot, &models.ServiceAccount{ID: "site-tester", Meta: models.ServiceAccountV1Meta{Name: "Site Tester"}})
+	if err != nil {
+		t.Fatalf("Failed to create SA: %v", err)
 	}
-	_, _ = rbac.CreateRole(ctx, roleRead)
-	_, _ = rbac.CreateRoleBinding(ctx, &models.RoleBinding{
-		ID: "rb-read-site", Name: "RB Read Site", RoleIDs: []string{roleRead.ID}, ServiceAccountID: sa.ID, Enabled: true,
-	})
 
-	t.Run("SA with Read permissions can list pools", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/network/site/pools", nil)
-		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
-		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
+	analysis := site.NewAnalysisEngine(nil)
+	service := site.NewSitePoolService(analysis, nil)
 
-		rr := httptest.NewRecorder()
-		r.ServeHTTP(rr, req)
-		assert.Equal(t, http.StatusOK, rr.Code)
-	})
+	// 2. Setup Site Pools
+	group1 := &models.SiteGroup{ID: "site-pool-1", Name: "Pool 1"}
+	group2 := &models.SiteGroup{ID: "site-pool-2", Name: "Pool 2"}
 
-	t.Run("SA with Read permissions cannot create pool", func(t *testing.T) {
-		body := `{"name": "New Site Pool"}`
-		req := httptest.NewRequest("POST", "/network/site/pools", strings.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
+	_ = service.CreateGroup(ctxRoot, group1)
+	_ = service.CreateGroup(ctxRoot, group2)
 
-		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
-		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
+	// 3. Setup permissions for SA: Only allowed to manage pool-1
+	role := &models.Role{ID: "site-role", Meta: models.RoleV1Meta{Name: "Site Manager",
+		Rules: []models.PolicyRule{
+			{Resource: "network/site/" + group1.ID, Verbs: []string{"*"}},
+			{Resource: "network/site", Verbs: []string{"list", "get"}},
+		},
+	}}
+	_, _ = rbac.CreateRole(ctxRoot, role)
+	_, _ = rbac.CreateRoleBinding(ctxRoot, &models.RoleBinding{ID: "site-binding", Meta: models.RoleBindingV1Meta{
+		Name:             "Site Binding",
+		ServiceAccountID: sa.ID,
+		RoleIDs:          []string{role.ID},
+		Enabled:          true,
+	}})
 
-		rr := httptest.NewRecorder()
-		r.ServeHTTP(rr, req)
-		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	})
+	// Create a context impersonating this SA
+	perms, _ := authservice.GetPermissions(context.Background(), sa.ID, "delete", "network/site/"+group1.ID)
+	ctxSA := auth.WithAuth(context.Background(), &auth.AuthContext{ID: sa.ID, Type: "sa"})
+	ctxSA = auth.WithPermissions(ctxSA, perms)
 
-	t.Run("SA with execute permission can trigger site export", func(t *testing.T) {
-		// First create an export as root
-		exp := &models.SiteExport{Name: "Test Site Export", Rule: "true"}
-		_ = sitePoolService.CreateExport(ctx, exp)
-
-		// Grant execute permission to SA
-		roleExec := &models.Role{
-			ID:   "role-exec-site",
-			Name: "Exec Only Site",
-			Rules: []models.PolicyRule{
-				{Resource: "network/site", Verbs: []string{"execute"}},
-			},
+	t.Run("Allow delete authorized site pool", func(t *testing.T) {
+		err := service.DeleteGroup(ctxSA, group1.ID)
+		if err != nil {
+			t.Errorf("Should allow deleting pool-1: %v", err)
 		}
-		_, _ = rbac.CreateRole(ctx, roleExec)
-		_, _ = rbac.CreateRoleBinding(ctx, &models.RoleBinding{
-			ID: "rb-exec-site", Name: "RB Exec Site", RoleIDs: []string{roleExec.ID}, ServiceAccountID: sa.ID, Enabled: true,
-		})
+	})
 
-		req := httptest.NewRequest("POST", "/network/site/exports/"+exp.ID+"/trigger", nil)
-		authCtx := &commonauth.AuthContext{Type: "sa", ID: sa.ID}
-		req = req.WithContext(commonauth.WithAuth(req.Context(), authCtx))
+	t.Run("Deny delete unauthorized site pool", func(t *testing.T) {
+		perms2, _ := authservice.GetPermissions(context.Background(), sa.ID, "delete", "network/site/"+group2.ID)
+		ctxSA2 := auth.WithPermissions(ctxSA, perms2)
 
-		rr := httptest.NewRecorder()
-		r.ServeHTTP(rr, req)
-		assert.Equal(t, http.StatusOK, rr.Code)
-
-		// Cleanup tasks
-		siteExportManager.WaitAll()
+		err := service.DeleteGroup(ctxSA2, group2.ID)
+		if err == nil {
+			t.Error("Should NOT allow deleting pool-2")
+		} else if !strings.Contains(err.Error(), "permission denied") {
+			t.Errorf("Expected permission denied error, got: %v", err)
+		}
 	})
 }

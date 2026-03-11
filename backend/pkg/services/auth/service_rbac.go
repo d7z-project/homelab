@@ -28,13 +28,13 @@ func GetPermissions(ctx context.Context, saID, verb, resource string) (*models.R
 	perms := &models.ResourcePermissions{}
 
 	for _, rb := range rbs {
-		if rb.Enabled && rb.ServiceAccountID == saID {
-			for _, roleID := range rb.RoleIDs {
+		if rb.Meta.Enabled && rb.Meta.ServiceAccountID == saID {
+			for _, roleID := range rb.Meta.RoleIDs {
 				role, err := rbacrepo.GetRole(ctx, roleID)
 				if err != nil {
 					continue
 				}
-				for _, rule := range role.Rules {
+				for _, rule := range role.Meta.Rules {
 					// Check if any verb in this rule matches requested verb
 					if matchVerb(rule.Verbs, verb) {
 						res := rule.Resource

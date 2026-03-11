@@ -21,10 +21,7 @@ func TestIPPoolSecurityInstanceLevel(t *testing.T) {
 	ctxRoot := tests.SetupMockRootContext()
 
 	// 1. Create a ServiceAccount
-	sa, err := rbac.CreateServiceAccount(ctxRoot, &models.ServiceAccount{
-		ID:   "ip-security-tester",
-		Name: "IP Security Tester",
-	})
+	sa, err := rbac.CreateServiceAccount(ctxRoot, &models.ServiceAccount{ID: "ip-security-tester", Meta: models.ServiceAccountV1Meta{Name: "IP Security Tester"}})
 	if err != nil {
 		t.Fatalf("Failed to create SA: %v", err)
 	}
@@ -48,22 +45,19 @@ func TestIPPoolSecurityInstanceLevel(t *testing.T) {
 	}
 
 	// 3. Setup permissions for SA: Only allowed to manage pool-1
-	role := &models.Role{
-		ID:   "pool1-manager",
-		Name: "Pool1 Manager",
+	role := &models.Role{ID: "pool1-manager", Meta: models.RoleV1Meta{Name: "Pool1 Manager",
 		Rules: []models.PolicyRule{
 			{Resource: "network/ip/" + group1.ID, Verbs: []string{"*"}},
 			{Resource: "network/ip", Verbs: []string{"list", "get"}}, // Global read
 		},
-	}
+	}}
 	_, _ = rbac.CreateRole(ctxRoot, role)
-	_, _ = rbac.CreateRoleBinding(ctxRoot, &models.RoleBinding{
-		ID:               "binding-pool1",
+	_, _ = rbac.CreateRoleBinding(ctxRoot, &models.RoleBinding{ID: "binding-pool1", Meta: models.RoleBindingV1Meta{
 		Name:             "Binding Pool1",
 		ServiceAccountID: sa.ID,
 		RoleIDs:          []string{role.ID},
 		Enabled:          true,
-	})
+	}})
 
 	// Create a context impersonating this SA
 	perms, _ := authservice.GetPermissions(context.Background(), sa.ID, "delete", "network/ip/"+group1.ID)
@@ -100,10 +94,7 @@ func TestSitePoolSecurityInstanceLevel(t *testing.T) {
 	ctxRoot := tests.SetupMockRootContext()
 
 	// 1. Create a ServiceAccount
-	sa, err := rbac.CreateServiceAccount(ctxRoot, &models.ServiceAccount{
-		ID:   "site-security-tester",
-		Name: "Site Security Tester",
-	})
+	sa, err := rbac.CreateServiceAccount(ctxRoot, &models.ServiceAccount{ID: "site-security-tester", Meta: models.ServiceAccountV1Meta{Name: "Site Security Tester"}})
 	if err != nil {
 		t.Fatalf("Failed to create SA: %v", err)
 	}
@@ -125,22 +116,19 @@ func TestSitePoolSecurityInstanceLevel(t *testing.T) {
 	}
 
 	// 3. Setup permissions for SA: Only allowed to manage pool-1
-	role := &models.Role{
-		ID:   "site-pool1-manager",
-		Name: "Site Pool1 Manager",
+	role := &models.Role{ID: "site-pool1-manager", Meta: models.RoleV1Meta{Name: "Site Pool1 Manager",
 		Rules: []models.PolicyRule{
 			{Resource: "network/site/" + group1.ID, Verbs: []string{"*"}},
 			{Resource: "network/site", Verbs: []string{"list", "get"}}, // Global read
 		},
-	}
+	}}
 	_, _ = rbac.CreateRole(ctxRoot, role)
-	_, _ = rbac.CreateRoleBinding(ctxRoot, &models.RoleBinding{
-		ID:               "site-binding-pool1",
+	_, _ = rbac.CreateRoleBinding(ctxRoot, &models.RoleBinding{ID: "site-binding-pool1", Meta: models.RoleBindingV1Meta{
 		Name:             "Site Binding Pool1",
 		ServiceAccountID: sa.ID,
 		RoleIDs:          []string{role.ID},
 		Enabled:          true,
-	})
+	}})
 
 	// Create a context impersonating this SA
 	perms, _ := authservice.GetPermissions(context.Background(), sa.ID, "delete", "network/site/"+group1.ID)
@@ -174,15 +162,12 @@ func TestSecurityInstanceLevel(t *testing.T) {
 	ctxRoot := tests.SetupMockRootContext()
 
 	// 1. Create a ServiceAccount and verify hashing
-	sa, err := rbac.CreateServiceAccount(ctxRoot, &models.ServiceAccount{
-		ID:   "security-tester",
-		Name: "Security Tester",
-	})
+	sa, err := rbac.CreateServiceAccount(ctxRoot, &models.ServiceAccount{ID: "security-tester", Meta: models.ServiceAccountV1Meta{Name: "Security Tester"}})
 	if err != nil {
 		t.Fatalf("Failed to create SA: %v", err)
 	}
 
-	plainToken := sa.Token // This is the plain JWT returned once
+	plainToken := sa.Meta.Token // This is the plain JWT returned once
 	if plainToken == "" {
 		t.Fatal("Expected plain token in response, got empty")
 	}
@@ -206,22 +191,19 @@ func TestSecurityInstanceLevel(t *testing.T) {
 	}
 
 	// 3. Setup permissions for SA: Only allowed to manage wf-1
-	role := &models.Role{
-		ID:   "wf1-manager",
-		Name: "WF1 Manager",
+	role := &models.Role{ID: "wf1-manager", Meta: models.RoleV1Meta{Name: "WF1 Manager",
 		Rules: []models.PolicyRule{
 			{Resource: "actions/" + wf1.ID, Verbs: []string{"*"}},
 			{Resource: "actions", Verbs: []string{"list", "get"}}, // Global read
 		},
-	}
+	}}
 	_, _ = rbac.CreateRole(ctxRoot, role)
-	_, _ = rbac.CreateRoleBinding(ctxRoot, &models.RoleBinding{
-		ID:               "binding-1",
+	_, _ = rbac.CreateRoleBinding(ctxRoot, &models.RoleBinding{ID: "binding-1", Meta: models.RoleBindingV1Meta{
 		Name:             "Binding 1",
 		ServiceAccountID: sa.ID,
 		RoleIDs:          []string{role.ID},
 		Enabled:          true,
-	})
+	}})
 
 	// Create a context impersonating this SA
 	perms, _ := authservice.GetPermissions(context.Background(), sa.ID, "delete", "actions/"+wf1.ID)

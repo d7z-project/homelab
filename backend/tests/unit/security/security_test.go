@@ -90,7 +90,7 @@ func TestRBACServicePermissionChecks(t *testing.T) {
 	}
 
 	// Try to create a role
-	_, err = rbacservice.CreateRole(userCtx, &models.Role{Name: "Test"})
+	_, err = rbacservice.CreateRole(userCtx, &models.Role{Meta: models.RoleV1Meta{Name: "Test"}})
 	if err == nil {
 		t.Error("Expected error when creating role without rbac permission")
 	}

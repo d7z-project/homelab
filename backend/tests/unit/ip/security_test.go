@@ -34,21 +34,22 @@ func TestIPSecurity(t *testing.T) {
 
 	// Create a Service Account and a Role with limited permissions
 	ctx := tests.SetupMockRootContext()
-	sa := &models.ServiceAccount{ID: "test-sa", Name: "Test SA", Enabled: true}
+	sa := &models.ServiceAccount{ID: "test-sa", Meta: models.ServiceAccountV1Meta{Name: "Test SA", Enabled: true}}
 	_, _ = rbac.CreateServiceAccount(ctx, sa)
 
 	// Role 1: Can only list and get pools
-	roleRead := &models.Role{
-		ID:   "role-read",
-		Name: "Read Only",
+	roleRead := &models.Role{ID: "role-read", Meta: models.RoleV1Meta{Name: "Read Only",
 		Rules: []models.PolicyRule{
 			{Resource: "network/ip", Verbs: []string{"list", "get"}},
 		},
-	}
+	}}
 	_, _ = rbac.CreateRole(ctx, roleRead)
-	_, _ = rbac.CreateRoleBinding(ctx, &models.RoleBinding{
-		ID: "rb-read", Name: "RB Read", RoleIDs: []string{roleRead.ID}, ServiceAccountID: sa.ID, Enabled: true,
-	})
+	_, _ = rbac.CreateRoleBinding(ctx, &models.RoleBinding{ID: "rb-read", Meta: models.RoleBindingV1Meta{
+		Name:             "RB Read",
+		RoleIDs:          []string{roleRead.ID},
+		ServiceAccountID: sa.ID,
+		Enabled:          true,
+	}})
 
 	t.Run("SA with Read permissions can list pools", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/network/ip/pools", nil)
@@ -77,21 +78,22 @@ func TestIPSecurity(t *testing.T) {
 
 	t.Run("SA with execute permission can trigger export", func(t *testing.T) {
 		// First create an export as root
-		exp := &models.IPExport{Meta: models.IPExportV1Meta{Name: "Test Export", Rule: "true"}}
+		exp := &models.IPExport{ID: "test-export", Meta: models.IPExportV1Meta{Name: "Test Export", Rule: "true", GroupIDs: []string{"any"}}}
 		_ = ipPoolService.CreateExport(ctx, exp)
 
 		// Grant execute permission to SA
-		roleExec := &models.Role{
-			ID:   "role-exec",
-			Name: "Exec Only",
+		roleExec := &models.Role{ID: "role-exec", Meta: models.RoleV1Meta{Name: "Exec Only",
 			Rules: []models.PolicyRule{
 				{Resource: "network/ip", Verbs: []string{"execute"}},
 			},
-		}
+		}}
 		_, _ = rbac.CreateRole(ctx, roleExec)
-		_, _ = rbac.CreateRoleBinding(ctx, &models.RoleBinding{
-			ID: "rb-exec", Name: "RB Exec", RoleIDs: []string{roleExec.ID}, ServiceAccountID: sa.ID, Enabled: true,
-		})
+		_, _ = rbac.CreateRoleBinding(ctx, &models.RoleBinding{ID: "rb-exec", Meta: models.RoleBindingV1Meta{
+			Name:             "RB Exec",
+			RoleIDs:          []string{roleExec.ID},
+			ServiceAccountID: sa.ID,
+			Enabled:          true,
+		}})
 
 		req := httptest.NewRequest("POST", "/network/ip/exports/"+exp.ID+"/trigger", nil)
 		// Inject SA identity

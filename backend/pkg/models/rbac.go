@@ -1,8 +1,8 @@
 package models
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -31,68 +31,78 @@ type PolicyRule struct {
 	Verbs    []string `json:"verbs"`
 }
 
-type Role struct {
-	ID       string       `json:"id"`
+type RoleV1Meta struct {
 	Name     string       `json:"name"`
 	Comments string       `json:"comments"`
 	Rules    []PolicyRule `json:"rules"`
 }
 
-func (ro *Role) Bind(r *http.Request) error {
-	ro.ID = strings.TrimSpace(ro.ID)
-	if ro.ID == "" {
-		return nil // ID is optional on create (UUID generated)
-	}
-	if !rbacIdRegex.MatchString(ro.ID) {
-		return fmt.Errorf("invalid role ID format: %s", ro.ID)
-	}
-	if len(ro.Rules) == 0 {
+func (m *RoleV1Meta) Validate(ctx context.Context) error {
+	if len(m.Rules) == 0 {
 		return errors.New("at least one policy rule is required")
 	}
 	return nil
 }
 
-type ServiceAccount struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Token      string `json:"token"`
-	Comments   string `json:"comments"`
-	Enabled    bool   `json:"enabled"`
-	LastUsedAt string `json:"lastUsedAt,omitempty"`
-}
-
-func (s *ServiceAccount) Bind(r *http.Request) error {
-	s.ID = strings.TrimSpace(s.ID)
-	if s.ID == "" {
-		return errors.New("service account ID is required")
-	}
-	if !rbacIdRegex.MatchString(s.ID) {
-		return fmt.Errorf("invalid service account ID format: %s", s.ID)
-	}
+func (m *RoleV1Meta) Bind(r *http.Request) error {
 	return nil
 }
 
-type RoleBinding struct {
-	ID               string   `json:"id"`
+type RoleV1Status struct {
+}
+
+type Role = Resource[RoleV1Meta, RoleV1Status]
+
+type ServiceAccountV1Meta struct {
+	Name     string `json:"name"`
+	Token    string `json:"token"`
+	Comments string `json:"comments"`
+	Enabled  bool   `json:"enabled"`
+}
+
+func (m *ServiceAccountV1Meta) Validate(ctx context.Context) error {
+	return nil
+}
+
+func (m *ServiceAccountV1Meta) Bind(r *http.Request) error {
+	return nil
+}
+
+type ServiceAccountV1Status struct {
+	LastUsedAt string `json:"lastUsedAt,omitempty"`
+}
+
+type ServiceAccount = Resource[ServiceAccountV1Meta, ServiceAccountV1Status]
+
+type RoleBindingV1Meta struct {
 	Name             string   `json:"name"`
 	RoleIDs          []string `json:"roleIds"`
 	ServiceAccountID string   `json:"serviceAccountId"`
 	Enabled          bool     `json:"enabled"`
 }
 
-func (rb *RoleBinding) Bind(r *http.Request) error {
-	rb.Name = strings.TrimSpace(rb.Name)
-	if rb.Name == "" {
-		return errors.New("role binding name is required")
-	}
-	if rb.ServiceAccountID == "" {
+func (m *RoleBindingV1Meta) Validate(ctx context.Context) error {
+	if m.ServiceAccountID == "" {
 		return errors.New("service account ID is required")
 	}
-	if len(rb.RoleIDs) == 0 {
+	if len(m.RoleIDs) == 0 {
 		return errors.New("at least one role must be assigned")
 	}
 	return nil
 }
+
+func (m *RoleBindingV1Meta) Bind(r *http.Request) error {
+	m.Name = strings.TrimSpace(m.Name)
+	if m.Name == "" {
+		return errors.New("role binding name is required")
+	}
+	return nil
+}
+
+type RoleBindingV1Status struct {
+}
+
+type RoleBinding = Resource[RoleBindingV1Meta, RoleBindingV1Status]
 
 type ResourcePermissions struct {
 	AllowedAll       bool        `json:"allowedAll"`

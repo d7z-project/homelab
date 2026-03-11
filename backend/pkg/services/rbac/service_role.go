@@ -29,7 +29,7 @@ func CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
 		return nil, errors.New("Role ID already exists")
 	}
 
-	message := fmt.Sprintf("Created Role: %s (id: %s) with rules: %+v", role.Name, role.ID, role.Rules)
+	message := fmt.Sprintf("Created Role: %s (id: %s) with rules: %+v", role.Meta.Name, role.ID, role.Meta.Rules)
 	if err := rbacrepo.SaveRole(ctx, role); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRole", role.ID, message, false)
 		return nil, err
@@ -63,10 +63,10 @@ func UpdateRole(ctx context.Context, id string, role *models.Role) (*models.Role
 
 	role.ID = id
 	changes := []string{}
-	if existing.Name != role.Name {
-		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, role.Name))
+	if existing.Meta.Name != role.Meta.Name {
+		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Meta.Name, role.Meta.Name))
 	}
-	changes = append(changes, fmt.Sprintf("rules updated: %+v -> %+v", existing.Rules, role.Rules))
+	changes = append(changes, fmt.Sprintf("rules updated: %+v -> %+v", existing.Meta.Rules, role.Meta.Rules))
 
 	message := fmt.Sprintf("Updated Role: %s: %s", role.ID, strings.Join(changes, ", "))
 	if err := rbacrepo.SaveRole(ctx, role); err != nil {
@@ -99,7 +99,7 @@ func DeleteRole(ctx context.Context, id string) error {
 		for _, rb := range rbs {
 			newRoleIDs := make([]string, 0)
 			found := false
-			for _, rid := range rb.RoleIDs {
+			for _, rid := range rb.Meta.RoleIDs {
 				if rid == id {
 					found = true
 				} else {
@@ -110,14 +110,14 @@ func DeleteRole(ctx context.Context, id string) error {
 				if len(newRoleIDs) == 0 {
 					rbacrepo.DeleteRoleBinding(ctx, rb.ID)
 				} else {
-					rb.RoleIDs = newRoleIDs
+					rb.Meta.RoleIDs = newRoleIDs
 					rbacrepo.SaveRoleBinding(ctx, &rb)
 				}
 			}
 		}
 	}
 
-	message := fmt.Sprintf("Deleted Role: %s (name: %s) with rules: %+v", existing.ID, existing.Name, existing.Rules)
+	message := fmt.Sprintf("Deleted Role: %s (name: %s) with rules: %+v", existing.ID, existing.Meta.Name, existing.Meta.Rules)
 	if err := rbacrepo.DeleteRole(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRole", id, message, false)
 		return err

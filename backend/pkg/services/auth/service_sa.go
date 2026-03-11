@@ -28,7 +28,7 @@ func UpdateSALastUsed(saID string) {
 		ctx := context.Background()
 		sa, err := rbacrepo.GetServiceAccount(ctx, saID)
 		if err == nil && sa != nil {
-			sa.LastUsedAt = now.Format(time.RFC3339)
+			sa.Status.LastUsedAt = now.Format(time.RFC3339)
 			_ = rbacrepo.SaveServiceAccount(ctx, sa)
 		}
 	}()
@@ -82,9 +82,9 @@ func IsSAEnabled(ctx context.Context, saID string, currentToken string) bool {
 	}
 	// If currentToken is provided, it MUST match the hash stored in DB.
 	if currentToken != "" {
-		if sa.Token != HashToken(currentToken) {
+		if sa.Meta.Token != HashToken(currentToken) {
 			return false
 		}
 	}
-	return sa.Enabled
+	return sa.Meta.Enabled
 }

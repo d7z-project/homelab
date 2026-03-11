@@ -34,10 +34,8 @@ func TestImpersonation(t *testing.T) {
 
 	// 1. Setup Service Account
 	saID := "test-executor-sa"
-	_, err := rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{
-		ID:   saID,
-		Name: "Executor SA",
-	})
+	_, err := rbac.CreateServiceAccount(tests.SetupMockRootContext(), &models.ServiceAccount{ID: saID, Meta: models.ServiceAccountV1Meta{Name: "Executor SA",
+	}})
 	if err != nil {
 		t.Fatalf("Failed to create service account: %v", err)
 	}
@@ -65,11 +63,9 @@ func TestImpersonation(t *testing.T) {
 	triggerUserID := "human-trigger-user"
 	ctx := tests.SetupMockRootContext()
 	// Ensure SA exists in DB (direct repo call for robustness)
-	_ = rbacrepo.SaveServiceAccount(ctx, &models.ServiceAccount{
-		ID:      saID,
-		Name:    "Executor SA",
+	_ = rbacrepo.SaveServiceAccount(ctx, &models.ServiceAccount{ID: saID, Meta: models.ServiceAccountV1Meta{Name:    "Executor SA",
 		Enabled: true,
-	})
+	}})
 	instanceID, err := actions.GlobalExecutor.Execute(ctx, triggerUserID, workflow, "Manual", nil, "")
 	if err != nil {
 		t.Fatalf("Failed to trigger workflow: %v", err)

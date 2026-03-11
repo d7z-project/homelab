@@ -22,12 +22,12 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 	}
 
 	// Verify ServiceAccount exists
-	if _, err := rbacrepo.GetServiceAccount(ctx, rb.ServiceAccountID); err != nil {
-		return nil, fmt.Errorf("service account '%s' not found", rb.ServiceAccountID)
+	if _, err := rbacrepo.GetServiceAccount(ctx, rb.Meta.ServiceAccountID); err != nil {
+		return nil, fmt.Errorf("service account '%s' not found", rb.Meta.ServiceAccountID)
 	}
 
 	// Verify all Roles exist
-	for _, rid := range rb.RoleIDs {
+	for _, rid := range rb.Meta.RoleIDs {
 		if _, err := rbacrepo.GetRole(ctx, rid); err != nil {
 			return nil, fmt.Errorf("role '%s' not found", rid)
 		}
@@ -43,7 +43,7 @@ func CreateRoleBinding(ctx context.Context, rb *models.RoleBinding) (*models.Rol
 	}
 
 	message := fmt.Sprintf("Created RoleBinding: %s (id: %s, SA: %s, Roles: %v, enabled: %v)",
-		rb.Name, rb.ID, rb.ServiceAccountID, rb.RoleIDs, rb.Enabled)
+		rb.Meta.Name, rb.ID, rb.Meta.ServiceAccountID, rb.Meta.RoleIDs, rb.Meta.Enabled)
 	if err := rbacrepo.SaveRoleBinding(ctx, rb); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRoleBinding", rb.ID, message, false)
 		return nil, err
@@ -69,12 +69,12 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 	}
 
 	// Verify ServiceAccount exists
-	if _, err := rbacrepo.GetServiceAccount(ctx, rb.ServiceAccountID); err != nil {
-		return nil, fmt.Errorf("service account '%s' not found", rb.ServiceAccountID)
+	if _, err := rbacrepo.GetServiceAccount(ctx, rb.Meta.ServiceAccountID); err != nil {
+		return nil, fmt.Errorf("service account '%s' not found", rb.Meta.ServiceAccountID)
 	}
 
 	// Verify all Roles exist
-	for _, rid := range rb.RoleIDs {
+	for _, rid := range rb.Meta.RoleIDs {
 		if _, err := rbacrepo.GetRole(ctx, rid); err != nil {
 			return nil, fmt.Errorf("role '%s' not found", rid)
 		}
@@ -82,16 +82,16 @@ func UpdateRoleBinding(ctx context.Context, id string, rb *models.RoleBinding) (
 
 	rb.ID = id
 	changes := []string{}
-	if existing.Name != rb.Name {
-		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Name, rb.Name))
+	if existing.Meta.Name != rb.Meta.Name {
+		changes = append(changes, fmt.Sprintf("name: '%s' -> '%s'", existing.Meta.Name, rb.Meta.Name))
 	}
-	if existing.Enabled != rb.Enabled {
-		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Enabled, rb.Enabled))
+	if existing.Meta.Enabled != rb.Meta.Enabled {
+		changes = append(changes, fmt.Sprintf("enabled: %v -> %v", existing.Meta.Enabled, rb.Meta.Enabled))
 	}
-	if existing.ServiceAccountID != rb.ServiceAccountID {
-		changes = append(changes, fmt.Sprintf("SA: %s -> %s", existing.ServiceAccountID, rb.ServiceAccountID))
+	if existing.Meta.ServiceAccountID != rb.Meta.ServiceAccountID {
+		changes = append(changes, fmt.Sprintf("SA: %s -> %s", existing.Meta.ServiceAccountID, rb.Meta.ServiceAccountID))
 	}
-	changes = append(changes, fmt.Sprintf("roles: %v -> %v", existing.RoleIDs, rb.RoleIDs))
+	changes = append(changes, fmt.Sprintf("roles: %v -> %v", existing.Meta.RoleIDs, rb.Meta.RoleIDs))
 
 	message := fmt.Sprintf("Updated RoleBinding %s: %s", rb.ID, strings.Join(changes, ", "))
 
@@ -114,7 +114,7 @@ func DeleteRoleBinding(ctx context.Context, id string) error {
 	}
 
 	message := fmt.Sprintf("Deleted RoleBinding: %s (name: %s, SA: %s, Roles: %v, enabled: %v)",
-		existing.ID, existing.Name, existing.ServiceAccountID, existing.RoleIDs, existing.Enabled)
+		existing.ID, existing.Meta.Name, existing.Meta.ServiceAccountID, existing.Meta.RoleIDs, existing.Meta.Enabled)
 	if err := rbacrepo.DeleteRoleBinding(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRoleBinding", id, message, false)
 		return err

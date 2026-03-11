@@ -23,8 +23,8 @@ func init() {
 		for _, sa := range res.Items {
 			items = append(items, models.LookupItem{
 				ID:          sa.ID,
-				Name:        sa.Name,
-				Description: sa.Comments,
+				Name:        sa.Meta.Name,
+				Description: sa.Meta.Comments,
 			})
 		}
 		return &models.PaginationResponse[models.LookupItem]{
@@ -47,8 +47,8 @@ func init() {
 		for _, r := range res.Items {
 			items = append(items, models.LookupItem{
 				ID:          r.ID,
-				Name:        r.Name,
-				Description: r.Comments,
+				Name:        r.Meta.Name,
+				Description: r.Meta.Comments,
 			})
 		}
 		return &models.PaginationResponse[models.LookupItem]{
@@ -72,7 +72,7 @@ func init() {
 			items = append(items, models.LookupItem{
 				ID:          rb.ID,
 				Name:        rb.ID, // Binding ID is usually its unique name
-				Description: fmt.Sprintf("%s -> %s", rb.ServiceAccountID, strings.Join(rb.RoleIDs, ", ")),
+				Description: fmt.Sprintf("%s -> %s", rb.Meta.ServiceAccountID, strings.Join(rb.Meta.RoleIDs, ", ")),
 			})
 		}
 		return &models.PaginationResponse[models.LookupItem]{

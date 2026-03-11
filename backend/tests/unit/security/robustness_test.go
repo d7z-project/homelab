@@ -21,20 +21,23 @@ func TestRBACWildcardRobustness(t *testing.T) {
 	adminCtx := auth.WithPermissions(ctx, &models.ResourcePermissions{AllowedAll: true})
 
 	// 1. Create SA
-	_, _ = rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{ID: "worker", Name: "Worker"})
+	_, _ = rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{ID: "worker", Meta: models.ServiceAccountV1Meta{Name: "Worker"}})
 
 	// 2. Create Role with specific resource
-	role, _ := rbacservice.CreateRole(adminCtx, &models.Role{
+	role, _ := rbacservice.CreateRole(adminCtx, &models.Role{Meta: models.RoleV1Meta{
 		Name: "DNS Manager",
 		Rules: []models.PolicyRule{
 			{Resource: "network/dns/example.com", Verbs: []string{"*"}},
 		},
-	})
+	}})
 
 	// 3. Bind
-	_, _ = rbacservice.CreateRoleBinding(adminCtx, &models.RoleBinding{
-		Name: "Bind", ServiceAccountID: "worker", RoleIDs: []string{role.ID}, Enabled: true,
-	})
+	_, _ = rbacservice.CreateRoleBinding(adminCtx, &models.RoleBinding{ID: "worker", Meta: models.RoleBindingV1Meta{
+		Name:             "Bind",
+		ServiceAccountID: "worker",
+		RoleIDs:          []string{role.ID},
+		Enabled:          true,
+	}})
 
 	// Test Case: Exact match
 	perms, _ := authservice.GetPermissions(ctx, "worker", "get", "network/dns/example.com")
@@ -102,7 +105,7 @@ func TestPaginationRobustness(t *testing.T) {
 
 	// Create 5 items
 	for i := 0; i < 5; i++ {
-		_, _ = rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{ID: "sa-" + string(rune('a'+i))})
+		_, _ = rbacservice.CreateServiceAccount(adminCtx, &models.ServiceAccount{ID: "sa-" + string(rune('a'+i)), Meta: models.ServiceAccountV1Meta{Name: "SA"}})
 	}
 
 	// Test: Large cursor or limit
