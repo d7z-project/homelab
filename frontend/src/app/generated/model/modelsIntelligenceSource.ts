@@ -16,9 +16,9 @@ export interface ModelsIntelligenceSource {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsIntelligenceSourceV1Meta;
+  meta: ModelsIntelligenceSourceV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: ModelsIntelligenceSourceV1Status;

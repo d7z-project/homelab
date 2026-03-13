@@ -15,9 +15,9 @@ export interface ModelsRoleBinding {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsRoleBindingV1Meta;
+  meta: ModelsRoleBindingV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: object;

@@ -49,7 +49,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
       const data = this.sources();
       if (
         Array.isArray(data) &&
-        data.some((s) => s.status === 'Running' || s.status === 'Pending')
+        data.some((s) => s.status?.status === 'Running' || s.status?.status === 'Pending')
       ) {
         this.loadSources();
       }
@@ -111,7 +111,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
 
   deleteSource(source: ModelsIntelligenceSource) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: { title: '删除确认', message: `确定要删除情报源 [${source.name}] 吗？` },
+      data: { title: '删除确认', message: `确定要删除情报源 [${source.meta?.name}] 吗？` },
     });
     dialogRef.afterClosed().subscribe((res) => {
       if (res && source.id) {

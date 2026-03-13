@@ -63,7 +63,7 @@
                 </th>
                 <td mat-cell *matCellDef="let element" class="pl-6! text-center">
                   <mat-slide-toggle
-                    [checked]="element.enabled"
+                    [checked]="element.meta?.enabled"
                     (click)="$event.stopPropagation(); toggleWorkflow(element)"
                     color="primary"
                     class="scale-75"
@@ -78,7 +78,7 @@
                 </th>
                 <td mat-cell *matCellDef="let wf" class="py-4 font-medium text-primary">
                   <span class="cursor-pointer hover:underline" (click)="filterByWorkflow(wf.id)">{{
-                    wf.name
+                    wf.meta?.name
                   }}</span>
                 </td>
               </ng-container>
@@ -88,7 +88,7 @@
                   描述
                 </th>
                 <td mat-cell *matCellDef="let wf" class="text-xs text-outline opacity-70">
-                  {{ wf.description || '-' }}
+                  {{ wf.meta?.description || '-' }}
                 </td>
               </ng-container>
 
@@ -107,20 +107,20 @@
                       matTooltip="步骤数量"
                     >
                       <mat-icon class="w-3! h-3! text-[12px]!">layers</mat-icon>
-                      {{ wf.steps?.length || 0 }} Steps
+                      {{ wf.meta?.steps?.length || 0 }} Steps
                     </span>
 
-                    @if (wf.cronEnabled) {
+                    @if (wf.meta?.cronEnabled) {
                       <span
                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[10px] font-bold border border-primary/20 uppercase tracking-tighter"
-                        [matTooltip]="'定时任务: ' + wf.cronExpr"
+                        [matTooltip]="'定时任务: ' + wf.meta?.cronExpr"
                       >
                         <mat-icon class="w-3! h-3! text-[12px]!">schedule</mat-icon>
                         CRON
                       </span>
                     }
 
-                    @if (wf.webhookEnabled) {
+                    @if (wf.meta?.webhookEnabled) {
                       <span
                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-tertiary/10 text-tertiary text-[10px] font-bold border border-tertiary/20 uppercase tracking-tighter"
                         matTooltip="Webhook 已启用"
@@ -153,15 +153,15 @@
                       mat-icon-button
                       icon-button-center
                       (click)="runWorkflow(wf)"
-                      [disabled]="!wf.enabled || isWorkflowRunning(wf.id)"
+                      [disabled]="!wf.meta?.enabled || isWorkflowRunning(wf.id)"
                       [matTooltip]="
                         isWorkflowRunning(wf.id)
                           ? '工作流正在运行中'
-                          : wf.enabled
+                          : wf.meta?.enabled
                             ? '启动工作流'
                             : '工作流已禁用，无法启动'
                       "
-                      [class.text-primary]="wf.enabled && !isWorkflowRunning(wf.id)"
+                      [class.text-primary]="wf.meta?.enabled && !isWorkflowRunning(wf.id)"
                     >
                       <mat-icon
                         class="text-[20px]! w-5! h-5! flex! items-center! justify-center!"
@@ -170,14 +170,14 @@
                       >
                     </button>
 
-                    @if (wf.webhookEnabled) {
+                    @if (wf.meta?.webhookEnabled) {
                       <button
                         mat-icon-button
                         icon-button-center
                         (click)="copyWebhookUrl(wf)"
-                        [disabled]="!wf.enabled"
-                        [matTooltip]="wf.enabled ? '复制 Webhook URL' : '工作流已禁用'"
-                        [class.text-secondary]="wf.enabled"
+                        [disabled]="!wf.meta?.enabled"
+                        [matTooltip]="wf.meta?.enabled ? '复制 Webhook URL' : '工作流已禁用'"
+                        [class.text-secondary]="wf.meta?.enabled"
                       >
                         <mat-icon class="text-[20px]! w-5! h-5! flex! items-center! justify-center!"
                           >link</mat-icon
@@ -187,7 +187,7 @@
                         mat-icon-button
                         icon-button-center
                         (click)="resetWebhookToken(wf)"
-                        [disabled]="!wf.enabled"
+                        [disabled]="!wf.meta?.enabled"
                         matTooltip="重置 Webhook Token"
                         class="text-outline"
                       >
@@ -348,8 +348,8 @@
                 <td mat-cell *matCellDef="let inst" class="py-4 font-medium pl-6! text-primary">
                   <span
                     class="cursor-pointer hover:underline"
-                    (click)="filterByWorkflow(inst.workflowId)"
-                    >{{ getWorkflowName(inst.workflowId) }}</span
+                    (click)="filterByWorkflow(inst.meta?.workflowId)"
+                    >{{ getWorkflowName(inst.meta?.workflowId) }}</span
                   >
                 </td>
               </ng-container>
@@ -366,12 +366,12 @@
                 <td mat-cell *matCellDef="let inst" class="text-center">
                   <div
                     class="flex items-center justify-center gap-1.5 text-xs text-outline font-medium"
-                    [matTooltip]="getTriggerTooltip(inst.trigger)"
+                    [matTooltip]="getTriggerTooltip(inst.meta?.trigger)"
                   >
                     <mat-icon class="w-3! h-3! text-[12px]! opacity-60">{{
-                      getTriggerIcon(inst.trigger)
+                      getTriggerIcon(inst.meta?.trigger)
                     }}</mat-icon>
-                    <span>{{ getTriggerLabel(inst.trigger) }}</span>
+                    <span>{{ getTriggerLabel(inst.meta?.trigger) }}</span>
                   </div>
                 </td>
               </ng-container>
@@ -382,9 +382,9 @@
                 <td mat-cell *matCellDef="let inst">
                   <span
                     class="px-2 py-0.5 rounded text-[10px] font-bold font-mono border"
-                    [class]="getStatusClass(inst.status)"
+                    [class]="getStatusClass(inst.status?.status)"
                   >
-                    {{ inst.status | uppercase }}
+                    {{ inst.status?.status | uppercase }}
                   </span>
                 </td>
               </ng-container>
@@ -404,7 +404,7 @@
                   启动时间
                 </th>
                 <td mat-cell *matCellDef="let inst" class="text-xs text-outline font-mono">
-                  {{ inst.startedAt | date: 'MM-dd HH:mm:ss' }}
+                  {{ inst.status?.startedAt | date: 'MM-dd HH:mm:ss' }}
                 </td>
               </ng-container>
 
@@ -435,7 +435,7 @@
                         >subject</mat-icon
                       >
                     </button>
-                    @if (inst.status === 'Running') {
+                    @if (inst.status?.status === 'Running') {
                       <button
                         mat-icon-button
                         icon-button-center

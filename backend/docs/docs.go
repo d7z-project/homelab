@@ -4205,6 +4205,44 @@ const docTemplate = `{
             }
         },
         "/network/site/pools/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "network/site"
+                ],
+                "summary": "Update a site group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Site Group",
+                        "name": "group",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SiteGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SiteGroup"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "produces": [
                     "application/json"
@@ -5650,6 +5688,9 @@ const docTemplate = `{
         },
         "models.Domain": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -5662,7 +5703,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.DomainV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -5673,6 +5714,9 @@ const docTemplate = `{
         "models.DomainV1Meta": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "enabled": {
                     "type": "boolean"
                 },
@@ -5759,6 +5803,9 @@ const docTemplate = `{
         },
         "models.IPExport": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -5771,7 +5818,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.IPExportV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -5878,6 +5925,9 @@ const docTemplate = `{
         },
         "models.IPPool": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -5890,7 +5940,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.IPPoolV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -5983,6 +6033,9 @@ const docTemplate = `{
         },
         "models.IPSyncPolicy": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -5995,7 +6048,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.IPSyncPolicyV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6071,6 +6124,9 @@ const docTemplate = `{
         },
         "models.IntelligenceSource": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6083,7 +6139,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.IntelligenceSourceV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6238,6 +6294,9 @@ const docTemplate = `{
         },
         "models.Record": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6250,7 +6309,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.RecordV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6314,6 +6373,9 @@ const docTemplate = `{
         },
         "models.Role": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6326,7 +6388,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.RoleV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6336,6 +6398,9 @@ const docTemplate = `{
         },
         "models.RoleBinding": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6348,7 +6413,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.RoleBindingV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6416,6 +6481,9 @@ const docTemplate = `{
         },
         "models.ServiceAccount": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6428,7 +6496,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.ServiceAccountV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6560,6 +6628,9 @@ const docTemplate = `{
         },
         "models.SiteExport": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6572,7 +6643,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.SiteExportV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6629,6 +6700,9 @@ const docTemplate = `{
         },
         "models.SiteGroup": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6641,7 +6715,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.SiteGroupV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6743,6 +6817,9 @@ const docTemplate = `{
         },
         "models.SiteSyncPolicy": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6755,7 +6832,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.SiteSyncPolicyV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -6913,6 +6990,9 @@ const docTemplate = `{
         },
         "models.TaskInstance": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -6925,7 +7005,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.TaskInstanceV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
@@ -7076,6 +7156,9 @@ const docTemplate = `{
         },
         "models.Workflow": {
             "type": "object",
+            "required": [
+                "meta"
+            ],
             "properties": {
                 "generation": {
                     "description": "Configuration version, increments only on Meta changes",
@@ -7088,7 +7171,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.WorkflowV1Meta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments on any change (Meta/Status)",
+                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {

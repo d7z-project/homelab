@@ -29,7 +29,7 @@ import { ModelsWorkflow } from '../../generated';
     MatButtonModule,
   ],
   template: `
-    <h2 mat-dialog-title>手动运行工作流: {{ data.workflow.name }}</h2>
+    <h2 mat-dialog-title>手动运行工作流: {{ data.workflow.meta?.name }}</h2>
     <mat-dialog-content>
       @if (varKeys.length > 0) {
         <p class="text-sm text-outline mb-4">此工作流需要以下运行参数：</p>
@@ -40,9 +40,9 @@ import { ModelsWorkflow } from '../../generated';
               <input
                 matInput
                 [formControlName]="key"
-                [placeholder]="data.workflow.vars?.[key]?.default || ''"
+                [placeholder]="data.workflow.meta?.vars?.[key]?.default || ''"
               />
-              <mat-hint>{{ data.workflow.vars?.[key]?.description }}</mat-hint>
+              <mat-hint>{{ data.workflow.meta?.vars?.[key]?.description }}</mat-hint>
               @if (form.get(key)?.errors?.['regexMatch']) {
                 <mat-error>值不符合该参数的前端正则要求</mat-error>
               }
@@ -73,10 +73,10 @@ export class RunWorkflowDialogComponent implements OnInit {
 
   ngOnInit() {
     const group: any = {};
-    if (this.data.workflow.vars) {
-      this.varKeys = Object.keys(this.data.workflow.vars);
+    if (this.data.workflow.meta?.vars) {
+      this.varKeys = Object.keys(this.data.workflow.meta.vars);
       for (const key of this.varKeys) {
-        const def = this.data.workflow.vars[key];
+        const def = this.data.workflow.meta.vars[key];
         const validators: any[] = def.required ? [Validators.required] : [];
         if (def.regexFrontend) {
           validators.push((control: AbstractControl): ValidationErrors | null => {

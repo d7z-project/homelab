@@ -307,13 +307,15 @@ export class ActionsComponent implements OnInit, OnDestroy {
   getWorkflowName(id: string | undefined): string {
     if (!id) return '-';
     const wf = this.workflows().find((w) => w.id === id);
-    return wf ? wf.name || id : id;
+    return wf ? wf.meta?.name || id : id;
   }
 
   isWorkflowRunning(id: string | undefined): boolean {
     if (!id) return false;
     return this.instances().some(
-      (i) => i.workflowId === id && (i.status === 'Running' || i.status === 'Pending'),
+      (i) =>
+        i.meta?.workflowId === id &&
+        (i.status?.status === 'Running' || i.status?.status === 'Pending'),
     );
   }
 
@@ -375,11 +377,14 @@ export class ActionsComponent implements OnInit, OnDestroy {
   }
 
   async toggleWorkflow(workflow: ModelsWorkflow) {
-    const updated = { ...workflow, enabled: !workflow.enabled };
+    const updated = {
+      ...workflow,
+      meta: { ...workflow.meta, enabled: !workflow.meta?.enabled },
+    };
     this.loading.set(true);
     try {
       await firstValueFrom(this.orchService.actionsWorkflowsIdPut(workflow.id!, updated));
-      this.snackBar.open(updated.enabled ? '工作流已启用' : '工作流已禁用', '了解', {
+      this.snackBar.open(updated.meta.enabled ? '工作流已启用' : '工作流已禁用', '了解', {
         duration: 2000,
       });
       await this.loadWorkflows(true);
@@ -393,8 +398,8 @@ export class ActionsComponent implements OnInit, OnDestroy {
   }
 
   copyWebhookUrl(workflow: ModelsWorkflow) {
-    if (!workflow.webhookEnabled || !workflow.webhookToken) return;
-    const url = `${window.location.origin}/api/v1/actions/webhooks/${workflow.webhookToken}`;
+    if (!workflow.meta?.webhookEnabled || !workflow.meta?.webhookToken) return;
+    const url = `${window.location.origin}/api/v1/actions/webhooks/${workflow.meta.webhookToken}`;
     navigator.clipboard.writeText(url).then(() => {
       this.snackBar.open('Webhook URL 已复制', '了解', { duration: 2000 });
     });
@@ -491,7 +496,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: '删除工作流',
-        message: `确定要删除工作流 [${workflow.name || workflow.id}] 吗？此操作不可撤销。`,
+        message: `确定要删除工作流 [${workflow.meta?.name || workflow.id}] 吗？此操作不可撤销。`,
       },
     });
 

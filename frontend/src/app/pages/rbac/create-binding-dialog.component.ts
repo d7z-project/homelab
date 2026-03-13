@@ -49,7 +49,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           <mat-label>显示名称</mat-label>
           <input
             matInput
-            [(ngModel)]="binding.name"
+            [(ngModel)]="binding.meta!.name"
             placeholder="例如: 备份代理权限绑定"
             required
           />
@@ -60,7 +60,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           code="rbac/serviceaccounts"
           label="目标服务账号 (ServiceAccount)"
           placeholder="搜索账号 ID 或名称..."
-          [(ngModel)]="binding.serviceAccountId"
+          [(ngModel)]="binding.meta!.serviceAccountId"
           [disabled]="isEdit"
         ></app-discovery-select>
 
@@ -69,7 +69,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           code="rbac/roles"
           label="赋予角色 (Roles)"
           placeholder="搜索并添加角色..."
-          [(ngModel)]="binding.roleIds"
+          [(ngModel)]="binding.meta!.roleIds"
           [multiple]="true"
           hint="可搜索并添加多个角色"
         ></app-discovery-select>
@@ -81,7 +81,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
             <span class="text-sm font-bold">启用此绑定</span>
             <span class="text-xs text-outline">禁用后此账号将暂时失去该组权限</span>
           </div>
-          <mat-slide-toggle color="primary" [(ngModel)]="binding.enabled"></mat-slide-toggle>
+          <mat-slide-toggle color="primary" [(ngModel)]="binding.meta!.enabled"></mat-slide-toggle>
         </div>
       </div>
     </mat-dialog-content>
@@ -92,10 +92,10 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
         color="primary"
         [mat-dialog-close]="binding"
         [disabled]="
-          !binding.name ||
-          !binding.serviceAccountId ||
-          !binding.roleIds ||
-          binding.roleIds.length === 0
+          !binding.meta!.name ||
+          !binding.meta!.serviceAccountId ||
+          !binding.meta!.roleIds ||
+          binding.meta!.roleIds.length === 0
         "
         class="ml-2! px-8 rounded-full"
       >
@@ -110,10 +110,12 @@ export class CreateBindingDialogComponent implements OnInit, AfterViewInit {
   isEdit = false;
   binding: ModelsRoleBinding = {
     id: '',
-    name: '',
-    serviceAccountId: '',
-    roleIds: [],
-    enabled: true,
+    meta: {
+      name: '',
+      serviceAccountId: '',
+      roleIds: [],
+      enabled: true,
+    },
   };
 
   constructor(
@@ -125,7 +127,10 @@ export class CreateBindingDialogComponent implements OnInit, AfterViewInit {
     if (data.binding) {
       this.isEdit = true;
       this.binding = JSON.parse(JSON.stringify(data.binding));
-      if (!this.binding.roleIds) this.binding.roleIds = [];
+      if (!this.binding.meta) {
+        this.binding.meta = { name: '', serviceAccountId: '', roleIds: [], enabled: true };
+      }
+      if (!this.binding.meta.roleIds) this.binding.meta.roleIds = [];
     }
   }
 

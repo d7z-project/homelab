@@ -124,13 +124,17 @@ definitions:
       meta:
         $ref: '#/definitions/models.DomainV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.DomainV1Status'
+    required:
+    - meta
     type: object
   models.DomainV1Meta:
     properties:
+      description:
+        type: string
       enabled:
         type: boolean
       name:
@@ -196,10 +200,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.IPExportV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.IPExportV1Status'
+    required:
+    - meta
     type: object
   models.IPExportPreviewRequest:
     properties:
@@ -275,10 +281,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.IPPoolV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.IPPoolV1Status'
+    required:
+    - meta
     type: object
   models.IPPoolEntry:
     properties:
@@ -345,10 +353,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.IPSyncPolicyV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.IPSyncPolicyV1Status'
+    required:
+    - meta
     type: object
   models.IPSyncPolicyV1Meta:
     properties:
@@ -403,10 +413,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.IntelligenceSourceV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.IntelligenceSourceV1Status'
+    required:
+    - meta
     type: object
   models.IntelligenceSourceV1Meta:
     properties:
@@ -513,10 +525,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.RecordV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.RecordV1Status'
+    required:
+    - meta
     type: object
   models.RecordV1Meta:
     properties:
@@ -562,10 +576,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.RoleV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.RoleV1Status'
+    required:
+    - meta
     type: object
   models.RoleBinding:
     properties:
@@ -577,10 +593,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.RoleBindingV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.RoleBindingV1Status'
+    required:
+    - meta
     type: object
   models.RoleBindingV1Meta:
     properties:
@@ -630,10 +648,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.ServiceAccountV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.ServiceAccountV1Status'
+    required:
+    - meta
     type: object
   models.ServiceAccountV1Meta:
     properties:
@@ -723,10 +743,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.SiteExportV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.SiteExportV1Status'
+    required:
+    - meta
     type: object
   models.SiteExportPreviewRequest:
     properties:
@@ -769,10 +791,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.SiteGroupV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.SiteGroupV1Status'
+    required:
+    - meta
     type: object
   models.SiteGroupV1Meta:
     properties:
@@ -846,10 +870,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.SiteSyncPolicyV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.SiteSyncPolicyV1Status'
+    required:
+    - meta
     type: object
   models.SiteSyncPolicyV1Meta:
     properties:
@@ -961,10 +987,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.TaskInstanceV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.TaskInstanceV1Status'
+    required:
+    - meta
     type: object
   models.TaskInstanceV1Meta:
     properties:
@@ -1075,10 +1103,12 @@ definitions:
       meta:
         $ref: '#/definitions/models.WorkflowV1Meta'
       resourceVersion:
-        description: Total object version, increments on any change (Meta/Status)
+        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
         $ref: '#/definitions/models.WorkflowV1Status'
+    required:
+    - meta
     type: object
   models.WorkflowV1Meta:
     properties:
@@ -3802,6 +3832,31 @@ paths:
           schema:
             type: string
       summary: Delete a site group
+      tags:
+      - network/site
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Site Group
+        in: body
+        name: group
+        required: true
+        schema:
+          $ref: '#/definitions/models.SiteGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SiteGroup'
+      summary: Update a site group
       tags:
       - network/site
   /network/site/pools/{id}/entries:

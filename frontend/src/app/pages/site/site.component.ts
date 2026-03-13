@@ -331,7 +331,7 @@ export class SiteComponent implements OnInit, OnDestroy {
 
   deletePool(pool: ModelsSiteGroup) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: { title: '删除确认', message: `确定要删除域名池 [${pool.name}] 吗？` },
+      data: { title: '删除确认', message: `确定要删除域名池 [${pool.meta?.name}] 吗？` },
     });
     dialogRef.afterClosed().subscribe((res) => {
       if (res && pool.id) {
@@ -361,7 +361,7 @@ export class SiteComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: '删除确认',
-        message: `确定要删除导出配置 [${exp.name}] 吗？此操作将级联删除该配置下的所有历史导出任务。`,
+        message: `确定要删除导出配置 [${exp.meta?.name}] 吗？此操作将级联删除该配置下的所有历史导出任务。`,
         color: 'warn',
       },
     });

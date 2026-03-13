@@ -24,8 +24,14 @@ import { NetworkSiteService } from '../../generated';
     <mat-dialog-content>
       <form [formGroup]="form" class="flex flex-col gap-4 pt-2">
         <mat-form-field appearance="outline">
-          <mat-label>池名称</mat-label>
-          <input matInput formControlName="name" required />
+          <mat-label>资产池 ID</mat-label>
+          <input matInput formControlName="id" required placeholder="例如: office-lan" />
+          <mat-hint>仅允许小写字母、数字、中划线和下划线，创建后不可更改</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>池显示名称</mat-label>
+          <input matInput formControlName="name" required placeholder="例如: 办公网域名池" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -56,6 +62,7 @@ export class CreateSitePoolDialogComponent {
   loading = false;
 
   form = this.fb.group({
+    id: ['', [Validators.required, Validators.pattern(/^[a-z0-9_\-]+$/)]],
     name: ['', Validators.required],
     description: [''],
   });
@@ -67,10 +74,11 @@ export class CreateSitePoolDialogComponent {
 
     this.siteService
       .networkSitePoolsPost({
-        name: val.name!,
-        description: val.description || undefined,
-        entryCount: 0,
-        checksum: '',
+        id: val.id!,
+        meta: {
+          name: val.name!,
+          description: val.description || undefined,
+        },
       })
       .subscribe({
         next: () => {

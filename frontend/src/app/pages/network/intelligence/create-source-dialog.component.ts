@@ -103,14 +103,14 @@ export class CreateSourceDialogComponent implements OnInit {
   ngOnInit() {
     if (this.data) {
       this.form.patchValue({
-        name: this.data.name,
-        type: this.data.type,
-        url: this.data.url,
-        autoUpdate: this.data.autoUpdate,
-        cron: this.data.cron,
-        allowPrivate: this.data.config?.['allowPrivate'] === 'true',
+        name: this.data.meta?.name,
+        type: this.data.meta?.type,
+        url: this.data.meta?.url,
+        autoUpdate: this.data.meta?.autoUpdate,
+        cron: this.data.meta?.cron,
+        allowPrivate: this.data.meta?.config?.['allowPrivate'] === 'true',
       });
-      if (this.data.autoUpdate) {
+      if (this.data.meta?.autoUpdate) {
         this.form.get('cron')?.setValidators(Validators.required);
       }
     }
@@ -133,7 +133,7 @@ export class CreateSourceDialogComponent implements OnInit {
     this.loading = true;
     const val = this.form.value;
 
-    const config: Record<string, string> = { ...this.data?.config };
+    const config: Record<string, string> = { ...this.data?.meta?.config };
     if (val.allowPrivate) {
       config['allowPrivate'] = 'true';
     } else {
@@ -141,17 +141,17 @@ export class CreateSourceDialogComponent implements OnInit {
     }
 
     const payload: ModelsIntelligenceSource = {
-      name: val.name!,
-      type: val.type!,
-      url: val.url!,
-      enabled: this.data ? this.data.enabled : true,
-      autoUpdate: !!val.autoUpdate,
-      cron: val.cron || '',
-      status: this.data ? this.data.status : ModelsTaskStatus.TaskStatusSuccess,
-      lastUpdatedAt: this.data ? this.data.lastUpdatedAt : '0001-01-01T00:00:00Z',
       id: this.data ? this.data.id : '',
-      errorMessage: this.data ? this.data.errorMessage : '',
-      config: config,
+      generation: this.data ? this.data.generation : 0,
+      meta: {
+        name: val.name!,
+        type: val.type!,
+        url: val.url!,
+        enabled: this.data ? this.data.meta?.enabled : true,
+        autoUpdate: !!val.autoUpdate,
+        cron: val.cron || '',
+        config: config,
+      },
     };
 
     const obs =

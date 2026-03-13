@@ -15,9 +15,9 @@ export interface ModelsRecord {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsRecordV1Meta;
+  meta: ModelsRecordV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: object;

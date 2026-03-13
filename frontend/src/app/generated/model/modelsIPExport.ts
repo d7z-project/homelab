@@ -16,9 +16,9 @@ export interface ModelsIPExport {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsIPExportV1Meta;
+  meta: ModelsIPExportV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: ModelsIPExportV1Status;

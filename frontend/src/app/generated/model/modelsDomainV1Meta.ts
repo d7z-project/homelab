@@ -9,6 +9,7 @@
  */
 
 export interface ModelsDomainV1Meta {
+  description?: string;
   enabled?: boolean;
   name?: string;
 }

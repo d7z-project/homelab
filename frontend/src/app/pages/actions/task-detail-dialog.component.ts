@@ -54,16 +54,18 @@ interface StepState {
         <div class="flex items-center gap-4 min-w-0">
           <mat-icon
             class="w-6! h-6! text-[24px]! shrink-0"
-            [style.color]="getStatusColor(instance()?.status)"
+            [style.color]="getStatusColor(instance()?.status?.status)"
           >
-            {{ getStatusIcon(instance()?.status) }}
+            {{ getStatusIcon(instance()?.status?.status) }}
           </mat-icon>
           <div class="flex flex-col min-w-0">
             <h2 class="text-sm sm:text-lg font-bold truncate m-0 tracking-tight">
               {{ workflowName() }}
             </h2>
             <div class="flex items-center gap-2 text-[10px] sm:text-xs text-outline font-medium">
-              <span class="uppercase tracking-widest">{{ instance()?.status || 'UNKNOWN' }}</span>
+              <span class="uppercase tracking-widest">{{
+                instance()?.status?.status || 'UNKNOWN'
+              }}</span>
               <span class="opacity-30">•</span>
               <span>#{{ instance()?.id?.slice(-6) || 'N/A' }}</span>
               <span class="opacity-30">•</span>
@@ -73,7 +75,9 @@ interface StepState {
         </div>
 
         <div class="flex items-center gap-2">
-          @if (instance()?.status === 'Running' || instance()?.status === 'Pending') {
+          @if (
+            instance()?.status?.status === 'Running' || instance()?.status?.status === 'Pending'
+          ) {
             <button mat-button color="warn" (click)="cancel()" class="rounded-full! font-bold">
               停止执行
             </button>
@@ -290,27 +294,29 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   autoScroll = signal(true);
   now = signal(new Date());
 
-  currentRunningStep = computed(() => (this.instance() as any)?.currentStep ?? -1);
+  currentRunningStep = computed(() => this.instance()?.status?.currentStep ?? -1);
   private pollingActive = true;
   private lastStepIndex = -1;
 
   duration = computed(() => {
     const inst = this.instance();
     if (!inst) return '0s';
-    const start = new Date(inst.startedAt || new Date()).getTime();
-    const end = inst.finishedAt ? new Date(inst.finishedAt!).getTime() : this.now().getTime();
+    const start = new Date(inst.status?.startedAt || new Date()).getTime();
+    const end = inst.status?.finishedAt
+      ? new Date(inst.status.finishedAt!).getTime()
+      : this.now().getTime();
     const diff = Math.max(0, Math.floor((end - start) / 1000));
     return this.formatSeconds(diff);
   });
 
   constructor(public dialogRef: MatDialogRef<TaskDetailDialogComponent>) {
     const inst = this.instance();
-    this.workflowName.set(inst?.workflowId || 'Workflow');
+    this.workflowName.set(inst?.meta?.workflowId || 'Workflow');
 
     effect(() => {
       const inst = this.instance();
       const current = this.currentRunningStep();
-      const status = inst?.status;
+      const status = inst?.status?.status;
 
       // 仅在步骤真正变更且启用了自动跟随，或者刚进入 Running 状态时触发跟随
       if (current !== this.lastStepIndex && current >= 0) {
@@ -339,10 +345,10 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   private async initStepStates() {
-    const inst = this.instance() as any;
+    const inst = this.instance();
     if (!inst) return;
 
-    const steps = (inst.steps || []).map((s: any) => ({
+    const steps = (inst.meta?.steps || []).map((s: any) => ({
       id: s.id || '',
       name: s.name || s.id || '',
     }));
@@ -378,7 +384,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
       loading: false,
     });
 
-    const status = inst.status;
+    const status = inst.status?.status;
     const current = this.currentRunningStep();
 
     if (status === 'Failed' || status === 'Cancelled') {
@@ -393,8 +399,10 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
 
     // Async fetch workflow name for display if available, but don't block
     try {
-      const wf = await firstValueFrom(this.orchService.actionsWorkflowsIdGet(inst.workflowId!));
-      if (wf) this.workflowName.set(wf.name || wf.id || '');
+      const wf = await firstValueFrom(
+        this.orchService.actionsWorkflowsIdGet(inst.meta?.workflowId!),
+      );
+      if (wf) this.workflowName.set(wf.meta?.name || wf.id || '');
     } catch (e) {}
   }
 
@@ -410,7 +418,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
         for (const s of expanded) {
           await this.loadLogsForStep(s.index);
         }
-        if (updated.status !== 'Running' && updated.status !== 'Pending') {
+        if (updated.status?.status !== 'Running' && updated.status?.status !== 'Pending') {
           this.pollingActive = false;
         }
       }
@@ -527,10 +535,10 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   getStepDuration(index: number): string | null {
-    const inst = this.instance() as any;
-    if (!inst || !inst.stepTimings || !inst.stepTimings[index]) return null;
-    const t = inst.stepTimings[index];
-    const start = new Date(t.startedAt).getTime();
+    const inst = this.instance();
+    if (!inst || !inst.status?.stepTimings || !inst.status.stepTimings[index]) return null;
+    const t = inst.status.stepTimings[index];
+    const start = new Date(t.startedAt!).getTime();
     const end = t.finishedAt ? new Date(t.finishedAt).getTime() : this.now().getTime();
     const diff = Math.max(0, Math.floor((end - start) / 1000));
     return this.formatSeconds(diff);
@@ -584,7 +592,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
   getStepStatusIcon(index: number): string {
     const inst = this.instance();
     if (!inst) return 'help_outline';
-    const status = inst.status;
+    const status = inst.status?.status;
     const currentStep = this.currentRunningStep();
     if (status === 'Success') return 'check_circle';
     if (status === 'Failed' || status === 'Cancelled') {

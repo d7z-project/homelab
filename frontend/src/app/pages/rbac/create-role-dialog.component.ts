@@ -80,7 +80,7 @@ interface RuleWithUI extends ModelsPolicyRule {
           <mat-label>角色名称 (显示名称)</mat-label>
           <input
             matInput
-            [(ngModel)]="role.name"
+            [(ngModel)]="role.meta!.name"
             (ngModelChange)="onRuleChange()"
             placeholder="例如: DNS 管理员"
             autofocus
@@ -203,8 +203,10 @@ export class CreateRoleDialogComponent implements AfterViewInit {
   isEdit = false;
   role: ModelsRole = {
     id: '',
-    name: '',
-    rules: [],
+    meta: {
+      name: '',
+      rules: [],
+    },
   };
   rules: RuleWithUI[] = [];
   existingIDs: string[] = [];
@@ -216,7 +218,7 @@ export class CreateRoleDialogComponent implements AfterViewInit {
     if (data.role) {
       this.isEdit = true;
       this.role = JSON.parse(JSON.stringify(data.role));
-      this.rules = (this.role.rules || []).map((r) => ({
+      this.rules = (this.role.meta?.rules || []).map((r) => ({
         ...r,
         resourceSuggestions: [],
         verbSuggestions: [],
@@ -269,7 +271,7 @@ export class CreateRoleDialogComponent implements AfterViewInit {
   }
 
   calculateValidity(): boolean {
-    if (!this.role.name?.trim()) return false;
+    if (!this.role.meta?.name?.trim()) return false;
     if (this.isEdit && !this.role.id) return false;
     if (this.rules.length === 0) return false;
 
@@ -358,7 +360,7 @@ export class CreateRoleDialogComponent implements AfterViewInit {
   confirm() {
     if (this.calculateValidity()) {
       // Sync rules back to role model
-      this.role.rules = this.rules.map(({ resource, verbs }) => ({ resource, verbs }));
+      this.role.meta!.rules = this.rules.map(({ resource, verbs }) => ({ resource, verbs }));
       this.dialogRef.close(this.role);
     }
   }

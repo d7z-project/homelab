@@ -7,7 +7,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { NetworkIpService, ModelsIPGroup } from '../../generated';
+import {
+  NetworkIpService,
+  ModelsIPPool,
+  ModelsIPPoolV1Meta,
+  ModelsIPPoolV1Status,
+} from '../../generated';
 
 @Component({
   selector: 'app-create-pool-dialog',
@@ -26,8 +31,20 @@ import { NetworkIpService, ModelsIPGroup } from '../../generated';
     <mat-dialog-content>
       <form [formGroup]="form" class="flex flex-col gap-4 pt-2">
         <mat-form-field appearance="outline">
-          <mat-label>池名称</mat-label>
-          <input matInput formControlName="name" required />
+          <mat-label>地址池 ID</mat-label>
+          <input
+            matInput
+            formControlName="id"
+            required
+            [readonly]="!!data.pool"
+            placeholder="例如: office-lan"
+          />
+          <mat-hint>仅允许小写字母、数字、中划线和下划线，创建后不可更改</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>池显示名称</mat-label>
+          <input matInput formControlName="name" required placeholder="例如: 办公网地址池" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -54,11 +71,12 @@ export class CreatePoolDialogComponent implements OnInit {
   private ipService = inject(NetworkIpService);
   private dialogRef = inject(MatDialogRef<CreatePoolDialogComponent>);
   private snackBar = inject(MatSnackBar);
-  public data = inject(MAT_DIALOG_DATA) as { pool?: ModelsIPGroup };
+  public data = inject(MAT_DIALOG_DATA) as { pool?: ModelsIPPool };
 
   loading = false;
 
   form = this.fb.group({
+    id: ['', [Validators.required, Validators.pattern(/^[a-z0-9_\-]+$/)]],
     name: ['', Validators.required],
     description: [''],
   });
@@ -66,8 +84,9 @@ export class CreatePoolDialogComponent implements OnInit {
   ngOnInit() {
     if (this.data.pool) {
       this.form.patchValue({
-        name: this.data.pool.name,
-        description: this.data.pool.description,
+        id: this.data.pool.id,
+        name: this.data.pool.meta?.name,
+        description: this.data.pool.meta?.description,
       });
     }
   }
@@ -77,10 +96,13 @@ export class CreatePoolDialogComponent implements OnInit {
     this.loading = true;
     const val = this.form.value;
 
-    const poolData: ModelsIPGroup = {
-      ...(this.data.pool || {}),
-      name: val.name!,
-      description: val.description || undefined,
+    const poolData: ModelsIPPool = {
+      id: val.id!,
+      generation: this.data.pool?.generation || 0,
+      meta: {
+        name: val.name!,
+        description: val.description || undefined,
+      },
     };
 
     const obs = this.data.pool?.id

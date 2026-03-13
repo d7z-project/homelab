@@ -12,7 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
-import { NetworkIpService, ModelsIPGroup, ModelsIPPoolEntry } from '../../generated';
+import { NetworkIpService, ModelsIPPool, ModelsIPPoolEntry } from '../../generated';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Router } from '@angular/router';
@@ -47,7 +47,7 @@ import { Router } from '@angular/router';
           </button>
           <div class="flex flex-col">
             <span class="text-base font-bold text-primary leading-tight">管理池数据</span>
-            <span class="text-[11px] text-outline opacity-70">{{ data.pool.name }}</span>
+            <span class="text-[11px] text-outline opacity-70">{{ data.pool.meta?.name }}</span>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -155,7 +155,7 @@ import { Router } from '@angular/router';
                 <span
                   class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider"
                 >
-                  共 {{ data.pool.entryCount }} 条
+                  共 {{ data.pool.status?.entryCount }} 条
                 </span>
               </div>
             </div>
@@ -362,7 +362,7 @@ export class ManageEntriesDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<ManageEntriesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { pool: ModelsIPGroup },
+    @Inject(MAT_DIALOG_DATA) public data: { pool: ModelsIPPool },
   ) {
     this.searchSubject.pipe(debounceTime(400), distinctUntilChanged()).subscribe(() => {
       this.loadEntries(true);

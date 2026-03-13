@@ -16,9 +16,9 @@ export interface ModelsServiceAccount {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsServiceAccountV1Meta;
+  meta: ModelsServiceAccountV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: ModelsServiceAccountV1Status;

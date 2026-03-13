@@ -24,7 +24,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateSyncPolicyDialogComponent } from './create-sync-policy-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPGroup } from '../../generated';
+import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPPool } from '../../generated';
 
 @Component({
   selector: 'app-ip-sync',
@@ -102,7 +102,9 @@ export class IpSyncComponent implements OnInit, OnDestroy {
 
   // 是否有任何策略正在同步中
   anySyncing = computed(() =>
-    this.policies().some((p) => p.lastStatus === 'Pending' || p.lastStatus === 'Running'),
+    this.policies().some(
+      (p) => p.status?.lastStatus === 'Pending' || p.status?.lastStatus === 'Running',
+    ),
   );
 
   private refreshTimer?: any;
@@ -175,7 +177,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     this.ipService.networkIpPoolsGet('', 100).subscribe({
       next: (res) => {
         const m = new Map<string, string>();
-        (res.items || []).forEach((g) => m.set(g.id || '', g.name || ''));
+        (res.items || []).forEach((g) => m.set(g.id || '', g.meta?.name || ''));
         this.groups.set(m);
       },
     });
@@ -271,9 +273,14 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     if (!policy.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...policy, enabled: policy.enabled! };
+      const updated = {
+        ...policy,
+        meta: { ...policy.meta, enabled: !policy.meta?.enabled },
+      };
       await firstValueFrom(this.ipService.networkIpSyncIdPut(policy.id, updated));
-      this.snackBar.open(updated.enabled ? '策略已启用' : '策略已禁用', '关闭', { duration: 2000 });
+      this.snackBar.open(updated.meta.enabled ? '策略已启用' : '策略已禁用', '关闭', {
+        duration: 2000,
+      });
       await this.loadPolicies(true);
     } catch (err: any) {
       this.snackBar.open(`操作失败: ${err.error?.message || err.message}`, '关闭', {
@@ -289,7 +296,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '删除确认',
-          message: `确定要删除策略 [${policy.name}] 吗？`,
+          message: `确定要删除策略 [${policy.meta?.name}] 吗？`,
           confirmText: '确定删除',
           color: 'warn',
         },

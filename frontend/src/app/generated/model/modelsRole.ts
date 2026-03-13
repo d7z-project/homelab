@@ -15,9 +15,9 @@ export interface ModelsRole {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsRoleV1Meta;
+  meta: ModelsRoleV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: object;

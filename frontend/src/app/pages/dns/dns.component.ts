@@ -115,7 +115,7 @@ export class DnsComponent implements OnInit, OnDestroy {
   getDomainName(domainId: string | undefined): string {
     if (!domainId) return '未知域名';
     const domain = this.domains().find((d) => d.id === domainId);
-    return domain?.name || '未知域名';
+    return domain?.meta?.name || '未知域名';
   }
 
   hasSearchContent = computed(() => {
@@ -364,9 +364,14 @@ export class DnsComponent implements OnInit, OnDestroy {
     if (!domain.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...domain, enabled: domain.enabled! };
+      const updated: ModelsDomain = {
+        ...domain,
+        meta: { ...domain.meta, enabled: domain.meta!.enabled },
+      };
       await firstValueFrom(this.networkDnsService.networkDnsDomainsIdPut(domain.id, updated));
-      this.snackBar.open(`域名已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      this.snackBar.open(`域名已${updated.meta!.enabled ? '启用' : '禁用'}`, '关闭', {
+        duration: 2000,
+      });
       await this.loadDomains(true);
     } catch (err) {
       this.snackBar.open('操作失败', '关闭', { duration: 2000 });
@@ -379,9 +384,14 @@ export class DnsComponent implements OnInit, OnDestroy {
     if (!record.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...record, enabled: record.enabled! };
+      const updated: ModelsRecord = {
+        ...record,
+        meta: { ...record.meta, enabled: record.meta!.enabled },
+      };
       await firstValueFrom(this.networkDnsService.networkDnsRecordsIdPut(record.id, updated));
-      this.snackBar.open(`记录已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      this.snackBar.open(`记录已${updated.meta!.enabled ? '启用' : '禁用'}`, '关闭', {
+        duration: 2000,
+      });
       await this.loadRecords(true);
     } catch (err) {
       this.snackBar.open('操作失败', '关闭', { duration: 2000 });
@@ -393,7 +403,7 @@ export class DnsComponent implements OnInit, OnDestroy {
   createDomain() {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateDomainDialogComponent, {
-        data: { domain: null, existingNames: this.domains().map((d) => d.name || '') },
+        data: { domain: null, existingNames: this.domains().map((d) => d.meta?.name || '') },
       });
 
       dialogRef.afterClosed().subscribe(async (result) => {
@@ -416,7 +426,7 @@ export class DnsComponent implements OnInit, OnDestroy {
   editDomain(domain: ModelsDomain) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateDomainDialogComponent, {
-        data: { domain: domain, existingNames: this.domains().map((d) => d.name || '') },
+        data: { domain: domain, existingNames: this.domains().map((d) => d.meta?.name || '') },
       });
 
       dialogRef.afterClosed().subscribe(async (result) => {
@@ -441,7 +451,7 @@ export class DnsComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '删除域名',
-          message: `确定要删除域名 "${domain.name}" 吗？此操作将级联删除所有关联的解析记录！`,
+          message: `确定要删除域名 "${domain.meta?.name}" 吗？此操作将级联删除所有关联的解析记录！`,
           confirmText: '确定删除',
           color: 'warn',
         },
@@ -515,7 +525,7 @@ export class DnsComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '删除记录',
-          message: `确定要删除记录 "${record.name} (${record.type})" 吗？`,
+          message: `确定要删除记录 "${record.meta?.name} (${record.meta?.type})" 吗？`,
           confirmText: '确定删除',
           color: 'warn',
         },

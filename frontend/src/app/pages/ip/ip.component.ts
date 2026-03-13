@@ -28,7 +28,7 @@ import { CreateExportDialogComponent } from './create-export-dialog.component';
 import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
 import { PreviewExportDialogComponent } from '../../shared/preview-export-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkIpService, ModelsIPGroup, ModelsIPExport } from '../../generated';
+import { NetworkIpService, ModelsIPPool, ModelsIPExport } from '../../generated';
 
 @Component({
   selector: 'app-ip',
@@ -81,7 +81,7 @@ export class IpComponent implements OnInit, OnDestroy {
   showScrollTop = signal(false);
 
   // Address Pools
-  pools = signal<ModelsIPGroup[]>([]);
+  pools = signal<ModelsIPPool[]>([]);
   poolSearch = signal('');
   poolNextCursor = signal('');
   poolTotal = signal(0);
@@ -298,7 +298,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  editPool(pool: ModelsIPGroup) {
+  editPool(pool: ModelsIPPool) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreatePoolDialogComponent, {
         width: '400px',
@@ -310,12 +310,12 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  deletePool(pool: ModelsIPGroup) {
+  deletePool(pool: ModelsIPPool) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '删除地址池',
-          message: `确定要删除地址池 [${pool.name}] 吗？此操作将永久删除所有数据文件。`,
+          message: `确定要删除地址池 [${pool.meta?.name}] 吗？此操作将永久删除所有数据文件。`,
           color: 'warn',
         },
       });
@@ -335,7 +335,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  manageEntries(pool: ModelsIPGroup) {
+  manageEntries(pool: ModelsIPPool) {
     requestAnimationFrame(() => {
       this.dialog.open(ManageEntriesDialogComponent, {
         width: '100vw',
@@ -374,7 +374,7 @@ export class IpComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '删除配置',
-          message: `确定要删除导出配置 [${exp.name}] 吗？此操作将级联删除该配置下的所有历史导出任务。`,
+          message: `确定要删除导出配置 [${exp.meta?.name}] 吗？此操作将级联删除该配置下的所有历史导出任务。`,
           color: 'warn',
         },
       });

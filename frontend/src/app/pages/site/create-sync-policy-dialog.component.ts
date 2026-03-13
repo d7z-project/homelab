@@ -34,6 +34,17 @@ import { NetworkSiteService, ModelsSiteSyncPolicy, ModelsSiteGroup } from '../..
     <mat-dialog-content>
       <form [formGroup]="form" class="flex flex-col gap-4 pt-2">
         <mat-form-field appearance="outline">
+          <mat-label>策略 ID (可选)</mat-label>
+          <input
+            matInput
+            formControlName="id"
+            [readonly]="!!data.policy"
+            placeholder="例如: sync_my_source"
+          />
+          <mat-hint>必须以 sync_ 开头，留空则由系统自动生成</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>策略名称</mat-label>
           <input matInput formControlName="name" required />
         </mat-form-field>
@@ -219,28 +230,34 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
   loading = false;
 
   form = this.fb.group({
-    name: [this.data.policy?.name || '', Validators.required],
-    description: [this.data.policy?.description || ''],
-    sourceUrl: [this.data.policy?.sourceUrl || '', Validators.required],
-    format: [this.data.policy?.format || 'text', Validators.required],
-    mode: [this.data.policy?.mode || 'overwrite', Validators.required],
-    targetGroupId: [this.data.policy?.targetGroupId || '', Validators.required],
-    cron: [this.data.policy?.cron || '0 0 * * *', Validators.required],
-    enabled: [this.data.policy?.enabled ?? true],
-    allowPrivate: [this.data.policy?.config?.['allowPrivate'] === 'true'],
+    id: [this.data.policy?.id || '', [Validators.pattern(/^sync_[a-z0-9_\-]+$/)]],
+    name: [this.data.policy?.meta?.name || '', Validators.required],
+    description: [this.data.policy?.meta?.description || ''],
+    sourceUrl: [this.data.policy?.meta?.sourceUrl || '', Validators.required],
+    format: [this.data.policy?.meta?.format || 'text', Validators.required],
+    mode: [this.data.policy?.meta?.mode || 'overwrite', Validators.required],
+    targetGroupId: [this.data.policy?.meta?.targetGroupId || '', Validators.required],
+    cron: [this.data.policy?.meta?.cron || '0 0 * * *', Validators.required],
+    enabled: [this.data.policy?.meta?.enabled ?? true],
+    allowPrivate: [this.data.policy?.meta?.config?.['allowPrivate'] === 'true'],
     // Specific configs
-    tags: [this.data.policy?.config?.['tags'] || this.data.policy?.config?.['tag'] || 'sync'],
-    language: [this.data.policy?.config?.['language'] || 'zh-CN'],
+    tags: [
+      this.data.policy?.meta?.config?.['tags'] || this.data.policy?.meta?.config?.['tag'] || 'sync',
+    ],
+    language: [this.data.policy?.meta?.config?.['language'] || 'zh-CN'],
     code: [
-      this.data.policy?.config?.['code'] === '*' ? '' : this.data.policy?.config?.['code'] || 'CN',
+      this.data.policy?.meta?.config?.['code'] === '*'
+        ? ''
+        : this.data.policy?.meta?.config?.['code'] || 'CN',
     ],
     importAll: [
-      this.data.policy?.config?.['code'] === '*' || this.data.policy?.config?.['code'] === 'all',
+      this.data.policy?.meta?.config?.['code'] === '*' ||
+        this.data.policy?.meta?.config?.['code'] === 'all',
     ],
     tagMappings: this.fb.array([]),
-    separator: [this.data.policy?.config?.['separator'] || ','],
-    siteColumn: [this.data.policy?.config?.['siteColumn'] || 0],
-    tagColumn: [this.data.policy?.config?.['tagColumn'] || ''],
+    separator: [this.data.policy?.meta?.config?.['separator'] || ','],
+    siteColumn: [this.data.policy?.meta?.config?.['siteColumn'] || 0],
+    tagColumn: [this.data.policy?.meta?.config?.['tagColumn'] || ''],
   });
 
   get tagMappings() {
@@ -252,7 +269,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
   }
 
   initMappings() {
-    const mappingStr = this.data.policy?.config?.['tagMapping'];
+    const mappingStr = this.data.policy?.meta?.config?.['tagMapping'];
     if (mappingStr) {
       try {
         const mapping = JSON.parse(mappingStr);
@@ -320,16 +337,19 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
     }
 
     const policy: ModelsSiteSyncPolicy = {
-      ...this.data.policy,
-      name: val.name!,
-      description: val.description || '',
-      sourceUrl: val.sourceUrl!,
-      format: val.format!,
-      mode: val.mode!,
-      config: config,
-      targetGroupId: val.targetGroupId!,
-      cron: val.cron!,
-      enabled: !!val.enabled,
+      id: val.id || undefined,
+      generation: this.data.policy?.generation || 0,
+      meta: {
+        name: val.name!,
+        description: val.description || '',
+        sourceUrl: val.sourceUrl!,
+        format: val.format!,
+        mode: val.mode!,
+        config: config,
+        targetGroupId: val.targetGroupId!,
+        cron: val.cron!,
+        enabled: !!val.enabled,
+      },
     };
 
     const obs = this.data.policy?.id

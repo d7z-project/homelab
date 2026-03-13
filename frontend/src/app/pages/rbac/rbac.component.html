@@ -64,7 +64,7 @@
                 </th>
                 <td mat-cell *matCellDef="let element" class="pl-6! text-center">
                   <mat-slide-toggle
-                    [checked]="element.enabled"
+                    [checked]="element.meta?.enabled"
                     (click)="$event.stopPropagation(); toggleSa(element)"
                     color="primary"
                     class="scale-75"
@@ -78,7 +78,7 @@
                   名称
                 </th>
                 <td mat-cell *matCellDef="let element" class="py-4 font-medium text-primary">
-                  {{ element.name || element.id }}
+                  {{ element.meta?.name || element.id }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="id">
@@ -98,7 +98,7 @@
                   *matCellDef="let element"
                   class="py-4 text-sm text-outline whitespace-pre-wrap max-w-xs"
                 >
-                  {{ element.comments || '-' }}
+                  {{ element.meta?.comments || '-' }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="token">
@@ -119,7 +119,9 @@
                 </th>
                 <td mat-cell *matCellDef="let element" class="text-xs text-outline">
                   {{
-                    element.lastUsedAt ? (element.lastUsedAt | date: 'yyyy-MM-dd HH:mm:ss') : '从未'
+                    element.status?.lastUsedAt
+                      ? (element.status?.lastUsedAt | date: 'yyyy-MM-dd HH:mm:ss')
+                      : '从未'
                   }}
                 </td>
               </ng-container>
@@ -285,7 +287,7 @@
                   名称
                 </th>
                 <td mat-cell *matCellDef="let element" class="py-4 font-medium pl-6! text-primary">
-                  {{ element.name }}
+                  {{ element.meta?.name }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="rules">
@@ -294,7 +296,7 @@
                 </th>
                 <td mat-cell *matCellDef="let element">
                   <div class="flex flex-wrap justify-center gap-2 py-3">
-                    @for (rule of element.rules; track rule) {
+                    @for (rule of element.meta?.rules; track rule) {
                       <div
                         class="text-[10px] px-2.5 py-1 rounded-lg border border-outline-variant bg-surface-container-low flex items-center gap-2 shadow-sm"
                       >
@@ -443,7 +445,7 @@
                 </th>
                 <td mat-cell *matCellDef="let element" class="pl-6! text-center">
                   <mat-slide-toggle
-                    [checked]="element.enabled"
+                    [checked]="element.meta?.enabled"
                     (click)="$event.stopPropagation(); toggleRb(element)"
                     color="primary"
                     class="scale-75"
@@ -457,7 +459,7 @@
                   绑定名称
                 </th>
                 <td mat-cell *matCellDef="let element" class="py-4 font-medium text-primary">
-                  {{ element.name }}
+                  {{ element.meta?.name }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="sa">
@@ -465,7 +467,7 @@
                   服务账号
                 </th>
                 <td mat-cell *matCellDef="let element" class="text-sm">
-                  {{ getSaName(element.serviceAccountId) }}
+                  {{ getSaName(element.meta?.serviceAccountId) }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="role">
@@ -474,7 +476,7 @@
                 </th>
                 <td mat-cell *matCellDef="let element">
                   <div class="flex flex-wrap justify-center gap-1.5 py-3">
-                    @for (roleId of element.roleIds; track roleId) {
+                    @for (roleId of element.meta?.roleIds; track roleId) {
                       <span
                         class="text-[10px] px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-medium border border-outline-variant shadow-sm"
                       >

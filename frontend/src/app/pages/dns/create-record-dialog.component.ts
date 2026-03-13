@@ -39,7 +39,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           code="network/dns/domains"
           label="所属域名"
           placeholder="搜索域名..."
-          [(ngModel)]="record.domainId"
+          [(ngModel)]="record.meta!.domainId"
           [disabled]="isEdit"
           required
         ></app-discovery-select>
@@ -49,10 +49,10 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
             <mat-label>主机记录 (Name)</mat-label>
             <input
               matInput
-              [(ngModel)]="record.name"
+              [(ngModel)]="record.meta!.name"
               placeholder="例如: www 或 @"
               required
-              [disabled]="isEdit && record.type === 'SOA'"
+              [disabled]="isEdit && record.meta!.type === 'SOA'"
               pattern="^(@|[\\-a-zA-Z0-9\\*_]+(\\.[\\-a-zA-Z0-9\\*_]+)*)$"
               #nameInput="ngModel"
             />
@@ -68,9 +68,9 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           <mat-form-field appearance="outline" class="w-32">
             <mat-label>记录类型</mat-label>
             <mat-select
-              [(ngModel)]="record.type"
+              [(ngModel)]="record.meta!.type"
               (selectionChange)="onTypeChange()"
-              [disabled]="isEdit && record.type === 'SOA'"
+              [disabled]="isEdit && record.meta!.type === 'SOA'"
             >
               @for (t of recordTypes; track t) {
                 <mat-option [value]="t">{{ t }}</mat-option>
@@ -79,12 +79,12 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           </mat-form-field>
         </div>
 
-        @if (!['SOA', 'SRV', 'CAA'].includes(record.type || '')) {
+        @if (!['SOA', 'SRV', 'CAA'].includes(record.meta!.type || '')) {
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>记录值 (Value)</mat-label>
             <input
               matInput
-              [(ngModel)]="record.value"
+              [(ngModel)]="record.meta!.value"
               [placeholder]="getValuePlaceholder()"
               required
               #valueInput="ngModel"
@@ -92,17 +92,17 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
             @if (valueInput.errors?.['required']) {
               <mat-error>请输入记录值</mat-error>
             }
-            @if (record.type === 'A' && !isValidIPv4()) {
+            @if (record.meta!.type === 'A' && !isValidIPv4()) {
               <mat-error>无效的 IPv4 地址</mat-error>
             }
-            @if (record.type === 'AAAA' && !isValidIPv6()) {
+            @if (record.meta!.type === 'AAAA' && !isValidIPv6()) {
               <mat-error>无效的 IPv6 地址</mat-error>
             }
           </mat-form-field>
         }
 
         <!-- SOA specific fields -->
-        @if (record.type === 'SOA') {
+        @if (record.meta!.type === 'SOA') {
           <div class="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div class="flex gap-4">
               <mat-form-field appearance="outline" class="flex-1">
@@ -170,7 +170,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
         }
 
         <!-- SRV specific fields -->
-        @if (record.type === 'SRV') {
+        @if (record.meta!.type === 'SRV') {
           <div class="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div class="grid grid-cols-2 gap-4">
               <mat-form-field appearance="outline">
@@ -212,7 +212,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
         }
 
         <!-- CAA specific fields -->
-        @if (record.type === 'CAA') {
+        @if (record.meta!.type === 'CAA') {
           <div class="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div class="grid grid-cols-2 gap-4">
               <mat-form-field appearance="outline">
@@ -256,25 +256,28 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
             <input
               matInput
               type="number"
-              [(ngModel)]="record.ttl"
+              [(ngModel)]="record.meta!.ttl"
               min="1"
               required
               placeholder="默认 600"
               #ttlInput="ngModel"
             />
             <mat-hint>推荐值: 600, 3600, 86400</mat-hint>
-            @if (ttlInput.errors?.['required'] || (record.ttl !== undefined && record.ttl < 1)) {
+            @if (
+              ttlInput.errors?.['required'] ||
+              (record.meta!.ttl !== undefined && record.meta!.ttl < 1)
+            ) {
               <mat-error>TTL 必须大于 0</mat-error>
             }
           </mat-form-field>
 
-          @if (record.type === 'MX' || record.type === 'SRV') {
+          @if (record.meta!.type === 'MX' || record.meta!.type === 'SRV') {
             <mat-form-field appearance="outline" class="w-32">
               <mat-label>优先级</mat-label>
               <input
                 matInput
                 type="number"
-                [(ngModel)]="record.priority"
+                [(ngModel)]="record.meta!.priority"
                 (ngModelChange)="syncValue()"
                 min="0"
                 max="65535"
@@ -292,13 +295,13 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
           </div>
           <mat-slide-toggle
             color="primary"
-            [(ngModel)]="record.enabled"
-            [disabled]="record.type === 'SOA'"
+            [(ngModel)]="record.meta!.enabled"
+            [disabled]="record.meta!.type === 'SOA'"
           >
           </mat-slide-toggle>
         </div>
 
-        @if (record.type === 'CNAME') {
+        @if (record.meta!.type === 'CNAME') {
           <div class="p-3 bg-warn-container text-on-warn-container rounded-xl text-xs flex gap-2">
             <mat-icon class="text-sm h-4 w-4">info</mat-icon>
             <span>提示: CNAME 记录不能与同一主机记录下的其他记录（如 A, TXT）共存。</span>
@@ -326,13 +329,15 @@ export class CreateRecordDialogComponent implements AfterViewInit {
   private dialogRef = inject(MatDialogRef<CreateRecordDialogComponent>);
   isEdit = false;
   record: ModelsRecord = {
-    domainId: '',
-    name: '',
-    type: 'A',
-    value: '',
-    ttl: 600,
-    priority: 10,
-    enabled: true,
+    meta: {
+      domainId: '',
+      name: '',
+      type: 'A',
+      value: '',
+      ttl: 600,
+      priority: 10,
+      enabled: true,
+    },
   };
   recordTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
 
@@ -345,7 +350,7 @@ export class CreateRecordDialogComponent implements AfterViewInit {
   soaExpire = '';
   soaMinimum = '';
 
-  // SRV parts (Priority is handled by record.priority)
+  // SRV parts (Priority is handled by record.meta!.priority)
   srvWeight = 0;
   srvPort = 0;
   srvTarget = '';
@@ -362,14 +367,14 @@ export class CreateRecordDialogComponent implements AfterViewInit {
     if (data.record) {
       this.isEdit = true;
       this.record = { ...data.record };
-      if (this.record.type === 'SOA') {
+      if (this.record.meta!.type === 'SOA') {
         if (!this.recordTypes.includes('SOA')) {
           this.recordTypes.push('SOA');
         }
       }
       this.parseValue();
     } else if (data.defaultDomainId) {
-      this.record.domainId = data.defaultDomainId;
+      this.record.meta!.domainId = data.defaultDomainId;
     }
   }
 
@@ -381,15 +386,15 @@ export class CreateRecordDialogComponent implements AfterViewInit {
   }
 
   onTypeChange() {
-    this.record.value = '';
+    this.record.meta!.value = '';
     this.syncValue();
   }
 
   parseValue() {
-    if (!this.record.value) return;
-    const parts = this.record.value.split(/\s+/);
+    if (!this.record.meta!.value) return;
+    const parts = this.record.meta!.value.split(/\s+/);
 
-    if (this.record.type === 'SOA') {
+    if (this.record.meta!.type === 'SOA') {
       if (parts.length >= 7) {
         this.soaMname = parts[0];
         this.soaRname = parts[1];
@@ -399,13 +404,13 @@ export class CreateRecordDialogComponent implements AfterViewInit {
         this.soaExpire = parts[5];
         this.soaMinimum = parts[6];
       }
-    } else if (this.record.type === 'SRV') {
+    } else if (this.record.meta!.type === 'SRV') {
       if (parts.length >= 3) {
         this.srvWeight = parseInt(parts[0]) || 0;
         this.srvPort = parseInt(parts[1]) || 0;
         this.srvTarget = parts.slice(2).join(' ');
       }
-    } else if (this.record.type === 'CAA') {
+    } else if (this.record.meta!.type === 'CAA') {
       if (parts.length >= 3) {
         this.caaFlags = parseInt(parts[0]) || 0;
         this.caaTag = parts[1] || 'issue';
@@ -426,27 +431,27 @@ export class CreateRecordDialogComponent implements AfterViewInit {
   }
 
   syncValue() {
-    if (this.record.type === 'SOA') {
+    if (this.record.meta!.type === 'SOA') {
       const mname = this.ensureTrailingDot(this.soaMname);
       const rname = this.ensureTrailingDot(this.soaRname);
-      this.record.value =
+      this.record.meta!.value =
         `${mname} ${rname} ${this.soaSerial} ${this.soaRefresh} ${this.soaRetry} ${this.soaExpire} ${this.soaMinimum}`.trim();
-    } else if (this.record.type === 'SRV') {
+    } else if (this.record.meta!.type === 'SRV') {
       const target = this.ensureTrailingDot(this.srvTarget);
-      this.record.value = `${this.srvWeight} ${this.srvPort} ${target}`.trim();
-    } else if (this.record.type === 'CAA') {
-      this.record.value = `${this.caaFlags} ${this.caaTag} "${this.caaValue}"`;
+      this.record.meta!.value = `${this.srvWeight} ${this.srvPort} ${target}`.trim();
+    } else if (this.record.meta!.type === 'CAA') {
+      this.record.meta!.value = `${this.caaFlags} ${this.caaTag} "${this.caaValue}"`;
     } else if (
-      this.record.type === 'CNAME' ||
-      this.record.type === 'MX' ||
-      this.record.type === 'NS'
+      this.record.meta!.type === 'CNAME' ||
+      this.record.meta!.type === 'MX' ||
+      this.record.meta!.type === 'NS'
     ) {
-      this.record.value = this.ensureTrailingDot(this.record.value || '');
+      this.record.meta!.value = this.ensureTrailingDot(this.record.meta!.value || '');
     }
   }
 
   getValuePlaceholder(): string {
-    switch (this.record.type) {
+    switch (this.record.meta!.type) {
       case 'A':
         return 'IPv4 地址, 如 1.2.3.4';
       case 'AAAA':
@@ -465,51 +470,51 @@ export class CreateRecordDialogComponent implements AfterViewInit {
   isValidIPv4(): boolean {
     const ipv4Regex =
       /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    return ipv4Regex.test(this.record.value || '');
+    return ipv4Regex.test(this.record.meta!.value || '');
   }
 
   isValidIPv6(): boolean {
     const ipv6Regex =
       /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
-    return ipv6Regex.test(this.record.value || '');
+    return ipv6Regex.test(this.record.meta!.value || '');
   }
 
   isValid(): boolean {
-    const name = this.record.name?.trim();
-    if (!name || this.record.domainId! || !this.record.type) return false;
-    if (this.record.ttl === undefined || this.record.ttl < 1) return false;
+    const name = this.record.meta!.name?.trim();
+    if (!name || this.record.meta!.domainId! || !this.record.meta!.type) return false;
+    if (this.record.meta!.ttl === undefined || this.record.meta!.ttl < 1) return false;
 
     // Value must exist (either directly or via parts)
     if (
-      this.record.value! &&
-      this.record.type !== 'SOA' &&
-      this.record.type !== 'SRV' &&
-      this.record.type !== 'CAA'
+      this.record.meta!.value! &&
+      this.record.meta!.type !== 'SOA' &&
+      this.record.meta!.type !== 'SRV' &&
+      this.record.meta!.type !== 'CAA'
     )
       return false;
 
     // Type-specific value validation
-    if (this.record.type === 'A' && !this.isValidIPv4()) return false;
-    if (this.record.type === 'AAAA' && !this.isValidIPv6()) return false;
+    if (this.record.meta!.type === 'A' && !this.isValidIPv4()) return false;
+    if (this.record.meta!.type === 'AAAA' && !this.isValidIPv6()) return false;
 
-    if (this.record.type === 'SOA') {
+    if (this.record.meta!.type === 'SOA') {
       const dnsPattern = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}\.?$/i;
       if (!dnsPattern.test(this.soaMname) || !dnsPattern.test(this.soaRname)) return false;
     }
 
-    if (this.record.type === 'SRV') {
+    if (this.record.meta!.type === 'SRV') {
       if (this.srvWeight < 0 || this.srvWeight > 65535) return false;
       if (this.srvPort < 0 || this.srvPort > 65535) return false;
       if (!this.srvTarget) return false;
       if (
-        this.record.priority === undefined ||
-        this.record.priority < 0 ||
-        this.record.priority > 65535
+        this.record.meta!.priority === undefined ||
+        this.record.meta!.priority < 0 ||
+        this.record.meta!.priority > 65535
       )
         return false;
     }
 
-    if (this.record.type === 'CAA') {
+    if (this.record.meta!.type === 'CAA') {
       if (this.caaFlags < 0 || this.caaFlags > 255) return false;
       if (!this.caaValue) return false;
     }

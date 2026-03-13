@@ -16,9 +16,9 @@ export interface ModelsTaskInstance {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsTaskInstanceV1Meta;
+  meta: ModelsTaskInstanceV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: ModelsTaskInstanceV1Status;

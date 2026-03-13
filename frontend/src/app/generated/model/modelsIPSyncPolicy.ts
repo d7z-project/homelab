@@ -16,9 +16,9 @@ export interface ModelsIPSyncPolicy {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsIPSyncPolicyV1Meta;
+  meta: ModelsIPSyncPolicyV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: ModelsIPSyncPolicyV1Status;

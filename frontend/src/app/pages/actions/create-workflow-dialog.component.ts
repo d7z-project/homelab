@@ -452,10 +452,13 @@ export class CreateWorkflowDialogComponent implements OnInit {
     });
 
     const workflow: ModelsWorkflow = {
-      ...workflowValue,
-      vars: Object.keys(varsMap).length > 0 ? varsMap : undefined,
-      steps: steps,
       id: this.data?.workflow?.id,
+      generation: this.data?.workflow?.generation || 0,
+      meta: {
+        ...workflowValue,
+        vars: Object.keys(varsMap).length > 0 ? varsMap : undefined,
+        steps: steps,
+      },
     };
 
     return this.cleanObject(workflow);
@@ -494,19 +497,19 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   applyWorkflowToForms(wf: ModelsWorkflow) {
     this.infoForm.patchValue({
-      name: wf.name,
-      description: wf.description,
-      enabled: wf.enabled,
-      timeout: wf.timeout || 7200,
-      serviceAccountId: wf.serviceAccountId,
-      cronEnabled: wf.cronEnabled,
-      cronExpr: wf.cronExpr,
-      webhookEnabled: wf.webhookEnabled,
+      name: wf.meta?.name,
+      description: wf.meta?.description,
+      enabled: wf.meta?.enabled,
+      timeout: wf.meta?.timeout || 7200,
+      serviceAccountId: wf.meta?.serviceAccountId,
+      cronEnabled: wf.meta?.cronEnabled,
+      cronExpr: wf.meta?.cronExpr,
+      webhookEnabled: wf.meta?.webhookEnabled,
     });
 
     this.vars.clear();
-    if (wf.vars) {
-      Object.entries(wf.vars).forEach(([key, v]) => {
+    if (wf.meta?.vars) {
+      Object.entries(wf.meta.vars).forEach(([key, v]) => {
         this.vars.push(
           this.fb.group({
             key: [key, [Validators.required, Validators.pattern(/^[a-z0-9_]+$/)]],
@@ -521,8 +524,8 @@ export class CreateWorkflowDialogComponent implements OnInit {
     }
 
     this.steps.clear();
-    if (wf.steps) {
-      wf.steps.forEach((s, idx) => {
+    if (wf.meta?.steps) {
+      wf.meta.steps.forEach((s, idx) => {
         this.steps.push(
           this.fb.group({
             id: [
@@ -702,7 +705,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
       } else {
         workflow = this.getCurrentWorkflow();
       }
-      if (!workflow?.name || !workflow?.steps) throw new Error('工作流名称和步骤必填');
+      if (!workflow?.meta?.name || !workflow?.meta?.steps) throw new Error('工作流名称和步骤必填');
 
       // 1. Validate
       await firstValueFrom(this.orchService.actionsWorkflowsValidatePost(workflow));

@@ -10,10 +10,10 @@ import (
 // Resource represents a unified container for configuration (Meta) and running state (Status).
 type Resource[M any, S any] struct {
 	ID              string `json:"id"`
-	Meta            M      `json:"meta"`
+	Meta            M      `json:"meta" validate:"required"`
 	Status          S      `json:"status"`
 	Generation      int64  `json:"generation"`      // Configuration version, increments only on Meta changes
-	ResourceVersion int64  `json:"resourceVersion"` // Total object version, increments on any change (Meta/Status)
+	ResourceVersion int64  `json:"resourceVersion"` // Total object version, increments only on any change (Meta/Status)
 }
 
 // ConfigValidator defines the internal self-consistency validation interface that Meta models must implement.

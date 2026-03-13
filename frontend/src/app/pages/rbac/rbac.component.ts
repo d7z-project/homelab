@@ -115,9 +115,14 @@ export class RbacComponent implements OnInit, OnDestroy {
     if (!sa.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...sa, enabled: sa.enabled! };
+      const updated = {
+        ...sa,
+        meta: { ...sa.meta, enabled: !sa.meta?.enabled },
+      };
       await firstValueFrom(this.rbacService.rbacServiceaccountsIdPut(sa.id, updated));
-      this.snackBar.open(`账号已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      this.snackBar.open(`账号已${updated.meta.enabled ? '启用' : '禁用'}`, '关闭', {
+        duration: 2000,
+      });
       // Keep silent refresh or just update local state if preferred, but list reload is safer
       await this.loadServiceAccounts(true);
     } catch (err) {
@@ -140,9 +145,14 @@ export class RbacComponent implements OnInit, OnDestroy {
     if (!rb.id) return;
     this.loading.set(true);
     try {
-      const updated = { ...rb, enabled: rb.enabled! };
+      const updated = {
+        ...rb,
+        meta: { ...rb.meta, enabled: !rb.meta?.enabled },
+      };
       await firstValueFrom(this.rbacService.rbacRolebindingsIdPut(rb.id, updated));
-      this.snackBar.open(`绑定已${updated.enabled ? '启用' : '禁用'}`, '关闭', { duration: 2000 });
+      this.snackBar.open(`绑定已${updated.meta.enabled ? '启用' : '禁用'}`, '关闭', {
+        duration: 2000,
+      });
       await this.loadRoleBindings(true);
     } catch (err) {
       this.snackBar.open('操作失败', '关闭', { duration: 3000 });
@@ -153,11 +163,11 @@ export class RbacComponent implements OnInit, OnDestroy {
 
   // Helper mappings for RoleBinding display
   getSaName(id: string): string {
-    return this.serviceAccounts().find((s) => s.id === id)?.name || id;
+    return this.serviceAccounts().find((s) => s.id === id)?.meta?.name || id;
   }
 
   getRoleName(id: string): string {
-    return this.roles().find((r) => r.id === id)?.name || id;
+    return this.roles().find((r) => r.id === id)?.meta?.name || id;
   }
 
   hasSearchContent = computed(() => {
@@ -443,16 +453,16 @@ export class RbacComponent implements OnInit, OnDestroy {
   async showSaRoles(sa: ModelsServiceAccount) {
     const saID = sa.id || '';
     const relevantRbs = this.roleBindings().filter(
-      (rb) => rb.serviceAccountId === saID && rb.enabled,
+      (rb) => rb.meta?.serviceAccountId === saID && rb.meta?.enabled,
     );
-    const roleIDs = Array.from(new Set(relevantRbs.flatMap((rb) => rb.roleIds || [])));
+    const roleIDs = Array.from(new Set(relevantRbs.flatMap((rb) => rb.meta?.roleIds || [])));
     const roles = roleIDs
       .map((id) => this.roles().find((r) => r.id === id))
       .filter((r) => !!r) as ModelsRole[];
 
     requestAnimationFrame(() => {
       this.dialog.open(ShowSaRolesDialogComponent, {
-        data: { saID: saID, saName: sa.name, roles: roles },
+        data: { saID: saID, saName: sa.meta?.name, roles: roles },
       });
     });
   }
@@ -542,7 +552,7 @@ export class RbacComponent implements OnInit, OnDestroy {
 
             requestAnimationFrame(() => {
               this.dialog.open(ShowTokenDialogComponent, {
-                data: { id: sa.id, name: sa.name, token: sa.token },
+                data: { id: sa.id, name: sa.meta?.name, token: sa.meta?.token },
                 disableClose: true,
               });
             });
@@ -562,7 +572,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '删除服务账号',
-          message: `确定要永久删除账号 "${sa.name || id}" 吗？此操作不可撤销。`,
+          message: `确定要永久删除账号 "${sa.meta?.name || id}" 吗？此操作不可撤销。`,
           confirmText: '确认删除',
           color: 'warn',
         },
@@ -590,7 +600,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '重置令牌',
-          message: `确定要重置账号 "${sa.name || id}" 的令牌吗？旧令牌将立即失效。`,
+          message: `确定要重置账号 "${sa.meta?.name || id}" 的令牌吗？旧令牌将立即失效。`,
           confirmText: '确定重置',
           color: 'warn',
         },
@@ -603,7 +613,7 @@ export class RbacComponent implements OnInit, OnDestroy {
             this.snackBar.open('令牌已重置', '关闭', { duration: 2000 });
             requestAnimationFrame(() => {
               this.dialog.open(ShowTokenDialogComponent, {
-                data: { id: res.id, name: res.name, token: res.token },
+                data: { id: res.id, name: res.meta?.name, token: res.meta?.token },
                 disableClose: true,
               });
             });
@@ -646,7 +656,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '删除角色',
-          message: `确定要删除角色 "${role.name || id}" 吗？删除后关联的权限绑定可能会失效。`,
+          message: `确定要删除角色 "${role.meta?.name || id}" 吗？删除后关联的权限绑定可能会失效。`,
           confirmText: '确定删除',
           color: 'warn',
         },
@@ -696,7 +706,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
           title: '解除绑定',
-          message: `确定要删除绑定 "${rb.name || id}" 吗？这将立即撤销该账号的相关权限。`,
+          message: `确定要删除绑定 "${rb.meta?.name || id}" 吗？这将立即撤销该账号的相关权限。`,
           confirmText: '确定解除',
           color: 'warn',
         },

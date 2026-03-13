@@ -35,7 +35,7 @@ import { ModelsDomain } from '../../generated';
           <mat-label>域名名称 (FQDN)</mat-label>
           <input
             matInput
-            [(ngModel)]="domain.name"
+            [(ngModel)]="domain.meta!.name"
             #nameInput="ngModel"
             placeholder="例如: example.com"
             [disabled]="isEdit"
@@ -65,14 +65,14 @@ import { ModelsDomain } from '../../generated';
             <span class="text-sm font-bold">解析状态</span>
             <span class="text-xs text-outline">禁用后该域名下的所有记录将停止解析</span>
           </div>
-          <mat-slide-toggle color="primary" [(ngModel)]="domain.enabled"> </mat-slide-toggle>
+          <mat-slide-toggle color="primary" [(ngModel)]="domain.meta!.enabled"> </mat-slide-toggle>
         </div>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>备注信息</mat-label>
           <textarea
             matInput
-            [(ngModel)]="domain.comments"
+            [(ngModel)]="domain.meta!.description"
             placeholder="说明此域名的用途..."
             rows="3"
           ></textarea>
@@ -98,9 +98,11 @@ export class CreateDomainDialogComponent {
   private dialogRef = inject(MatDialogRef<CreateDomainDialogComponent>);
   isEdit = false;
   domain: ModelsDomain = {
-    name: '',
-    enabled: true,
-    comments: '',
+    meta: {
+      name: '',
+      enabled: true,
+      description: '',
+    },
   };
   existingNames: string[] = [];
 
@@ -116,12 +118,12 @@ export class CreateDomainDialogComponent {
   }
 
   isDuplicate(): boolean {
-    const name = this.domain.name?.trim().toLowerCase();
+    const name = this.domain.meta!.name?.trim().toLowerCase();
     return this.existingNames.some((n) => n.toLowerCase() === name);
   }
 
   isValid(): boolean {
-    const name = this.domain.name?.trim();
+    const name = this.domain.meta!.name?.trim();
     if (!name) return false;
     if (!this.isEdit && this.isDuplicate()) return false;
     // Simple regex for domain validation
@@ -130,7 +132,7 @@ export class CreateDomainDialogComponent {
 
   confirm() {
     if (this.isValid()) {
-      this.domain.name = this.domain.name?.toLowerCase().trim();
+      this.domain.meta!.name = this.domain.meta!.name?.toLowerCase().trim();
       this.dialogRef.close(this.domain);
     }
   }

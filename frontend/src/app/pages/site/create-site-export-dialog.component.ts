@@ -150,10 +150,10 @@ export class CreateSiteExportDialogComponent {
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: { export?: ModelsSiteExport }) {
     this.form = this.fb.group({
-      name: [this.data.export?.name || '', Validators.required],
-      description: [this.data.export?.description || ''],
-      rule: [this.data.export?.rule || '"cn" in tags', Validators.required],
-      groupIds: [this.data.export?.groupIds || ([] as string[]), Validators.required],
+      name: [this.data.export?.meta?.name || '', Validators.required],
+      description: [this.data.export?.meta?.description || ''],
+      rule: [this.data.export?.meta?.rule || '"cn" in tags', Validators.required],
+      groupIds: [this.data.export?.meta?.groupIds || ([] as string[]), Validators.required],
     });
   }
 
@@ -163,11 +163,14 @@ export class CreateSiteExportDialogComponent {
     const val = this.form.value;
 
     const exportData: ModelsSiteExport = {
-      ...this.data.export,
-      name: val.name!,
-      description: val.description || undefined,
-      rule: val.rule!,
-      groupIds: val.groupIds || [],
+      id: this.data.export?.id,
+      generation: this.data.export?.generation || 0,
+      meta: {
+        name: val.name!,
+        description: val.description || undefined,
+        rule: val.rule!,
+        groupIds: val.groupIds || [],
+      },
     };
 
     const obs = this.data.export?.id

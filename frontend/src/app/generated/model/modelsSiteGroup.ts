@@ -16,9 +16,9 @@ export interface ModelsSiteGroup {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsSiteGroupV1Meta;
+  meta: ModelsSiteGroupV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: ModelsSiteGroupV1Status;

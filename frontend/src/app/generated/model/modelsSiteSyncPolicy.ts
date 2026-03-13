@@ -16,9 +16,9 @@ export interface ModelsSiteSyncPolicy {
    */
   generation?: number;
   id?: string;
-  meta?: ModelsSiteSyncPolicyV1Meta;
+  meta: ModelsSiteSyncPolicyV1Meta;
   /**
-   * Total object version, increments on any change (Meta/Status)
+   * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
   status?: ModelsSiteSyncPolicyV1Status;

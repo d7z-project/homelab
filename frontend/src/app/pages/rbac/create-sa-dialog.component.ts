@@ -56,7 +56,7 @@ import { ModelsServiceAccount } from '../../generated';
           <mat-label>显示名称</mat-label>
           <input
             matInput
-            [(ngModel)]="sa.name"
+            [(ngModel)]="sa.meta!.name"
             placeholder="例如: 备份代理"
             (keyup.enter)="confirm()"
           />
@@ -66,7 +66,7 @@ import { ModelsServiceAccount } from '../../generated';
           <mat-label>备注 (Comments)</mat-label>
           <textarea
             matInput
-            [(ngModel)]="sa.comments"
+            [(ngModel)]="sa.meta!.comments"
             placeholder="说明此账号的用途..."
             rows="3"
           ></textarea>
@@ -79,7 +79,7 @@ import { ModelsServiceAccount } from '../../generated';
             <span class="text-sm font-bold">启用此账号</span>
             <span class="text-xs text-outline">禁用后使用该 ID 的所有 API 访问将被拒绝</span>
           </div>
-          <mat-slide-toggle color="primary" [(ngModel)]="sa.enabled"></mat-slide-toggle>
+          <mat-slide-toggle color="primary" [(ngModel)]="sa.meta!.enabled"></mat-slide-toggle>
         </div>
       </div>
     </mat-dialog-content>
@@ -103,9 +103,11 @@ export class CreateSaDialogComponent {
   isEdit = false;
   sa: ModelsServiceAccount = {
     id: '',
-    name: '',
-    comments: '',
-    enabled: true,
+    meta: {
+      name: '',
+      comments: '',
+      enabled: true,
+    },
   };
   existingIDs: string[] = [];
 
@@ -115,7 +117,10 @@ export class CreateSaDialogComponent {
   ) {
     if (data.sa) {
       this.isEdit = true;
-      this.sa = { ...data.sa };
+      this.sa = {
+        ...data.sa,
+        meta: { ...data.sa.meta },
+      };
     }
     this.existingIDs = data.existingIDs || [];
   }
