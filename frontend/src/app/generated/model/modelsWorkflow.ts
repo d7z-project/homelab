@@ -15,11 +15,11 @@ export interface ModelsWorkflow {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsWorkflowV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsWorkflowV1Status;
+  status: ModelsWorkflowV1Status;
 }

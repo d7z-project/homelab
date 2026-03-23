@@ -524,28 +524,26 @@ func ValidateRegexHandler(w http.ResponseWriter, r *http.Request) {
 
 // ActionsRouter registers the actions routes
 func ActionsRouter(r chi.Router) {
-	r.Route("/actions", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("list", "actions")).Get("/workflows", ScanWorkflowsHandler)
-		r.With(middlewares.RequirePermission("create", "actions")).Post("/workflows", CreateWorkflowHandler)
-		r.With(middlewares.RequirePermission("get", "actions")).Get("/workflows/schema", GetWorkflowSchemaHandler)
-		r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/validate", ValidateWorkflowHandler)
-		r.With(middlewares.RequirePermission("execute", "actions")).Post("/validate/regex", ValidateRegexHandler)
+	r.With(middlewares.RequirePermission("list", "actions")).Get("/api/v1/actions/workflows", ScanWorkflowsHandler)
+	r.With(middlewares.RequirePermission("create", "actions")).Post("/api/v1/actions/workflows", CreateWorkflowHandler)
+	r.With(middlewares.RequirePermission("get", "actions")).Get("/api/v1/actions/workflows/schema", GetWorkflowSchemaHandler)
+	r.With(middlewares.RequirePermission("execute", "actions")).Post("/api/v1/actions/workflows/validate", ValidateWorkflowHandler)
+	r.With(middlewares.RequirePermission("execute", "actions")).Post("/api/v1/actions/validate/regex", ValidateRegexHandler)
 
-		// Use Chi's idiomatic With() pattern for cleaner middleware integration
-		r.With(middlewares.RequirePermission("update", "actions")).Put("/workflows/{id}", UpdateWorkflowHandler)
-		r.With(middlewares.RequirePermission("get", "actions")).Get("/workflows/{id}", GetWorkflowHandler)
-		r.With(middlewares.RequirePermission("delete", "actions")).Delete("/workflows/{id}", DeleteWorkflowHandler)
-		r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/{workflowId}/run", RunWorkflowHandler)
-		r.With(middlewares.RequirePermission("update", "actions")).Post("/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
+	// Use Chi's idiomatic With() pattern for cleaner middleware integration
+	r.With(middlewares.RequirePermission("update", "actions")).Put("/api/v1/actions/workflows/{id}", UpdateWorkflowHandler)
+	r.With(middlewares.RequirePermission("get", "actions")).Get("/api/v1/actions/workflows/{id}", GetWorkflowHandler)
+	r.With(middlewares.RequirePermission("delete", "actions")).Delete("/api/v1/actions/workflows/{id}", DeleteWorkflowHandler)
+	r.With(middlewares.RequirePermission("execute", "actions")).Post("/api/v1/actions/workflows/{workflowId}/run", RunWorkflowHandler)
+	r.With(middlewares.RequirePermission("update", "actions")).Post("/api/v1/actions/workflows/{id}/webhook/reset", ResetWebhookTokenHandler)
 
-		r.With(middlewares.RequirePermission("list", "actions")).Get("/instances", ScanInstancesHandler)
-		r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}", GetInstanceHandler)
-		r.With(middlewares.RequirePermission("delete", "actions")).Post("/instances/cleanup", CleanupInstancesHandler)
-		r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}/logs", GetInstanceLogsHandler)
-		r.With(middlewares.RequirePermission("delete", "actions")).Delete("/instances/{id}", DeleteInstanceHandler)
-		r.With(middlewares.RequirePermission("execute", "actions")).Post("/instances/{id}/cancel", CancelInstanceHandler)
+	r.With(middlewares.RequirePermission("list", "actions")).Get("/api/v1/actions/instances", ScanInstancesHandler)
+	r.With(middlewares.RequirePermission("get", "actions")).Get("/api/v1/actions/instances/{id}", GetInstanceHandler)
+	r.With(middlewares.RequirePermission("delete", "actions")).Post("/api/v1/actions/instances/cleanup", CleanupInstancesHandler)
+	r.With(middlewares.RequirePermission("get", "actions")).Get("/api/v1/actions/instances/{id}/logs", GetInstanceLogsHandler)
+	r.With(middlewares.RequirePermission("delete", "actions")).Delete("/api/v1/actions/instances/{id}", DeleteInstanceHandler)
+	r.With(middlewares.RequirePermission("execute", "actions")).Post("/api/v1/actions/instances/{id}/cancel", CancelInstanceHandler)
 
-		r.With(middlewares.RequirePermission("list", "actions")).Get("/manifests", ScanManifestsHandler)
-		r.With(middlewares.RequirePermission("execute", "actions")).Post("/probe", ProbeHandler)
-	})
+	r.With(middlewares.RequirePermission("list", "actions")).Get("/api/v1/actions/manifests", ScanManifestsHandler)
+	r.With(middlewares.RequirePermission("execute", "actions")).Post("/api/v1/actions/probe", ProbeHandler)
 }

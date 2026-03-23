@@ -154,12 +154,10 @@ func CancelIntelligenceSyncHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func IntelligenceRouter(r chi.Router) {
-	r.Route("/network/intelligence", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("list", "network/intelligence")).Get("/sources", ScanIntelligenceSourcesHandler)
-		r.With(middlewares.RequirePermission("create", "network/intelligence")).Post("/sources", CreateIntelligenceSourceHandler)
-		r.With(middlewares.RequirePermission("update", "network/intelligence")).Put("/sources/{id}", UpdateIntelligenceSourceHandler)
-		r.With(middlewares.RequirePermission("delete", "network/intelligence")).Delete("/sources/{id}", DeleteIntelligenceSourceHandler)
-		r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/sources/{id}/sync", SyncIntelligenceSourceHandler)
-		r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/sync/{id}/cancel", CancelIntelligenceSyncHandler)
-	})
+	r.With(middlewares.RequirePermission("list", "network/intelligence")).Get("/api/v1/network/intelligence/sources", ScanIntelligenceSourcesHandler)
+	r.With(middlewares.RequirePermission("create", "network/intelligence")).Post("/api/v1/network/intelligence/sources", CreateIntelligenceSourceHandler)
+	r.With(middlewares.RequirePermission("update", "network/intelligence")).Put("/api/v1/network/intelligence/sources/{id}", UpdateIntelligenceSourceHandler)
+	r.With(middlewares.RequirePermission("delete", "network/intelligence")).Delete("/api/v1/network/intelligence/sources/{id}", DeleteIntelligenceSourceHandler)
+	r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/api/v1/network/intelligence/sources/{id}/sync", SyncIntelligenceSourceHandler)
+	r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/api/v1/network/intelligence/sync/{id}/cancel", CancelIntelligenceSyncHandler)
 }

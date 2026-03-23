@@ -15,11 +15,11 @@ export interface ModelsIntelligenceSource {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsIntelligenceSourceV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsIntelligenceSourceV1Status;
+  status: ModelsIntelligenceSourceV1Status;
 }

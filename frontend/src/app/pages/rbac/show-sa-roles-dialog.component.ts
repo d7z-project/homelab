@@ -37,13 +37,13 @@ import { ModelsRole } from '../../generated';
                     class="text-secondary! w-[18px]! h-[18px]! text-[18px]! flex! items-center! justify-center!"
                     >shield</mat-icon
                   >
-                  <span class="font-bold text-sm text-on-surface">{{ role.meta?.name }}</span>
+                  <span class="font-bold text-sm text-on-surface">{{ role.meta.name }}</span>
                   <span class="text-[10px] text-outline font-mono ml-auto opacity-60">{{
                     role.id
                   }}</span>
                 </div>
                 <div class="p-4 space-y-3">
-                  @for (rule of role.meta?.rules; track rule) {
+                  @for (rule of role.meta.rules; track rule) {
                     <div class="flex flex-wrap items-center gap-2">
                       <div class="flex gap-1">
                         <span

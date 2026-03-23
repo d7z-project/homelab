@@ -9,9 +9,9 @@ import (
 
 // Resource represents a unified container for configuration (Meta) and running state (Status).
 type Resource[M any, S any] struct {
-	ID              string `json:"id"`
+	ID              string `json:"id" validate:"required"`
 	Meta            M      `json:"meta" validate:"required"`
-	Status          S      `json:"status"`
+	Status          S      `json:"status" validate:"required"`
 	Generation      int64  `json:"generation"`      // Configuration version, increments only on Meta changes
 	ResourceVersion int64  `json:"resourceVersion"` // Total object version, increments only on any change (Meta/Status)
 }

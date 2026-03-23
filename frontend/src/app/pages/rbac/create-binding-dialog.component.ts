@@ -116,6 +116,7 @@ export class CreateBindingDialogComponent implements OnInit, AfterViewInit {
       roleIds: [],
       enabled: true,
     },
+    status: {},
   };
 
   constructor(

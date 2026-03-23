@@ -15,11 +15,11 @@ export interface ModelsServiceAccount {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsServiceAccountV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsServiceAccountV1Status;
+  status: ModelsServiceAccountV1Status;
 }

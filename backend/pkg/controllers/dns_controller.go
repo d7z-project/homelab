@@ -293,17 +293,15 @@ func ExportHandler(w http.ResponseWriter, r *http.Request) {
 
 // DNSRouter registers the DNS routes
 func DNSRouter(r chi.Router) {
-	r.Route("/network/dns", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("get", "network/dns")).Get("/export", ExportHandler)
+	r.With(middlewares.RequirePermission("get", "network/dns")).Get("/api/v1/network/dns/export", ExportHandler)
 
-		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/domains", ScanDomainsHandler)
-		r.With(middlewares.RequirePermission("create", "network/dns")).Post("/domains", CreateDomainHandler)
-		r.With(middlewares.RequirePermission("update", "network/dns")).Put("/domains/{id}", UpdateDomainHandler)
-		r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/domains/{id}", DeleteDomainHandler)
+	r.With(middlewares.RequirePermission("list", "network/dns")).Get("/api/v1/network/dns/domains", ScanDomainsHandler)
+	r.With(middlewares.RequirePermission("create", "network/dns")).Post("/api/v1/network/dns/domains", CreateDomainHandler)
+	r.With(middlewares.RequirePermission("update", "network/dns")).Put("/api/v1/network/dns/domains/{id}", UpdateDomainHandler)
+	r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/api/v1/network/dns/domains/{id}", DeleteDomainHandler)
 
-		r.With(middlewares.RequirePermission("list", "network/dns")).Get("/records", ScanRecordsHandler)
-		r.With(middlewares.RequirePermission("create", "network/dns")).Post("/records", CreateRecordHandler)
-		r.With(middlewares.RequirePermission("update", "network/dns")).Put("/records/{id}", UpdateRecordHandler)
-		r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/records/{id}", DeleteRecordHandler)
-	})
+	r.With(middlewares.RequirePermission("list", "network/dns")).Get("/api/v1/network/dns/records", ScanRecordsHandler)
+	r.With(middlewares.RequirePermission("create", "network/dns")).Post("/api/v1/network/dns/records", CreateRecordHandler)
+	r.With(middlewares.RequirePermission("update", "network/dns")).Put("/api/v1/network/dns/records/{id}", UpdateRecordHandler)
+	r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/api/v1/network/dns/records/{id}", DeleteRecordHandler)
 }

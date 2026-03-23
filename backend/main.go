@@ -155,6 +155,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
+	r.Use(middleware.StripSlashes)
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -186,6 +187,10 @@ func main() {
 		target, _ := url.Parse("http://127.0.0.1:4200")
 		proxy := httputil.NewSingleHostReverseProxy(target)
 		r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/api/v1/") {
+				common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "API endpoint not found")
+				return
+			}
 			proxy.ServeHTTP(w, r)
 		})
 	} else {
@@ -195,6 +200,10 @@ func main() {
 		}
 		fileServer := http.FileServer(http.FS(staticFS))
 		r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/api/v1/") {
+				common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "API endpoint not found")
+				return
+			}
 			path := strings.TrimPrefix(r.URL.Path, "/")
 			if path == "" {
 				path = "index.html"

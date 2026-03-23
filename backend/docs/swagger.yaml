@@ -129,7 +129,9 @@ definitions:
       status:
         $ref: '#/definitions/models.DomainV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.DomainV1Meta:
     properties:
@@ -205,7 +207,9 @@ definitions:
       status:
         $ref: '#/definitions/models.IPExportV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.IPExportPreviewRequest:
     properties:
@@ -286,7 +290,9 @@ definitions:
       status:
         $ref: '#/definitions/models.IPPoolV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.IPPoolEntry:
     properties:
@@ -358,7 +364,9 @@ definitions:
       status:
         $ref: '#/definitions/models.IPSyncPolicyV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.IPSyncPolicyV1Meta:
     properties:
@@ -418,7 +426,9 @@ definitions:
       status:
         $ref: '#/definitions/models.IntelligenceSourceV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.IntelligenceSourceV1Meta:
     properties:
@@ -530,7 +540,9 @@ definitions:
       status:
         $ref: '#/definitions/models.RecordV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.RecordV1Meta:
     properties:
@@ -581,7 +593,9 @@ definitions:
       status:
         $ref: '#/definitions/models.RoleV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.RoleBinding:
     properties:
@@ -598,7 +612,9 @@ definitions:
       status:
         $ref: '#/definitions/models.RoleBindingV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.RoleBindingV1Meta:
     properties:
@@ -653,7 +669,9 @@ definitions:
       status:
         $ref: '#/definitions/models.ServiceAccountV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.ServiceAccountV1Meta:
     properties:
@@ -748,7 +766,9 @@ definitions:
       status:
         $ref: '#/definitions/models.SiteExportV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.SiteExportPreviewRequest:
     properties:
@@ -796,7 +816,9 @@ definitions:
       status:
         $ref: '#/definitions/models.SiteGroupV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.SiteGroupV1Meta:
     properties:
@@ -875,7 +897,9 @@ definitions:
       status:
         $ref: '#/definitions/models.SiteSyncPolicyV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.SiteSyncPolicyV1Meta:
     properties:
@@ -992,7 +1016,9 @@ definitions:
       status:
         $ref: '#/definitions/models.TaskInstanceV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.TaskInstanceV1Meta:
     properties:
@@ -1108,7 +1134,9 @@ definitions:
       status:
         $ref: '#/definitions/models.WorkflowV1Status'
     required:
+    - id
     - meta
+    - status
     type: object
   models.WorkflowV1Meta:
     properties:

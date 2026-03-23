@@ -47,7 +47,7 @@ import { Router } from '@angular/router';
           </button>
           <div class="flex flex-col">
             <span class="text-base font-bold text-primary leading-tight">管理池数据</span>
-            <span class="text-[11px] text-outline opacity-70">{{ data.pool.meta?.name }}</span>
+            <span class="text-[11px] text-outline opacity-70">{{ data.pool.meta.name }}</span>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -155,7 +155,7 @@ import { Router } from '@angular/router';
                 <span
                   class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider"
                 >
-                  共 {{ data.pool.status?.entryCount }} 条
+                  共 {{ data.pool.status.entryCount }} 条
                 </span>
               </div>
             </div>
@@ -389,7 +389,7 @@ export class ManageEntriesDialogComponent implements OnInit {
     }
 
     this.ipService
-      .networkIpPoolsIdPreviewGet(this.data.pool.id!, this.nextCursor, 50, this.searchQuery)
+      .networkIpPoolsIdPreviewGet(this.data.pool.id, this.nextCursor, 50, this.searchQuery)
       .subscribe({
         next: (res) => {
           const newEntries = res.entries || [];
@@ -471,7 +471,7 @@ export class ManageEntriesDialogComponent implements OnInit {
       : [];
 
     this.ipService
-      .networkIpPoolsIdEntriesPost(this.data.pool.id!, {
+      .networkIpPoolsIdEntriesPost(this.data.pool.id, {
         cidr: val.cidr!,
         oldTags: this.isEditMode() ? this.originalUserTags : undefined,
         newTags: newTags,
@@ -498,7 +498,7 @@ export class ManageEntriesDialogComponent implements OnInit {
     if (!confirm(`确定要彻底删除 ${entry.cidr} 吗？`)) return;
 
     this.submitting.set(true);
-    this.ipService.networkIpPoolsIdEntriesDelete(this.data.pool.id!, entry.cidr!).subscribe({
+    this.ipService.networkIpPoolsIdEntriesDelete(this.data.pool.id, entry.cidr!).subscribe({
       next: () => {
         this.snackBar.open('删除成功', '关闭', { duration: 2000 });
         this.submitting.set(false);

@@ -79,6 +79,7 @@ export class CreateSitePoolDialogComponent {
           name: val.name!,
           description: val.description || undefined,
         },
+        status: {} as any,
       })
       .subscribe({
         next: () => {

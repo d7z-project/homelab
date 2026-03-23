@@ -15,11 +15,11 @@ export interface ModelsSiteSyncPolicy {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsSiteSyncPolicyV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsSiteSyncPolicyV1Status;
+  status: ModelsSiteSyncPolicyV1Status;
 }

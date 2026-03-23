@@ -5682,7 +5682,9 @@
         "models.Domain": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -5797,7 +5799,9 @@
         "models.IPExport": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -5919,7 +5923,9 @@
         "models.IPPool": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6027,7 +6033,9 @@
         "models.IPSyncPolicy": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6118,7 +6126,9 @@
         "models.IntelligenceSource": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6288,7 +6298,9 @@
         "models.Record": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6367,7 +6379,9 @@
         "models.Role": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6392,7 +6406,9 @@
         "models.RoleBinding": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6475,7 +6491,9 @@
         "models.ServiceAccount": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6622,7 +6640,9 @@
         "models.SiteExport": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6694,7 +6714,9 @@
         "models.SiteGroup": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6811,7 +6833,9 @@
         "models.SiteSyncPolicy": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6984,7 +7008,9 @@
         "models.TaskInstance": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -7150,7 +7176,9 @@
         "models.Workflow": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {

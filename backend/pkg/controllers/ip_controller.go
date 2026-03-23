@@ -632,38 +632,31 @@ func TriggerSyncHandler(w http.ResponseWriter, r *http.Request) {
 
 // IPRouter registers the IP routes
 func IPRouter(r chi.Router) {
-	r.Route("/network/ip", func(r chi.Router) {
-		r.Route("/pools", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ScanGroupsHandler)
-			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateGroupHandler)
-			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateGroupHandler)
-			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteGroupHandler)
-			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/{id}/preview", PreviewPoolHandler)
-			r.With(middlewares.RequirePermission("update", "network/ip")).Post("/{id}/entries", ManagePoolEntryHandler)
-			r.With(middlewares.RequirePermission("update", "network/ip")).Delete("/{id}/entries", DeletePoolEntryHandler)
-		})
-		r.Route("/analysis", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/hit-test", HitTestHandler)
-			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/info", IPInfoHandler)
-		})
-		r.Route("/exports", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ScanExportsHandler)
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/tasks", ScanExportTasksHandler)
-			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateExportHandler)
-			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateExportHandler)
-			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteExportHandler)
-			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/{id}/trigger", TriggerExportHandler)
-			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/task/{taskId}", ExportTaskStatusHandler)
-			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/task/{taskId}/cancel", CancelExportTaskHandler)
-			r.With(middlewares.RequirePermission("get", "network/ip")).Get("/download/{taskId}", DownloadExportHandler)
-			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/preview", PreviewExportHandler)
-		})
-		r.Route("/sync", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/ip")).Get("/", ScanSyncPoliciesHandler)
-			r.With(middlewares.RequirePermission("create", "network/ip")).Post("/", CreateSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("update", "network/ip")).Put("/{id}", UpdateSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/{id}", DeleteSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/{id}/trigger", TriggerSyncHandler)
-		})
-	})
+	r.With(middlewares.RequirePermission("list", "network/ip")).Get("/api/v1/network/ip/pools", ScanGroupsHandler)
+	r.With(middlewares.RequirePermission("create", "network/ip")).Post("/api/v1/network/ip/pools", CreateGroupHandler)
+	r.With(middlewares.RequirePermission("update", "network/ip")).Put("/api/v1/network/ip/pools/{id}", UpdateGroupHandler)
+	r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/api/v1/network/ip/pools/{id}", DeleteGroupHandler)
+	r.With(middlewares.RequirePermission("get", "network/ip")).Get("/api/v1/network/ip/pools/{id}/preview", PreviewPoolHandler)
+	r.With(middlewares.RequirePermission("update", "network/ip")).Post("/api/v1/network/ip/pools/{id}/entries", ManagePoolEntryHandler)
+	r.With(middlewares.RequirePermission("update", "network/ip")).Delete("/api/v1/network/ip/pools/{id}/entries", DeletePoolEntryHandler)
+
+	r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/api/v1/network/ip/analysis/hit-test", HitTestHandler)
+	r.With(middlewares.RequirePermission("get", "network/ip")).Get("/api/v1/network/ip/analysis/info", IPInfoHandler)
+
+	r.With(middlewares.RequirePermission("list", "network/ip")).Get("/api/v1/network/ip/exports", ScanExportsHandler)
+	r.With(middlewares.RequirePermission("list", "network/ip")).Get("/api/v1/network/ip/exports/tasks", ScanExportTasksHandler)
+	r.With(middlewares.RequirePermission("create", "network/ip")).Post("/api/v1/network/ip/exports", CreateExportHandler)
+	r.With(middlewares.RequirePermission("update", "network/ip")).Put("/api/v1/network/ip/exports/{id}", UpdateExportHandler)
+	r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/api/v1/network/ip/exports/{id}", DeleteExportHandler)
+	r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/api/v1/network/ip/exports/{id}/trigger", TriggerExportHandler)
+	r.With(middlewares.RequirePermission("get", "network/ip")).Get("/api/v1/network/ip/exports/task/{taskId}", ExportTaskStatusHandler)
+	r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/api/v1/network/ip/exports/task/{taskId}/cancel", CancelExportTaskHandler)
+	r.With(middlewares.RequirePermission("get", "network/ip")).Get("/api/v1/network/ip/exports/download/{taskId}", DownloadExportHandler)
+	r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/api/v1/network/ip/exports/preview", PreviewExportHandler)
+
+	r.With(middlewares.RequirePermission("list", "network/ip")).Get("/api/v1/network/ip/sync", ScanSyncPoliciesHandler)
+	r.With(middlewares.RequirePermission("create", "network/ip")).Post("/api/v1/network/ip/sync", CreateSyncPolicyHandler)
+	r.With(middlewares.RequirePermission("update", "network/ip")).Put("/api/v1/network/ip/sync/{id}", UpdateSyncPolicyHandler)
+	r.With(middlewares.RequirePermission("delete", "network/ip")).Delete("/api/v1/network/ip/sync/{id}", DeleteSyncPolicyHandler)
+	r.With(middlewares.RequirePermission("execute", "network/ip")).Post("/api/v1/network/ip/sync/{id}/trigger", TriggerSyncHandler)
 }

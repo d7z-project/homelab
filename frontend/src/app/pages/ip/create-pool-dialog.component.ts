@@ -103,6 +103,7 @@ export class CreatePoolDialogComponent implements OnInit {
         name: val.name!,
         description: val.description || undefined,
       },
+      status: (this.data.pool?.status || {}) as any,
     };
 
     const obs = this.data.pool?.id

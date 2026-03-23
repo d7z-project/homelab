@@ -534,38 +534,32 @@ func UpdateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, group)
 }
 
+// SiteRouter registers the site routes
 func SiteRouter(r chi.Router) {
-	r.Route("/network/site", func(r chi.Router) {
-		r.Route("/pools", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ScanSiteGroupsHandler)
-			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteGroupHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Put("/{id}", UpdateSiteGroupHandler)
-			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteGroupHandler)
-			r.With(middlewares.RequirePermission("get", "network/site")).Get("/{id}/preview", PreviewSitePoolHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Post("/{id}/entries", ManageSitePoolEntryHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Delete("/{id}/entries", DeleteSitePoolEntryHandler)
-		})
-		r.Route("/analysis", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/hit-test", SiteHitTestHandler)
-		})
-		r.Route("/exports", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ScanSiteExportsHandler)
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/tasks", ScanSiteExportTasksHandler)
-			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteExportHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Put("/{id}", UpdateSiteExportHandler)
-			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteExportHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/{id}/trigger", TriggerSiteExportHandler)
-			r.With(middlewares.RequirePermission("get", "network/site")).Get("/task/{taskId}", SiteExportTaskStatusHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/task/{taskId}/cancel", CancelSiteExportTaskHandler)
-			r.With(middlewares.RequirePermission("get", "network/site")).Get("/download/{taskId}", DownloadSiteExportHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/preview", PreviewSiteExportHandler)
-		})
-		r.Route("/sync", func(r chi.Router) {
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/", ScanSiteSyncPoliciesHandler)
-			r.With(middlewares.RequirePermission("create", "network/site")).Post("/", CreateSiteSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Put("/{id}", UpdateSiteSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/{id}", DeleteSiteSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/{id}/trigger", TriggerSiteSyncHandler)
-		})
-	})
+	r.With(middlewares.RequirePermission("list", "network/site")).Get("/api/v1/network/site/pools", ScanSiteGroupsHandler)
+	r.With(middlewares.RequirePermission("create", "network/site")).Post("/api/v1/network/site/pools", CreateSiteGroupHandler)
+	r.With(middlewares.RequirePermission("update", "network/site")).Put("/api/v1/network/site/pools/{id}", UpdateSiteGroupHandler)
+	r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/api/v1/network/site/pools/{id}", DeleteSiteGroupHandler)
+	r.With(middlewares.RequirePermission("get", "network/site")).Get("/api/v1/network/site/pools/{id}/preview", PreviewSitePoolHandler)
+	r.With(middlewares.RequirePermission("update", "network/site")).Post("/api/v1/network/site/pools/{id}/entries", ManageSitePoolEntryHandler)
+	r.With(middlewares.RequirePermission("update", "network/site")).Delete("/api/v1/network/site/pools/{id}/entries", DeleteSitePoolEntryHandler)
+
+	r.With(middlewares.RequirePermission("execute", "network/site")).Post("/api/v1/network/site/analysis/hit-test", SiteHitTestHandler)
+
+	r.With(middlewares.RequirePermission("list", "network/site")).Get("/api/v1/network/site/exports", ScanSiteExportsHandler)
+	r.With(middlewares.RequirePermission("list", "network/site")).Get("/api/v1/network/site/exports/tasks", ScanSiteExportTasksHandler)
+	r.With(middlewares.RequirePermission("create", "network/site")).Post("/api/v1/network/site/exports", CreateSiteExportHandler)
+	r.With(middlewares.RequirePermission("update", "network/site")).Put("/api/v1/network/site/exports/{id}", UpdateSiteExportHandler)
+	r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/api/v1/network/site/exports/{id}", DeleteSiteExportHandler)
+	r.With(middlewares.RequirePermission("execute", "network/site")).Post("/api/v1/network/site/exports/{id}/trigger", TriggerSiteExportHandler)
+	r.With(middlewares.RequirePermission("get", "network/site")).Get("/api/v1/network/site/exports/task/{taskId}", SiteExportTaskStatusHandler)
+	r.With(middlewares.RequirePermission("execute", "network/site")).Post("/api/v1/network/site/exports/task/{taskId}/cancel", CancelSiteExportTaskHandler)
+	r.With(middlewares.RequirePermission("get", "network/site")).Get("/api/v1/network/site/exports/download/{taskId}", DownloadSiteExportHandler)
+	r.With(middlewares.RequirePermission("execute", "network/site")).Post("/api/v1/network/site/exports/preview", PreviewSiteExportHandler)
+
+	r.With(middlewares.RequirePermission("list", "network/site")).Get("/api/v1/network/site/sync", ScanSiteSyncPoliciesHandler)
+	r.With(middlewares.RequirePermission("create", "network/site")).Post("/api/v1/network/site/sync", CreateSiteSyncPolicyHandler)
+	r.With(middlewares.RequirePermission("update", "network/site")).Put("/api/v1/network/site/sync/{id}", UpdateSiteSyncPolicyHandler)
+	r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/api/v1/network/site/sync/{id}", DeleteSiteSyncPolicyHandler)
+	r.With(middlewares.RequirePermission("execute", "network/site")).Post("/api/v1/network/site/sync/{id}/trigger", TriggerSiteSyncHandler)
 }

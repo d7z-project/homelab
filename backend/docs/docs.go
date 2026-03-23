@@ -5689,7 +5689,9 @@ const docTemplate = `{
         "models.Domain": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -5804,7 +5806,9 @@ const docTemplate = `{
         "models.IPExport": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -5926,7 +5930,9 @@ const docTemplate = `{
         "models.IPPool": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6034,7 +6040,9 @@ const docTemplate = `{
         "models.IPSyncPolicy": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6125,7 +6133,9 @@ const docTemplate = `{
         "models.IntelligenceSource": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6295,7 +6305,9 @@ const docTemplate = `{
         "models.Record": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6374,7 +6386,9 @@ const docTemplate = `{
         "models.Role": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6399,7 +6413,9 @@ const docTemplate = `{
         "models.RoleBinding": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6482,7 +6498,9 @@ const docTemplate = `{
         "models.ServiceAccount": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6629,7 +6647,9 @@ const docTemplate = `{
         "models.SiteExport": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6701,7 +6721,9 @@ const docTemplate = `{
         "models.SiteGroup": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6818,7 +6840,9 @@ const docTemplate = `{
         "models.SiteSyncPolicy": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -6991,7 +7015,9 @@ const docTemplate = `{
         "models.TaskInstance": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {
@@ -7157,7 +7183,9 @@ const docTemplate = `{
         "models.Workflow": {
             "type": "object",
             "required": [
-                "meta"
+                "id",
+                "meta",
+                "status"
             ],
             "properties": {
                 "generation": {

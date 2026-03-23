@@ -452,13 +452,14 @@ export class CreateWorkflowDialogComponent implements OnInit {
     });
 
     const workflow: ModelsWorkflow = {
-      id: this.data?.workflow?.id,
+      id: this.data?.workflow?.id || '',
       generation: this.data?.workflow?.generation || 0,
       meta: {
         ...workflowValue,
         vars: Object.keys(varsMap).length > 0 ? varsMap : undefined,
         steps: steps,
       },
+      status: {} as any,
     };
 
     return this.cleanObject(workflow);

@@ -15,11 +15,11 @@ export interface ModelsSiteExport {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsSiteExportV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsSiteExportV1Status;
+  status: ModelsSiteExportV1Status;
 }

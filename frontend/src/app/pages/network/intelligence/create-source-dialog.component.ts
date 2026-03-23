@@ -152,6 +152,7 @@ export class CreateSourceDialogComponent implements OnInit {
         cron: val.cron || '',
         config: config,
       },
+      status: (this.data?.status || {}) as any,
     };
 
     const obs =

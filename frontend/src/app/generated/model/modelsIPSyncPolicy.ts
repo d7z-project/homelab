@@ -15,11 +15,11 @@ export interface ModelsIPSyncPolicy {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsIPSyncPolicyV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsIPSyncPolicyV1Status;
+  status: ModelsIPSyncPolicyV1Status;
 }

@@ -207,6 +207,7 @@ export class CreateRoleDialogComponent implements AfterViewInit {
       name: '',
       rules: [],
     },
+    status: {},
   };
   rules: RuleWithUI[] = [];
   existingIDs: string[] = [];

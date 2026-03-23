@@ -15,11 +15,11 @@ export interface ModelsIPExport {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsIPExportV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsIPExportV1Status;
+  status: ModelsIPExportV1Status;
 }

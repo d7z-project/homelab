@@ -15,6 +15,16 @@ import (
 )
 
 func ScanRecords(ctx context.Context, domainID string, cursor string, limit int, search string) (*models.PaginationResponse[models.Record], error) {
+	if domainID == "" {
+		perms := commonauth.PermissionsFromContext(ctx)
+		if perms.IsAllowed("network/dns") {
+			return dnsrepo.ScanRecords(ctx, "", cursor, limit, search)
+		}
+		return &models.PaginationResponse[models.Record]{
+			Items: []models.Record{},
+		}, nil
+	}
+
 	dom, err := dnsrepo.DomainRepo.Get(ctx, domainID)
 	if err != nil {
 		return nil, err

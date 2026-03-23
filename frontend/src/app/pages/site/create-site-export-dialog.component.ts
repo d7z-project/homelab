@@ -163,7 +163,7 @@ export class CreateSiteExportDialogComponent {
     const val = this.form.value;
 
     const exportData: ModelsSiteExport = {
-      id: this.data.export?.id,
+      id: this.data.export?.id || '',
       generation: this.data.export?.generation || 0,
       meta: {
         name: val.name!,
@@ -171,6 +171,7 @@ export class CreateSiteExportDialogComponent {
         rule: val.rule!,
         groupIds: val.groupIds || [],
       },
+      status: (this.data.export?.status || {}) as any,
     };
 
     const obs = this.data.export?.id

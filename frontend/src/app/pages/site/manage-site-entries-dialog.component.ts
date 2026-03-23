@@ -41,7 +41,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
           <button mat-icon-button mat-dialog-close>
             <mat-icon>arrow_back</mat-icon>
           </button>
-          <span class="text-lg font-medium">管理域名池 - {{ data.pool.meta?.name }}</span>
+          <span class="text-lg font-medium">管理域名池 - {{ data.pool.meta.name }}</span>
         </div>
       </mat-toolbar>
 

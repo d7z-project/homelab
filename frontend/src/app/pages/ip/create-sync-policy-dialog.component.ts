@@ -349,7 +349,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
     }
 
     const policy: ModelsIPSyncPolicy = {
-      id: val.id || undefined,
+      id: val.id || '',
       generation: this.data.policy?.generation || 0,
       meta: {
         name: val.name!,
@@ -362,6 +362,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
         cron: val.cron!,
         enabled: !!val.enabled,
       },
+      status: (this.data.policy?.status || {}) as any,
     };
 
     const obs = this.data.policy?.id

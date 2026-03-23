@@ -15,11 +15,11 @@ export interface ModelsIPPool {
    * Configuration version, increments only on Meta changes
    */
   generation?: number;
-  id?: string;
+  id: string;
   meta: ModelsIPPoolV1Meta;
   /**
    * Total object version, increments only on any change (Meta/Status)
    */
   resourceVersion?: number;
-  status?: ModelsIPPoolV1Status;
+  status: ModelsIPPoolV1Status;
 }

@@ -403,25 +403,23 @@ func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
 
 // RBACRouter registers the RBAC routes
 func RBACRouter(r chi.Router) {
-	r.Route("/rbac", func(r chi.Router) {
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/resources/suggest", SuggestResourcesHandler)
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/verbs/suggest", SuggestVerbsHandler)
-		r.With(middlewares.RequirePermission("simulate", "rbac")).Post("/simulate", SimulatePermissionsHandler)
+	r.With(middlewares.RequirePermission("list", "rbac")).Get("/api/v1/rbac/resources/suggest", SuggestResourcesHandler)
+	r.With(middlewares.RequirePermission("list", "rbac")).Get("/api/v1/rbac/verbs/suggest", SuggestVerbsHandler)
+	r.With(middlewares.RequirePermission("simulate", "rbac")).Post("/api/v1/rbac/simulate", SimulatePermissionsHandler)
 
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/serviceaccounts", ScanServiceAccountsHandler)
-		r.With(middlewares.RequirePermission("create", "rbac")).Post("/serviceaccounts", CreateServiceAccountHandler)
-		r.With(middlewares.RequirePermission("update", "rbac")).Put("/serviceaccounts/{id}", UpdateServiceAccountHandler)
-		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/serviceaccounts/{id}", DeleteServiceAccountHandler)
-		r.With(middlewares.RequirePermission("update", "rbac")).Post("/serviceaccounts/{id}/reset", ResetServiceAccountTokenHandler)
+	r.With(middlewares.RequirePermission("list", "rbac")).Get("/api/v1/rbac/serviceaccounts", ScanServiceAccountsHandler)
+	r.With(middlewares.RequirePermission("create", "rbac")).Post("/api/v1/rbac/serviceaccounts", CreateServiceAccountHandler)
+	r.With(middlewares.RequirePermission("update", "rbac")).Put("/api/v1/rbac/serviceaccounts/{id}", UpdateServiceAccountHandler)
+	r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/api/v1/rbac/serviceaccounts/{id}", DeleteServiceAccountHandler)
+	r.With(middlewares.RequirePermission("update", "rbac")).Post("/api/v1/rbac/serviceaccounts/{id}/reset", ResetServiceAccountTokenHandler)
 
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/roles", ScanRolesHandler)
-		r.With(middlewares.RequirePermission("create", "rbac")).Post("/roles", CreateRoleHandler)
-		r.With(middlewares.RequirePermission("update", "rbac")).Put("/roles/{id}", UpdateRoleHandler)
-		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/roles/{id}", DeleteRoleHandler)
+	r.With(middlewares.RequirePermission("list", "rbac")).Get("/api/v1/rbac/roles", ScanRolesHandler)
+	r.With(middlewares.RequirePermission("create", "rbac")).Post("/api/v1/rbac/roles", CreateRoleHandler)
+	r.With(middlewares.RequirePermission("update", "rbac")).Put("/api/v1/rbac/roles/{id}", UpdateRoleHandler)
+	r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/api/v1/rbac/roles/{id}", DeleteRoleHandler)
 
-		r.With(middlewares.RequirePermission("list", "rbac")).Get("/rolebindings", ScanRoleBindingsHandler)
-		r.With(middlewares.RequirePermission("create", "rbac")).Post("/rolebindings", CreateRoleBindingHandler)
-		r.With(middlewares.RequirePermission("update", "rbac")).Put("/rolebindings/{id}", UpdateRoleBindingHandler)
-		r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/rolebindings/{id}", DeleteRoleBindingHandler)
-	})
+	r.With(middlewares.RequirePermission("list", "rbac")).Get("/api/v1/rbac/rolebindings", ScanRoleBindingsHandler)
+	r.With(middlewares.RequirePermission("create", "rbac")).Post("/api/v1/rbac/rolebindings", CreateRoleBindingHandler)
+	r.With(middlewares.RequirePermission("update", "rbac")).Put("/api/v1/rbac/rolebindings/{id}", UpdateRoleBindingHandler)
+	r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/api/v1/rbac/rolebindings/{id}", DeleteRoleBindingHandler)
 }
