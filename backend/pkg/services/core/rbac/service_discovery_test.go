@@ -6,7 +6,8 @@ import (
 
 	"homelab/pkg/common"
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/models"
+	discoverymodel "homelab/pkg/models/core/discovery"
+	rbacmodel "homelab/pkg/models/core/rbac"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
 	registryruntime "homelab/pkg/runtime/registry"
 	rbacservice "homelab/pkg/services/core/rbac"
@@ -26,27 +27,27 @@ func TestRegisterDiscovery(t *testing.T) {
 	})
 	common.DB = db
 
-	if err := rbacrepo.ServiceAccountRepo.Cow(context.Background(), "sa-1", func(res *models.ServiceAccount) error {
+	if err := rbacrepo.ServiceAccountRepo.Cow(context.Background(), "sa-1", func(res *rbacmodel.ServiceAccount) error {
 		res.ID = "sa-1"
-		res.Meta = models.ServiceAccountV1Meta{Name: "builder", Comments: "build bot", Enabled: true}
+		res.Meta = rbacmodel.ServiceAccountV1Meta{Name: "builder", Comments: "build bot", Enabled: true}
 		res.Generation = 1
 		res.ResourceVersion = 1
 		return nil
 	}); err != nil {
 		t.Fatalf("seed service account: %v", err)
 	}
-	if err := rbacrepo.RoleRepo.Cow(context.Background(), "role-1", func(res *models.Role) error {
+	if err := rbacrepo.RoleRepo.Cow(context.Background(), "role-1", func(res *rbacmodel.Role) error {
 		res.ID = "role-1"
-		res.Meta = models.RoleV1Meta{Name: "admin", Comments: "admin role", Rules: []models.PolicyRule{{Resource: "rbac", Verbs: []string{"*"}}}}
+		res.Meta = rbacmodel.RoleV1Meta{Name: "admin", Comments: "admin role", Rules: []rbacmodel.PolicyRule{{Resource: "rbac", Verbs: []string{"*"}}}}
 		res.Generation = 1
 		res.ResourceVersion = 1
 		return nil
 	}); err != nil {
 		t.Fatalf("seed role: %v", err)
 	}
-	if err := rbacrepo.BindingRepo.Cow(context.Background(), "binding-1", func(res *models.RoleBinding) error {
+	if err := rbacrepo.BindingRepo.Cow(context.Background(), "binding-1", func(res *rbacmodel.RoleBinding) error {
 		res.ID = "binding-1"
-		res.Meta = models.RoleBindingV1Meta{Name: "binding-1", RoleIDs: []string{"role-1"}, ServiceAccountID: "sa-1", Enabled: true}
+		res.Meta = rbacmodel.RoleBindingV1Meta{Name: "binding-1", RoleIDs: []string{"role-1"}, ServiceAccountID: "sa-1", Enabled: true}
 		res.Generation = 1
 		res.ResourceVersion = 1
 		return nil
@@ -56,10 +57,10 @@ func TestRegisterDiscovery(t *testing.T) {
 
 	rbacservice.RegisterDiscovery()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{AllowedAll: true})
 
 	for _, code := range []string{"rbac/serviceaccounts", "rbac/roles", "rbac/rolebindings"} {
-		res, err := registryruntime.Default().Lookup(ctx, models.LookupRequest{Code: code, Limit: 20})
+		res, err := registryruntime.Default().Lookup(ctx, discoverymodel.LookupRequest{Code: code, Limit: 20})
 		if err != nil {
 			t.Fatalf("lookup %s: %v", code, err)
 		}

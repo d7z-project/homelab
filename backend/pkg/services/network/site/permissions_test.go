@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/models"
+	rbacmodel "homelab/pkg/models/core/rbac"
 )
 
 func TestRequireSiteResourceAllowsScopedResource(t *testing.T) {
 	t.Parallel()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{
 		AllowedInstances: []string{siteGroupResource("site-a")},
 	})
 
@@ -24,7 +24,7 @@ func TestRequireSiteResourceAllowsScopedResource(t *testing.T) {
 func TestRequireSiteResourceOrGlobalAllowsGlobalPermission(t *testing.T) {
 	t.Parallel()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{
 		AllowedInstances: []string{siteResourceBase},
 	})
 

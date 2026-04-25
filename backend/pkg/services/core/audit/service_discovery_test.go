@@ -7,7 +7,8 @@ import (
 
 	"homelab/pkg/common"
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/models"
+	auditmodel "homelab/pkg/models/core/audit"
+	rbacmodel "homelab/pkg/models/core/rbac"
 	auditrepo "homelab/pkg/repositories/core/audit"
 	registryruntime "homelab/pkg/runtime/registry"
 	auditservice "homelab/pkg/services/core/audit"
@@ -27,7 +28,7 @@ func TestRegisterDiscovery(t *testing.T) {
 	})
 	common.DB = db
 
-	if err := auditrepo.SaveLog(context.Background(), &models.AuditLog{
+	if err := auditrepo.SaveLog(context.Background(), &auditmodel.AuditLog{
 		ID:        "log-1",
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 		Subject:   "root",
@@ -42,7 +43,7 @@ func TestRegisterDiscovery(t *testing.T) {
 
 	auditservice.RegisterDiscovery()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{AllowedAll: true})
 
 	suggestions, err := registryruntime.Default().SuggestResources(ctx, "audit/")
 	if err != nil {

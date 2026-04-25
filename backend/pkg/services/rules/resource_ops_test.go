@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"homelab/pkg/common"
-	"homelab/pkg/models"
+	"homelab/pkg/models/shared"
 
 	"gopkg.d7z.net/middleware/kv"
 )
@@ -36,12 +36,12 @@ func TestCreateAndLoadAndReplaceMeta(t *testing.T) {
 	t.Parallel()
 
 	repo := newTestRepo(t)
-	resource := &models.Resource[testMeta, testStatus]{
+	resource := &shared.Resource[testMeta, testStatus]{
 		ID:   "alpha",
 		Meta: testMeta{Name: "Alpha"},
 	}
 
-	err := CreateAndLoad(context.Background(), repo, resource, func(res *models.Resource[testMeta, testStatus]) error {
+	err := CreateAndLoad(context.Background(), repo, resource, func(res *shared.Resource[testMeta, testStatus]) error {
 		res.Meta = resource.Meta
 		res.Status.CreatedAt = time.Unix(10, 0)
 		res.Generation = 1
@@ -81,11 +81,11 @@ func TestScanBySearch(t *testing.T) {
 		{id: "beta", name: "Second"},
 		{id: "gamma", name: "Third"},
 	} {
-		resource := &models.Resource[testMeta, testStatus]{
+		resource := &shared.Resource[testMeta, testStatus]{
 			ID:   item.id,
 			Meta: testMeta{Name: item.name},
 		}
-		if err := CreateAndLoad(context.Background(), repo, resource, func(res *models.Resource[testMeta, testStatus]) error {
+		if err := CreateAndLoad(context.Background(), repo, resource, func(res *shared.Resource[testMeta, testStatus]) error {
 			res.Meta = resource.Meta
 			res.Generation = 1
 			res.ResourceVersion = 1

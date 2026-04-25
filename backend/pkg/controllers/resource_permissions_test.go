@@ -6,18 +6,18 @@ import (
 	"testing"
 
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/models"
+	rbacmodel "homelab/pkg/models/core/rbac"
 )
 
 func TestRequireScopedPermissionAllowsInstanceScope(t *testing.T) {
 	t.Parallel()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{
-		MatchedRule:      &models.PolicyRule{},
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{
+		MatchedRule:      &rbacmodel.PolicyRule{},
 		AllowedInstances: []string{"network/ip/pool-a"},
 	})
 
-	if err := requireScopedPermission(ctx, networkIPResourceBase, "pool-a"); err != nil {
+	if err := RequireScopedPermission(ctx, NetworkIPResourceBase, "pool-a"); err != nil {
 		t.Fatalf("expected instance permission to pass, got %v", err)
 	}
 }
@@ -25,11 +25,11 @@ func TestRequireScopedPermissionAllowsInstanceScope(t *testing.T) {
 func TestRequireScopedPermissionAllowsGlobalScope(t *testing.T) {
 	t.Parallel()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{
 		AllowedAll: true,
 	})
 
-	if err := requireScopedPermission(ctx, networkSiteResourceBase, "site-a"); err != nil {
+	if err := RequireScopedPermission(ctx, NetworkSiteResourceBase, "site-a"); err != nil {
 		t.Fatalf("expected global permission to pass, got %v", err)
 	}
 }
@@ -37,7 +37,7 @@ func TestRequireScopedPermissionAllowsGlobalScope(t *testing.T) {
 func TestRequireScopedPermissionReturnsDeniedResource(t *testing.T) {
 	t.Parallel()
 
-	err := requireScopedPermission(context.Background(), networkIPResourceBase, "pool-a")
+	err := RequireScopedPermission(context.Background(), NetworkIPResourceBase, "pool-a")
 	if !errors.Is(err, commonauth.ErrPermissionDenied) {
 		t.Fatalf("expected permission denied, got %v", err)
 	}

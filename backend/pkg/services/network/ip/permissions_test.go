@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/models"
+	rbacmodel "homelab/pkg/models/core/rbac"
 )
 
 func TestRequireIPResourceAllowsScopedResource(t *testing.T) {
 	t.Parallel()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{
 		AllowedInstances: []string{ipGroupResource("pool-a")},
 	})
 
@@ -24,7 +24,7 @@ func TestRequireIPResourceAllowsScopedResource(t *testing.T) {
 func TestRequireIPResourceOrGlobalAllowsGlobalPermission(t *testing.T) {
 	t.Parallel()
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{
 		AllowedInstances: []string{ipResourceBase},
 	})
 

@@ -7,7 +7,9 @@ import (
 
 	"homelab/pkg/common"
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/models"
+	discoverymodel "homelab/pkg/models/core/discovery"
+	rbacmodel "homelab/pkg/models/core/rbac"
+	workflowmodel "homelab/pkg/models/workflow"
 	moduleworkflow "homelab/pkg/modules/workflow"
 	actionrepo "homelab/pkg/repositories/workflow/actions"
 	registryruntime "homelab/pkg/runtime/registry"
@@ -30,15 +32,15 @@ func TestModuleStartRegistersDiscoveryAndSAUsage(t *testing.T) {
 	common.FS = afero.NewMemMapFs()
 	common.TempDir = afero.NewMemMapFs()
 
-	if err := actionrepo.WorkflowRepo.Cow(context.Background(), "wf-1", func(res *models.Workflow) error {
+	if err := actionrepo.WorkflowRepo.Cow(context.Background(), "wf-1", func(res *workflowmodel.Workflow) error {
 		res.ID = "wf-1"
-		res.Meta = models.WorkflowV1Meta{
+		res.Meta = workflowmodel.WorkflowV1Meta{
 			Name:             "deploy",
 			Description:      "deploy workflow",
 			Enabled:          true,
 			ServiceAccountID: "sa-build",
-			Vars:             map[string]models.VarDefinition{},
-			Steps: []models.Step{
+			Vars:             map[string]workflowmodel.VarDefinition{},
+			Steps: []workflowmodel.Step{
 				{ID: "step1", Type: "core/sleep", Name: "Sleep", Params: map[string]string{"seconds": "1"}},
 			},
 		}
@@ -54,8 +56,8 @@ func TestModuleStartRegistersDiscoveryAndSAUsage(t *testing.T) {
 		t.Fatalf("start module: %v", err)
 	}
 
-	ctx := commonauth.WithPermissions(context.Background(), &models.ResourcePermissions{AllowedAll: true})
-	lookup, err := registryruntime.Default().Lookup(ctx, models.LookupRequest{
+	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{AllowedAll: true})
+	lookup, err := registryruntime.Default().Lookup(ctx, discoverymodel.LookupRequest{
 		Code:  "actions/workflows",
 		Limit: 20,
 	})
