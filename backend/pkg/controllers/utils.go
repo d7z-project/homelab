@@ -52,7 +52,7 @@ func HandleError(w http.ResponseWriter, r *http.Request, err error) {
 	common.InternalServerError(w, r, 500, err.Error())
 }
 
-func getCursorParams(r *http.Request) (string, int) {
+func GetCursorParams(r *http.Request) (string, int) {
 	cursor := r.URL.Query().Get("cursor")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 {

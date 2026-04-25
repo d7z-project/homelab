@@ -3,6 +3,7 @@ package common
 import (
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -16,6 +17,8 @@ var Opts = &Options{
 	RootPassword: "admin",
 	TotpAuth:     "",
 	JWTSecret:    "change-me-please",
+	Workflow:     true,
+	Intelligence: true,
 }
 
 type Options struct {
@@ -29,6 +32,8 @@ type Options struct {
 	TotpAuth     string `yaml:"totp_auth" env:"HOMELAB_TOTP_AUTH"`
 	JWTSecret    string `yaml:"jwt_secret" env:"HOMELAB_JWT_SECRET"`
 	SessionTTL   string `yaml:"session_ttl" env:"HOMELAB_SESSION_TTL"`
+	Workflow     bool   `yaml:"workflow" env:"HOMELAB_WORKFLOW"`
+	Intelligence bool   `yaml:"intelligence" env:"HOMELAB_INTELLIGENCE"`
 }
 
 func (o *Options) ParseEnv() {
@@ -50,6 +55,11 @@ func (o *Options) ParseEnv() {
 			if fieldVal.Kind() == reflect.String {
 				fieldVal.SetString(envVal)
 			}
+			if fieldVal.Kind() == reflect.Bool {
+				if parsed, err := strconv.ParseBool(envVal); err == nil {
+					fieldVal.SetBool(parsed)
+				}
+			}
 		}
 	}
 }
@@ -69,6 +79,11 @@ func (o *Options) ParseEnvWithPrefix(prefix string) {
 			fieldVal := val.Field(i)
 			if fieldVal.Kind() == reflect.String {
 				fieldVal.SetString(envVal)
+			}
+			if fieldVal.Kind() == reflect.Bool {
+				if parsed, err := strconv.ParseBool(envVal); err == nil {
+					fieldVal.SetBool(parsed)
+				}
 			}
 		}
 	}

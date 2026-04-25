@@ -6,10 +6,11 @@ import (
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
-	"homelab/pkg/models"
-	authservice "homelab/pkg/services/auth"
+	authservice "homelab/pkg/services/core/auth"
 	"net/http"
 	"strings"
+
+	rbacmodel "homelab/pkg/models/core/rbac"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -62,7 +63,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 							SessionID: jti,
 						})
 						// 2. Inject Global Permissions (important for manual service-layer checks)
-						perms := &models.ResourcePermissions{
+						perms := &rbacmodel.ResourcePermissions{
 							AllowedAll: true,
 						}
 						ctx = context.WithValue(ctx, commonauth.PermissionsContextKey, perms)
@@ -106,9 +107,9 @@ func RequirePermission(verb string, resource string) func(http.Handler) http.Han
 			}
 
 			if ac.Type == "root" {
-				perms := &models.ResourcePermissions{
+				perms := &rbacmodel.ResourcePermissions{
 					AllowedAll:  true,
-					MatchedRule: &models.PolicyRule{Resource: "*", Verbs: []string{"*"}},
+					MatchedRule: &rbacmodel.PolicyRule{Resource: "*", Verbs: []string{"*"}},
 				}
 				w.Header().Set("X-Matched-Policy", "*:*")
 				ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, perms)

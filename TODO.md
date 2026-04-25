@@ -1,96 +1,221 @@
-# 资源 Meta 与 Status 逻辑分离设计方案 (Generation 驱动 + 冲突域分离)
+# Homelab 重构 TODO
 
-## 1. 背景与动机
+## 目标
 
-为了实现配置与状态的解耦，并提供类 Kubernetes 的强一致性与乐观并发控制（OCC），本方案采用双计数器架构。
+- 按能力边界拆分模块，而不是按“大域聚合”做超级模块。
+- 路由注册独立成 `pkg/routes/*`，模块负责生命周期，controller 只负责 handler。
+- 保留共享实现下沉，但不牺牲模块可维护性。
+- 不考虑兼容性，按全新项目直接重写。
 
-- **架构清晰**：通过泛型容器物理隔离配置（Meta）与状态（Status）。
-- **冲突域分离**：用户的配置修改（Meta）与系统的状态更新（Status）不应互相阻塞。
-- **单调版本指纹**：放弃不可靠的时间戳，采用单调递增的整数 `Generation` 作为版本指纹。
-- **平滑路径**：移除路径中的中置版本号，采用扁平路径以优化前缀扫描性能。
+## 目标结构
 
-## 2. 存储拓扑与模型设计
+### 模块
 
-### 2.1 存储路径
+```text
+pkg/modules/
+  core/discovery
+  core/session
+  core/rbac
+  core/auth
+  core/audit
 
-- **路径规则**: `{module}/{Model}/v1/{id}` (例如：`network/IPPool/v1/example1`)
+  network/dns
+  network/ip
+  network/site
+  network/intelligence
 
-### 2.2 资源规范与容器结构 (`Resource[M, S]`)
+  workflow
+```
 
-资源配置（Meta）与状态（Status）的结构体严格按 `{Model}V1Meta` 与 `{Model}V1Status` 命名（例如 `IPPoolV1Meta`, `IPPoolV1Status`），由泛型容器包裹：
+### 路由
+
+```text
+pkg/routes/
+  core.go
+  network.go
+  workflow.go
+
+  core/
+    discovery.go
+    session.go
+    rbac.go
+    auth.go
+    audit.go
+
+  network/
+    dns.go
+    ip.go
+    site.go
+    intelligence.go
+```
+
+## 模块职责
+
+### Core
+
+- `core/discovery`
+  - 暴露 discovery API
+  - 消费 registry
+
+- `core/session`
+  - 会话查询
+  - 会话吊销
+  - 登出
+
+- `core/rbac`
+  - role
+  - rolebinding
+  - serviceaccount
+  - simulate
+  - resource/verb suggest
+
+- `core/auth`
+  - 登录
+  - 当前身份信息
+  - auth 路由入口
+
+- `core/audit`
+  - 审计查询
+  - 审计清理
+
+### Network
+
+- `network/dns`
+  - domain
+  - record
+  - export
+  - soa
+
+- `network/ip`
+  - pool
+  - export
+  - sync
+  - analysis
+
+- `network/site`
+  - pool
+  - export
+  - sync
+  - analysis
+
+- `network/intelligence`
+  - source
+  - sync
+  - task
+
+### Workflow
+
+- `workflow`
+  - workflow
+  - instance
+  - log
+  - webhook
+  - trigger
+
+## 设计约束
+
+- 允许 `routes/core.go`、`routes/network.go` 做聚合注册。
+- 不允许再引入 `modules/core`、`modules/network` 这种吞并子能力生命周期的大模块。
+- 每个模块只管理自己的 discovery 注册。
+- 每个模块只启动自己的 runner、cron、task manager。
+- controller 不再承担模块装配职责。
+- service 共享逻辑可以下沉到公共包，但模块边界不跟着消失。
+
+## 模块接口
 
 ```go
-type Resource[M any, S any] struct {
-    ID              string `json:"id"`
-    Meta            M      `json:"meta"`
-    Status          S      `json:"status"`
-    Generation      int64  `json:"generation"`      // 配置版本：仅在 Meta 变更时递增
-    ResourceVersion int64  `json:"resourceVersion"` // 对象总版本：任何变更（Meta/Status）均递增
+type Module interface {
+    Name() string
+    RegisterRoutes(r chi.Router)
+    Start(ctx context.Context) error
+    Stop(ctx context.Context) error
 }
 ```
 
-## 3. 逻辑架构设计
+建议模块名使用能力全名：
 
-### 3.1 冲突检测逻辑 (Conflict Resolution)
+- `core.auth`
+- `core.rbac`
+- `core.audit`
+- `network.dns`
+- `network.ip`
+- `network.site`
+- `network.intelligence`
+- `workflow`
 
-- **Meta 更新 (PatchMeta)**: 强制校验 `Generation`。若请求携带的 `Generation > 0` 且不一致，返回 `409 Conflict`。更新后 `Generation` 与 `ResourceVersion` 均递增。
-- **Status 更新 (UpdateStatus)**: 非阻塞写入，不校验 `Generation`。仅递增 `ResourceVersion`。
+## 重构阶段
 
-### 3.2 多级校验体系 (Validation Strategy)
+### Phase A：恢复能力切片模块
 
-为了确保数据一致性并解耦业务逻辑，采用以下三层校验：
+- 删除当前粗粒度的 `pkg/modules/core`
+- 删除当前粗粒度的 `pkg/modules/network`
+- 重建：
+  - `pkg/modules/core/discovery`
+  - `pkg/modules/core/session`
+  - `pkg/modules/core/rbac`
+  - `pkg/modules/core/auth`
+  - `pkg/modules/core/audit`
+  - `pkg/modules/network/dns`
+  - `pkg/modules/network/ip`
+  - `pkg/modules/network/site`
+  - `pkg/modules/network/intelligence`
+  - `pkg/modules/workflow`
 
-| 维度                      | 校验主体                 | 职责范围                             | 触发时机     |
-| :------------------------ | :----------------------- | :----------------------------------- | :----------- |
-| **1. Schema (格式)**      | `DTO` (render.Binder)    | 必填项、正则、枚举范围、字段预处理。 | API 参数绑定 |
-| **2. Integrity (自洽性)** | `Meta` (ConfigValidator) | 内部逻辑矛盾校验（不依赖外部 DB）。  | 仓库层写入前 |
-| **3. Business (业务)**    | `Service` 层             | 全局冲突检查、权限校验、引用存在性。 | 调用仓库前   |
+验收：
 
-#### 3.2.1 仓库层“最后的防线”
+- `bootstrap` 只装配能力切片模块
+- 不再存在新的超级 `core/network` 模块
 
-`BaseRepository` 在执行 `Save` 或 `PatchMeta` 时，必须通过类型断言自动调用 `Meta.Validate(ctx)`。
+### Phase B：引入独立路由层
 
-- 若校验失败，必须回滚 `db.Cow` 事务并返回 `400 Bad Request` 相关的包装错误。
+- 新建 `pkg/routes/*`
+- 从模块中移出 HTTP 注册细节
+- 模块只调用对应的 route registrar
+- 保留：
+  - `pkg/routes/core.go`
+  - `pkg/routes/network.go`
+  - `pkg/routes/workflow.go`
 
-## 4. 核心接口定义
+验收：
 
-```go
-// ConfigValidator 定义了 Meta 模型必须实现的自洽性校验
-type ConfigValidator interface {
-    // Validate 执行不依赖外部环境的内部逻辑校验
-    Validate(ctx context.Context) error
-}
-```
+- `pkg/modules/*` 不直接堆叠大量 `chi` 路由细节
+- `pkg/controllers/*` 不再暴露路由装配职责
 
-## 5. 实施路线图
+### Phase C：对齐 discovery 与后台任务
 
-### 第一阶段：基础设施实现
+- discovery 注册代码迁到对应模块边界
+- runner/cron/task manager 迁到对应模块边界
+- 删除跨能力代管逻辑
 
-- [x] 在 `pkg/models/` 定义 `Resource[M, S]` 容器及 `ConfigValidator` 接口。
-- [x] 在 `pkg/common/` 实现类似 k8s client-go 的 `BaseRepository[M, S]`：
-  - [x] 强制 `NewBaseRepository(module, model)` 拼装类似于 K8s API 的 `{module}/{model}/v1/{id}` 存储路径。
-  - [x] 在 `db.Cow` 闭包内集成 `Generation` 冲突检测。
-  - [x] 自动触发 `ConfigValidator.Validate()`。
-  - [x] 抽象封装内置游标流的 `List` 分页获取方法。
-- [x] 封装标准的错误类型：`ErrConflict` (409) 和 `ErrInvalidConfig` (400)。
+验收：
 
-### 第二阶段：业务模型重构 (全新系统，不考虑迁移)
+- `network/ip` 只启动 IP 的同步任务
+- `network/site` 只启动 Site 的同步任务
+- `network/intelligence` 只启动 Intelligence 的同步任务
+- `workflow` 只启动 workflow 的 trigger/self-healing
 
-- [x] **IP 模块**: 重构 `IPPool` 结构，实现 `Validate` 接口校验 CIDR/Gateway 匹配逻辑。
-- [x] **DNS 模块**: 重构 `Domain` 和 `Record` 结构，实现 `Validate` 接口校验域名格式。
-- [x] **Intelligence 模块**: 重构 `IntelligenceSource` 结构，实现 `Validate` 接口。
-- [x] **RBAC 模块**: 重构 `Role`, `ServiceAccount`, `RoleBinding` 结构，实现 `Validate` 接口。
-- [x] **Site 模块**: 重构 `SiteGroup`, `SiteSyncPolicy` 等资源。
-- [x] **Actions 模块**: 重构 `Workflow` 结构。
+### Phase D：清理 service 边界
 
-### 第三阶段：Service 层适配
+- 继续保留 `services/rules` 作为共享实现层
+- 必要时新增 `services/core`、`services/network` 公共层
+- 删除仅用于旧边界的 service 入口壳
+- 不再新增 `dns/ip/site/intelligence` 的重复 discovery/bootstrapping 入口
 
-- [x] 调整 `Update` 逻辑，要求调用方从 DTO 获取并传递 `Generation` (在主要模块中已完成)。
-- [x] 确保业务逻辑校验（如 IP 冲突）在调用 `PatchMeta` 之前完成。
-- [x] 统一仓库层 `Save`/`PatchMeta` 的校验逻辑。
+验收：
 
-## 6. 优势总结
+- 共享实现下沉
+- 模块边界不被共享实现反向吞掉
 
-- **强一致性**：`Generation` 确保并发编辑时不会覆盖他人工作。
-- **数据合法性**：三层校验确保非法配置无法落地。
-- **高性能写**：冲突域分离避免了高频状态更新阻塞用户配置修改。
+## 当前重构原则
+
+- 不保留旧接口兼容
+- 不保留旧路由兼容
+- 不保留旧模块聚合方案
+- 优先删除错误边界，再补正确边界
+
+## 禁止事项
+
+- 禁止重新引入 `pkg/modules/core/module.go` 这种承载全部 core 生命周期的超级模块
+- 禁止重新引入 `pkg/modules/network/module.go` 这种承载全部 network 生命周期的超级模块
+- 禁止把 discovery 继续散落在无关 service 入口文件中
+- 禁止 controller 再承担 route grouping 和模块注入职责

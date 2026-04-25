@@ -1,0 +1,180 @@
+package processors
+
+import (
+	"encoding/json"
+	"fmt"
+	workflowmodel "homelab/pkg/models/workflow"
+	"homelab/pkg/models/shared"
+	actions "homelab/pkg/services/workflow"
+	"time"
+)
+
+type LoggerProcessor struct{}
+
+func RegisterBuiltins() {
+	actions.Register(&LoggerProcessor{})
+	actions.Register(&SleepProcessor{})
+	actions.Register(&FailProcessor{})
+	actions.Register(&WorkflowCallProcessor{})
+	RegisterHTTPProcessors()
+}
+
+func (p *LoggerProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
+		ID:          "core/logger",
+		Name:        "日志输出",
+		Description: "将指定的消息打印到任务日志中。",
+		Params: []workflowmodel.ParamDefinition{
+			{Name: "message", Description: "要打印的消息内容", Optional: false},
+		},
+		OutputParams: []workflowmodel.ParamDefinition{},
+	}
+}
+
+func (p *LoggerProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
+	message := inputs["message"]
+	ctx.Logger.Log(message)
+	return nil, nil
+}
+
+// SleepProcessor pauses execution for a given duration.
+type SleepProcessor struct{}
+
+func (p *SleepProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
+		ID:          "core/sleep",
+		Name:        "休眠等待",
+		Description: "暂停任务执行一段时间。",
+		Params: []workflowmodel.ParamDefinition{
+			{
+				Name:          "duration",
+				Description:   "等待时长，例如 5s, 10m, 1h",
+				Optional:      false,
+				RegexFrontend: `^\d+[smh]$`,
+				RegexBackend:  `^\d+[smh]$`,
+			},
+		},
+		OutputParams: []workflowmodel.ParamDefinition{},
+	}
+}
+
+func (p *SleepProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
+	d, err := time.ParseDuration(inputs["duration"])
+	if err != nil {
+		return nil, fmt.Errorf("invalid duration: %v", err)
+	}
+	ctx.Logger.Logf("Sleeping for %v...", d)
+	select {
+	case <-time.After(d):
+		return nil, nil
+	case <-ctx.Context.Done():
+		return nil, ctx.Context.Err()
+	}
+}
+
+// FailProcessor immediately fails the workflow.
+type FailProcessor struct{}
+
+func (p *FailProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
+		ID:          "core/fail",
+		Name:        "立即失败",
+		Description: "中断任务并标记为失败状态。",
+		Params: []workflowmodel.ParamDefinition{
+			{Name: "message", Description: "失败原因描述", Optional: false},
+		},
+		OutputParams: []workflowmodel.ParamDefinition{},
+	}
+}
+
+func (p *FailProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
+	return nil, fmt.Errorf("explicit failure: %s", inputs["message"])
+}
+
+// WorkflowCallProcessor calls another workflow synchronously.
+type WorkflowCallProcessor struct{}
+
+func (p *WorkflowCallProcessor) Manifest() actions.StepManifest {
+	return actions.StepManifest{
+		ID:          "core/workflow_call",
+		Name:        "调用工作流",
+		Description: "同步调用另一个工作流，并等待其执行完成。不允许自我调用。",
+		Params: []workflowmodel.ParamDefinition{
+			{
+				Name:        "workflow_id",
+				Description: "要调用的目标工作流 ID",
+				Optional:    false,
+				LookupCode:  "actions/workflows",
+			},
+			{
+				Name:          "vars",
+				Description:   "传递给子工作流的变量 (JSON 对象格式)",
+				Optional:      true,
+				RegexFrontend: `^\{.*\}$`,
+				RegexBackend:  `^\{.*\}$`,
+			},
+		},
+		OutputParams: []workflowmodel.ParamDefinition{
+			{Name: "instance_id", Description: "子工作流的执行实例 ID"},
+			{Name: "status", Description: "子工作流的最终执行状态"},
+		},
+	}
+}
+
+func (p *WorkflowCallProcessor) Execute(ctx *actions.TaskContext, inputs map[string]string) (map[string]string, error) {
+	targetID := inputs["workflow_id"]
+	if targetID == ctx.WorkflowID {
+		return nil, fmt.Errorf("recursion detected: a workflow cannot call itself")
+	}
+
+	// Parse optional vars
+	var subVars map[string]string
+	if varsJSON := inputs["vars"]; varsJSON != "" {
+		if err := json.Unmarshal([]byte(varsJSON), &subVars); err != nil {
+			return nil, fmt.Errorf("failed to parse vars JSON: %v", err)
+		}
+	}
+
+	// Fetch target workflow
+	wf, err := actions.GetWorkflow(ctx.Context, targetID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch target workflow %s: %v", targetID, err)
+	}
+
+	ctx.Logger.Logf("Triggering sub-workflow: %s (%s)", wf.Meta.Name, targetID)
+	// Trigger sub-workflow using the service account identity (impersonation)
+	instanceID, err := actions.GlobalExecutor.Execute(ctx.Context, ctx.ServiceAccountID, wf, "SubWorkflow:"+ctx.InstanceID, subVars, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to trigger sub-workflow: %v", err)
+	}
+
+	ctx.Logger.Logf("Waiting for sub-workflow %s to complete...", instanceID)
+
+	// Poll for completion
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Context.Done():
+			return nil, ctx.Context.Err()
+		case <-ticker.C:
+			inst, err := actions.GetTaskInstance(ctx.Context, instanceID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to poll sub-workflow status: %v", err)
+			}
+
+			if inst.Status.Status != shared.TaskStatusRunning && inst.Status.Status != shared.TaskStatusPending {
+				ctx.Logger.Logf("Sub-workflow %s finished with status: %s", instanceID, string(inst.Status.Status))
+				outputs := map[string]string{
+					"instance_id": instanceID,
+					"status":      string(inst.Status.Status),
+				}
+				if inst.Status.Status == shared.TaskStatusSuccess {
+					return outputs, nil
+				}
+				return outputs, fmt.Errorf("sub-workflow %s failed with status: %s", instanceID, string(inst.Status.Status))
+			}
+		}
+	}
+}

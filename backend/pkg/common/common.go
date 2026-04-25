@@ -100,7 +100,6 @@ type Response struct {
 }
 
 type CursorResponse struct {
-	Total      int         `json:"total"`
 	NextCursor string      `json:"nextCursor,omitempty"`
 	HasMore    bool        `json:"hasMore"`
 	Items      interface{} `json:"items"`
@@ -118,14 +117,12 @@ func Success(w http.ResponseWriter, r *http.Request, data interface{}) {
 
 type CursorProvider interface {
 	GetItems() interface{}
-	GetTotal() int64
 	GetCursor() string
 	HasMoreData() bool
 }
 
 func CursorSuccess(w http.ResponseWriter, r *http.Request, provider CursorProvider) {
 	Success(w, r, &CursorResponse{
-		Total:      int(provider.GetTotal()),
 		NextCursor: provider.GetCursor(),
 		HasMore:    provider.HasMoreData(),
 		Items:      provider.GetItems(),

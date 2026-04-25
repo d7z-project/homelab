@@ -2,257 +2,190 @@ package common
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"homelab/pkg/models"
-	"time"
+	"strconv"
+	"strings"
+
+	metav1 "homelab/pkg/apis/meta/v1"
+	"homelab/pkg/models/shared"
+	"homelab/pkg/store"
 
 	"gopkg.d7z.net/middleware/kv"
 )
 
-// BaseRepository provides standard operations for generic resources, implementing OCC and validation.
+// BaseRepository is a transitional wrapper over the new resource store.
+// It preserves the old call surface while routing persistence through pkg/store.
 type BaseRepository[M any, S any] struct {
-	db     kv.KV
-	module string
-	model  string
-	prefix []string
+	store *store.ResourceStore[M, S]
 }
 
-// NewBaseRepository creates a new BaseRepository with the K8s-style storage path: {module}/{model}/v1.
+// NewBaseRepository creates a repository backed by the new resource store.
 func NewBaseRepository[M any, S any](module, model string) *BaseRepository[M, S] {
+	resource := strings.ToLower(strings.ReplaceAll(module+"-"+model, "/", "-"))
+	store.DefaultDB = func() kv.KV {
+		return DB
+	}
 	return &BaseRepository[M, S]{
-		db:     DB,
-		module: module,
-		model:  model,
-		prefix: []string{module, model, "v1"},
+		store: store.NewResourceStore[M, S](
+			nil,
+			"internal/v1",
+			model,
+			resource,
+			func(ctx context.Context, spec *M) error {
+				if validator, ok := any(spec).(shared.ConfigValidator); ok {
+					if err := validator.Validate(ctx); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		),
 	}
 }
 
-// childDB returns the scoped KV for this repository.
-func (r *BaseRepository[M, S]) childDB() kv.KV {
-	if r.db != nil {
-		return r.db.Child(r.prefix...)
-	}
-	return DB.Child(r.prefix...)
-}
-
-// Cow executes a Copy-on-Write operation with optimistic concurrency control.
-func (r *BaseRepository[M, S]) Cow(ctx context.Context, id string, mutate func(*models.Resource[M, S]) error) error {
-	db := r.childDB()
-	retries := 10
-
-	for i := 0; i < retries; i++ {
-		oldData, err := db.Get(ctx, id)
-		if err != nil && err.Error() != kv.ErrKeyNotFound.Error() {
-			// Try to handle 'not found' properly
-			if !isNotFound(err) {
-				return fmt.Errorf("failed to get resource for Cow: %w", err)
-			}
-			oldData = ""
-		}
-
-		var res models.Resource[M, S]
-		if oldData != "" {
-			if err := json.Unmarshal([]byte(oldData), &res); err != nil {
-				return fmt.Errorf("failed to unmarshal resource: %w", err)
-			}
-		} else {
-			res.ID = id
-		}
-
-		if err := mutate(&res); err != nil {
+// Cow executes a copy-on-write mutation using the new resource store.
+func (r *BaseRepository[M, S]) Cow(ctx context.Context, id string, mutate func(*shared.Resource[M, S]) error) error {
+	return mapStoreError(r.store.Mutate(ctx, id, true, func(obj *metav1.Object[M, S]) error {
+		legacy := fromStoreObject(obj)
+		if err := mutate(&legacy); err != nil {
 			return err
 		}
-
-		newData, err := json.Marshal(res)
-		if err != nil {
-			return fmt.Errorf("failed to marshal resource: %w", err)
-		}
-
-		if oldData == "" {
-			// Creation
-			success, err := db.PutIfNotExists(ctx, id, string(newData), kv.TTLKeep)
-			if err != nil {
-				return fmt.Errorf("failed to create resource: %w", err)
-			}
-			if success {
-				return nil
-			}
-		} else {
-			// Update
-			success, err := db.CompareAndSwap(ctx, id, oldData, string(newData))
-			if err != nil {
-				return fmt.Errorf("failed to update resource: %w", err)
-			}
-			if success {
-				return nil
-			}
-		}
-
-		// CAS failed, retry
-		// Wait a bit before retrying, maybe add jitter
-		time.Sleep(time.Duration(10+i*5) * time.Millisecond)
-	}
-
-	return fmt.Errorf("%w: failed to update resource %s after %d retries", ErrConflict, id, retries)
+		applyLegacyObject(obj, &legacy)
+		return nil
+	}))
 }
 
 // Save persists a full resource, automatically incrementing ResourceVersion.
-func (r *BaseRepository[M, S]) Save(ctx context.Context, res *models.Resource[M, S]) error {
-	// Type assertion for validation
-	if validator, ok := any(res.Meta).(models.ConfigValidator); ok {
-		if err := validator.Validate(ctx); err != nil {
-			return fmt.Errorf("%w: %v", ErrInvalidConfig, err)
-		}
+func (r *BaseRepository[M, S]) Save(ctx context.Context, res *shared.Resource[M, S]) error {
+	if res == nil {
+		return fmt.Errorf("%w: resource is required", ErrBadRequest)
 	}
-
-	res.ResourceVersion++
-	newData, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-	return r.childDB().Put(ctx, res.ID, string(newData), kv.TTLKeep)
-}
-
-func isNotFound(err error) bool {
-	// Simple heuristic since kv.ErrKeyNotFound is used, but error wrapping could obfuscate it
-	if err == nil {
-		return false
-	}
-	return err.Error() == kv.ErrKeyNotFound.Error() || err.Error() == "key not found"
+	return mapStoreError(r.store.Mutate(ctx, res.ID, true, func(obj *metav1.Object[M, S]) error {
+		legacy := fromStoreObject(obj)
+		legacy.ID = res.ID
+		legacy.Meta = res.Meta
+		legacy.Status = res.Status
+		legacy.Generation = res.Generation
+		legacy.ResourceVersion = res.ResourceVersion + 1
+		applyLegacyObject(obj, &legacy)
+		return nil
+	}))
 }
 
 // Get retrieves a resource by ID.
-func (r *BaseRepository[M, S]) Get(ctx context.Context, id string) (*models.Resource[M, S], error) {
-	data, err := r.childDB().Get(ctx, id)
+func (r *BaseRepository[M, S]) Get(ctx context.Context, id string) (*shared.Resource[M, S], error) {
+	obj, err := r.store.Get(ctx, id)
 	if err != nil {
-		if isNotFound(err) {
-			return nil, ErrNotFound
-		}
-		return nil, err
+		return nil, mapStoreError(err)
 	}
-
-	var res models.Resource[M, S]
-	if err := json.Unmarshal([]byte(data), &res); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
+	legacy := fromStoreObject(obj)
+	return &legacy, nil
 }
 
-// PatchMeta modifies the configuration (Meta) of a resource.
-// Validates expected generation if provided (>0).
-// Automatically runs ConfigValidator if implemented by the Meta payload.
+// PatchMeta modifies resource spec and increments generation/resourceVersion.
 func (r *BaseRepository[M, S]) PatchMeta(ctx context.Context, id string, expectedGeneration int64, apply func(*M)) error {
-	return r.Cow(ctx, id, func(res *models.Resource[M, S]) error {
-		if expectedGeneration > 0 && res.Generation != expectedGeneration {
-			return fmt.Errorf("%w: requested generation %d doesn't match current %d",
-				ErrConflict, expectedGeneration, res.Generation)
+	return mapStoreError(r.store.Mutate(ctx, id, false, func(obj *metav1.Object[M, S]) error {
+		legacy := fromStoreObject(obj)
+		if expectedGeneration > 0 && legacy.Generation != expectedGeneration {
+			return fmt.Errorf("%w: requested generation %d doesn't match current %d", ErrConflict, expectedGeneration, legacy.Generation)
 		}
-
-		apply(&res.Meta)
-
-		// Type assertion for validation
-		if validator, ok := any(res.Meta).(models.ConfigValidator); ok {
-			if err := validator.Validate(ctx); err != nil {
-				return fmt.Errorf("%w: %v", ErrInvalidConfig, err)
-			}
-		}
-
-		res.Generation++
-		res.ResourceVersion++
-
+		apply(&legacy.Meta)
+		legacy.Generation++
+		legacy.ResourceVersion++
+		applyLegacyObject(obj, &legacy)
 		return nil
-	})
+	}))
 }
 
-// UpdateStatus modifies the running state (Status) of a resource.
-// Does not validate generation, increments only ResourceVersion.
+// UpdateStatus modifies resource status and increments only resourceVersion.
 func (r *BaseRepository[M, S]) UpdateStatus(ctx context.Context, id string, apply func(*S)) error {
-	return r.Cow(ctx, id, func(res *models.Resource[M, S]) error {
-		apply(&res.Status)
-
-		res.ResourceVersion++
-
+	return mapStoreError(r.store.Mutate(ctx, id, false, func(obj *metav1.Object[M, S]) error {
+		legacy := fromStoreObject(obj)
+		apply(&legacy.Status)
+		legacy.ResourceVersion++
+		applyLegacyObject(obj, &legacy)
 		return nil
-	})
+	}))
 }
 
 // Delete removes a resource by ID.
 func (r *BaseRepository[M, S]) Delete(ctx context.Context, id string) error {
-	success, err := r.childDB().Delete(ctx, id)
-	if err != nil {
-		if isNotFound(err) {
-			return ErrNotFound
-		}
-		return err
-	}
-	if !success {
-		return ErrNotFound
-	}
-	return nil
+	return mapStoreError(r.store.Delete(ctx, id))
 }
 
-// List returns a paginated list of resources using cursor pagination.
-func (r *BaseRepository[M, S]) List(ctx context.Context, cursor string, limit int, filter func(*models.Resource[M, S]) bool) (*models.PaginationResponse[models.Resource[M, S]], error) {
-	db := r.childDB()
-	count, _ := db.Count(ctx)
-
-	fetchLimit := limit * 2
-	if fetchLimit < 50 {
-		fetchLimit = 50
-	}
-
-	resp, err := db.ListCurrentCursor(ctx, &kv.ListOptions{
-		Limit:  int64(fetchLimit),
-		Cursor: cursor,
+// List returns paginated resources using the new store list semantics.
+func (r *BaseRepository[M, S]) List(ctx context.Context, cursor string, limit int, filter func(*shared.Resource[M, S]) bool) (*shared.PaginationResponse[shared.Resource[M, S]], error) {
+	res, err := r.store.List(ctx, cursor, limit, func(obj *metav1.Object[M, S]) bool {
+		if filter == nil {
+			return true
+		}
+		legacy := fromStoreObject(obj)
+		return filter(&legacy)
 	})
 	if err != nil {
-		return nil, err
+		return nil, mapStoreError(err)
 	}
 
-	res := make([]models.Resource[M, S], 0)
-	for _, v := range resp.Pairs {
-		var item models.Resource[M, S]
-		if err := json.Unmarshal([]byte(v.Value), &item); err == nil {
-			if filter == nil || filter(&item) {
-				res = append(res, item)
-			}
-		}
-
-		// If we've reached exactly the limit, return right away, and set the cursor to this item's key.
-		if len(res) == limit {
-			return &models.PaginationResponse[models.Resource[M, S]]{
-				Items:      res,
-				NextCursor: v.Key,
-				HasMore:    resp.HasMore || len(resp.Pairs) > 0,
-				Total:      int64(count),
-			}, nil
-		}
+	items := make([]shared.Resource[M, S], 0, len(res.Items))
+	for i := range res.Items {
+		item := res.Items[i]
+		items = append(items, fromStoreObject(&item))
 	}
-
-	// Reached the end of fetched data, didn't hit limit exactly.
-	return &models.PaginationResponse[models.Resource[M, S]]{
-		Items:      res,
-		NextCursor: resp.Cursor,
-		HasMore:    resp.HasMore,
-		Total:      int64(count),
+	return &shared.PaginationResponse[shared.Resource[M, S]]{
+		Items:      items,
+		NextCursor: res.Metadata.Continue,
+		HasMore:    res.Metadata.Continue != "",
 	}, nil
 }
 
-// ListAll returns all resources in the repository.
-func (r *BaseRepository[M, S]) ListAll(ctx context.Context) ([]models.Resource[M, S], error) {
-	db := r.childDB()
-	items, err := db.List(ctx, "")
+// ListAll returns all resources from the new store.
+func (r *BaseRepository[M, S]) ListAll(ctx context.Context) ([]shared.Resource[M, S], error) {
+	res, err := r.store.ListAll(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, mapStoreError(err)
 	}
-	res := make([]models.Resource[M, S], 0, len(items))
-	for _, v := range items {
-		var item models.Resource[M, S]
-		if err := json.Unmarshal([]byte(v.Value), &item); err == nil {
-			res = append(res, item)
-		}
+	items := make([]shared.Resource[M, S], 0, len(res))
+	for i := range res {
+		item := res[i]
+		items = append(items, fromStoreObject(&item))
 	}
-	return res, nil
+	return items, nil
+}
+
+func fromStoreObject[M any, S any](obj *metav1.Object[M, S]) shared.Resource[M, S] {
+	resourceVersion, _ := strconv.ParseInt(obj.Metadata.ResourceVersion, 10, 64)
+	return shared.Resource[M, S]{
+		ID:              obj.Metadata.Name,
+		Meta:            obj.Spec,
+		Status:          obj.Status,
+		Generation:      obj.Metadata.Generation,
+		ResourceVersion: resourceVersion,
+	}
+}
+
+func applyLegacyObject[M any, S any](obj *metav1.Object[M, S], legacy *shared.Resource[M, S]) {
+	obj.Metadata.Name = legacy.ID
+	obj.Metadata.Generation = legacy.Generation
+	obj.Metadata.ResourceVersion = strconv.FormatInt(legacy.ResourceVersion, 10)
+	obj.Spec = legacy.Meta
+	obj.Status = legacy.Status
+}
+
+func mapStoreError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		return fmt.Errorf("%w: %v", ErrNotFound, err)
+	case errors.Is(err, store.ErrBadRequest):
+		return fmt.Errorf("%w: %v", ErrBadRequest, err)
+	case errors.Is(err, store.ErrConflict):
+		return fmt.Errorf("%w: %v", ErrConflict, err)
+	case errors.Is(err, store.ErrInvalidConfig):
+		return fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+	default:
+		return err
+	}
 }

@@ -6,17 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"homelab/pkg/common"
-	"homelab/pkg/models"
 	"log"
 	"sync"
 	"time"
+
+	"homelab/pkg/models/shared"
 
 	"gopkg.d7z.net/middleware/kv"
 )
 
 // Manager 泛型任务管理器
 // 将全局 DB 持久化、分布式锁判定、状态机（Running->Success/Failed）、防僵死清理、上下文取消封装为统一能力
-type Manager[T models.TaskInfo] struct {
+type Manager[T shared.TaskInfo] struct {
 	mu          sync.RWMutex
 	tasks       map[string]T
 	activeTasks map[string]context.CancelFunc // 保存运行中任务的取消句柄
@@ -29,7 +30,7 @@ type Manager[T models.TaskInfo] struct {
 // NewManager 实例化框架。自动引用 common.DB，无需外部传递。
 
 // dbPath 为 DB 的 namespace，如 "network", "site"
-func NewManager[T models.TaskInfo](lockPrefix string, dbKey string, dbPath ...string) *Manager[T] {
+func NewManager[T shared.TaskInfo](lockPrefix string, dbKey string, dbPath ...string) *Manager[T] {
 	m := &Manager[T]{
 		tasks:       make(map[string]T),
 		activeTasks: make(map[string]context.CancelFunc),
@@ -75,12 +76,12 @@ func (m *Manager[T]) Reconcile(ctx context.Context) {
 	changed := false
 	for _, t := range m.tasks {
 		status := t.GetStatus()
-		if status == models.TaskStatusRunning || status == models.TaskStatusPending {
+		if status == shared.TaskStatusRunning || status == shared.TaskStatusPending {
 			// 探测锁状态
 			lockKey := fmt.Sprintf("%s:%s", m.lockPrefix, t.GetID())
 			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
 				// 能拿到锁说明执行者已挂
-				t.SetStatus(models.TaskStatusFailed)
+				t.SetStatus(shared.TaskStatusFailed)
 				t.SetError("Interrupted by system restart or node failure")
 				changed = true
 				release() // 主动释放探测锁
@@ -125,8 +126,8 @@ func (m *Manager[T]) CancelTask(id string) bool {
 	// 2. 将状态标记为 Cancelled 更新到底层 (异地节点依赖此状态探测)
 	if t, ok := m.tasks[id]; ok {
 		status := t.GetStatus()
-		if status == models.TaskStatusPending || status == models.TaskStatusRunning {
-			t.SetStatus(models.TaskStatusCancelled)
+		if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
+			t.SetStatus(shared.TaskStatusCancelled)
 			b, _ := json.Marshal(m.tasks)
 			_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 			return true
@@ -193,7 +194,7 @@ func (m *Manager[T]) Cleanup(maxAge time.Duration) {
 	for id, t := range m.tasks {
 		status := t.GetStatus()
 		createdAt := t.GetCreatedAt()
-		if now.Sub(createdAt) > maxAge && status != models.TaskStatusRunning {
+		if now.Sub(createdAt) > maxAge && status != shared.TaskStatusRunning {
 			if m.cleanupHook != nil {
 				m.cleanupHook(t)
 			}
@@ -246,12 +247,12 @@ func (m *Manager[T]) RunTask(ctx context.Context, id string, fn func(ctx context
 	defer release() //退出时自动释放锁
 
 	// 2. 状态检查（可能在排队阶段已被要求取消）
-	if t.GetStatus() == models.TaskStatusCancelled {
+	if t.GetStatus() == shared.TaskStatusCancelled {
 		m.Save()
 		return
 	}
 
-	t.SetStatus(models.TaskStatusRunning)
+	t.SetStatus(shared.TaskStatusRunning)
 	m.Save()
 
 	// 3. 构建可取消的上下文并注册到活跃表
@@ -269,7 +270,7 @@ func (m *Manager[T]) RunTask(ctx context.Context, id string, fn func(ctx context
 		m.mu.Unlock()
 
 		if r := recover(); r != nil {
-			t.SetStatus(models.TaskStatusFailed)
+			t.SetStatus(shared.TaskStatusFailed)
 			t.SetError(fmt.Sprintf("panic: %v", r))
 			m.Save()
 		}
@@ -283,14 +284,14 @@ func (m *Manager[T]) RunTask(ctx context.Context, id string, fn func(ctx context
 	latestStatus := t.GetStatus() // 有可能其他协程调用 CancelTask 已经标记成了 Cancelled
 	m.mu.RUnlock()
 
-	if latestStatus == models.TaskStatusCancelled || errors.Is(taskCtx.Err(), context.Canceled) {
-		t.SetStatus(models.TaskStatusCancelled)
+	if latestStatus == shared.TaskStatusCancelled || errors.Is(taskCtx.Err(), context.Canceled) {
+		t.SetStatus(shared.TaskStatusCancelled)
 		t.SetError("Task cancelled manually")
 	} else if err != nil {
-		t.SetStatus(models.TaskStatusFailed)
+		t.SetStatus(shared.TaskStatusFailed)
 		t.SetError(err.Error())
 	} else {
-		t.SetStatus(models.TaskStatusSuccess)
+		t.SetStatus(shared.TaskStatusSuccess)
 	}
 	m.Save()
 }

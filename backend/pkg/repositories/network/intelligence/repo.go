@@ -1,0 +1,43 @@
+package intelligence
+
+import (
+	"context"
+	"homelab/pkg/common"
+	"strings"
+
+	intelligencemodel "homelab/pkg/models/network/intelligence"
+	"homelab/pkg/models/shared"
+)
+
+var SourceRepo = common.NewBaseRepository[intelligencemodel.IntelligenceSourceV1Meta, intelligencemodel.IntelligenceSourceV1Status]("network", "IntelligenceSource")
+
+func GetSource(ctx context.Context, id string) (*intelligencemodel.IntelligenceSource, error) {
+	return SourceRepo.Get(ctx, id)
+}
+
+func SaveSource(ctx context.Context, source *intelligencemodel.IntelligenceSource) error {
+	return SourceRepo.Cow(ctx, source.ID, func(res *intelligencemodel.IntelligenceSource) error {
+		res.Meta = source.Meta
+		res.Status = source.Status
+		return nil
+	})
+}
+
+func ScanAllSources(ctx context.Context) ([]intelligencemodel.IntelligenceSource, error) {
+	res, err := SourceRepo.List(ctx, "", 10000, nil)
+	if err != nil {
+		return nil, err
+	}
+	return res.Items, nil
+}
+
+func ScanSources(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[intelligencemodel.IntelligenceSource], error) {
+	search = strings.ToLower(search)
+	return SourceRepo.List(ctx, cursor, limit, func(s *intelligencemodel.IntelligenceSource) bool {
+		return search == "" || strings.Contains(strings.ToLower(s.Meta.Name), search) || strings.Contains(strings.ToLower(s.ID), search)
+	})
+}
+
+func DeleteSource(ctx context.Context, id string) error {
+	return SourceRepo.Delete(ctx, id)
+}

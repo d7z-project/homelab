@@ -4,11 +4,11 @@ import (
 	"io"
 	"time"
 
-	"homelab/pkg/models"
+	"homelab/pkg/models/shared"
 )
 
 // ProgressReader wraps an io.Reader to provide real-time tracking of download progress.
-type ProgressReader[T models.TaskInfo] struct {
+type ProgressReader[T shared.TaskInfo] struct {
 	io.Reader
 	Total   int64
 	Current int64
@@ -34,7 +34,7 @@ func (pr *ProgressReader[T]) Read(p []byte) (int, error) {
 }
 
 // NewProgressReader creates a new Reader that reports progress using task.Manager.
-func NewProgressReader[T models.TaskInfo](r io.Reader, total int64, task T, manager *Manager[T]) io.Reader {
+func NewProgressReader[T shared.TaskInfo](r io.Reader, total int64, task T, manager *Manager[T]) io.Reader {
 	return &ProgressReader[T]{
 		Reader:  r,
 		Total:   total,

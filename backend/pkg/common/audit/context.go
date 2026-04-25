@@ -2,8 +2,9 @@ package audit
 
 import (
 	"context"
-	"homelab/pkg/models"
-	auditrepo "homelab/pkg/repositories/audit"
+
+	auditmodel "homelab/pkg/models/core/audit"
+	auditrepo "homelab/pkg/repositories/core/audit"
 )
 
 type contextKey string
@@ -27,7 +28,7 @@ func (l *AuditLogger) Log(action string, targetID string, message string, succes
 	if !success {
 		status = "Failed"
 	}
-	logEntry := &models.AuditLog{
+	logEntry := &auditmodel.AuditLog{
 		Subject:   l.Subject,
 		Action:    action,
 		Resource:  l.Resource,
