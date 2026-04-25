@@ -3,7 +3,7 @@ package rbac
 import (
 	"context"
 	rbaccontroller "homelab/pkg/controllers/core/rbac"
-	"homelab/pkg/controllers/middlewares"
+	"homelab/pkg/controllers/routerx"
 	runtimepkg "homelab/pkg/runtime"
 	rbacservice "homelab/pkg/services/core/rbac"
 
@@ -17,32 +17,28 @@ func New() *Module { return &Module{} }
 func (m *Module) Name() string { return "core.rbac" }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	r.Route("/rbac", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AuthMiddleware)
-			r.Use(middlewares.AuditMiddleware("rbac"))
-
-			r.With(middlewares.RequirePermission("list", "rbac")).Get("/resources/suggest", rbaccontroller.SuggestResourcesHandler)
-			r.With(middlewares.RequirePermission("list", "rbac")).Get("/verbs/suggest", rbaccontroller.SuggestVerbsHandler)
-			r.With(middlewares.RequirePermission("simulate", "rbac")).Post("/simulate", rbaccontroller.SimulatePermissionsHandler)
-
-			r.With(middlewares.RequirePermission("list", "rbac")).Get("/serviceaccounts", rbaccontroller.ScanServiceAccountsHandler)
-			r.With(middlewares.RequirePermission("create", "rbac")).Post("/serviceaccounts", rbaccontroller.CreateServiceAccountHandler)
-			r.With(middlewares.RequirePermission("update", "rbac")).Put("/serviceaccounts/{id}", rbaccontroller.UpdateServiceAccountHandler)
-			r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/serviceaccounts/{id}", rbaccontroller.DeleteServiceAccountHandler)
-			r.With(middlewares.RequirePermission("update", "rbac")).Post("/serviceaccounts/{id}/reset", rbaccontroller.ResetServiceAccountTokenHandler)
-
-			r.With(middlewares.RequirePermission("list", "rbac")).Get("/roles", rbaccontroller.ScanRolesHandler)
-			r.With(middlewares.RequirePermission("create", "rbac")).Post("/roles", rbaccontroller.CreateRoleHandler)
-			r.With(middlewares.RequirePermission("update", "rbac")).Put("/roles/{id}", rbaccontroller.UpdateRoleHandler)
-			r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/roles/{id}", rbaccontroller.DeleteRoleHandler)
-
-			r.With(middlewares.RequirePermission("list", "rbac")).Get("/rolebindings", rbaccontroller.ScanRoleBindingsHandler)
-			r.With(middlewares.RequirePermission("create", "rbac")).Post("/rolebindings", rbaccontroller.CreateRoleBindingHandler)
-			r.With(middlewares.RequirePermission("update", "rbac")).Put("/rolebindings/{id}", rbaccontroller.UpdateRoleBindingHandler)
-			r.With(middlewares.RequirePermission("delete", "rbac")).Delete("/rolebindings/{id}", rbaccontroller.DeleteRoleBindingHandler)
-		})
-	})
+	routerx.Mount(r, "/rbac", routerx.Scope{
+		Resource: "rbac",
+		Audit:    "rbac",
+		UsesAuth: true,
+	},
+		routerx.Get("/resources/suggest", rbaccontroller.SuggestResourcesHandler, "list"),
+		routerx.Get("/verbs/suggest", rbaccontroller.SuggestVerbsHandler, "list"),
+		routerx.Post("/simulate", rbaccontroller.SimulatePermissionsHandler, "simulate"),
+		routerx.Get("/serviceaccounts", rbaccontroller.ScanServiceAccountsHandler, "list"),
+		routerx.Post("/serviceaccounts", rbaccontroller.CreateServiceAccountHandler, "create"),
+		routerx.Put("/serviceaccounts/{id}", rbaccontroller.UpdateServiceAccountHandler, "update"),
+		routerx.Delete("/serviceaccounts/{id}", rbaccontroller.DeleteServiceAccountHandler, "delete"),
+		routerx.Post("/serviceaccounts/{id}/reset", rbaccontroller.ResetServiceAccountTokenHandler, "update"),
+		routerx.Get("/roles", rbaccontroller.ScanRolesHandler, "list"),
+		routerx.Post("/roles", rbaccontroller.CreateRoleHandler, "create"),
+		routerx.Put("/roles/{id}", rbaccontroller.UpdateRoleHandler, "update"),
+		routerx.Delete("/roles/{id}", rbaccontroller.DeleteRoleHandler, "delete"),
+		routerx.Get("/rolebindings", rbaccontroller.ScanRoleBindingsHandler, "list"),
+		routerx.Post("/rolebindings", rbaccontroller.CreateRoleBindingHandler, "create"),
+		routerx.Put("/rolebindings/{id}", rbaccontroller.UpdateRoleBindingHandler, "update"),
+		routerx.Delete("/rolebindings/{id}", rbaccontroller.DeleteRoleBindingHandler, "delete"),
+	)
 }
 
 func (m *Module) Start(context.Context) error {

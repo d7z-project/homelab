@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 // Site Pools
@@ -30,8 +29,7 @@ func ScanSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := deps.PoolService.ScanGroups(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -53,9 +51,8 @@ func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var group apiv1.Group
-	if err := render.Bind(r, &group); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	group, ok := controllercommon.BindRequest[apiv1.Group](w, r)
+	if !ok {
 		return
 	}
 	model := toModelGroup(group)
@@ -78,9 +75,8 @@ func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkSiteResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
+	if !ok {
 		return
 	}
 	if err := deps.PoolService.DeleteGroup(r.Context(), id); err != nil {
@@ -105,9 +101,8 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkSiteResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
+	if !ok {
 		return
 	}
 	cursor := r.URL.Query().Get("cursor")
@@ -138,14 +133,12 @@ func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkSiteResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
+	if !ok {
 		return
 	}
-	var req apiv1.PoolEntryRequest
-	if err := render.Bind(r, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.BindRequest[apiv1.PoolEntryRequest](w, r)
+	if !ok {
 		return
 	}
 	modelReq := toModelPoolEntryRequest(req)
@@ -170,9 +163,8 @@ func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkSiteResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
+	if !ok {
 		return
 	}
 	value := r.URL.Query().Get("value")
@@ -206,10 +198,14 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 		Domain   string   `json:"domain"`
 		GroupIDs []string `json:"groupIds"`
 	}
-	if err := render.DecodeJSON(r.Body, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	decoded, ok := controllercommon.DecodeJSONRequest[struct {
+		Domain   string   `json:"domain"`
+		GroupIDs []string `json:"groupIds"`
+	}](w, r)
+	if !ok {
 		return
 	}
+	req = decoded
 	res, err := deps.Analysis.HitTest(r.Context(), req.Domain, req.GroupIDs)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -234,8 +230,7 @@ func ScanSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := deps.PoolService.ScanExports(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -257,9 +252,8 @@ func CreateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var export apiv1.Export
-	if err := render.Bind(r, &export); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	export, ok := controllercommon.BindRequest[apiv1.Export](w, r)
+	if !ok {
 		return
 	}
 	model := toModelExport(export)
@@ -289,10 +283,9 @@ func UpdateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	var export apiv1.Export
-	if err := render.Bind(r, &export); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	id := controllercommon.PathID(r, "id")
+	export, ok := controllercommon.BindRequest[apiv1.Export](w, r)
+	if !ok {
 		return
 	}
 	export.ID = id
@@ -316,7 +309,7 @@ func DeleteSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := deps.PoolService.DeleteExport(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -379,7 +372,7 @@ func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "taskId")
+	id := controllercommon.PathID(r, "taskId")
 	task := deps.Exports.GetTask(id)
 	if task == nil {
 		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found")
@@ -403,7 +396,7 @@ func CancelSiteExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "taskId")
+	id := controllercommon.PathID(r, "taskId")
 	if !deps.Exports.CancelTask(id) {
 		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found or not cancelable")
 		return
@@ -430,9 +423,8 @@ func PreviewSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req apiv1.ExportPreviewRequest
-	if err := render.Bind(r, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.BindRequest[apiv1.ExportPreviewRequest](w, r)
+	if !ok {
 		return
 	}
 	modelReq := toModelExportPreviewRequest(req)
@@ -456,7 +448,7 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "taskId")
+	id := controllercommon.PathID(r, "taskId")
 	task := deps.Exports.GetTask(id)
 	if task == nil || task.Status != "Success" {
 		http.Error(w, "file not ready", http.StatusNotFound)
@@ -490,8 +482,7 @@ func ScanSiteSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := deps.PoolService.ScanSyncPolicies(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -513,9 +504,8 @@ func CreateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var policy apiv1.SyncPolicy
-	if err := render.Bind(r, &policy); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	policy, ok := controllercommon.BindRequest[apiv1.SyncPolicy](w, r)
+	if !ok {
 		return
 	}
 	model := toModelSyncPolicy(policy)
@@ -540,9 +530,8 @@ func UpdateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var policy apiv1.SyncPolicy
-	if err := render.Bind(r, &policy); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	policy, ok := controllercommon.BindRequest[apiv1.SyncPolicy](w, r)
+	if !ok {
 		return
 	}
 	policy.ID = chi.URLParam(r, "id")
@@ -609,9 +598,8 @@ func UpdateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := chi.URLParam(r, "id")
-	var group apiv1.Group
-	if err := render.Bind(r, &group); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	group, ok := controllercommon.BindRequest[apiv1.Group](w, r)
+	if !ok {
 		return
 	}
 	group.ID = id

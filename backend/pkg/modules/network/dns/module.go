@@ -2,8 +2,8 @@ package dns
 
 import (
 	"context"
-	"homelab/pkg/controllers/middlewares"
 	dnscontroller "homelab/pkg/controllers/network/dns"
+	"homelab/pkg/controllers/routerx"
 	runtimepkg "homelab/pkg/runtime"
 	dnsservice "homelab/pkg/services/network/dns"
 
@@ -17,24 +17,21 @@ func New() *Module { return &Module{} }
 func (m *Module) Name() string { return "network.dns" }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	r.Route("/network/dns", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AuthMiddleware)
-			r.Use(middlewares.AuditMiddleware("network/dns"))
-
-			r.With(middlewares.RequirePermission("get", "network/dns")).Get("/export", dnscontroller.ExportHandler)
-
-			r.With(middlewares.RequirePermission("list", "network/dns")).Get("/domains", dnscontroller.ScanDomainsHandler)
-			r.With(middlewares.RequirePermission("create", "network/dns")).Post("/domains", dnscontroller.CreateDomainHandler)
-			r.With(middlewares.RequirePermission("update", "network/dns")).Put("/domains/{id}", dnscontroller.UpdateDomainHandler)
-			r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/domains/{id}", dnscontroller.DeleteDomainHandler)
-
-			r.With(middlewares.RequirePermission("list", "network/dns")).Get("/records", dnscontroller.ScanRecordsHandler)
-			r.With(middlewares.RequirePermission("create", "network/dns")).Post("/records", dnscontroller.CreateRecordHandler)
-			r.With(middlewares.RequirePermission("update", "network/dns")).Put("/records/{id}", dnscontroller.UpdateRecordHandler)
-			r.With(middlewares.RequirePermission("delete", "network/dns")).Delete("/records/{id}", dnscontroller.DeleteRecordHandler)
-		})
-	})
+	routerx.Mount(r, "/network/dns", routerx.Scope{
+		Resource: "network/dns",
+		Audit:    "network/dns",
+		UsesAuth: true,
+	},
+		routerx.Get("/export", dnscontroller.ExportHandler, "get"),
+		routerx.Get("/domains", dnscontroller.ScanDomainsHandler, "list"),
+		routerx.Post("/domains", dnscontroller.CreateDomainHandler, "create"),
+		routerx.Put("/domains/{id}", dnscontroller.UpdateDomainHandler, "update"),
+		routerx.Delete("/domains/{id}", dnscontroller.DeleteDomainHandler, "delete"),
+		routerx.Get("/records", dnscontroller.ScanRecordsHandler, "list"),
+		routerx.Post("/records", dnscontroller.CreateRecordHandler, "create"),
+		routerx.Put("/records/{id}", dnscontroller.UpdateRecordHandler, "update"),
+		routerx.Delete("/records/{id}", dnscontroller.DeleteRecordHandler, "delete"),
+	)
 }
 
 func (m *Module) Start(context.Context) error {

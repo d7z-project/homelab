@@ -2,9 +2,11 @@ package site
 
 import (
 	"context"
+	"net/http"
+
 	controllerdeps "homelab/pkg/controllers"
-	"homelab/pkg/controllers/middlewares"
 	sitecontroller "homelab/pkg/controllers/network/site"
+	"homelab/pkg/controllers/routerx"
 	runtimepkg "homelab/pkg/runtime"
 	ipservice "homelab/pkg/services/network/ip"
 	siteservice "homelab/pkg/services/network/site"
@@ -32,40 +34,38 @@ func New(enricher *ipservice.MMDBManager) *Module {
 func (m *Module) Name() string { return "network.site" }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	r.Route("/network/site", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AuthMiddleware)
-			r.Use(middlewares.AuditMiddleware("network/site"))
-			r.Use(controllerdeps.WithSiteControllerDeps(m.service, m.analysis, m.exports))
-
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/pools", sitecontroller.ScanSiteGroupsHandler)
-			r.With(middlewares.RequirePermission("create", "network/site")).Post("/pools", sitecontroller.CreateSiteGroupHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Put("/pools/{id}", sitecontroller.UpdateSiteGroupHandler)
-			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/pools/{id}", sitecontroller.DeleteSiteGroupHandler)
-			r.With(middlewares.RequirePermission("get", "network/site")).Get("/pools/{id}/preview", sitecontroller.PreviewSitePoolHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Post("/pools/{id}/entries", sitecontroller.ManageSitePoolEntryHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Delete("/pools/{id}/entries", sitecontroller.DeleteSitePoolEntryHandler)
-
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/analysis/hit-test", sitecontroller.SiteHitTestHandler)
-
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/exports", sitecontroller.ScanSiteExportsHandler)
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/exports/tasks", sitecontroller.ScanSiteExportTasksHandler)
-			r.With(middlewares.RequirePermission("create", "network/site")).Post("/exports", sitecontroller.CreateSiteExportHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Put("/exports/{id}", sitecontroller.UpdateSiteExportHandler)
-			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/exports/{id}", sitecontroller.DeleteSiteExportHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/exports/{id}/trigger", sitecontroller.TriggerSiteExportHandler)
-			r.With(middlewares.RequirePermission("get", "network/site")).Get("/exports/task/{taskId}", sitecontroller.SiteExportTaskStatusHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/exports/task/{taskId}/cancel", sitecontroller.CancelSiteExportTaskHandler)
-			r.With(middlewares.RequirePermission("get", "network/site")).Get("/exports/download/{taskId}", sitecontroller.DownloadSiteExportHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/exports/preview", sitecontroller.PreviewSiteExportHandler)
-
-			r.With(middlewares.RequirePermission("list", "network/site")).Get("/sync", sitecontroller.ScanSiteSyncPoliciesHandler)
-			r.With(middlewares.RequirePermission("create", "network/site")).Post("/sync", sitecontroller.CreateSiteSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("update", "network/site")).Put("/sync/{id}", sitecontroller.UpdateSiteSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("delete", "network/site")).Delete("/sync/{id}", sitecontroller.DeleteSiteSyncPolicyHandler)
-			r.With(middlewares.RequirePermission("execute", "network/site")).Post("/sync/{id}/trigger", sitecontroller.TriggerSiteSyncHandler)
-		})
-	})
+	routerx.Mount(r, "/network/site", routerx.Scope{
+		Resource: "network/site",
+		Audit:    "network/site",
+		UsesAuth: true,
+		Extra: []func(http.Handler) http.Handler{
+			controllerdeps.WithSiteControllerDeps(m.service, m.analysis, m.exports),
+		},
+	},
+		routerx.Get("/pools", sitecontroller.ScanSiteGroupsHandler, "list"),
+		routerx.Post("/pools", sitecontroller.CreateSiteGroupHandler, "create"),
+		routerx.Put("/pools/{id}", sitecontroller.UpdateSiteGroupHandler, "update"),
+		routerx.Delete("/pools/{id}", sitecontroller.DeleteSiteGroupHandler, "delete"),
+		routerx.Get("/pools/{id}/preview", sitecontroller.PreviewSitePoolHandler, "get"),
+		routerx.Post("/pools/{id}/entries", sitecontroller.ManageSitePoolEntryHandler, "update"),
+		routerx.Delete("/pools/{id}/entries", sitecontroller.DeleteSitePoolEntryHandler, "update"),
+		routerx.Post("/analysis/hit-test", sitecontroller.SiteHitTestHandler, "execute"),
+		routerx.Get("/exports", sitecontroller.ScanSiteExportsHandler, "list"),
+		routerx.Get("/exports/tasks", sitecontroller.ScanSiteExportTasksHandler, "list"),
+		routerx.Post("/exports", sitecontroller.CreateSiteExportHandler, "create"),
+		routerx.Put("/exports/{id}", sitecontroller.UpdateSiteExportHandler, "update"),
+		routerx.Delete("/exports/{id}", sitecontroller.DeleteSiteExportHandler, "delete"),
+		routerx.Post("/exports/{id}/trigger", sitecontroller.TriggerSiteExportHandler, "execute"),
+		routerx.Get("/exports/task/{taskId}", sitecontroller.SiteExportTaskStatusHandler, "get"),
+		routerx.Post("/exports/task/{taskId}/cancel", sitecontroller.CancelSiteExportTaskHandler, "execute"),
+		routerx.Get("/exports/download/{taskId}", sitecontroller.DownloadSiteExportHandler, "get"),
+		routerx.Post("/exports/preview", sitecontroller.PreviewSiteExportHandler, "execute"),
+		routerx.Get("/sync", sitecontroller.ScanSiteSyncPoliciesHandler, "list"),
+		routerx.Post("/sync", sitecontroller.CreateSiteSyncPolicyHandler, "create"),
+		routerx.Put("/sync/{id}", sitecontroller.UpdateSiteSyncPolicyHandler, "update"),
+		routerx.Delete("/sync/{id}", sitecontroller.DeleteSiteSyncPolicyHandler, "delete"),
+		routerx.Post("/sync/{id}/trigger", sitecontroller.TriggerSiteSyncHandler, "execute"),
+	)
 }
 
 func (m *Module) Start(ctx context.Context) error {

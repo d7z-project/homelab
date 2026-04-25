@@ -3,7 +3,7 @@ package workflow
 import (
 	"context"
 
-	"homelab/pkg/controllers/middlewares"
+	"homelab/pkg/controllers/routerx"
 	workflowcontroller "homelab/pkg/controllers/workflow"
 	runtimepkg "homelab/pkg/runtime"
 	actionservice "homelab/pkg/services/workflow"
@@ -27,31 +27,30 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 		r.Get("/webhooks/{token}", workflowcontroller.WebhookHandler)
 		r.Post("/webhooks/{token}", workflowcontroller.WebhookHandler)
 
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AuthMiddleware)
-			r.Use(middlewares.AuditMiddleware("actions"))
-
-			r.With(middlewares.RequirePermission("list", "actions")).Get("/workflows", workflowcontroller.ScanWorkflowsHandler)
-			r.With(middlewares.RequirePermission("create", "actions")).Post("/workflows", workflowcontroller.CreateWorkflowHandler)
-			r.With(middlewares.RequirePermission("get", "actions")).Get("/workflows/schema", workflowcontroller.GetWorkflowSchemaHandler)
-			r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/validate", workflowcontroller.ValidateWorkflowHandler)
-			r.With(middlewares.RequirePermission("execute", "actions")).Post("/validate/regex", workflowcontroller.ValidateRegexHandler)
-			r.With(middlewares.RequirePermission("update", "actions")).Put("/workflows/{id}", workflowcontroller.UpdateWorkflowHandler)
-			r.With(middlewares.RequirePermission("get", "actions")).Get("/workflows/{id}", workflowcontroller.GetWorkflowHandler)
-			r.With(middlewares.RequirePermission("delete", "actions")).Delete("/workflows/{id}", workflowcontroller.DeleteWorkflowHandler)
-			r.With(middlewares.RequirePermission("execute", "actions")).Post("/workflows/{workflowId}/run", workflowcontroller.RunWorkflowHandler)
-			r.With(middlewares.RequirePermission("update", "actions")).Post("/workflows/{id}/webhook/reset", workflowcontroller.ResetWebhookTokenHandler)
-
-			r.With(middlewares.RequirePermission("list", "actions")).Get("/instances", workflowcontroller.ScanInstancesHandler)
-			r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}", workflowcontroller.GetInstanceHandler)
-			r.With(middlewares.RequirePermission("delete", "actions")).Post("/instances/cleanup", workflowcontroller.CleanupInstancesHandler)
-			r.With(middlewares.RequirePermission("get", "actions")).Get("/instances/{id}/logs", workflowcontroller.GetInstanceLogsHandler)
-			r.With(middlewares.RequirePermission("delete", "actions")).Delete("/instances/{id}", workflowcontroller.DeleteInstanceHandler)
-			r.With(middlewares.RequirePermission("execute", "actions")).Post("/instances/{id}/cancel", workflowcontroller.CancelInstanceHandler)
-
-			r.With(middlewares.RequirePermission("list", "actions")).Get("/manifests", workflowcontroller.ScanManifestsHandler)
-			r.With(middlewares.RequirePermission("execute", "actions")).Post("/probe", workflowcontroller.ProbeHandler)
-		})
+		routerx.Mount(r, "/", routerx.Scope{
+			Resource: "actions",
+			Audit:    "actions",
+			UsesAuth: true,
+		},
+			routerx.Get("/workflows", workflowcontroller.ScanWorkflowsHandler, "list"),
+			routerx.Post("/workflows", workflowcontroller.CreateWorkflowHandler, "create"),
+			routerx.Get("/workflows/schema", workflowcontroller.GetWorkflowSchemaHandler, "get"),
+			routerx.Post("/workflows/validate", workflowcontroller.ValidateWorkflowHandler, "execute"),
+			routerx.Post("/validate/regex", workflowcontroller.ValidateRegexHandler, "execute"),
+			routerx.Put("/workflows/{id}", workflowcontroller.UpdateWorkflowHandler, "update"),
+			routerx.Get("/workflows/{id}", workflowcontroller.GetWorkflowHandler, "get"),
+			routerx.Delete("/workflows/{id}", workflowcontroller.DeleteWorkflowHandler, "delete"),
+			routerx.Post("/workflows/{workflowId}/run", workflowcontroller.RunWorkflowHandler, "execute"),
+			routerx.Post("/workflows/{id}/webhook/reset", workflowcontroller.ResetWebhookTokenHandler, "update"),
+			routerx.Get("/instances", workflowcontroller.ScanInstancesHandler, "list"),
+			routerx.Get("/instances/{id}", workflowcontroller.GetInstanceHandler, "get"),
+			routerx.Post("/instances/cleanup", workflowcontroller.CleanupInstancesHandler, "delete"),
+			routerx.Get("/instances/{id}/logs", workflowcontroller.GetInstanceLogsHandler, "get"),
+			routerx.Delete("/instances/{id}", workflowcontroller.DeleteInstanceHandler, "delete"),
+			routerx.Post("/instances/{id}/cancel", workflowcontroller.CancelInstanceHandler, "execute"),
+			routerx.Get("/manifests", workflowcontroller.ScanManifestsHandler, "list"),
+			routerx.Post("/probe", workflowcontroller.ProbeHandler, "execute"),
+		)
 	})
 }
 

@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 // ScanWorkflowsHandler godoc
@@ -28,8 +27,7 @@ import (
 // @Security ApiKeyAuth
 // @Router /actions/workflows [get]
 func ScanWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := workflowservice.ScanWorkflows(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -53,9 +51,8 @@ func ScanWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/workflows [post]
 func CreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	var workflow apiv1.Workflow
-	if err := render.Bind(r, &workflow); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	workflow, ok := controllercommon.BindRequest[apiv1.Workflow](w, r)
+	if !ok {
 		return
 	}
 
@@ -84,10 +81,9 @@ func CreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{id} [put]
 func UpdateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	var workflow apiv1.Workflow
-	if err := render.Bind(r, &workflow); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	id := controllercommon.PathID(r, "id")
+	workflow, ok := controllercommon.BindRequest[apiv1.Workflow](w, r)
+	if !ok {
 		return
 	}
 
@@ -113,7 +109,7 @@ func UpdateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{id} [delete]
 func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := workflowservice.DeleteWorkflow(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -134,7 +130,7 @@ func DeleteWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{id} [get]
 func GetWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	res, err := workflowservice.GetWorkflow(r.Context(), id)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -157,8 +153,7 @@ func GetWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/instances [get]
 func ScanInstancesHandler(w http.ResponseWriter, r *http.Request) {
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	workflowId := r.URL.Query().Get("workflowId")
 	res, err := workflowservice.ScanTaskInstances(r.Context(), cursor, limit, search, workflowId)
 	if err != nil {
@@ -181,7 +176,7 @@ func ScanInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/instances/{id} [get]
 func GetInstanceHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	res, err := workflowservice.GetTaskInstance(r.Context(), id)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -207,11 +202,12 @@ func GetInstanceHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{workflowId}/run [post]
 func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	workflowID := chi.URLParam(r, "workflowId")
+	workflowID := controllercommon.PathID(r, "workflowId")
 
-	var req apiv1.RunWorkflowRequest
-	// Ignore errors, body is optional
-	_ = render.Bind(r, &req)
+	req, ok := controllercommon.BindOptionalRequest[apiv1.RunWorkflowRequest](w, r)
+	if !ok {
+		return
+	}
 
 	instanceID, err := workflowservice.RunWorkflow(r.Context(), workflowID, req.Inputs, req.Trigger)
 	if err != nil {
@@ -234,7 +230,7 @@ func RunWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/instances/{id} [delete]
 func DeleteInstanceHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := workflowservice.DeleteTaskInstance(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -385,9 +381,8 @@ func GetWorkflowSchemaHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/probe [post]
 func ProbeHandler(w http.ResponseWriter, r *http.Request) {
-	var req apiv1.ProbeRequest
-	if err := render.Bind(r, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.BindRequest[apiv1.ProbeRequest](w, r)
+	if !ok {
 		return
 	}
 
@@ -415,9 +410,8 @@ func ProbeHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/workflows/validate [post]
 func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	var workflow apiv1.Workflow
-	if err := render.Bind(r, &workflow); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	workflow, ok := controllercommon.BindRequest[apiv1.Workflow](w, r)
+	if !ok {
 		return
 	}
 
@@ -442,7 +436,7 @@ func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/workflows/{id}/webhook/reset [post]
 func ResetWebhookTokenHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	token, err := workflowservice.ResetWebhookToken(r.Context(), id)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)

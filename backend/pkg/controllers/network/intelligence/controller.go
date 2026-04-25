@@ -5,9 +5,6 @@ import (
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 // ScanIntelligenceSourcesHandler godoc
@@ -27,8 +24,7 @@ func ScanIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := deps.Service.ScanSources(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -54,9 +50,8 @@ func CreateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var source apiv1.Source
-	if err := render.Bind(r, &source); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	source, ok := controllercommon.BindRequest[apiv1.Source](w, r)
+	if !ok {
 		return
 	}
 	model := toModelSource(source)
@@ -86,10 +81,9 @@ func UpdateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	var source apiv1.Source
-	if err := render.Bind(r, &source); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	id := controllercommon.PathID(r, "id")
+	source, ok := controllercommon.BindRequest[apiv1.Source](w, r)
+	if !ok {
 		return
 	}
 	source.ID = id
@@ -117,7 +111,7 @@ func DeleteIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := deps.Service.DeleteSource(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -141,7 +135,7 @@ func SyncIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := deps.Service.SyncSource(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -164,7 +158,7 @@ func CancelIntelligenceSyncHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if !deps.Service.CancelTask(id) {
 		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found or not cancelable")
 		return

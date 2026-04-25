@@ -3,7 +3,7 @@ package audit
 import (
 	"context"
 	auditcontroller "homelab/pkg/controllers/core/audit"
-	"homelab/pkg/controllers/middlewares"
+	"homelab/pkg/controllers/routerx"
 	runtimepkg "homelab/pkg/runtime"
 	auditservice "homelab/pkg/services/core/audit"
 
@@ -17,14 +17,14 @@ func New() *Module { return &Module{} }
 func (m *Module) Name() string { return "core.audit" }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	r.Route("/audit", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AuthMiddleware)
-			r.Use(middlewares.AuditMiddleware("audit"))
-			r.With(middlewares.RequirePermission("list", "audit")).Get("/logs", auditcontroller.ScanAuditLogsHandler)
-			r.With(middlewares.RequirePermission("delete", "audit")).Post("/logs/cleanup", auditcontroller.CleanupAuditLogsHandler)
-		})
-	})
+	routerx.Mount(r, "/audit", routerx.Scope{
+		Resource: "audit",
+		Audit:    "audit",
+		UsesAuth: true,
+	},
+		routerx.Get("/logs", auditcontroller.ScanAuditLogsHandler, "list"),
+		routerx.Post("/logs/cleanup", auditcontroller.CleanupAuditLogsHandler, "delete"),
+	)
 }
 
 func (m *Module) Start(context.Context) error {

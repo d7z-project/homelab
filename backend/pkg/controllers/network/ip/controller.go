@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 // ScanGroupsHandler godoc
@@ -31,8 +30,7 @@ func ScanGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := deps.PoolService.ScanGroups(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -58,9 +56,8 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var group apiv1.Pool
-	if err := render.Bind(r, &group); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	group, ok := controllercommon.BindRequest[apiv1.Pool](w, r)
+	if !ok {
 		return
 	}
 	model := toModelPool(group)
@@ -90,14 +87,12 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkIPResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
+	if !ok {
 		return
 	}
-	var group apiv1.Pool
-	if err := render.Bind(r, &group); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	group, ok := controllercommon.BindRequest[apiv1.Pool](w, r)
+	if !ok {
 		return
 	}
 	group.ID = id
@@ -127,9 +122,8 @@ func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkIPResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
+	if !ok {
 		return
 	}
 	cursor := r.URL.Query().Get("cursor")
@@ -164,9 +158,8 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkIPResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
+	if !ok {
 		return
 	}
 	if err := deps.PoolService.DeleteGroup(r.Context(), id); err != nil {
@@ -192,8 +185,7 @@ func ScanExportsHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := deps.PoolService.ScanExports(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -219,9 +211,8 @@ func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var export apiv1.Export
-	if err := render.Bind(r, &export); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	export, ok := controllercommon.BindRequest[apiv1.Export](w, r)
+	if !ok {
 		return
 	}
 	model := toModelExport(export)
@@ -251,10 +242,9 @@ func UpdateExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	var export apiv1.Export
-	if err := render.Bind(r, &export); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	id := controllercommon.PathID(r, "id")
+	export, ok := controllercommon.BindRequest[apiv1.Export](w, r)
+	if !ok {
 		return
 	}
 	export.ID = id
@@ -282,7 +272,7 @@ func DeleteExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := deps.PoolService.DeleteExport(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -306,9 +296,8 @@ func HitTestHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var req apiv1.HitTestRequest
-	if err := render.DecodeJSON(r.Body, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.DecodeJSONRequest[apiv1.HitTestRequest](w, r)
+	if !ok {
 		return
 	}
 	res, err := deps.Analysis.HitTest(r.Context(), req.IP, req.GroupIDs)
@@ -359,7 +348,7 @@ func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, toAPIExportTasks(tasks))
 }
 
-// TriggerExportHandler godoc
+// TriggerIPExportHandler godoc
 // @Summary Trigger dynamic export
 // @Tags network/ip
 // @Produce json
@@ -370,7 +359,7 @@ func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} common.Response "Export Not Found"
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/{id}/trigger [post]
-func TriggerExportHandler(w http.ResponseWriter, r *http.Request) {
+func TriggerIPExportHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.IPDepsFromRequest(w, r)
 	if !ok {
 		return
@@ -403,7 +392,7 @@ func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	taskId := chi.URLParam(r, "taskId")
+	taskId := controllercommon.PathID(r, "taskId")
 	task := deps.Exports.GetTask(taskId)
 	if task == nil {
 		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found")
@@ -427,7 +416,7 @@ func CancelExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	taskId := chi.URLParam(r, "taskId")
+	taskId := controllercommon.PathID(r, "taskId")
 	if !deps.Exports.CancelTask(taskId) {
 		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found or not cancelable")
 		return
@@ -453,9 +442,8 @@ func PreviewExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var req apiv1.ExportPreviewRequest
-	if err := render.Bind(r, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.BindRequest[apiv1.ExportPreviewRequest](w, r)
+	if !ok {
 		return
 	}
 	modelReq := toModelExportPreviewRequest(req)
@@ -480,7 +468,7 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	taskId := chi.URLParam(r, "taskId")
+	taskId := controllercommon.PathID(r, "taskId")
 	task := deps.Exports.GetTask(taskId)
 	if task == nil || task.Status != "Success" {
 		http.Error(w, "file not ready or not found", http.StatusNotFound)
@@ -522,14 +510,12 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkIPResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
+	if !ok {
 		return
 	}
-	var req apiv1.PoolEntryRequest
-	if err := render.Bind(r, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.BindRequest[apiv1.PoolEntryRequest](w, r)
+	if !ok {
 		return
 	}
 	mode := "add"
@@ -564,9 +550,8 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
-	if err := controllercommon.RequireScopedPermission(r.Context(), controllercommon.NetworkIPResourceBase, id); err != nil {
-		controllercommon.HandleError(w, r, err)
+	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
+	if !ok {
 		return
 	}
 	cidr := r.URL.Query().Get("cidr")
@@ -604,8 +589,7 @@ func ScanSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := deps.PoolService.ScanSyncPolicies(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -631,9 +615,8 @@ func CreateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var policy apiv1.SyncPolicy
-	if err := render.Bind(r, &policy); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	policy, ok := controllercommon.BindRequest[apiv1.SyncPolicy](w, r)
+	if !ok {
 		return
 	}
 	model := toModelSyncPolicy(policy)
@@ -662,9 +645,8 @@ func UpdateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var policy apiv1.SyncPolicy
-	if err := render.Bind(r, &policy); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	policy, ok := controllercommon.BindRequest[apiv1.SyncPolicy](w, r)
+	if !ok {
 		return
 	}
 	policy.ID = chi.URLParam(r, "id")

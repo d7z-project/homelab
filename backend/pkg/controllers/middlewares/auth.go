@@ -98,6 +98,10 @@ func AuthMiddleware(next http.Handler) http.Handler {
 }
 
 func RequirePermission(verb string, resource string) func(http.Handler) http.Handler {
+	return RequireAnyPermission(resource, verb)
+}
+
+func RequireAnyPermission(resource string, verbs ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ac := commonauth.FromContext(r.Context())
@@ -118,14 +122,16 @@ func RequirePermission(verb string, resource string) func(http.Handler) http.Han
 			}
 
 			if ac.ID != "" {
-				perms, err := authservice.GetPermissions(r.Context(), ac.ID, verb, resource)
-				if err == nil && perms != nil && (perms.AllowedAll || len(perms.AllowedInstances) > 0) {
-					if perms.MatchedRule != nil {
-						w.Header().Set("X-Matched-Policy", perms.MatchedRule.Resource)
+				for _, verb := range verbs {
+					perms, err := authservice.GetPermissions(r.Context(), ac.ID, verb, resource)
+					if err == nil && perms != nil && (perms.AllowedAll || len(perms.AllowedInstances) > 0) {
+						if perms.MatchedRule != nil {
+							w.Header().Set("X-Matched-Policy", perms.MatchedRule.Resource)
+						}
+						ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, perms)
+						next.ServeHTTP(w, r.WithContext(ctx))
+						return
 					}
-					ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, perms)
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
 				}
 			}
 

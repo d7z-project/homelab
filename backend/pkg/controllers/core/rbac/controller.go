@@ -9,9 +9,6 @@ import (
 	"net/http"
 
 	discoverymodel "homelab/pkg/models/core/discovery"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 // ListServiceAccountsHandler godoc
@@ -27,9 +24,7 @@ import (
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [get]
 func ScanServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
-
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := rbacservice.ScanServiceAccounts(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -51,9 +46,8 @@ func ScanServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts [post]
 func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
-	var sa apiv1.ServiceAccount
-	if err := render.Bind(r, &sa); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	sa, ok := controllercommon.BindRequest[apiv1.ServiceAccount](w, r)
+	if !ok {
 		return
 	}
 
@@ -81,10 +75,9 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts/{id} [put]
 func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	var sa apiv1.ServiceAccount
-	if err := render.Bind(r, &sa); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	id := controllercommon.PathID(r, "id")
+	sa, ok := controllercommon.BindRequest[apiv1.ServiceAccount](w, r)
+	if !ok {
 		return
 	}
 
@@ -109,7 +102,7 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts/{id} [delete]
 func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := rbacservice.DeleteServiceAccount(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -130,9 +123,7 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/roles [get]
 func ScanRolesHandler(w http.ResponseWriter, r *http.Request) {
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
-
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := rbacservice.ScanRoles(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -154,9 +145,8 @@ func ScanRolesHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/roles [post]
 func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
-	var role apiv1.Role
-	if err := render.Bind(r, &role); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	role, ok := controllercommon.BindRequest[apiv1.Role](w, r)
+	if !ok {
 		return
 	}
 
@@ -184,10 +174,9 @@ func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/roles/{id} [put]
 func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	var role apiv1.Role
-	if err := render.Bind(r, &role); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	id := controllercommon.PathID(r, "id")
+	role, ok := controllercommon.BindRequest[apiv1.Role](w, r)
+	if !ok {
 		return
 	}
 
@@ -212,7 +201,7 @@ func UpdateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/roles/{id} [delete]
 func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := rbacservice.DeleteRole(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -233,9 +222,7 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings [get]
 func ScanRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
-
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 	res, err := rbacservice.ScanRoleBindings(r.Context(), cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -257,9 +244,8 @@ func ScanRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings [post]
 func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
-	var rb apiv1.RoleBinding
-	if err := render.Bind(r, &rb); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	rb, ok := controllercommon.BindRequest[apiv1.RoleBinding](w, r)
+	if !ok {
 		return
 	}
 
@@ -287,10 +273,9 @@ func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings/{id} [put]
 func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	var rb apiv1.RoleBinding
-	if err := render.Bind(r, &rb); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	id := controllercommon.PathID(r, "id")
+	rb, ok := controllercommon.BindRequest[apiv1.RoleBinding](w, r)
+	if !ok {
 		return
 	}
 
@@ -315,7 +300,7 @@ func UpdateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/rolebindings/{id} [delete]
 func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := rbacservice.DeleteRoleBinding(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -335,7 +320,7 @@ func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/serviceaccounts/{id}/reset [post]
 func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	res, err := rbacservice.ResetServiceAccountToken(r.Context(), id)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -357,9 +342,8 @@ func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /rbac/simulate [post]
 func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
-	var req apiv1.SimulatePermissionsRequest
-	if err := render.Bind(r, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.BindRequest[apiv1.SimulatePermissionsRequest](w, r)
+	if !ok {
 		return
 	}
 
