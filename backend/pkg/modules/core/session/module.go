@@ -16,13 +16,13 @@ func New() *Module { return &Module{} }
 func (m *Module) Name() string { return "core.session" }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	routerx.Mount(r, "/auth", routerx.Scope{
+	routerx.WithScope(r, routerx.Scope{
 		Resource: "rbac",
 		Audit:    "rbac",
 		UsesAuth: true,
 	},
-		routerx.Get("/sessions", authcontroller.ScanSessionsHandler, "list"),
-		routerx.Delete("/sessions/{id}", authcontroller.RevokeSessionHandler, "admin"),
+		routerx.Get("/auth/sessions", authcontroller.ScanSessionsHandler, "list"),
+		routerx.Delete("/auth/sessions/{id}", authcontroller.RevokeSessionHandler, "admin"),
 	)
 }
 

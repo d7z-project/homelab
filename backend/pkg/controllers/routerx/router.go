@@ -24,18 +24,22 @@ type Route struct {
 
 func Mount(r chi.Router, prefix string, scope Scope, routes ...Route) {
 	r.Route(prefix, func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			if scope.UsesAuth {
-				r.Use(middlewares.AuthMiddleware)
-			}
-			if scope.Audit != "" {
-				r.Use(middlewares.AuditMiddleware(scope.Audit))
-			}
-			for _, mw := range scope.Extra {
-				r.Use(mw)
-			}
-			registerRoutes(r, scope.Resource, routes)
-		})
+		WithScope(r, scope, routes...)
+	})
+}
+
+func WithScope(r chi.Router, scope Scope, routes ...Route) {
+	r.Group(func(r chi.Router) {
+		if scope.UsesAuth {
+			r.Use(middlewares.AuthMiddleware)
+		}
+		if scope.Audit != "" {
+			r.Use(middlewares.AuditMiddleware(scope.Audit))
+		}
+		for _, mw := range scope.Extra {
+			r.Use(mw)
+		}
+		registerRoutes(r, scope.Resource, routes)
 	})
 }
 
