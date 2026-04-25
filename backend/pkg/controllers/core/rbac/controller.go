@@ -21,7 +21,7 @@ import (
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name or id"
-// @Success 200 {object} common.CursorResponse{items=[]models.ServiceAccount}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.ServiceAccount}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
@@ -43,8 +43,8 @@ func ScanServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param sa body models.ServiceAccount true "Service Account"
-// @Success 200 {object} models.ServiceAccount
+// @Param sa body apiv1.ServiceAccount true "Service Account"
+// @Success 200 {object} apiv1.ServiceAccount
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -72,8 +72,8 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Service Account ID"
-// @Param sa body models.ServiceAccount true "Service Account"
-// @Success 200 {object} models.ServiceAccount
+// @Param sa body apiv1.ServiceAccount true "Service Account"
+// @Success 200 {object} apiv1.ServiceAccount
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -124,7 +124,7 @@ func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name or id"
-// @Success 200 {object} common.CursorResponse{items=[]models.Role}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Role}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
@@ -146,8 +146,8 @@ func ScanRolesHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param role body models.Role true "Role"
-// @Success 200 {object} models.Role
+// @Param role body apiv1.Role true "Role"
+// @Success 200 {object} apiv1.Role
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -175,8 +175,8 @@ func CreateRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
-// @Param role body models.Role true "Role"
-// @Success 200 {object} models.Role
+// @Param role body apiv1.Role true "Role"
+// @Success 200 {object} apiv1.Role
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -227,7 +227,7 @@ func DeleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name or id"
-// @Success 200 {object} common.CursorResponse{items=[]models.RoleBinding}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.RoleBinding}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
@@ -249,8 +249,8 @@ func ScanRoleBindingsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param rb body models.RoleBinding true "Role Binding"
-// @Success 200 {object} models.RoleBinding
+// @Param rb body apiv1.RoleBinding true "Role Binding"
+// @Success 200 {object} apiv1.RoleBinding
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -278,8 +278,8 @@ func CreateRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Role Binding ID"
-// @Param rb body models.RoleBinding true "Role Binding"
-// @Success 200 {object} models.RoleBinding
+// @Param rb body apiv1.RoleBinding true "Role Binding"
+// @Success 200 {object} apiv1.RoleBinding
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -328,7 +328,7 @@ func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Produce json
 // @Param id path string true "Service Account ID"
-// @Success 200 {object} models.ServiceAccount
+// @Success 200 {object} apiv1.ServiceAccount
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Service Account Not Found"
@@ -349,8 +349,8 @@ func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Accept json
 // @Produce json
-// @Param request body models.SimulatePermissionsRequest true "Simulation Request"
-// @Success 200 {object} models.ResourcePermissions
+// @Param request body apiv1.SimulatePermissionsRequest true "Simulation Request"
+// @Success 200 {object} apiv1.ResourcePermissions
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -376,7 +376,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Produce json
 // @Param prefix query string false "Prefix to filter resources"
-// @Success 200 {array} models.DiscoverResult
+// @Success 200 {array} discoverymodel.DiscoverResult
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /rbac/resources/suggest [get]

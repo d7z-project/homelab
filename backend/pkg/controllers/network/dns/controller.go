@@ -20,7 +20,7 @@ import (
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.Domain}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Domain}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
@@ -42,8 +42,8 @@ func ScanDomainsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/dns
 // @Accept json
 // @Produce json
-// @Param domain body models.Domain true "Domain"
-// @Success 200 {object} models.Domain
+// @Param domain body apiv1.Domain true "Domain"
+// @Success 200 {object} apiv1.Domain
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -71,8 +71,8 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Domain ID"
-// @Param domain body models.Domain true "Domain"
-// @Success 200 {object} models.Domain
+// @Param domain body apiv1.Domain true "Domain"
+// @Success 200 {object} apiv1.Domain
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -141,7 +141,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.Record}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Record}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/dns/records [get]
@@ -173,8 +173,8 @@ func ScanRecordsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/dns
 // @Accept json
 // @Produce json
-// @Param record body models.Record true "Record"
-// @Success 200 {object} models.Record
+// @Param record body apiv1.Record true "Record"
+// @Success 200 {object} apiv1.Record
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -208,8 +208,8 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Record ID"
-// @Param record body models.Record true "Record"
-// @Success 200 {object} models.Record
+// @Param record body apiv1.Record true "Record"
+// @Success 200 {object} apiv1.Record
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -281,7 +281,7 @@ func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Returns all enabled DNS domains and records in a structured format.
 // @Tags network/dns
 // @Produce json
-// @Success 200 {object} models.DnsExportResponse
+// @Success 200 {object} apiv1.ExportResponse
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth

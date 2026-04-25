@@ -2,7 +2,8 @@ package discovery
 
 import (
 	"context"
-	"homelab/pkg/routes/core"
+	discoverycontroller "homelab/pkg/controllers/core/discovery"
+	"homelab/pkg/controllers/middlewares"
 	runtimepkg "homelab/pkg/runtime"
 
 	"github.com/go-chi/chi/v5"
@@ -14,7 +15,14 @@ func New() *Module { return &Module{} }
 
 func (m *Module) Name() string { return "core.discovery" }
 
-func (m *Module) RegisterRoutes(r chi.Router) { core.RegisterDiscovery(r) }
+func (m *Module) RegisterRoutes(r chi.Router) {
+	r.Route("/discovery", func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.AuthMiddleware)
+			discoverycontroller.DiscoveryController(r)
+		})
+	})
+}
 
 func (m *Module) Start(context.Context) error { return nil }
 

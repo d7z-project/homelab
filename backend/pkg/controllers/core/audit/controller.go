@@ -16,7 +16,7 @@ import (
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search query"
-// @Success 200 {object} common.CursorResponse{items=[]models.AuditLog}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.AuditLog}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
@@ -39,7 +39,7 @@ func ScanAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags audit
 // @Produce json
 // @Param days query int true "Logs older than these days will be deleted"
-// @Success 200 {object} models.AuditCleanupResponse
+// @Success 200 {object} apiv1.AuditCleanupResponse
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"

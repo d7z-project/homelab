@@ -25,7 +25,7 @@ func DiscoveryController(r chi.Router) {
 // @Param search query string false "Search string"
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
-// @Success 200 {object} common.CursorResponse{items=[]models.LookupItem}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.LookupItem}
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "Code Not Found"

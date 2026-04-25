@@ -161,7 +161,9 @@ func main() {
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Logger)
-		app.RegisterRoutes(r)
+		r.Route("/api/v1", func(r chi.Router) {
+			app.RegisterRoutes(r)
+		})
 	})
 
 	r.Get("/api/swagger", func(w http.ResponseWriter, r *http.Request) {

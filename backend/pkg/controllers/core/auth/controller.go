@@ -19,10 +19,10 @@ import (
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body models.LoginRequest true "Login Request"
-// @Success 200 {object} models.LoginResponse
+// @Param request body apiv1.LoginRequest true "Login Request"
+// @Success 200 {object} apiv1.LoginResponse
 // @Failure 401 {object} common.Response "Unauthorized"
-// @Router /login [post]
+// @Router /auth/login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req apiv1.LoginRequest
 	if err := render.Bind(r, &req); err != nil {
@@ -61,7 +61,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "success"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
-// @Router /logout [post]
+// @Router /auth/logout [post]
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	authHeader := r.Header.Get("Authorization")
 	token := authHeader
@@ -86,7 +86,7 @@ type AuthInfo struct {
 // @Success 200 {object} AuthInfo
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
-// @Router /info [get]
+// @Router /auth/info [get]
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	ac := commonauth.FromContext(r.Context())
 	if ac == nil {
@@ -105,7 +105,7 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Scan all active root sessions
 // @Tags auth
 // @Produce json
-// @Success 200 {array} models.Session
+// @Success 200 {array} apiv1.Session
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth

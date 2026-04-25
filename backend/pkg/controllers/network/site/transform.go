@@ -5,6 +5,7 @@ import (
 	networkcommon "homelab/pkg/models/network/common"
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
+	siteservice "homelab/pkg/services/network/site"
 )
 
 func toModelGroup(api apiv1.Group) sitemodel.SiteGroup {
@@ -186,6 +187,27 @@ func toAPIPoolEntries(items []sitemodel.SitePoolEntry) []apiv1.PoolEntry {
 	res := make([]apiv1.PoolEntry, 0, len(items))
 	for _, item := range items {
 		res = append(res, toAPIPoolEntry(item))
+	}
+	return res
+}
+
+func toAPIExportTask(model siteservice.ExportTaskDTO) apiv1.ExportTask {
+	return apiv1.ExportTask{
+		ID:          model.ID,
+		Status:      model.Status,
+		Progress:    model.Progress,
+		Format:      model.Format,
+		ResultURL:   model.ResultURL,
+		Error:       model.Error,
+		CreatedAt:   model.CreatedAt,
+		RecordCount: model.RecordCount,
+	}
+}
+
+func toAPIExportTasks(items []siteservice.ExportTaskDTO) []apiv1.ExportTask {
+	res := make([]apiv1.ExportTask, 0, len(items))
+	for _, item := range items {
+		res = append(res, toAPIExportTask(item))
 	}
 	return res
 }

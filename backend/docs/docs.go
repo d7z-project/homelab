@@ -70,7 +70,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.TaskInstance"
+                                                "$ref": "#/definitions/v1.TaskInstance"
                                             }
                                         }
                                     }
@@ -112,7 +112,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Number of deleted instances",
                         "schema": {
-                            "$ref": "#/definitions/models.TaskCleanupResponse"
+                            "$ref": "#/definitions/v1.TaskCleanupResponse"
                         }
                     },
                     "400": {
@@ -158,7 +158,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.TaskInstance"
+                            "$ref": "#/definitions/v1.TaskInstance"
                         }
                     },
                     "401": {
@@ -315,7 +315,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Logs and next offset",
                         "schema": {
-                            "$ref": "#/definitions/models.TaskLogResponse"
+                            "$ref": "#/definitions/v1.TaskLogResponse"
                         }
                     },
                     "401": {
@@ -354,7 +354,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.StepManifest"
+                                "$ref": "#/definitions/v1.StepManifest"
                             }
                         }
                     },
@@ -392,7 +392,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/actions.ProbeRequest"
+                            "$ref": "#/definitions/v1.ProbeRequest"
                         }
                     }
                 ],
@@ -400,10 +400,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Processor Output Data",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/v1.ProbeResponse"
                         }
                     },
                     "400": {
@@ -611,7 +608,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.Workflow"
+                                                "$ref": "#/definitions/v1.Workflow"
                                             }
                                         }
                                     }
@@ -657,7 +654,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Workflow"
+                            "$ref": "#/definitions/v1.Workflow"
                         }
                     }
                 ],
@@ -665,7 +662,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Workflow"
+                            "$ref": "#/definitions/v1.Workflow"
                         }
                     },
                     "400": {
@@ -714,8 +711,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/v1.WorkflowSchemaResponse"
                         }
                     },
                     "401": {
@@ -752,7 +748,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Workflow"
+                            "$ref": "#/definitions/v1.Workflow"
                         }
                     }
                 ],
@@ -806,7 +802,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Workflow"
+                            "$ref": "#/definitions/v1.Workflow"
                         }
                     },
                     "401": {
@@ -860,7 +856,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Workflow"
+                            "$ref": "#/definitions/v1.Workflow"
                         }
                     }
                 ],
@@ -868,7 +864,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Workflow"
+                            "$ref": "#/definitions/v1.Workflow"
                         }
                     },
                     "400": {
@@ -1031,7 +1027,7 @@ const docTemplate = `{
                         "name": "req",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/models.RunWorkflowRequest"
+                            "$ref": "#/definitions/v1.RunWorkflowRequest"
                         }
                     }
                 ],
@@ -1123,7 +1119,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.AuditLog"
+                                                "$ref": "#/definitions/v1.AuditLog"
                                             }
                                         }
                                     }
@@ -1173,7 +1169,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.AuditCleanupResponse"
+                            "$ref": "#/definitions/v1.AuditCleanupResponse"
                         }
                     },
                     "400": {
@@ -1192,6 +1188,125 @@ const docTemplate = `{
                         "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/info": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get current user info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.AuthInfo"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login to get session",
+                "parameters": [
+                    {
+                        "description": "Login Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.LoginResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout",
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/ping": {
+            "get": {
+                "description": "Returns pong if the server is alive",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Ping the server",
+                "responses": {
+                    "200": {
+                        "description": "pong",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -1217,7 +1332,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Session"
+                                "$ref": "#/definitions/v1.Session"
                             }
                         }
                     },
@@ -1383,7 +1498,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.LookupItem"
+                                                "$ref": "#/definitions/v1.LookupItem"
                                             }
                                         }
                                     }
@@ -1405,105 +1520,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Code Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/info": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Get current user info",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/controllers.AuthInfo"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/login": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Login to get session",
-                "parameters": [
-                    {
-                        "description": "Login Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.LoginResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/common.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/logout": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Logout",
-                "responses": {
-                    "200": {
-                        "description": "success",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/common.Response"
                         }
@@ -1559,7 +1575,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.Domain"
+                                                "$ref": "#/definitions/v1.Domain"
                                             }
                                         }
                                     }
@@ -1604,7 +1620,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Domain"
+                            "$ref": "#/definitions/v1.Domain"
                         }
                     }
                 ],
@@ -1612,7 +1628,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Domain"
+                            "$ref": "#/definitions/v1.Domain"
                         }
                     },
                     "400": {
@@ -1667,7 +1683,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Domain"
+                            "$ref": "#/definitions/v1.Domain"
                         }
                     }
                 ],
@@ -1675,7 +1691,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Domain"
+                            "$ref": "#/definitions/v1.Domain"
                         }
                     },
                     "400": {
@@ -1773,7 +1789,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.DnsExportResponse"
+                            "$ref": "#/definitions/v1.ExportResponse"
                         }
                     },
                     "401": {
@@ -1845,7 +1861,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.Record"
+                                                "$ref": "#/definitions/v1.Record"
                                             }
                                         }
                                     }
@@ -1884,7 +1900,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Record"
+                            "$ref": "#/definitions/v1.Record"
                         }
                     }
                 ],
@@ -1892,7 +1908,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Record"
+                            "$ref": "#/definitions/v1.Record"
                         }
                     },
                     "400": {
@@ -1947,7 +1963,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Record"
+                            "$ref": "#/definitions/v1.Record"
                         }
                     }
                 ],
@@ -1955,7 +1971,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Record"
+                            "$ref": "#/definitions/v1.Record"
                         }
                     },
                     "400": {
@@ -2082,7 +2098,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.IntelligenceSource"
+                                                "$ref": "#/definitions/v1.Source"
                                             }
                                         }
                                     }
@@ -2127,7 +2143,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IntelligenceSource"
+                            "$ref": "#/definitions/v1.Source"
                         }
                     }
                 ],
@@ -2135,7 +2151,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IntelligenceSource"
+                            "$ref": "#/definitions/v1.Source"
                         }
                     },
                     "400": {
@@ -2190,7 +2206,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IntelligenceSource"
+                            "$ref": "#/definitions/v1.Source"
                         }
                     }
                 ],
@@ -2198,7 +2214,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IntelligenceSource"
+                            "$ref": "#/definitions/v1.Source"
                         }
                     },
                     "400": {
@@ -2397,7 +2413,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPHitTestRequest"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.HitTestRequest"
                         }
                     }
                 ],
@@ -2405,7 +2421,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPAnalysisResult"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.AnalysisResult"
                         }
                     },
                     "400": {
@@ -2450,7 +2466,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPInfoResponse"
+                            "$ref": "#/definitions/v1.IPInfoResponse"
                         }
                     },
                     "400": {
@@ -2516,7 +2532,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.IPExport"
+                                                "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.Export"
                                             }
                                         }
                                     }
@@ -2555,7 +2571,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.Export"
                         }
                     }
                 ],
@@ -2563,7 +2579,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.Export"
                         }
                     },
                     "400": {
@@ -2646,7 +2662,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPExportPreviewRequest"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.ExportPreviewRequest"
                         }
                     }
                 ],
@@ -2656,7 +2672,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.IPPoolEntry"
+                                "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.PoolEntry"
                             }
                         }
                     },
@@ -2708,7 +2724,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ip.ExportTask"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.ExportTask"
                         }
                     },
                     "401": {
@@ -2791,7 +2807,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/ip.ExportTask"
+                                "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.ExportTask"
                             }
                         }
                     }
@@ -2829,7 +2845,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.Export"
                         }
                     }
                 ],
@@ -2837,7 +2853,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.Export"
                         }
                     },
                     "400": {
@@ -2949,7 +2965,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPExportTriggerResponse"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.ExportTriggerResponse"
                         }
                     },
                     "401": {
@@ -3015,7 +3031,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.IPPool"
+                                                "$ref": "#/definitions/v1.Pool"
                                             }
                                         }
                                     }
@@ -3054,7 +3070,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPPool"
+                            "$ref": "#/definitions/v1.Pool"
                         }
                     }
                 ],
@@ -3062,7 +3078,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPPool"
+                            "$ref": "#/definitions/v1.Pool"
                         }
                     },
                     "400": {
@@ -3117,7 +3133,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPPool"
+                            "$ref": "#/definitions/v1.Pool"
                         }
                     }
                 ],
@@ -3125,7 +3141,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPPool"
+                            "$ref": "#/definitions/v1.Pool"
                         }
                     },
                     "400": {
@@ -3236,7 +3252,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPPoolEntryRequest"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.PoolEntryRequest"
                         }
                     }
                 ],
@@ -3387,7 +3403,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPPoolPreviewResponse"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.PoolPreviewResponse"
                         }
                     },
                     "401": {
@@ -3453,7 +3469,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.IPSyncPolicy"
+                                                "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy"
                                             }
                                         }
                                     }
@@ -3492,7 +3508,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy"
                         }
                     }
                 ],
@@ -3500,7 +3516,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy"
                         }
                     },
                     "400": {
@@ -3555,7 +3571,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.IPSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy"
                         }
                     }
                 ],
@@ -3563,7 +3579,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.IPSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy"
                         }
                     },
                     "400": {
@@ -3708,7 +3724,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SiteAnalysisResult"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.AnalysisResult"
                         }
                     }
                 }
@@ -3757,7 +3773,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.SiteExport"
+                                                "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.Export"
                                             }
                                         }
                                     }
@@ -3785,7 +3801,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SiteExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.Export"
                         }
                     }
                 ],
@@ -3793,7 +3809,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SiteExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.Export"
                         }
                     }
                 }
@@ -3852,7 +3868,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SiteExportPreviewRequest"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.ExportPreviewRequest"
                         }
                     }
                 ],
@@ -3862,7 +3878,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.SitePoolEntry"
+                                "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.PoolEntry"
                             }
                         }
                     },
@@ -3909,7 +3925,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/site.ExportTask"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.ExportTask"
                         }
                     }
                 }
@@ -3980,7 +3996,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/site.ExportTask"
+                                "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.ExportTask"
                             }
                         }
                     }
@@ -4018,7 +4034,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SiteExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.Export"
                         }
                     }
                 ],
@@ -4026,7 +4042,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SiteExport"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.Export"
                         }
                     },
                     "400": {
@@ -4110,10 +4126,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.ExportTriggerResponse"
                         }
                     }
                 }
@@ -4162,7 +4175,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.SiteGroup"
+                                                "$ref": "#/definitions/v1.Group"
                                             }
                                         }
                                     }
@@ -4190,7 +4203,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SiteGroup"
+                            "$ref": "#/definitions/v1.Group"
                         }
                     }
                 ],
@@ -4198,7 +4211,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SiteGroup"
+                            "$ref": "#/definitions/v1.Group"
                         }
                     }
                 }
@@ -4230,7 +4243,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SiteGroup"
+                            "$ref": "#/definitions/v1.Group"
                         }
                     }
                 ],
@@ -4238,7 +4251,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SiteGroup"
+                            "$ref": "#/definitions/v1.Group"
                         }
                     }
                 }
@@ -4296,7 +4309,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SitePoolEntryRequest"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.PoolEntryRequest"
                         }
                     }
                 ],
@@ -4390,7 +4403,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SitePoolPreviewResponse"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.PoolPreviewResponse"
                         }
                     }
                 }
@@ -4439,7 +4452,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.SiteSyncPolicy"
+                                                "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy"
                                             }
                                         }
                                     }
@@ -4467,7 +4480,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SiteSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy"
                         }
                     }
                 ],
@@ -4475,7 +4488,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SiteSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy"
                         }
                     }
                 }
@@ -4507,7 +4520,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SiteSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy"
                         }
                     }
                 ],
@@ -4515,7 +4528,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.SiteSyncPolicy"
+                            "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy"
                         }
                     }
                 }
@@ -4575,26 +4588,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ping": {
-            "get": {
-                "description": "Returns pong if the server is alive",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "system"
-                ],
-                "summary": "Ping the server",
-                "responses": {
-                    "200": {
-                        "description": "pong",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/rbac/resources/suggest": {
             "get": {
                 "security": [
@@ -4623,7 +4616,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.DiscoverResult"
+                                "$ref": "#/definitions/discovery.DiscoverResult"
                             }
                         }
                     },
@@ -4684,7 +4677,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.RoleBinding"
+                                                "$ref": "#/definitions/v1.RoleBinding"
                                             }
                                         }
                                     }
@@ -4729,7 +4722,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.RoleBinding"
+                            "$ref": "#/definitions/v1.RoleBinding"
                         }
                     }
                 ],
@@ -4737,7 +4730,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.RoleBinding"
+                            "$ref": "#/definitions/v1.RoleBinding"
                         }
                     },
                     "400": {
@@ -4792,7 +4785,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.RoleBinding"
+                            "$ref": "#/definitions/v1.RoleBinding"
                         }
                     }
                 ],
@@ -4800,7 +4793,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.RoleBinding"
+                            "$ref": "#/definitions/v1.RoleBinding"
                         }
                     },
                     "400": {
@@ -4927,7 +4920,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.Role"
+                                                "$ref": "#/definitions/v1.Role"
                                             }
                                         }
                                     }
@@ -4972,7 +4965,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Role"
+                            "$ref": "#/definitions/v1.Role"
                         }
                     }
                 ],
@@ -4980,7 +4973,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Role"
+                            "$ref": "#/definitions/v1.Role"
                         }
                     },
                     "400": {
@@ -5035,7 +5028,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Role"
+                            "$ref": "#/definitions/v1.Role"
                         }
                     }
                 ],
@@ -5043,7 +5036,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Role"
+                            "$ref": "#/definitions/v1.Role"
                         }
                     },
                     "400": {
@@ -5170,7 +5163,7 @@ const docTemplate = `{
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.ServiceAccount"
+                                                "$ref": "#/definitions/v1.ServiceAccount"
                                             }
                                         }
                                     }
@@ -5215,7 +5208,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccount"
                         }
                     }
                 ],
@@ -5223,7 +5216,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccount"
                         }
                     },
                     "400": {
@@ -5278,7 +5271,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccount"
                         }
                     }
                 ],
@@ -5286,7 +5279,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccount"
                         }
                     },
                     "400": {
@@ -5392,7 +5385,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccount"
                         }
                     },
                     "401": {
@@ -5440,7 +5433,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SimulatePermissionsRequest"
+                            "$ref": "#/definitions/v1.SimulatePermissionsRequest"
                         }
                     }
                 ],
@@ -5448,7 +5441,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.ResourcePermissions"
+                            "$ref": "#/definitions/v1.ResourcePermissions"
                         }
                     },
                     "400": {
@@ -5515,16 +5508,16 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "actions.ProbeRequest": {
+        "auth.AuthInfo": {
             "type": "object",
             "properties": {
-                "params": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                "id": {
+                    "type": "string"
                 },
-                "processorId": {
+                "sessionId": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 }
             }
@@ -5538,9 +5531,6 @@ const docTemplate = `{
                 "items": {},
                 "nextCursor": {
                     "type": "string"
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -5556,25 +5546,103 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.AuthInfo": {
+        "discovery.DiscoverResult": {
             "type": "object",
             "properties": {
-                "id": {
+                "final": {
+                    "type": "boolean"
+                },
+                "fullId": {
                     "type": "string"
                 },
-                "sessionId": {
-                    "type": "string"
-                },
-                "type": {
+                "name": {
                     "type": "string"
                 }
             }
         },
-        "ip.ExportTask": {
+        "homelab_pkg_apis_network_ip_v1.AnalysisResult": {
+            "type": "object",
+            "properties": {
+                "matched": {
+                    "type": "boolean"
+                },
+                "matches": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.AnalysisMatch"
+                    }
+                }
+            }
+        },
+        "homelab_pkg_apis_network_ip_v1.Export": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.ExportMeta"
+                },
+                "resourceVersion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.ExportStatus"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_ip_v1.ExportMeta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_ip_v1.ExportPreviewRequest": {
+            "type": "object",
+            "properties": {
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rule": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_ip_v1.ExportStatus": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_ip_v1.ExportTask": {
             "type": "object",
             "properties": {
                 "checksum": {
-                    "description": "Rule + GroupChecksums + Format",
                     "type": "string"
                 },
                 "createdAt": {
@@ -5599,252 +5667,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "description": "Pending, Running, Success, Failed, Cancelled",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.TaskStatus"
-                        }
-                    ]
+                    "$ref": "#/definitions/shared.TaskStatus"
                 }
             }
         },
-        "models.AuditCleanupResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.AuditLog": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "description": "CREATE, UPDATE, DELETE, or HTTP Method",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ipAddress": {
-                    "type": "string"
-                },
-                "message": {
-                    "description": "Detailed description",
-                    "type": "string"
-                },
-                "resource": {
-                    "description": "e.g., \"DNS/Record\", \"RBAC/ServiceAccount\"",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Success or Failed",
-                    "type": "string"
-                },
-                "subject": {
-                    "description": "User or SA name (e.g., \"root\" or \"sa-name\")",
-                    "type": "string"
-                },
-                "targetId": {
-                    "description": "ID or name of the resource operated on",
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "RFC3339 format",
-                    "type": "string"
-                },
-                "userAgent": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.DiscoverResult": {
-            "type": "object",
-            "properties": {
-                "final": {
-                    "description": "True if this is a complete resource, False if it's a category/prefix",
-                    "type": "boolean"
-                },
-                "fullId": {
-                    "description": "Actual resource path used in RBAC check",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Display name in UI",
-                    "type": "string"
-                }
-            }
-        },
-        "models.DnsExportResponse": {
-            "type": "object",
-            "properties": {
-                "domains": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ExportDomain"
-                    }
-                }
-            }
-        },
-        "models.Domain": {
-            "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
-            "properties": {
-                "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.DomainV1Meta"
-                },
-                "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.DomainV1Status"
-                }
-            }
-        },
-        "models.DomainV1Meta": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.DomainV1Status": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.ExportDomain": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "records": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ExportRecord"
-                    }
-                }
-            }
-        },
-        "models.ExportRecord": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "ttl": {
-                    "type": "integer"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.IPAnalysisMatch": {
-            "type": "object",
-            "properties": {
-                "cidr": {
-                    "description": "命中的具体网段",
-                    "type": "string"
-                },
-                "tags": {
-                    "description": "命中的 Tags",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "models.IPAnalysisResult": {
-            "type": "object",
-            "properties": {
-                "matched": {
-                    "type": "boolean"
-                },
-                "matches": {
-                    "description": "所有命中的网段及其标签",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.IPAnalysisMatch"
-                    }
-                }
-            }
-        },
-        "models.IPExport": {
-            "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
-            "properties": {
-                "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.IPExportV1Meta"
-                },
-                "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.IPExportV1Status"
-                }
-            }
-        },
-        "models.IPExportPreviewRequest": {
-            "type": "object",
-            "properties": {
-                "groupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "rule": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.IPExportTriggerResponse": {
+        "homelab_pkg_apis_network_ip_v1.ExportTriggerResponse": {
             "type": "object",
             "properties": {
                 "taskId": {
@@ -5852,40 +5679,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IPExportV1Meta": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "groupIds": {
-                    "description": "依赖的 IP 池 ID 列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rule": {
-                    "description": "go-expr 表达式",
-                    "type": "string"
-                }
-            }
-        },
-        "models.IPExportV1Status": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.IPHitTestRequest": {
+        "homelab_pkg_apis_network_ip_v1.HitTestRequest": {
             "type": "object",
             "properties": {
                 "groupIds": {
@@ -5899,62 +5693,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IPInfoResponse": {
-            "type": "object",
-            "properties": {
-                "asn": {
-                    "type": "integer"
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "ip": {
-                    "type": "string"
-                },
-                "label": {
-                    "description": "附加标识 (如 NS 主机名)",
-                    "type": "string"
-                },
-                "location": {
-                    "description": "\"lat,lon\"",
-                    "type": "string"
-                },
-                "org": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.IPPool": {
-            "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
-            "properties": {
-                "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.IPPoolV1Meta"
-                },
-                "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.IPPoolV1Status"
-                }
-            }
-        },
-        "models.IPPoolEntry": {
+        "homelab_pkg_apis_network_ip_v1.PoolEntry": {
             "type": "object",
             "properties": {
                 "cidr": {
@@ -5968,7 +5707,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IPPoolEntryRequest": {
+        "homelab_pkg_apis_network_ip_v1.PoolEntryRequest": {
             "type": "object",
             "properties": {
                 "cidr": {
@@ -5988,87 +5727,47 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IPPoolPreviewResponse": {
+        "homelab_pkg_apis_network_ip_v1.PoolPreviewResponse": {
             "type": "object",
             "properties": {
                 "entries": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.IPPoolEntry"
+                        "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.PoolEntry"
                     }
                 },
                 "nextCursor": {
-                    "description": "下一个 Byte Offset (作为字符串传递)",
                     "type": "string"
                 },
                 "total": {
-                    "description": "总条数",
                     "type": "integer"
                 }
             }
         },
-        "models.IPPoolV1Meta": {
+        "homelab_pkg_apis_network_ip_v1.SyncPolicy": {
             "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.IPPoolV1Status": {
-            "type": "object",
-            "properties": {
-                "checksum": {
-                    "description": "数据指纹，用于缓存失效",
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "entryCount": {
-                    "description": "池中条目总数",
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.IPSyncPolicy": {
-            "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.IPSyncPolicyV1Meta"
+                    "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicyMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.IPSyncPolicyV1Status"
+                    "$ref": "#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicyStatus"
                 }
             }
         },
-        "models.IPSyncPolicyV1Meta": {
+        "homelab_pkg_apis_network_ip_v1.SyncPolicyMeta": {
             "type": "object",
             "properties": {
                 "config": {
-                    "description": "格式特定的配置",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
@@ -6084,11 +5783,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "format": {
-                    "description": "\"text\", \"geoip\"",
                     "type": "string"
                 },
                 "mode": {
-                    "description": "\"overwrite\", \"append\"",
                     "type": "string"
                 },
                 "name": {
@@ -6102,7 +5799,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IPSyncPolicyV1Status": {
+        "homelab_pkg_apis_network_ip_v1.SyncPolicyStatus": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -6115,12 +5812,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "lastStatus": {
-                    "description": "\"success\", \"failed\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.TaskStatus"
-                        }
-                    ]
+                    "$ref": "#/definitions/shared.TaskStatus"
                 },
                 "progress": {
                     "type": "number"
@@ -6130,39 +5822,211 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IntelligenceSource": {
+        "homelab_pkg_apis_network_site_v1.AnalysisResult": {
             "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
+            "properties": {
+                "dns": {
+                    "$ref": "#/definitions/v1.DNSAnalysis"
+                },
+                "matched": {
+                    "type": "boolean"
+                },
+                "pattern": {
+                    "type": "string"
+                },
+                "ruleType": {
+                    "type": "integer"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.Export": {
+            "type": "object",
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.IntelligenceSourceV1Meta"
+                    "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.ExportMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.IntelligenceSourceV1Status"
+                    "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.ExportStatus"
                 }
             }
         },
-        "models.IntelligenceSourceV1Meta": {
+        "homelab_pkg_apis_network_site_v1.ExportMeta": {
             "type": "object",
             "properties": {
-                "autoUpdate": {
-                    "type": "boolean"
+                "description": {
+                    "type": "string"
                 },
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.ExportPreviewRequest": {
+            "type": "object",
+            "properties": {
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rule": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.ExportStatus": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.ExportTask": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "progress": {
+                    "type": "number"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "resultUrl": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/shared.TaskStatus"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.ExportTriggerResponse": {
+            "type": "object",
+            "properties": {
+                "taskId": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.PoolEntry": {
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.PoolEntryRequest": {
+            "type": "object",
+            "properties": {
+                "newTags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "oldTags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.PoolPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.PoolEntry"
+                    }
+                },
+                "nextCursor": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.SyncPolicy": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicyMeta"
+                },
+                "resourceVersion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicyStatus"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.SyncPolicyMeta": {
+            "type": "object",
+            "properties": {
                 "config": {
                     "type": "object",
                     "additionalProperties": {
@@ -6172,51 +6036,358 @@ const docTemplate = `{
                 "cron": {
                     "type": "string"
                 },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sourceUrl": {
+                    "type": "string"
+                },
+                "targetGroupId": {
+                    "type": "string"
+                }
+            }
+        },
+        "homelab_pkg_apis_network_site_v1.SyncPolicyStatus": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "lastRunAt": {
+                    "type": "string"
+                },
+                "lastStatus": {
+                    "$ref": "#/definitions/shared.TaskStatus"
+                },
+                "progress": {
+                    "type": "number"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "networkcommon.IPInfoResponse": {
+            "type": "object",
+            "properties": {
+                "asn": {
+                    "type": "integer"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                }
+            }
+        },
+        "shared.TaskStatus": {
+            "type": "string",
+            "enum": [
+                "Pending",
+                "Running",
+                "Success",
+                "Failed",
+                "Cancelled"
+            ],
+            "x-enum-varnames": [
+                "TaskStatusPending",
+                "TaskStatusRunning",
+                "TaskStatusSuccess",
+                "TaskStatusFailed",
+                "TaskStatusCancelled"
+            ]
+        },
+        "v1.AnalysisMatch": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "v1.AuditCleanupResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.AuditLog": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ipAddress": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "targetId": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.DNSAnalysis": {
+            "type": "object",
+            "properties": {
+                "a": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/networkcommon.IPInfoResponse"
+                    }
+                },
+                "aaaa": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/networkcommon.IPInfoResponse"
+                    }
+                },
+                "cname": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/networkcommon.IPInfoResponse"
+                    }
+                },
+                "soa": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "v1.Domain": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/v1.DomainMeta"
+                },
+                "resourceVersion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/v1.DomainStatus"
+                }
+            }
+        },
+        "v1.DomainMeta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "enabled": {
                     "type": "boolean"
                 },
                 "name": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "asn, city, country",
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
                 }
             }
         },
-        "models.IntelligenceSourceV1Status": {
+        "v1.DomainStatus": {
             "type": "object",
             "properties": {
-                "errorMessage": {
+                "createdAt": {
                     "type": "string"
                 },
-                "lastUpdatedAt": {
+                "updatedAt": {
                     "type": "string"
-                },
-                "progress": {
-                    "type": "number"
-                },
-                "status": {
-                    "description": "Ready, Downloading, Error",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.TaskStatus"
-                        }
-                    ]
                 }
             }
         },
-        "models.LogEntry": {
+        "v1.ExportDomain": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ExportRecord"
+                    }
+                }
+            }
+        },
+        "v1.ExportRecord": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "ttl": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ExportResponse": {
+            "type": "object",
+            "properties": {
+                "domains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ExportDomain"
+                    }
+                }
+            }
+        },
+        "v1.Group": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/v1.GroupMeta"
+                },
+                "resourceVersion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/v1.GroupStatus"
+                }
+            }
+        },
+        "v1.GroupMeta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.GroupStatus": {
+            "type": "object",
+            "properties": {
+                "checksum": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "entryCount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.IPInfoResponse": {
+            "type": "object",
+            "properties": {
+                "asn": {
+                    "type": "integer"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.LogEntry": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string"
                 },
                 "stepId": {
-                    "description": "关联的步骤 ID，空字符串代表引擎级日志",
                     "type": "string"
                 },
                 "timestamp": {
@@ -6224,7 +6395,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.LoginRequest": {
+        "v1.LoginRequest": {
             "type": "object",
             "properties": {
                 "password": {
@@ -6235,7 +6406,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.LoginResponse": {
+        "v1.LoginResponse": {
             "type": "object",
             "properties": {
                 "session_id": {
@@ -6243,14 +6414,13 @@ const docTemplate = `{
                 }
             }
         },
-        "models.LookupItem": {
+        "v1.LookupItem": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string"
                 },
                 "icon": {
-                    "description": "Optional icon name for M3",
                     "type": "string"
                 },
                 "id": {
@@ -6261,34 +6431,30 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ParamDefinition": {
+        "v1.ParamDefinition": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string"
                 },
                 "lookupCode": {
-                    "description": "服务发现代号 (可选)",
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
                 "optional": {
-                    "description": "是否为可选参数",
                     "type": "boolean"
                 },
                 "regexBackend": {
-                    "description": "后端校验正则 (可选)",
                     "type": "string"
                 },
                 "regexFrontend": {
-                    "description": "前端校验正则 (可选)",
                     "type": "string"
                 }
             }
         },
-        "models.PolicyRule": {
+        "v1.PolicyRule": {
             "type": "object",
             "properties": {
                 "resource": {
@@ -6302,34 +6468,103 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Record": {
+        "v1.Pool": {
             "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.RecordV1Meta"
+                    "$ref": "#/definitions/v1.PoolMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.RecordV1Status"
+                    "$ref": "#/definitions/v1.PoolStatus"
                 }
             }
         },
-        "models.RecordV1Meta": {
+        "v1.PoolMeta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.PoolStatus": {
+            "type": "object",
+            "properties": {
+                "checksum": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "entryCount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ProbeRequest": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "processorId": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ProbeResponse": {
+            "type": "object",
+            "properties": {
+                "outputs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "processorId": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.Record": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/v1.RecordMeta"
+                },
+                "resourceVersion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/v1.RecordStatus"
+                }
+            }
+        },
+        "v1.RecordMeta": {
             "type": "object",
             "properties": {
                 "comments": {
@@ -6358,10 +6593,10 @@ const docTemplate = `{
                 }
             }
         },
-        "models.RecordV1Status": {
+        "v1.RecordStatus": {
             "type": "object"
         },
-        "models.ResourcePermissions": {
+        "v1.ResourcePermissions": {
             "type": "object",
             "properties": {
                 "allowedAll": {
@@ -6374,70 +6609,51 @@ const docTemplate = `{
                     }
                 },
                 "matchedRule": {
-                    "description": "Records which rule allowed the access",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.PolicyRule"
-                        }
-                    ]
+                    "$ref": "#/definitions/v1.PolicyRule"
                 }
             }
         },
-        "models.Role": {
+        "v1.Role": {
             "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.RoleV1Meta"
+                    "$ref": "#/definitions/v1.RoleMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.RoleV1Status"
+                    "$ref": "#/definitions/v1.RoleStatus"
                 }
             }
         },
-        "models.RoleBinding": {
+        "v1.RoleBinding": {
             "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.RoleBindingV1Meta"
+                    "$ref": "#/definitions/v1.RoleBindingMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.RoleBindingV1Status"
+                    "$ref": "#/definitions/v1.RoleBindingStatus"
                 }
             }
         },
-        "models.RoleBindingV1Meta": {
+        "v1.RoleBindingMeta": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -6457,10 +6673,10 @@ const docTemplate = `{
                 }
             }
         },
-        "models.RoleBindingV1Status": {
+        "v1.RoleBindingStatus": {
             "type": "object"
         },
-        "models.RoleV1Meta": {
+        "v1.RoleMeta": {
             "type": "object",
             "properties": {
                 "comments": {
@@ -6472,15 +6688,15 @@ const docTemplate = `{
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.PolicyRule"
+                        "$ref": "#/definitions/v1.PolicyRule"
                     }
                 }
             }
         },
-        "models.RoleV1Status": {
+        "v1.RoleStatus": {
             "type": "object"
         },
-        "models.RunWorkflowRequest": {
+        "v1.RunWorkflowRequest": {
             "type": "object",
             "properties": {
                 "inputs": {
@@ -6490,39 +6706,31 @@ const docTemplate = `{
                     }
                 },
                 "trigger": {
-                    "description": "Optional: Manual (default), API, Script, etc.",
                     "type": "string"
                 }
             }
         },
-        "models.ServiceAccount": {
+        "v1.ServiceAccount": {
             "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.ServiceAccountV1Meta"
+                    "$ref": "#/definitions/v1.ServiceAccountMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.ServiceAccountV1Status"
+                    "$ref": "#/definitions/v1.ServiceAccountStatus"
                 }
             }
         },
-        "models.ServiceAccountV1Meta": {
+        "v1.ServiceAccountMeta": {
             "type": "object",
             "properties": {
                 "comments": {
@@ -6539,7 +6747,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ServiceAccountV1Status": {
+        "v1.ServiceAccountStatus": {
             "type": "object",
             "properties": {
                 "lastUsedAt": {
@@ -6547,7 +6755,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Session": {
+        "v1.Session": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -6567,7 +6775,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.SimulatePermissionsRequest": {
+        "v1.SimulatePermissionsRequest": {
             "type": "object",
             "properties": {
                 "resource": {
@@ -6581,294 +6789,33 @@ const docTemplate = `{
                 }
             }
         },
-        "models.SiteAnalysisResult": {
+        "v1.Source": {
             "type": "object",
             "properties": {
-                "dns": {
-                    "description": "DNS Intelligence",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.SiteDNSAnalysis"
-                        }
-                    ]
+                "generation": {
+                    "type": "integer"
                 },
-                "matched": {
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/v1.SourceMeta"
+                },
+                "resourceVersion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/v1.SourceStatus"
+                }
+            }
+        },
+        "v1.SourceMeta": {
+            "type": "object",
+            "properties": {
+                "autoUpdate": {
                     "type": "boolean"
                 },
-                "pattern": {
-                    "type": "string"
-                },
-                "ruleType": {
-                    "type": "integer"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "models.SiteDNSAnalysis": {
-            "type": "object",
-            "properties": {
-                "a": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.IPInfoResponse"
-                    }
-                },
-                "aaaa": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.IPInfoResponse"
-                    }
-                },
-                "cname": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "ns": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.IPInfoResponse"
-                    }
-                },
-                "soa": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "models.SiteExport": {
-            "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
-            "properties": {
-                "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.SiteExportV1Meta"
-                },
-                "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.SiteExportV1Status"
-                }
-            }
-        },
-        "models.SiteExportPreviewRequest": {
-            "type": "object",
-            "properties": {
-                "groupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "rule": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.SiteExportV1Meta": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "groupIds": {
-                    "description": "依赖的域名池 ID 列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rule": {
-                    "description": "go-expr 表达式",
-                    "type": "string"
-                }
-            }
-        },
-        "models.SiteExportV1Status": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.SiteGroup": {
-            "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
-            "properties": {
-                "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.SiteGroupV1Meta"
-                },
-                "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.SiteGroupV1Status"
-                }
-            }
-        },
-        "models.SiteGroupV1Meta": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.SiteGroupV1Status": {
-            "type": "object",
-            "properties": {
-                "checksum": {
-                    "description": "数据指纹",
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "entryCount": {
-                    "description": "条目总数",
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.SitePoolEntry": {
-            "type": "object",
-            "properties": {
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "type": {
-                    "description": "0:Keyword, 1:Regex, 2:Domain, 3:Full",
-                    "type": "integer"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.SitePoolEntryRequest": {
-            "type": "object",
-            "properties": {
-                "newTags": {
-                    "description": "新增或更新后的标签",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "oldTags": {
-                    "description": "被替换的标签（用于编辑场景）",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "type": {
-                    "type": "integer"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.SitePoolPreviewResponse": {
-            "type": "object",
-            "properties": {
-                "entries": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.SitePoolEntry"
-                    }
-                },
-                "nextCursor": {
-                    "description": "下一个 Byte Offset (作为字符串传递)",
-                    "type": "string"
-                },
-                "total": {
-                    "description": "总条数",
-                    "type": "integer"
-                }
-            }
-        },
-        "models.SiteSyncPolicy": {
-            "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
-            "properties": {
-                "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.SiteSyncPolicyV1Meta"
-                },
-                "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.SiteSyncPolicyV1Status"
-                }
-            }
-        },
-        "models.SiteSyncPolicyV1Meta": {
-            "type": "object",
-            "properties": {
                 "config": {
-                    "description": "格式特定的配置",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
@@ -6877,123 +6824,90 @@ const docTemplate = `{
                 "cron": {
                     "type": "string"
                 },
-                "description": {
-                    "type": "string"
-                },
                 "enabled": {
                     "type": "boolean"
-                },
-                "format": {
-                    "description": "\"text\", \"geosite\"",
-                    "type": "string"
-                },
-                "mode": {
-                    "description": "\"overwrite\", \"append\"",
-                    "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "sourceUrl": {
+                "type": {
                     "type": "string"
                 },
-                "targetGroupId": {
+                "url": {
                     "type": "string"
                 }
             }
         },
-        "models.SiteSyncPolicyV1Status": {
+        "v1.SourceStatus": {
             "type": "object",
             "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
                 "errorMessage": {
                     "type": "string"
                 },
-                "lastRunAt": {
+                "lastUpdatedAt": {
                     "type": "string"
-                },
-                "lastStatus": {
-                    "description": "\"success\", \"failed\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.TaskStatus"
-                        }
-                    ]
                 },
                 "progress": {
                     "type": "number"
                 },
-                "updatedAt": {
-                    "type": "string"
+                "status": {
+                    "$ref": "#/definitions/shared.TaskStatus"
                 }
             }
         },
-        "models.Step": {
+        "v1.Step": {
             "type": "object",
             "properties": {
                 "fail": {
-                    "description": "执行出错时是否继续执行后续步骤",
                     "type": "boolean"
                 },
                 "id": {
-                    "description": "步骤 ID，用于 ${{ steps.ID.outputs.key }}",
                     "type": "string"
                 },
                 "if": {
-                    "description": "条件表达式 (go-expr)，为空则总是执行",
                     "type": "string"
                 },
                 "name": {
-                    "description": "步骤显示名称",
                     "type": "string"
                 },
                 "params": {
-                    "description": "输入参数，支持模板字符串",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
                 },
                 "type": {
-                    "description": "处理器类型 (如 core/fetch/http)",
                     "type": "string"
                 }
             }
         },
-        "models.StepManifest": {
+        "v1.StepManifest": {
             "type": "object",
             "properties": {
                 "description": {
-                    "description": "处理器功能简述",
                     "type": "string"
                 },
                 "id": {
-                    "description": "处理器唯一标识 (如 core/fetch/http)",
                     "type": "string"
                 },
                 "name": {
-                    "description": "显示名称",
                     "type": "string"
                 },
                 "outputParams": {
-                    "description": "输出参数",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.ParamDefinition"
+                        "$ref": "#/definitions/v1.ParamDefinition"
                     }
                 },
                 "params": {
-                    "description": "输入参数列表 (包含必选和可选)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.ParamDefinition"
+                        "$ref": "#/definitions/v1.ParamDefinition"
                     }
                 }
             }
         },
-        "models.StepTiming": {
+        "v1.StepTiming": {
             "type": "object",
             "properties": {
                 "finishedAt": {
@@ -7004,7 +6918,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.TaskCleanupResponse": {
+        "v1.TaskCleanupResponse": {
             "type": "object",
             "properties": {
                 "deleted": {
@@ -7012,60 +6926,48 @@ const docTemplate = `{
                 }
             }
         },
-        "models.TaskInstance": {
+        "v1.TaskInstance": {
             "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.TaskInstanceV1Meta"
+                    "$ref": "#/definitions/v1.TaskInstanceMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.TaskInstanceV1Status"
+                    "$ref": "#/definitions/v1.TaskInstanceStatus"
                 }
             }
         },
-        "models.TaskInstanceV1Meta": {
+        "v1.TaskInstanceMeta": {
             "type": "object",
             "properties": {
                 "inputs": {
-                    "description": "实际传入的变量值",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
                 },
                 "serviceAccountId": {
-                    "description": "执行该工作流时使用的身份 (Impersonation)",
                     "type": "string"
                 },
                 "steps": {
-                    "description": "运行时的步骤快照 (防篡改)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Step"
+                        "$ref": "#/definitions/v1.Step"
                     }
                 },
                 "trigger": {
-                    "description": "Manual, Cron, Webhook",
                     "type": "string"
                 },
                 "userId": {
-                    "description": "触发者 ID",
                     "type": "string"
                 },
                 "workflowId": {
@@ -7076,11 +6978,10 @@ const docTemplate = `{
                 }
             }
         },
-        "models.TaskInstanceV1Status": {
+        "v1.TaskInstanceStatus": {
             "type": "object",
             "properties": {
                 "currentStep": {
-                    "description": "当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)",
                     "type": "integer"
                 },
                 "error": {
@@ -7090,14 +6991,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "logs": {
-                    "description": "任务日志",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.LogEntry"
+                        "$ref": "#/definitions/v1.LogEntry"
                     }
                 },
                 "outputs": {
-                    "description": "任务最终输出",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
@@ -7107,29 +7006,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "description": "Pending, Running, Success, Failed, Cancelled",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.TaskStatus"
-                        }
-                    ]
+                    "type": "string"
                 },
                 "stepTimings": {
-                    "description": "步骤执行耗时追踪",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/models.StepTiming"
+                        "$ref": "#/definitions/v1.StepTiming"
                     }
                 }
             }
         },
-        "models.TaskLogResponse": {
+        "v1.TaskLogResponse": {
             "type": "object",
             "properties": {
                 "logs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.LogEntry"
+                        "$ref": "#/definitions/v1.LogEntry"
                     }
                 },
                 "nextOffset": {
@@ -7137,129 +7030,100 @@ const docTemplate = `{
                 }
             }
         },
-        "models.TaskStatus": {
-            "description": "任务执行状态: Pending(阻塞), Running(执行), Success(完成), Failed(失败), Cancelled(取消)",
-            "type": "string",
-            "enum": [
-                "Pending",
-                "Running",
-                "Success",
-                "Failed",
-                "Cancelled"
-            ],
-            "x-enum-varnames": [
-                "TaskStatusPending",
-                "TaskStatusRunning",
-                "TaskStatusSuccess",
-                "TaskStatusFailed",
-                "TaskStatusCancelled"
-            ]
-        },
-        "models.VarDefinition": {
+        "v1.VarDefinition": {
             "type": "object",
             "properties": {
                 "default": {
-                    "description": "默认值 (可选变量的默认值为空)",
                     "type": "string"
                 },
                 "description": {
-                    "description": "变量描述",
                     "type": "string"
                 },
                 "regexBackend": {
-                    "description": "后端校验正则 (可选)",
                     "type": "string"
                 },
                 "regexFrontend": {
-                    "description": "前端校验正则 (可选)",
                     "type": "string"
                 },
                 "required": {
-                    "description": "是否必填",
                     "type": "boolean"
                 }
             }
         },
-        "models.Workflow": {
+        "v1.Workflow": {
             "type": "object",
-            "required": [
-                "id",
-                "meta",
-                "status"
-            ],
             "properties": {
                 "generation": {
-                    "description": "Configuration version, increments only on Meta changes",
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "meta": {
-                    "$ref": "#/definitions/models.WorkflowV1Meta"
+                    "$ref": "#/definitions/v1.WorkflowMeta"
                 },
                 "resourceVersion": {
-                    "description": "Total object version, increments only on any change (Meta/Status)",
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.WorkflowV1Status"
+                    "$ref": "#/definitions/v1.WorkflowStatus"
                 }
             }
         },
-        "models.WorkflowV1Meta": {
+        "v1.WorkflowMeta": {
             "type": "object",
             "properties": {
                 "cronEnabled": {
-                    "description": "是否启用定时触发",
                     "type": "boolean"
                 },
                 "cronExpr": {
-                    "description": "Crontab 表达式",
                     "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
                 "enabled": {
-                    "description": "是否启用 (禁用时 Cron/Webhook/手动 均不可触发)",
                     "type": "boolean"
                 },
                 "name": {
                     "type": "string"
                 },
                 "serviceAccountId": {
-                    "description": "执行该工作流时使用的身份 (必填)",
                     "type": "string"
                 },
                 "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Step"
+                        "$ref": "#/definitions/v1.Step"
                     }
                 },
                 "timeout": {
-                    "description": "超时时间 (秒)，默认 7200 (2h)，0 为不超时",
                     "type": "integer"
                 },
                 "vars": {
-                    "description": "工作流启动时接受的变量定义",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/models.VarDefinition"
+                        "$ref": "#/definitions/v1.VarDefinition"
                     }
                 },
                 "webhookEnabled": {
-                    "description": "是否启用 Webhook 触发",
                     "type": "boolean"
                 },
                 "webhookToken": {
-                    "description": "Webhook 触发令牌",
                     "type": "string"
                 }
             }
         },
-        "models.WorkflowV1Status": {
+        "v1.WorkflowSchemaResponse": {
+            "type": "object",
+            "properties": {
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "v1.WorkflowStatus": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -7267,40 +7131,6 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
-                }
-            }
-        },
-        "site.ExportTask": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "format": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "progress": {
-                    "type": "number"
-                },
-                "recordCount": {
-                    "type": "integer"
-                },
-                "resultUrl": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Pending, Running, Success, Failed, Cancelled",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.TaskStatus"
-                        }
-                    ]
                 }
             }
         }

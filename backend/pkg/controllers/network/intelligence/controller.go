@@ -17,7 +17,7 @@ import (
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search"
-// @Success 200 {object} common.CursorResponse{items=[]models.IntelligenceSource}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Source}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Security ApiKeyAuth
@@ -42,8 +42,8 @@ func ScanIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/intelligence
 // @Accept json
 // @Produce json
-// @Param source body models.IntelligenceSource true "Source"
-// @Success 200 {object} models.IntelligenceSource
+// @Param source body apiv1.Source true "Source"
+// @Success 200 {object} apiv1.Source
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -73,8 +73,8 @@ func CreateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Source ID"
-// @Param source body models.IntelligenceSource true "Source"
-// @Success 200 {object} models.IntelligenceSource
+// @Param source body apiv1.Source true "Source"
+// @Success 200 {object} apiv1.Source
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"

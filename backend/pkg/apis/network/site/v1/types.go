@@ -219,3 +219,14 @@ type HitTestRequest struct {
 type ExportTriggerResponse struct {
 	TaskID string `json:"taskId"`
 }
+
+type ExportTask struct {
+	ID          string            `json:"id"`
+	Status      shared.TaskStatus `json:"status"`
+	Progress    float64           `json:"progress"`
+	Format      string            `json:"format"`
+	ResultURL   string            `json:"resultUrl"`
+	Error       string            `json:"error"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	RecordCount int64             `json:"recordCount"`
+}

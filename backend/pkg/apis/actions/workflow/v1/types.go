@@ -189,6 +189,15 @@ func (p *ProbeRequest) Bind(_ *http.Request) error {
 	return nil
 }
 
+type ProbeResponse struct {
+	ProcessorID string            `json:"processorId"`
+	Outputs     map[string]string `json:"outputs"`
+}
+
+type WorkflowSchemaResponse struct {
+	Schema map[string]interface{} `json:"schema"`
+}
+
 type TaskCleanupResponse struct {
 	Deleted int `json:"deleted"`
 }

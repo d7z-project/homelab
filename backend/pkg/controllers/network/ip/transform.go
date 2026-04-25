@@ -5,6 +5,7 @@ import (
 	networkcommon "homelab/pkg/models/network/common"
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
+	ipservice "homelab/pkg/services/network/ip"
 )
 
 func toModelPool(api apiv1.Pool) ipmodel.IPPool {
@@ -167,12 +168,34 @@ func toAPIAnalysisResult(model *ipmodel.IPAnalysisResult) *apiv1.AnalysisResult 
 	return &apiv1.AnalysisResult{Matched: model.Matched, Matches: items}
 }
 
-func toAPIIPInfo(model *networkcommon.IPInfoResponse) *networkcommon.IPInfoResponse {
+func toAPIIPInfo(model *networkcommon.IPInfoResponse) *apiv1.IPInfoResponse {
 	if model == nil {
 		return nil
 	}
 	copy := *model
 	return &copy
+}
+
+func toAPIExportTask(model ipservice.ExportTaskDTO) apiv1.ExportTask {
+	return apiv1.ExportTask{
+		ID:          model.ID,
+		Status:      model.Status,
+		Progress:    model.Progress,
+		Format:      model.Format,
+		ResultURL:   model.ResultURL,
+		Error:       model.Error,
+		CreatedAt:   model.CreatedAt,
+		RecordCount: model.RecordCount,
+		Checksum:    model.Checksum,
+	}
+}
+
+func toAPIExportTasks(items []ipservice.ExportTaskDTO) []apiv1.ExportTask {
+	res := make([]apiv1.ExportTask, 0, len(items))
+	for _, item := range items {
+		res = append(res, toAPIExportTask(item))
+	}
+	return res
 }
 
 func toAPIPoolEntries(items []ipmodel.IPPoolEntry) []apiv1.PoolEntry {

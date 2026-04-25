@@ -2,7 +2,9 @@ package intelligence
 
 import (
 	"context"
-	"homelab/pkg/routes"
+	controllerdeps "homelab/pkg/controllers"
+	"homelab/pkg/controllers/middlewares"
+	intcontroller "homelab/pkg/controllers/network/intelligence"
 	runtimepkg "homelab/pkg/runtime"
 	intservice "homelab/pkg/services/network/intelligence"
 	ipservice "homelab/pkg/services/network/ip"
@@ -21,7 +23,20 @@ func New(enricher *ipservice.MMDBManager) *Module {
 func (m *Module) Name() string { return "network.intelligence" }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	routes.RegisterNetworkIntelligence(r, m.service)
+	r.Route("/network/intelligence", func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.AuthMiddleware)
+			r.Use(middlewares.AuditMiddleware("network/intelligence"))
+			r.Use(controllerdeps.WithIntelligenceControllerDeps(m.service))
+
+			r.With(middlewares.RequirePermission("list", "network/intelligence")).Get("/sources", intcontroller.ScanIntelligenceSourcesHandler)
+			r.With(middlewares.RequirePermission("create", "network/intelligence")).Post("/sources", intcontroller.CreateIntelligenceSourceHandler)
+			r.With(middlewares.RequirePermission("update", "network/intelligence")).Put("/sources/{id}", intcontroller.UpdateIntelligenceSourceHandler)
+			r.With(middlewares.RequirePermission("delete", "network/intelligence")).Delete("/sources/{id}", intcontroller.DeleteIntelligenceSourceHandler)
+			r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/sources/{id}/sync", intcontroller.SyncIntelligenceSourceHandler)
+			r.With(middlewares.RequirePermission("execute", "network/intelligence")).Post("/sync/{id}/cancel", intcontroller.CancelIntelligenceSyncHandler)
+		})
+	})
 }
 
 func (m *Module) Start(ctx context.Context) error {

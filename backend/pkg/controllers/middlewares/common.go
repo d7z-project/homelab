@@ -11,7 +11,7 @@ import (
 // @Tags system
 // @Produce json
 // @Success 200 {string} string "pong"
-// @Router /ping [get]
+// @Router /auth/ping [get]
 func PingHandler(w http.ResponseWriter, r *http.Request) {
 	common.Success(w, r, "pong")
 }

@@ -23,7 +23,7 @@ import (
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.SiteGroup}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Group}
 // @Router /network/site/pools [get]
 func ScanSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -45,8 +45,8 @@ func ScanSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/site
 // @Accept json
 // @Produce json
-// @Param group body models.SiteGroup true "Site Group"
-// @Success 200 {object} models.SiteGroup
+// @Param group body apiv1.Group true "Site Group"
+// @Success 200 {object} apiv1.Group
 // @Router /network/site/pools [post]
 func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -98,7 +98,7 @@ func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Byte offset cursor"
 // @Param limit query int false "Number of entries to return"
 // @Param search query string false "Search prefix or tag"
-// @Success 200 {object} models.SitePoolPreviewResponse
+// @Success 200 {object} apiv1.PoolPreviewResponse
 // @Router /network/site/pools/{id}/preview [get]
 func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -130,7 +130,7 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param entry body models.SitePoolEntryRequest true "Site Entry"
+// @Param entry body apiv1.PoolEntryRequest true "Site Entry"
 // @Success 200 {string} string "success"
 // @Router /network/site/pools/{id}/entries [post]
 func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +195,7 @@ func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param request body object true "Hit test request"
-// @Success 200 {object} models.SiteAnalysisResult
+// @Success 200 {object} apiv1.AnalysisResult
 // @Router /network/site/analysis/hit-test [post]
 func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -227,7 +227,7 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.SiteExport}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Export}
 // @Router /network/site/exports [get]
 func ScanSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -249,8 +249,8 @@ func ScanSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/site
 // @Accept json
 // @Produce json
-// @Param export body models.SiteExport true "Site Export"
-// @Success 200 {object} models.SiteExport
+// @Param export body apiv1.Export true "Site Export"
+// @Success 200 {object} apiv1.Export
 // @Router /network/site/exports [post]
 func CreateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -276,8 +276,8 @@ func CreateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Export ID"
-// @Param export body models.SiteExport true "Site Export"
-// @Success 200 {object} models.SiteExport
+// @Param export body apiv1.Export true "Site Export"
+// @Success 200 {object} apiv1.Export
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -328,7 +328,7 @@ func DeleteSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Scan all site export tasks
 // @Tags network/site
 // @Produce json
-// @Success 200 {array} siteservice.ExportTask
+// @Success 200 {array} apiv1.ExportTask
 // @Security ApiKeyAuth
 // @Router /network/site/exports/tasks [get]
 func ScanSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
@@ -338,7 +338,7 @@ func ScanSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	tasks := deps.Exports.ScanTasks()
 
-	common.Success(w, r, tasks)
+	common.Success(w, r, toAPIExportTasks(tasks))
 }
 
 // TriggerSiteExportHandler godoc
@@ -347,7 +347,7 @@ func ScanSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Export ID"
 // @Param format query string false "Format: text, json, yaml"
-// @Success 200 {object} map[string]string
+// @Success 200 {object} apiv1.ExportTriggerResponse
 // @Router /network/site/exports/{id}/trigger [post]
 func TriggerSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -372,7 +372,7 @@ func TriggerSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/site
 // @Produce json
 // @Param taskId path string true "Task ID"
-// @Success 200 {object} siteservice.ExportTask
+// @Success 200 {object} apiv1.ExportTask
 // @Router /network/site/exports/task/{taskId} [get]
 func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -385,7 +385,7 @@ func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found")
 		return
 	}
-	common.Success(w, r, task)
+	common.Success(w, r, toAPIExportTask(*task))
 }
 
 // CancelSiteExportTaskHandler godoc
@@ -417,8 +417,8 @@ func CancelSiteExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/site
 // @Accept json
 // @Produce json
-// @Param request body models.SiteExportPreviewRequest true "Preview Request"
-// @Success 200 {array} models.SitePoolEntry
+// @Param request body apiv1.ExportPreviewRequest true "Preview Request"
+// @Success 200 {array} apiv1.PoolEntry
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -483,7 +483,7 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.SiteSyncPolicy}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.SyncPolicy}
 // @Router /network/site/sync [get]
 func ScanSiteSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -505,8 +505,8 @@ func ScanSiteSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/site
 // @Accept json
 // @Produce json
-// @Param policy body models.SiteSyncPolicy true "Site Sync Policy"
-// @Success 200 {object} models.SiteSyncPolicy
+// @Param policy body apiv1.SyncPolicy true "Site Sync Policy"
+// @Success 200 {object} apiv1.SyncPolicy
 // @Router /network/site/sync [post]
 func CreateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -532,8 +532,8 @@ func CreateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Policy ID"
-// @Param policy body models.SiteSyncPolicy true "Site Sync Policy"
-// @Success 200 {object} models.SiteSyncPolicy
+// @Param policy body apiv1.SyncPolicy true "Site Sync Policy"
+// @Success 200 {object} apiv1.SyncPolicy
 // @Router /network/site/sync/{id} [put]
 func UpdateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
@@ -600,8 +600,8 @@ func TriggerSiteSyncHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param group body models.SiteGroup true "Site Group"
-// @Success 200 {object} models.SiteGroup
+// @Param group body apiv1.Group true "Site Group"
+// @Success 200 {object} apiv1.Group
 // @Router /network/site/pools/{id} [put]
 func UpdateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	deps, ok := controllercommon.SiteDepsFromRequest(w, r)

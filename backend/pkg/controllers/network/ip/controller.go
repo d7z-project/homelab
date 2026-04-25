@@ -22,7 +22,7 @@ import (
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.IPPool}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Pool}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/pools [get]
@@ -46,8 +46,8 @@ func ScanGroupsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Accept json
 // @Produce json
-// @Param group body models.IPPool true "IP Group"
-// @Success 200 {object} models.IPPool
+// @Param group body apiv1.Pool true "IP Group"
+// @Success 200 {object} apiv1.Pool
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -77,8 +77,8 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param group body models.IPPool true "IP Group"
-// @Success 200 {object} models.IPPool
+// @Param group body apiv1.Pool true "IP Group"
+// @Success 200 {object} apiv1.Pool
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -117,7 +117,7 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Byte offset cursor"
 // @Param limit query int false "Number of entries to return"
 // @Param search query string false "Search prefix or tag"
-// @Success 200 {object} models.IPPoolPreviewResponse
+// @Success 200 {object} apiv1.PoolPreviewResponse
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "Group Not Found"
 // @Security ApiKeyAuth
@@ -183,7 +183,7 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.IPExport}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.Export}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/exports [get]
@@ -207,8 +207,8 @@ func ScanExportsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Accept json
 // @Produce json
-// @Param export body models.IPExport true "IP Export"
-// @Success 200 {object} models.IPExport
+// @Param export body apiv1.Export true "IP Export"
+// @Success 200 {object} apiv1.Export
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -238,8 +238,8 @@ func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Export ID"
-// @Param export body models.IPExport true "IP Export"
-// @Success 200 {object} models.IPExport
+// @Param export body apiv1.Export true "IP Export"
+// @Success 200 {object} apiv1.Export
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -295,8 +295,8 @@ func DeleteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Accept json
 // @Produce json
-// @Param request body models.IPHitTestRequest true "Hit test request"
-// @Success 200 {object} models.IPAnalysisResult
+// @Param request body apiv1.HitTestRequest true "Hit test request"
+// @Success 200 {object} apiv1.AnalysisResult
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
@@ -324,7 +324,7 @@ func HitTestHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Produce json
 // @Param ip query string true "IP address"
-// @Success 200 {object} models.IPInfoResponse
+// @Success 200 {object} apiv1.IPInfoResponse
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
@@ -347,7 +347,7 @@ func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Scan all IP export tasks
 // @Tags network/ip
 // @Produce json
-// @Success 200 {array} ipservice.ExportTask
+// @Success 200 {array} apiv1.ExportTask
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/tasks [get]
 func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
@@ -356,7 +356,7 @@ func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tasks := deps.Exports.ScanTasks()
-	common.Success(w, r, tasks)
+	common.Success(w, r, toAPIExportTasks(tasks))
 }
 
 // TriggerExportHandler godoc
@@ -365,7 +365,7 @@ func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Export ID"
 // @Param format query string false "Format: text, json, yaml"
-// @Success 200 {object} models.IPExportTriggerResponse
+// @Success 200 {object} apiv1.ExportTriggerResponse
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "Export Not Found"
 // @Security ApiKeyAuth
@@ -393,7 +393,7 @@ func TriggerExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Produce json
 // @Param taskId path string true "Task ID"
-// @Success 200 {object} ipservice.ExportTask
+// @Success 200 {object} apiv1.ExportTask
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 404 {object} common.Response "Task Not Found"
 // @Security ApiKeyAuth
@@ -409,7 +409,7 @@ func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 		common.Error(w, r, http.StatusNotFound, http.StatusNotFound, "task not found")
 		return
 	}
-	common.Success(w, r, task)
+	common.Success(w, r, toAPIExportTask(*task))
 }
 
 // CancelExportTaskHandler godoc
@@ -441,8 +441,8 @@ func CancelExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Accept json
 // @Produce json
-// @Param request body models.IPExportPreviewRequest true "Preview Request"
-// @Success 200 {array} models.IPPoolEntry
+// @Param request body apiv1.ExportPreviewRequest true "Preview Request"
+// @Success 200 {array} apiv1.PoolEntry
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -509,7 +509,7 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Group ID"
-// @Param entry body models.IPPoolEntryRequest true "IP/CIDR Tag Entry"
+// @Param entry body apiv1.PoolEntryRequest true "IP/CIDR Tag Entry"
 // @Success 200 {string} string "success"
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
@@ -595,7 +595,7 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Param cursor query string false "Cursor"
 // @Param limit query int false "Limit"
 // @Param search query string false "Search by name"
-// @Success 200 {object} common.CursorResponse{items=[]models.IPSyncPolicy}
+// @Success 200 {object} common.CursorResponse{items=[]apiv1.SyncPolicy}
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /network/ip/sync [get]
@@ -619,8 +619,8 @@ func ScanSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags network/ip
 // @Accept json
 // @Produce json
-// @Param policy body models.IPSyncPolicy true "IP Sync Policy"
-// @Success 200 {object} models.IPSyncPolicy
+// @Param policy body apiv1.SyncPolicy true "IP Sync Policy"
+// @Success 200 {object} apiv1.SyncPolicy
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -650,8 +650,8 @@ func CreateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Policy ID"
-// @Param policy body models.IPSyncPolicy true "IP Sync Policy"
-// @Success 200 {object} models.IPSyncPolicy
+// @Param policy body apiv1.SyncPolicy true "IP Sync Policy"
+// @Success 200 {object} apiv1.SyncPolicy
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"

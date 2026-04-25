@@ -1,12 +1,12 @@
 basePath: /api/v1
 definitions:
-  actions.ProbeRequest:
+  auth.AuthInfo:
     properties:
-      params:
-        additionalProperties:
-          type: string
-        type: object
-      processorId:
+      id:
+        type: string
+      sessionId:
+        type: string
+      type:
         type: string
     type: object
   common.CursorResponse:
@@ -16,8 +16,6 @@ definitions:
       items: {}
       nextCursor:
         type: string
-      total:
-        type: integer
     type: object
   common.Response:
     properties:
@@ -27,19 +25,69 @@ definitions:
       message:
         type: string
     type: object
-  controllers.AuthInfo:
+  discovery.DiscoverResult:
     properties:
-      id:
+      final:
+        type: boolean
+      fullId:
         type: string
-      sessionId:
-        type: string
-      type:
+      name:
         type: string
     type: object
-  ip.ExportTask:
+  homelab_pkg_apis_network_ip_v1.AnalysisResult:
+    properties:
+      matched:
+        type: boolean
+      matches:
+        items:
+          $ref: '#/definitions/v1.AnalysisMatch'
+        type: array
+    type: object
+  homelab_pkg_apis_network_ip_v1.Export:
+    properties:
+      generation:
+        type: integer
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.ExportMeta'
+      resourceVersion:
+        type: integer
+      status:
+        $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.ExportStatus'
+    type: object
+  homelab_pkg_apis_network_ip_v1.ExportMeta:
+    properties:
+      description:
+        type: string
+      groupIds:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      rule:
+        type: string
+    type: object
+  homelab_pkg_apis_network_ip_v1.ExportPreviewRequest:
+    properties:
+      groupIds:
+        items:
+          type: string
+        type: array
+      rule:
+        type: string
+    type: object
+  homelab_pkg_apis_network_ip_v1.ExportStatus:
+    properties:
+      createdAt:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  homelab_pkg_apis_network_ip_v1.ExportTask:
     properties:
       checksum:
-        description: Rule + GroupChecksums + Format
         type: string
       createdAt:
         type: string
@@ -56,198 +104,14 @@ definitions:
       resultUrl:
         type: string
       status:
-        allOf:
-        - $ref: '#/definitions/models.TaskStatus'
-        description: Pending, Running, Success, Failed, Cancelled
+        $ref: '#/definitions/shared.TaskStatus'
     type: object
-  models.AuditCleanupResponse:
-    properties:
-      deleted:
-        type: integer
-    type: object
-  models.AuditLog:
-    properties:
-      action:
-        description: CREATE, UPDATE, DELETE, or HTTP Method
-        type: string
-      id:
-        type: string
-      ipAddress:
-        type: string
-      message:
-        description: Detailed description
-        type: string
-      resource:
-        description: e.g., "DNS/Record", "RBAC/ServiceAccount"
-        type: string
-      status:
-        description: Success or Failed
-        type: string
-      subject:
-        description: User or SA name (e.g., "root" or "sa-name")
-        type: string
-      targetId:
-        description: ID or name of the resource operated on
-        type: string
-      timestamp:
-        description: RFC3339 format
-        type: string
-      userAgent:
-        type: string
-    type: object
-  models.DiscoverResult:
-    properties:
-      final:
-        description: True if this is a complete resource, False if it's a category/prefix
-        type: boolean
-      fullId:
-        description: Actual resource path used in RBAC check
-        type: string
-      name:
-        description: Display name in UI
-        type: string
-    type: object
-  models.DnsExportResponse:
-    properties:
-      domains:
-        items:
-          $ref: '#/definitions/models.ExportDomain'
-        type: array
-    type: object
-  models.Domain:
-    properties:
-      generation:
-        description: Configuration version, increments only on Meta changes
-        type: integer
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/models.DomainV1Meta'
-      resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
-        type: integer
-      status:
-        $ref: '#/definitions/models.DomainV1Status'
-    required:
-    - id
-    - meta
-    - status
-    type: object
-  models.DomainV1Meta:
-    properties:
-      description:
-        type: string
-      enabled:
-        type: boolean
-      name:
-        type: string
-    type: object
-  models.DomainV1Status:
-    properties:
-      createdAt:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  models.ExportDomain:
-    properties:
-      name:
-        type: string
-      records:
-        items:
-          $ref: '#/definitions/models.ExportRecord'
-        type: array
-    type: object
-  models.ExportRecord:
-    properties:
-      name:
-        type: string
-      priority:
-        type: integer
-      ttl:
-        type: integer
-      type:
-        type: string
-      value:
-        type: string
-    type: object
-  models.IPAnalysisMatch:
-    properties:
-      cidr:
-        description: 命中的具体网段
-        type: string
-      tags:
-        description: 命中的 Tags
-        items:
-          type: string
-        type: array
-    type: object
-  models.IPAnalysisResult:
-    properties:
-      matched:
-        type: boolean
-      matches:
-        description: 所有命中的网段及其标签
-        items:
-          $ref: '#/definitions/models.IPAnalysisMatch'
-        type: array
-    type: object
-  models.IPExport:
-    properties:
-      generation:
-        description: Configuration version, increments only on Meta changes
-        type: integer
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/models.IPExportV1Meta'
-      resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
-        type: integer
-      status:
-        $ref: '#/definitions/models.IPExportV1Status'
-    required:
-    - id
-    - meta
-    - status
-    type: object
-  models.IPExportPreviewRequest:
-    properties:
-      groupIds:
-        items:
-          type: string
-        type: array
-      rule:
-        type: string
-    type: object
-  models.IPExportTriggerResponse:
+  homelab_pkg_apis_network_ip_v1.ExportTriggerResponse:
     properties:
       taskId:
         type: string
     type: object
-  models.IPExportV1Meta:
-    properties:
-      description:
-        type: string
-      groupIds:
-        description: 依赖的 IP 池 ID 列表
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      rule:
-        description: go-expr 表达式
-        type: string
-    type: object
-  models.IPExportV1Status:
-    properties:
-      createdAt:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  models.IPHitTestRequest:
+  homelab_pkg_apis_network_ip_v1.HitTestRequest:
     properties:
       groupIds:
         items:
@@ -256,45 +120,7 @@ definitions:
       ip:
         type: string
     type: object
-  models.IPInfoResponse:
-    properties:
-      asn:
-        type: integer
-      city:
-        type: string
-      country:
-        type: string
-      ip:
-        type: string
-      label:
-        description: 附加标识 (如 NS 主机名)
-        type: string
-      location:
-        description: '"lat,lon"'
-        type: string
-      org:
-        type: string
-    type: object
-  models.IPPool:
-    properties:
-      generation:
-        description: Configuration version, increments only on Meta changes
-        type: integer
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/models.IPPoolV1Meta'
-      resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
-        type: integer
-      status:
-        $ref: '#/definitions/models.IPPoolV1Status'
-    required:
-    - id
-    - meta
-    - status
-    type: object
-  models.IPPoolEntry:
+  homelab_pkg_apis_network_ip_v1.PoolEntry:
     properties:
       cidr:
         type: string
@@ -303,7 +129,7 @@ definitions:
           type: string
         type: array
     type: object
-  models.IPPoolEntryRequest:
+  homelab_pkg_apis_network_ip_v1.PoolEntryRequest:
     properties:
       cidr:
         type: string
@@ -316,64 +142,35 @@ definitions:
           type: string
         type: array
     type: object
-  models.IPPoolPreviewResponse:
+  homelab_pkg_apis_network_ip_v1.PoolPreviewResponse:
     properties:
       entries:
         items:
-          $ref: '#/definitions/models.IPPoolEntry'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.PoolEntry'
         type: array
       nextCursor:
-        description: 下一个 Byte Offset (作为字符串传递)
         type: string
       total:
-        description: 总条数
         type: integer
     type: object
-  models.IPPoolV1Meta:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-    type: object
-  models.IPPoolV1Status:
-    properties:
-      checksum:
-        description: 数据指纹，用于缓存失效
-        type: string
-      createdAt:
-        type: string
-      entryCount:
-        description: 池中条目总数
-        type: integer
-      updatedAt:
-        type: string
-    type: object
-  models.IPSyncPolicy:
+  homelab_pkg_apis_network_ip_v1.SyncPolicy:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.IPSyncPolicyV1Meta'
+        $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicyMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.IPSyncPolicyV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicyStatus'
     type: object
-  models.IPSyncPolicyV1Meta:
+  homelab_pkg_apis_network_ip_v1.SyncPolicyMeta:
     properties:
       config:
         additionalProperties:
           type: string
-        description: 格式特定的配置
         type: object
       cron:
         type: string
@@ -382,10 +179,8 @@ definitions:
       enabled:
         type: boolean
       format:
-        description: '"text", "geoip"'
         type: string
       mode:
-        description: '"overwrite", "append"'
         type: string
       name:
         type: string
@@ -394,7 +189,7 @@ definitions:
       targetGroupId:
         type: string
     type: object
-  models.IPSyncPolicyV1Status:
+  homelab_pkg_apis_network_ip_v1.SyncPolicyStatus:
     properties:
       createdAt:
         type: string
@@ -403,120 +198,426 @@ definitions:
       lastRunAt:
         type: string
       lastStatus:
-        allOf:
-        - $ref: '#/definitions/models.TaskStatus'
-        description: '"success", "failed"'
+        $ref: '#/definitions/shared.TaskStatus'
       progress:
         type: number
       updatedAt:
         type: string
     type: object
-  models.IntelligenceSource:
+  homelab_pkg_apis_network_site_v1.AnalysisResult:
+    properties:
+      dns:
+        $ref: '#/definitions/v1.DNSAnalysis'
+      matched:
+        type: boolean
+      pattern:
+        type: string
+      ruleType:
+        type: integer
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  homelab_pkg_apis_network_site_v1.Export:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.IntelligenceSourceV1Meta'
+        $ref: '#/definitions/homelab_pkg_apis_network_site_v1.ExportMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.IntelligenceSourceV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/homelab_pkg_apis_network_site_v1.ExportStatus'
     type: object
-  models.IntelligenceSourceV1Meta:
+  homelab_pkg_apis_network_site_v1.ExportMeta:
     properties:
-      autoUpdate:
-        type: boolean
+      description:
+        type: string
+      groupIds:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      rule:
+        type: string
+    type: object
+  homelab_pkg_apis_network_site_v1.ExportPreviewRequest:
+    properties:
+      groupIds:
+        items:
+          type: string
+        type: array
+      rule:
+        type: string
+    type: object
+  homelab_pkg_apis_network_site_v1.ExportStatus:
+    properties:
+      createdAt:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  homelab_pkg_apis_network_site_v1.ExportTask:
+    properties:
+      createdAt:
+        type: string
+      error:
+        type: string
+      format:
+        type: string
+      id:
+        type: string
+      progress:
+        type: number
+      recordCount:
+        type: integer
+      resultUrl:
+        type: string
+      status:
+        $ref: '#/definitions/shared.TaskStatus'
+    type: object
+  homelab_pkg_apis_network_site_v1.ExportTriggerResponse:
+    properties:
+      taskId:
+        type: string
+    type: object
+  homelab_pkg_apis_network_site_v1.PoolEntry:
+    properties:
+      tags:
+        items:
+          type: string
+        type: array
+      type:
+        type: integer
+      value:
+        type: string
+    type: object
+  homelab_pkg_apis_network_site_v1.PoolEntryRequest:
+    properties:
+      newTags:
+        items:
+          type: string
+        type: array
+      oldTags:
+        items:
+          type: string
+        type: array
+      type:
+        type: integer
+      value:
+        type: string
+    type: object
+  homelab_pkg_apis_network_site_v1.PoolPreviewResponse:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/homelab_pkg_apis_network_site_v1.PoolEntry'
+        type: array
+      nextCursor:
+        type: string
+      total:
+        type: integer
+    type: object
+  homelab_pkg_apis_network_site_v1.SyncPolicy:
+    properties:
+      generation:
+        type: integer
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicyMeta'
+      resourceVersion:
+        type: integer
+      status:
+        $ref: '#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicyStatus'
+    type: object
+  homelab_pkg_apis_network_site_v1.SyncPolicyMeta:
+    properties:
       config:
         additionalProperties:
           type: string
         type: object
       cron:
         type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      format:
+        type: string
+      mode:
+        type: string
+      name:
+        type: string
+      sourceUrl:
+        type: string
+      targetGroupId:
+        type: string
+    type: object
+  homelab_pkg_apis_network_site_v1.SyncPolicyStatus:
+    properties:
+      createdAt:
+        type: string
+      errorMessage:
+        type: string
+      lastRunAt:
+        type: string
+      lastStatus:
+        $ref: '#/definitions/shared.TaskStatus'
+      progress:
+        type: number
+      updatedAt:
+        type: string
+    type: object
+  networkcommon.IPInfoResponse:
+    properties:
+      asn:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      ip:
+        type: string
+      label:
+        type: string
+      location:
+        type: string
+      org:
+        type: string
+    type: object
+  shared.TaskStatus:
+    enum:
+    - Pending
+    - Running
+    - Success
+    - Failed
+    - Cancelled
+    type: string
+    x-enum-varnames:
+    - TaskStatusPending
+    - TaskStatusRunning
+    - TaskStatusSuccess
+    - TaskStatusFailed
+    - TaskStatusCancelled
+  v1.AnalysisMatch:
+    properties:
+      cidr:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  v1.AuditCleanupResponse:
+    properties:
+      deleted:
+        type: integer
+    type: object
+  v1.AuditLog:
+    properties:
+      action:
+        type: string
+      id:
+        type: string
+      ipAddress:
+        type: string
+      message:
+        type: string
+      resource:
+        type: string
+      status:
+        type: string
+      subject:
+        type: string
+      targetId:
+        type: string
+      timestamp:
+        type: string
+      userAgent:
+        type: string
+    type: object
+  v1.DNSAnalysis:
+    properties:
+      a:
+        items:
+          $ref: '#/definitions/networkcommon.IPInfoResponse'
+        type: array
+      aaaa:
+        items:
+          $ref: '#/definitions/networkcommon.IPInfoResponse'
+        type: array
+      cname:
+        items:
+          type: string
+        type: array
+      ns:
+        items:
+          $ref: '#/definitions/networkcommon.IPInfoResponse'
+        type: array
+      soa:
+        items:
+          type: string
+        type: array
+    type: object
+  v1.Domain:
+    properties:
+      generation:
+        type: integer
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/v1.DomainMeta'
+      resourceVersion:
+        type: integer
+      status:
+        $ref: '#/definitions/v1.DomainStatus'
+    type: object
+  v1.DomainMeta:
+    properties:
+      description:
+        type: string
       enabled:
         type: boolean
       name:
         type: string
-      type:
-        description: asn, city, country
-        type: string
-      url:
-        type: string
     type: object
-  models.IntelligenceSourceV1Status:
+  v1.DomainStatus:
     properties:
-      errorMessage:
+      createdAt:
         type: string
-      lastUpdatedAt:
+      updatedAt:
         type: string
-      progress:
-        type: number
-      status:
-        allOf:
-        - $ref: '#/definitions/models.TaskStatus'
-        description: Ready, Downloading, Error
     type: object
-  models.LogEntry:
+  v1.ExportDomain:
+    properties:
+      name:
+        type: string
+      records:
+        items:
+          $ref: '#/definitions/v1.ExportRecord'
+        type: array
+    type: object
+  v1.ExportRecord:
+    properties:
+      name:
+        type: string
+      priority:
+        type: integer
+      ttl:
+        type: integer
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  v1.ExportResponse:
+    properties:
+      domains:
+        items:
+          $ref: '#/definitions/v1.ExportDomain'
+        type: array
+    type: object
+  v1.Group:
+    properties:
+      generation:
+        type: integer
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/v1.GroupMeta'
+      resourceVersion:
+        type: integer
+      status:
+        $ref: '#/definitions/v1.GroupStatus'
+    type: object
+  v1.GroupMeta:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  v1.GroupStatus:
+    properties:
+      checksum:
+        type: string
+      createdAt:
+        type: string
+      entryCount:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  v1.IPInfoResponse:
+    properties:
+      asn:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      ip:
+        type: string
+      label:
+        type: string
+      location:
+        type: string
+      org:
+        type: string
+    type: object
+  v1.LogEntry:
     properties:
       message:
         type: string
       stepId:
-        description: 关联的步骤 ID，空字符串代表引擎级日志
         type: string
       timestamp:
         type: string
     type: object
-  models.LoginRequest:
+  v1.LoginRequest:
     properties:
       password:
         type: string
       totp:
         type: string
     type: object
-  models.LoginResponse:
+  v1.LoginResponse:
     properties:
       session_id:
         type: string
     type: object
-  models.LookupItem:
+  v1.LookupItem:
     properties:
       description:
         type: string
       icon:
-        description: Optional icon name for M3
         type: string
       id:
         type: string
       name:
         type: string
     type: object
-  models.ParamDefinition:
+  v1.ParamDefinition:
     properties:
       description:
         type: string
       lookupCode:
-        description: 服务发现代号 (可选)
         type: string
       name:
         type: string
       optional:
-        description: 是否为可选参数
         type: boolean
       regexBackend:
-        description: 后端校验正则 (可选)
         type: string
       regexFrontend:
-        description: 前端校验正则 (可选)
         type: string
     type: object
-  models.PolicyRule:
+  v1.PolicyRule:
     properties:
       resource:
         type: string
@@ -525,26 +626,69 @@ definitions:
           type: string
         type: array
     type: object
-  models.Record:
+  v1.Pool:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.RecordV1Meta'
+        $ref: '#/definitions/v1.PoolMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.RecordV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/v1.PoolStatus'
     type: object
-  models.RecordV1Meta:
+  v1.PoolMeta:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  v1.PoolStatus:
+    properties:
+      checksum:
+        type: string
+      createdAt:
+        type: string
+      entryCount:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  v1.ProbeRequest:
+    properties:
+      params:
+        additionalProperties:
+          type: string
+        type: object
+      processorId:
+        type: string
+    type: object
+  v1.ProbeResponse:
+    properties:
+      outputs:
+        additionalProperties:
+          type: string
+        type: object
+      processorId:
+        type: string
+    type: object
+  v1.Record:
+    properties:
+      generation:
+        type: integer
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/v1.RecordMeta'
+      resourceVersion:
+        type: integer
+      status:
+        $ref: '#/definitions/v1.RecordStatus'
+    type: object
+  v1.RecordMeta:
     properties:
       comments:
         type: string
@@ -563,9 +707,9 @@ definitions:
       value:
         type: string
     type: object
-  models.RecordV1Status:
+  v1.RecordStatus:
     type: object
-  models.ResourcePermissions:
+  v1.ResourcePermissions:
     properties:
       allowedAll:
         type: boolean
@@ -574,49 +718,35 @@ definitions:
           type: string
         type: array
       matchedRule:
-        allOf:
-        - $ref: '#/definitions/models.PolicyRule'
-        description: Records which rule allowed the access
+        $ref: '#/definitions/v1.PolicyRule'
     type: object
-  models.Role:
+  v1.Role:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.RoleV1Meta'
+        $ref: '#/definitions/v1.RoleMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.RoleV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/v1.RoleStatus'
     type: object
-  models.RoleBinding:
+  v1.RoleBinding:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.RoleBindingV1Meta'
+        $ref: '#/definitions/v1.RoleBindingMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.RoleBindingV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/v1.RoleBindingStatus'
     type: object
-  models.RoleBindingV1Meta:
+  v1.RoleBindingMeta:
     properties:
       enabled:
         type: boolean
@@ -629,9 +759,9 @@ definitions:
       serviceAccountId:
         type: string
     type: object
-  models.RoleBindingV1Status:
+  v1.RoleBindingStatus:
     type: object
-  models.RoleV1Meta:
+  v1.RoleMeta:
     properties:
       comments:
         type: string
@@ -639,41 +769,34 @@ definitions:
         type: string
       rules:
         items:
-          $ref: '#/definitions/models.PolicyRule'
+          $ref: '#/definitions/v1.PolicyRule'
         type: array
     type: object
-  models.RoleV1Status:
+  v1.RoleStatus:
     type: object
-  models.RunWorkflowRequest:
+  v1.RunWorkflowRequest:
     properties:
       inputs:
         additionalProperties:
           type: string
         type: object
       trigger:
-        description: 'Optional: Manual (default), API, Script, etc.'
         type: string
     type: object
-  models.ServiceAccount:
+  v1.ServiceAccount:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.ServiceAccountV1Meta'
+        $ref: '#/definitions/v1.ServiceAccountMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.ServiceAccountV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/v1.ServiceAccountStatus'
     type: object
-  models.ServiceAccountV1Meta:
+  v1.ServiceAccountMeta:
     properties:
       comments:
         type: string
@@ -684,12 +807,12 @@ definitions:
       token:
         type: string
     type: object
-  models.ServiceAccountV1Status:
+  v1.ServiceAccountStatus:
     properties:
       lastUsedAt:
         type: string
     type: object
-  models.Session:
+  v1.Session:
     properties:
       createdAt:
         type: string
@@ -702,7 +825,7 @@ definitions:
       userType:
         type: string
     type: object
-  models.SimulatePermissionsRequest:
+  v1.SimulatePermissionsRequest:
     properties:
       resource:
         type: string
@@ -711,497 +834,230 @@ definitions:
       verb:
         type: string
     type: object
-  models.SiteAnalysisResult:
+  v1.Source:
     properties:
-      dns:
-        allOf:
-        - $ref: '#/definitions/models.SiteDNSAnalysis'
-        description: DNS Intelligence
-      matched:
+      generation:
+        type: integer
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/v1.SourceMeta'
+      resourceVersion:
+        type: integer
+      status:
+        $ref: '#/definitions/v1.SourceStatus'
+    type: object
+  v1.SourceMeta:
+    properties:
+      autoUpdate:
         type: boolean
-      pattern:
-        type: string
-      ruleType:
-        type: integer
-      tags:
-        items:
-          type: string
-        type: array
-    type: object
-  models.SiteDNSAnalysis:
-    properties:
-      a:
-        items:
-          $ref: '#/definitions/models.IPInfoResponse'
-        type: array
-      aaaa:
-        items:
-          $ref: '#/definitions/models.IPInfoResponse'
-        type: array
-      cname:
-        items:
-          type: string
-        type: array
-      ns:
-        items:
-          $ref: '#/definitions/models.IPInfoResponse'
-        type: array
-      soa:
-        items:
-          type: string
-        type: array
-    type: object
-  models.SiteExport:
-    properties:
-      generation:
-        description: Configuration version, increments only on Meta changes
-        type: integer
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/models.SiteExportV1Meta'
-      resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
-        type: integer
-      status:
-        $ref: '#/definitions/models.SiteExportV1Status'
-    required:
-    - id
-    - meta
-    - status
-    type: object
-  models.SiteExportPreviewRequest:
-    properties:
-      groupIds:
-        items:
-          type: string
-        type: array
-      rule:
-        type: string
-    type: object
-  models.SiteExportV1Meta:
-    properties:
-      description:
-        type: string
-      groupIds:
-        description: 依赖的域名池 ID 列表
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      rule:
-        description: go-expr 表达式
-        type: string
-    type: object
-  models.SiteExportV1Status:
-    properties:
-      createdAt:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  models.SiteGroup:
-    properties:
-      generation:
-        description: Configuration version, increments only on Meta changes
-        type: integer
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/models.SiteGroupV1Meta'
-      resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
-        type: integer
-      status:
-        $ref: '#/definitions/models.SiteGroupV1Status'
-    required:
-    - id
-    - meta
-    - status
-    type: object
-  models.SiteGroupV1Meta:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-    type: object
-  models.SiteGroupV1Status:
-    properties:
-      checksum:
-        description: 数据指纹
-        type: string
-      createdAt:
-        type: string
-      entryCount:
-        description: 条目总数
-        type: integer
-      updatedAt:
-        type: string
-    type: object
-  models.SitePoolEntry:
-    properties:
-      tags:
-        items:
-          type: string
-        type: array
-      type:
-        description: 0:Keyword, 1:Regex, 2:Domain, 3:Full
-        type: integer
-      value:
-        type: string
-    type: object
-  models.SitePoolEntryRequest:
-    properties:
-      newTags:
-        description: 新增或更新后的标签
-        items:
-          type: string
-        type: array
-      oldTags:
-        description: 被替换的标签（用于编辑场景）
-        items:
-          type: string
-        type: array
-      type:
-        type: integer
-      value:
-        type: string
-    type: object
-  models.SitePoolPreviewResponse:
-    properties:
-      entries:
-        items:
-          $ref: '#/definitions/models.SitePoolEntry'
-        type: array
-      nextCursor:
-        description: 下一个 Byte Offset (作为字符串传递)
-        type: string
-      total:
-        description: 总条数
-        type: integer
-    type: object
-  models.SiteSyncPolicy:
-    properties:
-      generation:
-        description: Configuration version, increments only on Meta changes
-        type: integer
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/models.SiteSyncPolicyV1Meta'
-      resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
-        type: integer
-      status:
-        $ref: '#/definitions/models.SiteSyncPolicyV1Status'
-    required:
-    - id
-    - meta
-    - status
-    type: object
-  models.SiteSyncPolicyV1Meta:
-    properties:
       config:
         additionalProperties:
           type: string
-        description: 格式特定的配置
         type: object
       cron:
         type: string
-      description:
-        type: string
       enabled:
         type: boolean
-      format:
-        description: '"text", "geosite"'
-        type: string
-      mode:
-        description: '"overwrite", "append"'
-        type: string
       name:
         type: string
-      sourceUrl:
+      type:
         type: string
-      targetGroupId:
+      url:
         type: string
     type: object
-  models.SiteSyncPolicyV1Status:
+  v1.SourceStatus:
     properties:
-      createdAt:
-        type: string
       errorMessage:
         type: string
-      lastRunAt:
+      lastUpdatedAt:
         type: string
-      lastStatus:
-        allOf:
-        - $ref: '#/definitions/models.TaskStatus'
-        description: '"success", "failed"'
       progress:
         type: number
-      updatedAt:
-        type: string
+      status:
+        $ref: '#/definitions/shared.TaskStatus'
     type: object
-  models.Step:
+  v1.Step:
     properties:
       fail:
-        description: 执行出错时是否继续执行后续步骤
         type: boolean
       id:
-        description: 步骤 ID，用于 ${{ steps.ID.outputs.key }}
         type: string
       if:
-        description: 条件表达式 (go-expr)，为空则总是执行
         type: string
       name:
-        description: 步骤显示名称
         type: string
       params:
         additionalProperties:
           type: string
-        description: 输入参数，支持模板字符串
         type: object
       type:
-        description: 处理器类型 (如 core/fetch/http)
         type: string
     type: object
-  models.StepManifest:
+  v1.StepManifest:
     properties:
       description:
-        description: 处理器功能简述
         type: string
       id:
-        description: 处理器唯一标识 (如 core/fetch/http)
         type: string
       name:
-        description: 显示名称
         type: string
       outputParams:
-        description: 输出参数
         items:
-          $ref: '#/definitions/models.ParamDefinition'
+          $ref: '#/definitions/v1.ParamDefinition'
         type: array
       params:
-        description: 输入参数列表 (包含必选和可选)
         items:
-          $ref: '#/definitions/models.ParamDefinition'
+          $ref: '#/definitions/v1.ParamDefinition'
         type: array
     type: object
-  models.StepTiming:
+  v1.StepTiming:
     properties:
       finishedAt:
         type: string
       startedAt:
         type: string
     type: object
-  models.TaskCleanupResponse:
+  v1.TaskCleanupResponse:
     properties:
       deleted:
         type: integer
     type: object
-  models.TaskInstance:
+  v1.TaskInstance:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.TaskInstanceV1Meta'
+        $ref: '#/definitions/v1.TaskInstanceMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.TaskInstanceV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/v1.TaskInstanceStatus'
     type: object
-  models.TaskInstanceV1Meta:
+  v1.TaskInstanceMeta:
     properties:
       inputs:
         additionalProperties:
           type: string
-        description: 实际传入的变量值
         type: object
       serviceAccountId:
-        description: 执行该工作流时使用的身份 (Impersonation)
         type: string
       steps:
-        description: 运行时的步骤快照 (防篡改)
         items:
-          $ref: '#/definitions/models.Step'
+          $ref: '#/definitions/v1.Step'
         type: array
       trigger:
-        description: Manual, Cron, Webhook
         type: string
       userId:
-        description: 触发者 ID
         type: string
       workflowId:
         type: string
       workspace:
         type: string
     type: object
-  models.TaskInstanceV1Status:
+  v1.TaskInstanceStatus:
     properties:
       currentStep:
-        description: '当前执行的步骤索引 (0: Init, 1..N: Steps, N+1: Final)'
         type: integer
       error:
         type: string
       finishedAt:
         type: string
       logs:
-        description: 任务日志
         items:
-          $ref: '#/definitions/models.LogEntry'
+          $ref: '#/definitions/v1.LogEntry'
         type: array
       outputs:
         additionalProperties:
           type: string
-        description: 任务最终输出
         type: object
       startedAt:
         type: string
       status:
-        allOf:
-        - $ref: '#/definitions/models.TaskStatus'
-        description: Pending, Running, Success, Failed, Cancelled
+        type: string
       stepTimings:
         additionalProperties:
-          $ref: '#/definitions/models.StepTiming'
-        description: 步骤执行耗时追踪
+          $ref: '#/definitions/v1.StepTiming'
         type: object
     type: object
-  models.TaskLogResponse:
+  v1.TaskLogResponse:
     properties:
       logs:
         items:
-          $ref: '#/definitions/models.LogEntry'
+          $ref: '#/definitions/v1.LogEntry'
         type: array
       nextOffset:
         type: integer
     type: object
-  models.TaskStatus:
-    description: '任务执行状态: Pending(阻塞), Running(执行), Success(完成), Failed(失败), Cancelled(取消)'
-    enum:
-    - Pending
-    - Running
-    - Success
-    - Failed
-    - Cancelled
-    type: string
-    x-enum-varnames:
-    - TaskStatusPending
-    - TaskStatusRunning
-    - TaskStatusSuccess
-    - TaskStatusFailed
-    - TaskStatusCancelled
-  models.VarDefinition:
+  v1.VarDefinition:
     properties:
       default:
-        description: 默认值 (可选变量的默认值为空)
         type: string
       description:
-        description: 变量描述
         type: string
       regexBackend:
-        description: 后端校验正则 (可选)
         type: string
       regexFrontend:
-        description: 前端校验正则 (可选)
         type: string
       required:
-        description: 是否必填
         type: boolean
     type: object
-  models.Workflow:
+  v1.Workflow:
     properties:
       generation:
-        description: Configuration version, increments only on Meta changes
         type: integer
       id:
         type: string
       meta:
-        $ref: '#/definitions/models.WorkflowV1Meta'
+        $ref: '#/definitions/v1.WorkflowMeta'
       resourceVersion:
-        description: Total object version, increments only on any change (Meta/Status)
         type: integer
       status:
-        $ref: '#/definitions/models.WorkflowV1Status'
-    required:
-    - id
-    - meta
-    - status
+        $ref: '#/definitions/v1.WorkflowStatus'
     type: object
-  models.WorkflowV1Meta:
+  v1.WorkflowMeta:
     properties:
       cronEnabled:
-        description: 是否启用定时触发
         type: boolean
       cronExpr:
-        description: Crontab 表达式
         type: string
       description:
         type: string
       enabled:
-        description: 是否启用 (禁用时 Cron/Webhook/手动 均不可触发)
         type: boolean
       name:
         type: string
       serviceAccountId:
-        description: 执行该工作流时使用的身份 (必填)
         type: string
       steps:
         items:
-          $ref: '#/definitions/models.Step'
+          $ref: '#/definitions/v1.Step'
         type: array
       timeout:
-        description: 超时时间 (秒)，默认 7200 (2h)，0 为不超时
         type: integer
       vars:
         additionalProperties:
-          $ref: '#/definitions/models.VarDefinition'
-        description: 工作流启动时接受的变量定义
+          $ref: '#/definitions/v1.VarDefinition'
         type: object
       webhookEnabled:
-        description: 是否启用 Webhook 触发
         type: boolean
       webhookToken:
-        description: Webhook 触发令牌
         type: string
     type: object
-  models.WorkflowV1Status:
+  v1.WorkflowSchemaResponse:
+    properties:
+      schema:
+        additionalProperties: true
+        type: object
+    type: object
+  v1.WorkflowStatus:
     properties:
       createdAt:
         type: string
       updatedAt:
         type: string
-    type: object
-  site.ExportTask:
-    properties:
-      createdAt:
-        type: string
-      error:
-        type: string
-      format:
-        type: string
-      id:
-        type: string
-      progress:
-        type: number
-      recordCount:
-        type: integer
-      resultUrl:
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/models.TaskStatus'
-        description: Pending, Running, Success, Failed, Cancelled
     type: object
 info:
   contact: {}
@@ -1240,7 +1096,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.TaskInstance'
+                    $ref: '#/definitions/v1.TaskInstance'
                   type: array
               type: object
         "401":
@@ -1301,7 +1157,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TaskInstance'
+            $ref: '#/definitions/v1.TaskInstance'
         "401":
           description: Unauthorized
           schema:
@@ -1369,7 +1225,7 @@ paths:
         "200":
           description: Logs and next offset
           schema:
-            $ref: '#/definitions/models.TaskLogResponse'
+            $ref: '#/definitions/v1.TaskLogResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1397,7 +1253,7 @@ paths:
         "200":
           description: Number of deleted instances
           schema:
-            $ref: '#/definitions/models.TaskCleanupResponse'
+            $ref: '#/definitions/v1.TaskCleanupResponse'
         "400":
           description: Bad Request
           schema:
@@ -1422,7 +1278,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.StepManifest'
+              $ref: '#/definitions/v1.StepManifest'
             type: array
         "401":
           description: Unauthorized
@@ -1445,16 +1301,14 @@ paths:
         name: req
         required: true
         schema:
-          $ref: '#/definitions/actions.ProbeRequest'
+          $ref: '#/definitions/v1.ProbeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Processor Output Data
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/v1.ProbeResponse'
         "400":
           description: Bad Request
           schema:
@@ -1590,7 +1444,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.Workflow'
+                    $ref: '#/definitions/v1.Workflow'
                   type: array
               type: object
         "401":
@@ -1616,14 +1470,14 @@ paths:
         name: workflow
         required: true
         schema:
-          $ref: '#/definitions/models.Workflow'
+          $ref: '#/definitions/v1.Workflow'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Workflow'
+            $ref: '#/definitions/v1.Workflow'
         "400":
           description: Bad Request (Validation Error)
           schema:
@@ -1693,7 +1547,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Workflow'
+            $ref: '#/definitions/v1.Workflow'
         "401":
           description: Unauthorized
           schema:
@@ -1727,14 +1581,14 @@ paths:
         name: workflow
         required: true
         schema:
-          $ref: '#/definitions/models.Workflow'
+          $ref: '#/definitions/v1.Workflow'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Workflow'
+            $ref: '#/definitions/v1.Workflow'
         "400":
           description: Bad Request
           schema:
@@ -1806,7 +1660,7 @@ paths:
         in: body
         name: req
         schema:
-          $ref: '#/definitions/models.RunWorkflowRequest'
+          $ref: '#/definitions/v1.RunWorkflowRequest'
       produces:
       - application/json
       responses:
@@ -1849,8 +1703,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/v1.WorkflowSchemaResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1872,7 +1725,7 @@ paths:
         name: workflow
         required: true
         schema:
-          $ref: '#/definitions/models.Workflow'
+          $ref: '#/definitions/v1.Workflow'
       produces:
       - application/json
       responses:
@@ -1919,7 +1772,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.AuditLog'
+                    $ref: '#/definitions/v1.AuditLog'
                   type: array
               type: object
         "401":
@@ -1949,7 +1802,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.AuditCleanupResponse'
+            $ref: '#/definitions/v1.AuditCleanupResponse'
         "400":
           description: Bad Request
           schema:
@@ -1967,6 +1820,80 @@ paths:
       summary: Cleanup old audit logs
       tags:
       - audit
+  /auth/info:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.AuthInfo'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user info
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.LoginResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+      summary: Login to get session
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Logout
+      tags:
+      - auth
+  /auth/ping:
+    get:
+      description: Returns pong if the server is alive
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+      summary: Ping the server
+      tags:
+      - system
   /auth/sessions:
     get:
       produces:
@@ -1976,7 +1903,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Session'
+              $ref: '#/definitions/v1.Session'
             type: array
         "401":
           description: Unauthorized
@@ -2080,7 +2007,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.LookupItem'
+                    $ref: '#/definitions/v1.LookupItem'
                   type: array
               type: object
         "400":
@@ -2100,67 +2027,6 @@ paths:
       summary: Discovery lookup
       tags:
       - discovery
-  /info:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/controllers.AuthInfo'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Get current user info
-      tags:
-      - auth
-  /login:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Login Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.LoginResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-      summary: Login to get session
-      tags:
-      - auth
-  /logout:
-    post:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/common.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: Logout
-      tags:
-      - auth
   /network/dns/domains:
     get:
       parameters:
@@ -2187,7 +2053,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.Domain'
+                    $ref: '#/definitions/v1.Domain'
                   type: array
               type: object
         "401":
@@ -2212,14 +2078,14 @@ paths:
         name: domain
         required: true
         schema:
-          $ref: '#/definitions/models.Domain'
+          $ref: '#/definitions/v1.Domain'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Domain'
+            $ref: '#/definitions/v1.Domain'
         "400":
           description: Bad Request
           schema:
@@ -2283,14 +2149,14 @@ paths:
         name: domain
         required: true
         schema:
-          $ref: '#/definitions/models.Domain'
+          $ref: '#/definitions/v1.Domain'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Domain'
+            $ref: '#/definitions/v1.Domain'
         "400":
           description: Bad Request
           schema:
@@ -2321,7 +2187,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.DnsExportResponse'
+            $ref: '#/definitions/v1.ExportResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2365,7 +2231,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.Record'
+                    $ref: '#/definitions/v1.Record'
                   type: array
               type: object
         "401":
@@ -2386,14 +2252,14 @@ paths:
         name: record
         required: true
         schema:
-          $ref: '#/definitions/models.Record'
+          $ref: '#/definitions/v1.Record'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Record'
+            $ref: '#/definitions/v1.Record'
         "400":
           description: Bad Request
           schema:
@@ -2457,14 +2323,14 @@ paths:
         name: record
         required: true
         schema:
-          $ref: '#/definitions/models.Record'
+          $ref: '#/definitions/v1.Record'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Record'
+            $ref: '#/definitions/v1.Record'
         "400":
           description: Bad Request
           schema:
@@ -2512,7 +2378,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.IntelligenceSource'
+                    $ref: '#/definitions/v1.Source'
                   type: array
               type: object
         "401":
@@ -2537,14 +2403,14 @@ paths:
         name: source
         required: true
         schema:
-          $ref: '#/definitions/models.IntelligenceSource'
+          $ref: '#/definitions/v1.Source'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IntelligenceSource'
+            $ref: '#/definitions/v1.Source'
         "400":
           description: Bad Request
           schema:
@@ -2608,14 +2474,14 @@ paths:
         name: source
         required: true
         schema:
-          $ref: '#/definitions/models.IntelligenceSource'
+          $ref: '#/definitions/v1.Source'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IntelligenceSource'
+            $ref: '#/definitions/v1.Source'
         "400":
           description: Bad Request
           schema:
@@ -2707,14 +2573,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.IPHitTestRequest'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.HitTestRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPAnalysisResult'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.AnalysisResult'
         "400":
           description: Bad Request
           schema:
@@ -2742,7 +2608,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPInfoResponse'
+            $ref: '#/definitions/v1.IPInfoResponse'
         "400":
           description: Bad Request
           schema:
@@ -2782,7 +2648,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.IPExport'
+                    $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.Export'
                   type: array
               type: object
         "401":
@@ -2803,14 +2669,14 @@ paths:
         name: export
         required: true
         schema:
-          $ref: '#/definitions/models.IPExport'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.Export'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPExport'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.Export'
         "400":
           description: Bad Request
           schema:
@@ -2874,14 +2740,14 @@ paths:
         name: export
         required: true
         schema:
-          $ref: '#/definitions/models.IPExport'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.Export'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPExport'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.Export'
         "400":
           description: Bad Request
           schema:
@@ -2921,7 +2787,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPExportTriggerResponse'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.ExportTriggerResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2968,7 +2834,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.IPExportPreviewRequest'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.ExportPreviewRequest'
       produces:
       - application/json
       responses:
@@ -2976,7 +2842,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.IPPoolEntry'
+              $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.PoolEntry'
             type: array
         "400":
           description: Bad Request
@@ -3009,7 +2875,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ip.ExportTask'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.ExportTask'
         "401":
           description: Unauthorized
           schema:
@@ -3060,7 +2926,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/ip.ExportTask'
+              $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.ExportTask'
             type: array
       security:
       - ApiKeyAuth: []
@@ -3093,7 +2959,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.IPPool'
+                    $ref: '#/definitions/v1.Pool'
                   type: array
               type: object
         "401":
@@ -3114,14 +2980,14 @@ paths:
         name: group
         required: true
         schema:
-          $ref: '#/definitions/models.IPPool'
+          $ref: '#/definitions/v1.Pool'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPPool'
+            $ref: '#/definitions/v1.Pool'
         "400":
           description: Bad Request
           schema:
@@ -3185,14 +3051,14 @@ paths:
         name: group
         required: true
         schema:
-          $ref: '#/definitions/models.IPPool'
+          $ref: '#/definitions/v1.Pool'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPPool'
+            $ref: '#/definitions/v1.Pool'
         "400":
           description: Bad Request
           schema:
@@ -3276,7 +3142,7 @@ paths:
         name: entry
         required: true
         schema:
-          $ref: '#/definitions/models.IPPoolEntryRequest'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.PoolEntryRequest'
       produces:
       - application/json
       responses:
@@ -3331,7 +3197,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPPoolPreviewResponse'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.PoolPreviewResponse'
         "401":
           description: Unauthorized
           schema:
@@ -3371,7 +3237,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.IPSyncPolicy'
+                    $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy'
                   type: array
               type: object
         "401":
@@ -3392,14 +3258,14 @@ paths:
         name: policy
         required: true
         schema:
-          $ref: '#/definitions/models.IPSyncPolicy'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPSyncPolicy'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy'
         "400":
           description: Bad Request
           schema:
@@ -3463,14 +3329,14 @@ paths:
         name: policy
         required: true
         schema:
-          $ref: '#/definitions/models.IPSyncPolicy'
+          $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.IPSyncPolicy'
+            $ref: '#/definitions/homelab_pkg_apis_network_ip_v1.SyncPolicy'
         "400":
           description: Bad Request
           schema:
@@ -3533,7 +3399,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SiteAnalysisResult'
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.AnalysisResult'
       summary: Perform site hit test
       tags:
       - network/site
@@ -3563,7 +3429,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.SiteExport'
+                    $ref: '#/definitions/homelab_pkg_apis_network_site_v1.Export'
                   type: array
               type: object
       summary: Scan all site exports
@@ -3578,14 +3444,14 @@ paths:
         name: export
         required: true
         schema:
-          $ref: '#/definitions/models.SiteExport'
+          $ref: '#/definitions/homelab_pkg_apis_network_site_v1.Export'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SiteExport'
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.Export'
       summary: Create a site export
       tags:
       - network/site
@@ -3621,14 +3487,14 @@ paths:
         name: export
         required: true
         schema:
-          $ref: '#/definitions/models.SiteExport'
+          $ref: '#/definitions/homelab_pkg_apis_network_site_v1.Export'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SiteExport'
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.Export'
         "400":
           description: Bad Request
           schema:
@@ -3668,9 +3534,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.ExportTriggerResponse'
       summary: Trigger site export
       tags:
       - network/site
@@ -3703,7 +3567,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.SiteExportPreviewRequest'
+          $ref: '#/definitions/homelab_pkg_apis_network_site_v1.ExportPreviewRequest'
       produces:
       - application/json
       responses:
@@ -3711,7 +3575,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.SitePoolEntry'
+              $ref: '#/definitions/homelab_pkg_apis_network_site_v1.PoolEntry'
             type: array
         "400":
           description: Bad Request
@@ -3744,7 +3608,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/site.ExportTask'
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.ExportTask'
       summary: Get site export task status
       tags:
       - network/site
@@ -3785,7 +3649,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/site.ExportTask'
+              $ref: '#/definitions/homelab_pkg_apis_network_site_v1.ExportTask'
             type: array
       security:
       - ApiKeyAuth: []
@@ -3818,7 +3682,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.SiteGroup'
+                    $ref: '#/definitions/v1.Group'
                   type: array
               type: object
       summary: Scan all site groups
@@ -3833,14 +3697,14 @@ paths:
         name: group
         required: true
         schema:
-          $ref: '#/definitions/models.SiteGroup'
+          $ref: '#/definitions/v1.Group'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SiteGroup'
+            $ref: '#/definitions/v1.Group'
       summary: Create a site group
       tags:
       - network/site
@@ -3876,14 +3740,14 @@ paths:
         name: group
         required: true
         schema:
-          $ref: '#/definitions/models.SiteGroup'
+          $ref: '#/definitions/v1.Group'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SiteGroup'
+            $ref: '#/definitions/v1.Group'
       summary: Update a site group
       tags:
       - network/site
@@ -3929,7 +3793,7 @@ paths:
         name: entry
         required: true
         schema:
-          $ref: '#/definitions/models.SitePoolEntryRequest'
+          $ref: '#/definitions/homelab_pkg_apis_network_site_v1.PoolEntryRequest'
       produces:
       - application/json
       responses:
@@ -3966,7 +3830,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SitePoolPreviewResponse'
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.PoolPreviewResponse'
       summary: Preview site pool data (cursor-based)
       tags:
       - network/site
@@ -3996,7 +3860,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.SiteSyncPolicy'
+                    $ref: '#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy'
                   type: array
               type: object
       summary: Scan all site sync policies
@@ -4011,14 +3875,14 @@ paths:
         name: policy
         required: true
         schema:
-          $ref: '#/definitions/models.SiteSyncPolicy'
+          $ref: '#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SiteSyncPolicy'
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy'
       summary: Create a site sync policy
       tags:
       - network/site
@@ -4054,14 +3918,14 @@ paths:
         name: policy
         required: true
         schema:
-          $ref: '#/definitions/models.SiteSyncPolicy'
+          $ref: '#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.SiteSyncPolicy'
+            $ref: '#/definitions/homelab_pkg_apis_network_site_v1.SyncPolicy'
       summary: Update a site sync policy
       tags:
       - network/site
@@ -4083,19 +3947,6 @@ paths:
       summary: Trigger a site sync policy execution
       tags:
       - network/site
-  /ping:
-    get:
-      description: Returns pong if the server is alive
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: pong
-          schema:
-            type: string
-      summary: Ping the server
-      tags:
-      - system
   /rbac/resources/suggest:
     get:
       parameters:
@@ -4110,7 +3961,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.DiscoverResult'
+              $ref: '#/definitions/discovery.DiscoverResult'
             type: array
         "401":
           description: Unauthorized
@@ -4147,7 +3998,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.RoleBinding'
+                    $ref: '#/definitions/v1.RoleBinding'
                   type: array
               type: object
         "401":
@@ -4172,14 +4023,14 @@ paths:
         name: rb
         required: true
         schema:
-          $ref: '#/definitions/models.RoleBinding'
+          $ref: '#/definitions/v1.RoleBinding'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.RoleBinding'
+            $ref: '#/definitions/v1.RoleBinding'
         "400":
           description: Bad Request
           schema:
@@ -4243,14 +4094,14 @@ paths:
         name: rb
         required: true
         schema:
-          $ref: '#/definitions/models.RoleBinding'
+          $ref: '#/definitions/v1.RoleBinding'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.RoleBinding'
+            $ref: '#/definitions/v1.RoleBinding'
         "400":
           description: Bad Request
           schema:
@@ -4298,7 +4149,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.Role'
+                    $ref: '#/definitions/v1.Role'
                   type: array
               type: object
         "401":
@@ -4323,14 +4174,14 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/models.Role'
+          $ref: '#/definitions/v1.Role'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Role'
+            $ref: '#/definitions/v1.Role'
         "400":
           description: Bad Request
           schema:
@@ -4394,14 +4245,14 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/models.Role'
+          $ref: '#/definitions/v1.Role'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Role'
+            $ref: '#/definitions/v1.Role'
         "400":
           description: Bad Request
           schema:
@@ -4449,7 +4300,7 @@ paths:
             - properties:
                 items:
                   items:
-                    $ref: '#/definitions/models.ServiceAccount'
+                    $ref: '#/definitions/v1.ServiceAccount'
                   type: array
               type: object
         "401":
@@ -4474,14 +4325,14 @@ paths:
         name: sa
         required: true
         schema:
-          $ref: '#/definitions/models.ServiceAccount'
+          $ref: '#/definitions/v1.ServiceAccount'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ServiceAccount'
+            $ref: '#/definitions/v1.ServiceAccount'
         "400":
           description: Bad Request
           schema:
@@ -4545,14 +4396,14 @@ paths:
         name: sa
         required: true
         schema:
-          $ref: '#/definitions/models.ServiceAccount'
+          $ref: '#/definitions/v1.ServiceAccount'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ServiceAccount'
+            $ref: '#/definitions/v1.ServiceAccount'
         "400":
           description: Bad Request
           schema:
@@ -4588,7 +4439,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ServiceAccount'
+            $ref: '#/definitions/v1.ServiceAccount'
         "401":
           description: Unauthorized
           schema:
@@ -4616,14 +4467,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.SimulatePermissionsRequest'
+          $ref: '#/definitions/v1.SimulatePermissionsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ResourcePermissions'
+            $ref: '#/definitions/v1.ResourcePermissions'
         "400":
           description: Bad Request
           schema:
