@@ -13,16 +13,13 @@ import (
 const (
 	EventIPPoolChanged       = "ip_pool_changed"
 	EventIPSyncPolicyChanged = "ip_sync_policy_changed"
-	EventIPSyncRun           = "ip_sync_run"
 
 	EventSitePoolChanged       = "site_pool_changed"
 	EventSiteSyncPolicyChanged = "site_sync_policy_changed"
-	EventSiteSyncRun           = "site_sync_run"
 
 	EventMMDBUpdate                = "mmdb_update"
 	EventIntelligenceSourceChanged = "intelligence_source_changed"
 
-	EventWorkflowExecute        = "workflow_execute"
 	EventWorkflowTriggerChanged = "workflow_trigger_changed"
 )
 
@@ -36,7 +33,6 @@ type genericDispatcher[T any] struct {
 
 func (d *genericDispatcher[T]) Dispatch(ctx context.Context, payloadStr string) {
 	var payload T
-	// 使用反射安全地检查 T 的底层类型是否为 string
 	t := reflect.TypeOf(payload)
 	if t != nil && t.Kind() == reflect.String {
 		if s, ok := any(&payload).(*string); ok {
@@ -47,13 +43,8 @@ func (d *genericDispatcher[T]) Dispatch(ctx context.Context, payloadStr string) 
 	}
 
 	if err := json.Unmarshal([]byte(payloadStr), &payload); err != nil {
-		// 如果解析失败且期望的是 string，直接透传 (兼容旧逻辑)
-		if s, ok := any(&payload).(*string); ok {
-			*s = payloadStr
-		} else {
-			log.Printf("[Events] failed to unmarshal payload %q into %T: %v", payloadStr, payload, err)
-			return
-		}
+		log.Printf("[Events] failed to unmarshal payload %q into %T: %v", payloadStr, payload, err)
+		return
 	}
 	d.handler(ctx, payload)
 }
@@ -161,12 +152,21 @@ func NotifyCluster(ctx context.Context, event string, payload any) {
 }
 
 // TriggerEvent directly triggers handlers for an event (used for testing).
-func TriggerEvent(ctx context.Context, event string, payload string) {
+func TriggerEvent(ctx context.Context, event string, payload any) {
 	eventHandlersMu.RLock()
 	dispatchers := eventDispatchers[event]
 	eventHandlersMu.RUnlock()
 
+	payloadStr := ""
+	if payload != nil {
+		if s, ok := payload.(string); ok {
+			payloadStr = s
+		} else {
+			data, _ := json.Marshal(payload)
+			payloadStr = string(data)
+		}
+	}
 	for _, d := range dispatchers {
-		d.Dispatch(ctx, payload)
+		d.Dispatch(ctx, payloadStr)
 	}
 }

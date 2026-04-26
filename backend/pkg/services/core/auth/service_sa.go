@@ -82,7 +82,7 @@ func IsSAEnabled(ctx context.Context, saID string, currentToken string) bool {
 	}
 	// If currentToken is provided, it MUST match the hash stored in DB.
 	if currentToken != "" {
-		if sa.Meta.Token != HashToken(currentToken) {
+		if sa.Status.TokenHash != HashToken(currentToken) {
 			return false
 		}
 	}

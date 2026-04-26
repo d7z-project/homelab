@@ -23,7 +23,7 @@ func GetSession(ctx context.Context, sessionID string) (userType string, ip stri
 	if err != nil {
 		return "", "", "", err
 	}
-	parts := strings.Split(string(val), "|")
+	parts := strings.Split(val, "|")
 	userType = parts[0]
 	if len(parts) > 2 {
 		ip = parts[2]
@@ -79,7 +79,7 @@ func RefreshSession(ctx context.Context, sessionID string, ttl time.Duration) er
 	if err != nil {
 		return err
 	}
-	return db.Put(ctx, sessionID, string(val), ttl)
+	return db.Put(ctx, sessionID, val, ttl)
 }
 
 func DeleteSession(ctx context.Context, sessionID string) error {

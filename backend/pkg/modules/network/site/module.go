@@ -73,8 +73,7 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 func (m *Module) Start(ctx context.Context) error {
 	ruleservice.RegisterSiteDiscovery(runtimepkg.RegistryFromContext(ctx))
 	siteservice.RegisterSiteProcessors(m.service)
-	m.service.Start(ctx)
-	return nil
+	return m.service.Start(ctx)
 }
 
 func (m *Module) Stop(context.Context) error { return nil }

@@ -12,12 +12,14 @@ import (
 	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 	"gopkg.d7z.net/middleware/lock"
+	"gopkg.d7z.net/middleware/queue"
 	"gopkg.d7z.net/middleware/subscribe"
 )
 
 type Dependencies struct {
 	DB         kv.KV
 	Locker     lock.Locker
+	Queue      queue.Queue
 	Subscriber subscribe.Subscriber
 	FS         afero.Fs
 	TempFS     afero.Fs

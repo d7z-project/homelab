@@ -11,6 +11,7 @@ var Opts = &Options{
 	Bind:         ":8080",
 	DB:           "memory://",
 	Lock:         "memory://",
+	Queue:        "memory://",
 	VFS:          "memory://",
 	TempDir:      "memory://",
 	PubSub:       "memory://",
@@ -25,6 +26,7 @@ type Options struct {
 	Bind         string `yaml:"bind" env:"HOMELAB_BIND"`
 	DB           string `yaml:"db" env:"HOMELAB_DB"`
 	Lock         string `yaml:"lock" env:"HOMELAB_LOCK"`
+	Queue        string `yaml:"queue" env:"HOMELAB_QUEUE"`
 	VFS          string `yaml:"vfs" env:"HOMELAB_VFS"`
 	TempDir      string `yaml:"temp_dir" env:"HOMELAB_TEMP_DIR"`
 	PubSub       string `yaml:"pub_sub" env:"HOMELAB_PUB_SUB"`

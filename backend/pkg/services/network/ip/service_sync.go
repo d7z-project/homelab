@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
-	commonauth "homelab/pkg/common/auth"
 	taskpkg "homelab/pkg/common/task"
-	rbacmodel "homelab/pkg/models/core/rbac"
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
@@ -170,24 +168,40 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 
 	policy.Status.LastStatus = shared.TaskStatusPending
 	policy.Status.LastRunAt = time.Now()
+	policy.Status.Progress = 0
+	policy.Status.ErrorMessage = ""
+	policy.Status.QueueTopic = ipSyncTopic
+	policy.Status.QueueMessageID = ""
+	policy.Status.QueuedAt = nil
+	policy.Status.DispatchedAt = nil
 	_ = repo.SaveSyncPolicy(ctx, policy)
 
-	if s.deps.Subscriber != nil {
-		common.NotifyCluster(ctx, common.EventIPSyncRun, id)
-	} else {
-		// Standalone/Test mode fallback: execute locally in background
-		go func() {
-			// 注入系统权限
-			sysCtx := commonauth.WithAuth(context.Background(), &commonauth.AuthContext{
-				Type: "sa",
-				ID:   "system",
-			})
-			sysCtx = commonauth.WithPermissions(sysCtx, &rbacmodel.ResourcePermissions{AllowedAll: true})
-			_ = s.doSync(sysCtx, id)
-		}()
+	payload, err := json.Marshal(syncJob{PolicyID: id})
+	if err != nil {
+		task.SetStatus(shared.TaskStatusFailed)
+		task.SetError(err.Error())
+		s.syncTasks.Save()
+		policy.Status.LastStatus = shared.TaskStatusFailed
+		policy.Status.ErrorMessage = err.Error()
+		_ = repo.SaveSyncPolicy(ctx, policy)
+		return fmt.Errorf("failed to encode sync job: %w", err)
 	}
+	messageID, err := s.deps.Queue.Publish(ctx, ipSyncTopic, string(payload), nil)
+	if err != nil {
+		task.SetStatus(shared.TaskStatusFailed)
+		task.SetError(err.Error())
+		s.syncTasks.Save()
+		policy.Status.LastStatus = shared.TaskStatusFailed
+		policy.Status.ErrorMessage = err.Error()
+		_ = repo.SaveSyncPolicy(ctx, policy)
+		return fmt.Errorf("failed to enqueue sync job: %w", err)
+	}
+	queuedAt := time.Now()
+	policy.Status.QueueMessageID = messageID
+	policy.Status.QueuedAt = &queuedAt
+	_ = repo.SaveSyncPolicy(ctx, policy)
 
-	commonaudit.FromContext(ctx).Log("TriggerIPSync", policy.Meta.Name, "Triggered Asynchronously", true)
+	commonaudit.FromContext(ctx).Log("TriggerIPSync", policy.Meta.Name, "Queued", true)
 	return nil
 }
 

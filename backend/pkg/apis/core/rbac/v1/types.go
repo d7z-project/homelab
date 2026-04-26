@@ -38,12 +38,12 @@ func (r *Role) Bind(_ *http.Request) error {
 
 type ServiceAccountMeta struct {
 	Name     string `json:"name"`
-	Token    string `json:"token"`
 	Comments string `json:"comments"`
 	Enabled  bool   `json:"enabled"`
 }
 
 type ServiceAccountStatus struct {
+	Token      string `json:"token,omitempty"`
 	LastUsedAt string `json:"lastUsedAt,omitempty"`
 }
 

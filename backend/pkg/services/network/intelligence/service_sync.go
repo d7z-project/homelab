@@ -2,6 +2,7 @@ package intelligence
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"homelab/pkg/common"
@@ -46,13 +47,41 @@ func (s *IntelligenceService) SyncSource(ctx context.Context, id string) error {
 	}
 	s.tasks.AddTask(task)
 
-	source.Status.Status = shared.TaskStatusRunning
+	source.Status.Status = shared.TaskStatusPending
+	source.Status.Progress = 0
 	source.Status.ErrorMessage = ""
+	source.Status.QueueTopic = intelligenceSyncTopic
+	source.Status.QueueMessageID = ""
+	source.Status.QueuedAt = nil
+	source.Status.DispatchedAt = nil
 	_ = repo.SaveSource(ctx, source)
 
-	commonaudit.FromContext(ctx).Log("SyncIntelligence", source.Meta.Name, "Started", true)
+	payload, err := json.Marshal(syncJob{SourceID: id})
+	if err != nil {
+		task.SetStatus(shared.TaskStatusFailed)
+		task.SetError(err.Error())
+		s.tasks.Save()
+		source.Status.Status = shared.TaskStatusFailed
+		source.Status.ErrorMessage = err.Error()
+		_ = repo.SaveSource(ctx, source)
+		return fmt.Errorf("failed to encode intelligence sync job: %w", err)
+	}
+	messageID, err := s.deps.Queue.Publish(ctx, intelligenceSyncTopic, string(payload), nil)
+	if err != nil {
+		task.SetStatus(shared.TaskStatusFailed)
+		task.SetError(err.Error())
+		s.tasks.Save()
+		source.Status.Status = shared.TaskStatusFailed
+		source.Status.ErrorMessage = err.Error()
+		_ = repo.SaveSource(ctx, source)
+		return fmt.Errorf("failed to enqueue intelligence sync job: %w", err)
+	}
+	queuedAt := time.Now()
+	source.Status.QueueMessageID = messageID
+	source.Status.QueuedAt = &queuedAt
+	_ = repo.SaveSource(ctx, source)
 
-	go s.runDownload(s.deps.WithContext(context.Background()), id)
+	commonaudit.FromContext(ctx).Log("SyncIntelligence", source.Meta.Name, "Queued", true)
 	return nil
 }
 
@@ -84,6 +113,9 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 			finalErr = fmt.Errorf("source not found")
 			return finalErr
 		}
+		source.Status.Status = shared.TaskStatusRunning
+		source.Status.ErrorMessage = ""
+		_ = repo.SaveSource(taskCtx, source)
 
 		// SSRF 校验
 		allowPrivate := false

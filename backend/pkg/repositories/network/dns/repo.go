@@ -3,46 +3,14 @@ package dns
 import (
 	"context"
 	"homelab/pkg/common"
-	runtimepkg "homelab/pkg/runtime"
 	"strings"
-	"time"
 
 	dnsmodel "homelab/pkg/models/network/dns"
 	"homelab/pkg/models/shared"
-
-	"gopkg.d7z.net/middleware/kv"
 )
 
-var domainRepo = common.NewBaseRepository[dnsmodel.DomainV1Meta, dnsmodel.DomainV1Status]("network", "Domain")
-var recordRepo = common.NewBaseRepository[dnsmodel.RecordV1Meta, dnsmodel.RecordV1Status]("network", "Record")
-
-func GetLastModified(ctx context.Context) time.Time {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
-		return time.Time{}
-	}
-	val, err := db.Child("network", "dns").Get(ctx, "last_modified")
-	if err == nil && val != "" {
-		t, err := time.Parse(time.RFC3339, val)
-		if err == nil {
-			return t
-		}
-	}
-	return time.Time{}
-}
-
-func ClearCache(ctx context.Context) {
-	updateLastModified(ctx)
-}
-
-func updateLastModified(ctx context.Context) {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
-		return
-	}
-	now := time.Now().Format(time.RFC3339)
-	_ = db.Child("network", "dns").Put(ctx, "last_modified", now, kv.TTLKeep)
-}
+var domainRepo = common.NewResourceRepository[dnsmodel.DomainV1Meta, dnsmodel.DomainV1Status]("network", "Domain")
+var recordRepo = common.NewResourceRepository[dnsmodel.RecordV1Meta, dnsmodel.RecordV1Status]("network", "Record")
 
 func GetDomain(ctx context.Context, id string) (*dnsmodel.Domain, error) {
 	return domainRepo.Get(ctx, id)

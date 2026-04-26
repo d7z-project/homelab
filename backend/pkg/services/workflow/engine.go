@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	commonauth "homelab/pkg/common/auth"
-	rbacmodel "homelab/pkg/models/core/rbac"
 	repo "homelab/pkg/repositories/workflow/actions"
 	runtimepkg "homelab/pkg/runtime"
+	authservice "homelab/pkg/services/core/auth"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -98,7 +98,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflo
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
 	}
-	instance.Meta.Workspace = workspace
+	instance.Status.Workspace = workspace
 
 	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
 		_ = rt.ActionsFS.RemoveAll(workspace)
@@ -166,9 +166,9 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 			err := fmt.Errorf("panic recovered: %v\n%s", r, string(debug.Stack()))
 			e.fail(instance, err, logger)
 		}
-		if instance.Meta.Workspace != "" {
+		if instance.Status.Workspace != "" {
 			logger.Logf("Cleaning up workspace...")
-			_ = rt.ActionsFS.RemoveAll(instance.Meta.Workspace)
+			_ = rt.ActionsFS.RemoveAll(instance.Status.Workspace)
 		}
 		if instance.Status.Status == "Running" {
 			instance.Status.Status = "Success"
@@ -201,9 +201,7 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 			e.fail(instance, fmt.Errorf("registry not configured"), logger)
 			return
 		}
-		saCtx := runtimepkg.DetachContext(ctx)
-		saCtx = commonauth.WithAuth(saCtx, &commonauth.AuthContext{Type: "root"})
-		saCtx = commonauth.WithPermissions(saCtx, &rbacmodel.ResourcePermissions{AllowedAll: true})
+		saCtx := commonauth.WithRoot(runtimepkg.DetachContext(ctx))
 		saExists, err := registry.Verify(saCtx, "rbac/serviceaccounts", instance.Meta.ServiceAccountID)
 		if err != nil || !saExists {
 			e.fail(instance, fmt.Errorf("service account '%s' no longer exists, workflow cannot execute", instance.Meta.ServiceAccountID), logger)
@@ -229,10 +227,21 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 
 		// Create impersonated context for this step
 		// This ensures all repo calls and processor logic respect the SA permissions
-		impersonatedCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
-			ID:   instance.Meta.ServiceAccountID,
-			Type: "sa",
-		})
+		identityType := "sa"
+		identityID := instance.Meta.ServiceAccountID
+		if identityID == "" || identityID == "root" {
+			identityType = "root"
+			identityID = ""
+		}
+		perms, err := authservice.GetPermissions(ctx, instance.Meta.ServiceAccountID, "*", "*")
+		if err != nil {
+			e.fail(instance, fmt.Errorf("failed to load workflow execution permissions: %w", err), logger)
+			return
+		}
+		impersonatedCtx := commonauth.WithIdentity(ctx, &commonauth.AuthContext{
+			ID:   identityID,
+			Type: identityType,
+		}, perms)
 
 		select {
 		case <-ctx.Done():
@@ -304,7 +313,7 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 		taskCtx := &TaskContext{
 			WorkflowID:       workflow.ID,
 			InstanceID:       instance.ID,
-			Workspace:        afero.NewBasePathFs(rt.ActionsFS, instance.Meta.Workspace),
+			Workspace:        afero.NewBasePathFs(rt.ActionsFS, instance.Status.Workspace),
 			UserID:           instance.Meta.UserID,
 			ServiceAccountID: workflow.Meta.ServiceAccountID,
 			Context:          impersonatedCtx, // Use impersonated context

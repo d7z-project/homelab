@@ -7,8 +7,6 @@ import (
 	runtimepkg "homelab/pkg/runtime"
 	rbacservice "homelab/pkg/services/core/rbac"
 	"net/http"
-
-	discoverymodel "homelab/pkg/models/core/discovery"
 )
 
 // ListServiceAccountsHandler godoc
@@ -376,7 +374,7 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 		controllercommon.HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, []discoverymodel.DiscoverResult(suggestions))
+	common.Success(w, r, suggestions)
 }
 
 // SuggestVerbsHandler godoc

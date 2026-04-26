@@ -4,7 +4,6 @@ import (
 	apiv1 "homelab/pkg/apis/actions/workflow/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
-	workflowmodel "homelab/pkg/models/workflow"
 	workflowservice "homelab/pkg/services/workflow"
 	"net/http"
 	"strconv"
@@ -464,24 +463,8 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find workflow by token. Since tokens are unique, we scan workflows.
-	// We scan with a large limit as a fallback, but ideally we'd have a specific repo method for this.
-	// For now, we'll scan through workflows to maintain API consistency.
-	res, err := workflowservice.ScanWorkflows(r.Context(), "", 1000, "")
+	target, err := workflowservice.GetWorkflowByWebhookToken(r.Context(), token)
 	if err != nil {
-		controllercommon.HandleError(w, r, err)
-		return
-	}
-
-	var target *workflowmodel.Workflow
-	for i := range res.Items {
-		if res.Items[i].Meta.WebhookEnabled && res.Items[i].Meta.WebhookToken == token {
-			target = &res.Items[i]
-			break
-		}
-	}
-
-	if target == nil {
 		common.Error(w, r, http.StatusUnauthorized, http.StatusUnauthorized, "invalid webhook token")
 		return
 	}

@@ -32,7 +32,6 @@ type Role = shared.Resource[RoleV1Meta, RoleV1Status]
 
 type ServiceAccountV1Meta struct {
 	Name     string `json:"name"`
-	Token    string `json:"token"`
 	Comments string `json:"comments"`
 	Enabled  bool   `json:"enabled"`
 }
@@ -42,6 +41,8 @@ func (m *ServiceAccountV1Meta) Validate(_ context.Context) error {
 }
 
 type ServiceAccountV1Status struct {
+	TokenHash  string `json:"tokenHash,omitempty"`
+	Token      string `json:"token,omitempty"`
 	LastUsedAt string `json:"lastUsedAt,omitempty"`
 }
 

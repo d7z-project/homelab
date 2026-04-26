@@ -16,6 +16,7 @@ import (
 
 	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
+	"gopkg.d7z.net/middleware/queue"
 )
 
 func TestModuleStartRegistersDiscoveryAndSAUsage(t *testing.T) {
@@ -29,9 +30,11 @@ func TestModuleStartRegistersDiscoveryAndSAUsage(t *testing.T) {
 		_ = db.Close()
 	})
 	registry := registryruntime.New()
+	taskQueue := queue.NewMemoryQueue()
 	deps := runtimepkg.ModuleDeps{
 		Dependencies: runtimepkg.Dependencies{
 			DB:     db,
+			Queue:  taskQueue,
 			FS:     afero.NewMemMapFs(),
 			TempFS: afero.NewMemMapFs(),
 		},

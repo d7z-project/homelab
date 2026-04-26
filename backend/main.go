@@ -32,6 +32,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 	"gopkg.d7z.net/middleware/kv"
 	"gopkg.d7z.net/middleware/lock"
+	queuepkg "gopkg.d7z.net/middleware/queue"
 	"gopkg.d7z.net/middleware/subscribe"
 	"gopkg.in/yaml.v3"
 )
@@ -78,6 +79,12 @@ func main() {
 		log.Fatalf("Failed to initialize locker: %v", err)
 	}
 
+	taskQueue, err := queuepkg.NewQueueFromURL(common.Opts.Queue)
+	if err != nil {
+		log.Fatalf("Failed to initialize queue: %v", err)
+	}
+	defer taskQueue.Close()
+
 	subscriber, err := subscribe.NewSubscriberFromURL(common.Opts.PubSub)
 	if err != nil {
 		log.Fatalf("Failed to initialize subscriber: %v", err)
@@ -114,6 +121,7 @@ func main() {
 	app := runtimepkg.NewApp(runtimepkg.Dependencies{
 		DB:         db,
 		Locker:     locker,
+		Queue:      taskQueue,
 		Subscriber: subscriber,
 		FS:         vfs,
 		TempFS:     tempFs,

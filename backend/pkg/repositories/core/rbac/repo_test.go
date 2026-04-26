@@ -23,7 +23,7 @@ func TestGetCachedRoleAndInvalidateCache(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	roleRepo = common.NewBaseRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
+	roleRepo = common.NewResourceRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
 	ClearCache()
 	ctx := runtimepkg.ModuleDeps{
 		Dependencies: runtimepkg.Dependencies{
@@ -89,7 +89,7 @@ func TestScanAllRoleBindings(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	bindingRepo = common.NewBaseRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
+	bindingRepo = common.NewResourceRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
 	ctx := runtimepkg.ModuleDeps{
 		Dependencies: runtimepkg.Dependencies{
 			DB:     db,

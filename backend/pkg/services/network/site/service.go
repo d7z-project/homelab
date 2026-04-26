@@ -3,7 +3,6 @@ package site
 import (
 	"context"
 	commonauth "homelab/pkg/common/auth"
-	rbacmodel "homelab/pkg/models/core/rbac"
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/site"
@@ -56,18 +55,6 @@ func NewSitePoolService(deps runtimepkg.ModuleDeps, engine *AnalysisEngine, em *
 		}
 	})
 
-	// 集群事件: 异步触发同步
-	common.RegisterEventHandler(common.EventSiteSyncRun, func(ctx context.Context, policyID string) {
-		// 注入系统权限
-		sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
-			Type: "sa",
-			ID:   "system",
-		})
-		sysCtx = commonauth.WithPermissions(sysCtx, &rbacmodel.ResourcePermissions{AllowedAll: true})
-
-		go s.doSync(sysCtx, policyID)
-	})
-
 	return s
 }
 
@@ -75,12 +62,8 @@ func (s *SitePoolService) GetSyncTaskManager() *taskpkg.Manager[*SyncTask] {
 	return s.syncTasks
 }
 
-func (s *SitePoolService) Start(ctx context.Context) {
-	sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
-		Type: "sa",
-		ID:   "system",
-	})
-	sysCtx = commonauth.WithPermissions(sysCtx, &rbacmodel.ResourcePermissions{AllowedAll: true})
+func (s *SitePoolService) Start(ctx context.Context) error {
+	sysCtx := commonauth.WithSystemSA(ctx)
 
 	s.syncTasks.Reconcile(sysCtx)
 	for _, t := range s.syncTasks.RangeAll() {
@@ -93,8 +76,6 @@ func (s *SitePoolService) Start(ctx context.Context) {
 				p.Status.LastRunAt = time.Now()
 				_ = repo.SaveSyncPolicy(sysCtx, p)
 			}
-		} else if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
-			go s.doSync(sysCtx, t.GetID())
 		}
 	}
 
@@ -106,6 +87,7 @@ func (s *SitePoolService) Start(ctx context.Context) {
 			}
 		}
 	}
+	return s.StartSyncConsumer(ctx)
 }
 
 func (s *SitePoolService) addCronJob(p sitemodel.SiteSyncPolicy) {
@@ -120,11 +102,7 @@ func (s *SitePoolService) addCronJob(p sitemodel.SiteSyncPolicy) {
 	id, err := common.AddDistributedCronJob(s.cron, p.Meta.Cron, lockKey, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
-		ctx = commonauth.WithAuth(ctx, &commonauth.AuthContext{
-			Type: "sa",
-			ID:   "system",
-		})
-		ctx = commonauth.WithPermissions(ctx, &rbacmodel.ResourcePermissions{AllowedAll: true})
+		ctx = commonauth.WithSystemSA(ctx)
 		_ = s.Sync(ctx, p.ID)
 	})
 	if err == nil {

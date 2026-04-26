@@ -99,7 +99,7 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 				items = append(items, discoverymodel.LookupItem{
 					ID:          r.ID,
 					Name:        fmt.Sprintf("%s (%s) - %s", r.Meta.Name, r.Meta.Type, domain.Meta.Name),
-					Description: r.Meta.Value,
+					Description: recordValue(&r),
 				})
 			}
 		}

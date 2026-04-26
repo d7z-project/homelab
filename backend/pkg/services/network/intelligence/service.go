@@ -123,7 +123,7 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 	}
 
 	log.Printf("IntelligenceService: initialized and scheduled tasks")
-	return nil
+	return s.StartSyncConsumer(ctx)
 }
 
 func (s *IntelligenceService) GetTasks() *task.Manager[*SyncTask] {

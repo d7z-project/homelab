@@ -32,7 +32,7 @@ func BootUpSelfHealing(ctx context.Context) {
 			}
 		}
 	}
-	// Clean up temp dirs in actions sub-directory (actionsFS is already scoped to 'orch')
+	// Clean up orphaned task workspaces under the scoped actions filesystem.
 	matches, err := afero.Glob(rt.ActionsFS, "*")
 	if err != nil {
 		log.Printf("Self-healing failed to glob actionsFS temp dirs: %v", err)
@@ -48,10 +48,10 @@ func BootUpSelfHealing(ctx context.Context) {
 					instanceID := parts[0] + "_" + parts[1]
 					inst, err := repo.GetTaskInstance(ctx, instanceID)
 
-					// If task not found or NOT running, it's safe to clean up
+					// If task not found or not running, the workspace is orphaned.
 					if err != nil || (inst != nil && inst.Status.Status != shared.TaskStatusRunning) {
 						_ = rt.ActionsFS.RemoveAll(match)
-						log.Printf("Self-healing: removed legacy task directory %s", match)
+						log.Printf("Self-healing: removed orphan task directory %s", match)
 					} else {
 						log.Printf("Self-healing: skipped active task directory %s", match)
 					}

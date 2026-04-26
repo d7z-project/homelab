@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 	"gopkg.d7z.net/middleware/lock"
+	"gopkg.d7z.net/middleware/queue"
 	"gopkg.d7z.net/middleware/subscribe"
 )
 
@@ -76,6 +77,14 @@ func SubscriberFromContext(ctx context.Context) subscribe.Subscriber {
 		return nil
 	}
 	return deps.Subscriber
+}
+
+func QueueFromContext(ctx context.Context) queue.Queue {
+	deps, ok := ModuleDepsFromContext(ctx)
+	if !ok {
+		return nil
+	}
+	return deps.Queue
 }
 
 func FSFromContext(ctx context.Context) afero.Fs {

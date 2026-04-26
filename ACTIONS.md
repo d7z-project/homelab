@@ -2,7 +2,7 @@
 
 ## 1. 核心设计原则 (Core Principles)
 - **空间隔离与虚拟化**: 每个任务实例运行期间拥有独立的 **虚拟工作目录 (Scoped Workspace)**（锚定在 `common.TempDir/orch`）。采用 `afero.Fs` 实现 100% 逻辑路径操作，任务结束自动逻辑清理。
-- **参数映射 (GitHub Actions 风格)**: 
+- **参数映射 (GitHub Actions 风格)**:
   - 支持引用前置步骤输出：`${{ steps.<step_id>.outputs.<key> }}`。
   - 支持引用工作流运行变量：`${{ vars.<var_key> }}`。
   - **内置状态引用**: 支持 `${{ steps.<step_id>.status }}` 获取前置步骤执行结果（布尔值 `true`/`false`）。
@@ -15,11 +15,11 @@
 - **软失败机制 (Fail-Safe)**: 支持步骤级 `fail: true` 配置。当步骤执行失败或校验不通过时，仅记录日志并标记 `status: false`，继续执行后续步骤。
 - **幂等性与并发控制**: 通过分布式锁 `common.Locker.TryLock` 实现触发阶段的幂等性拦截。同一工作流在同一时间只能有一个实例运行，冲突时新请求直接失败。
 - **执行条件 (Conditional execution)**: 每一个步骤 support 可选的 `if` 条件，使用 `go-expr` 表达式进行逻辑判断。
-- **日志分片与流式查询**: 
+- **日志分片与流式查询**:
   - **结构化存储**: 采用 `logs/actions/{workflow_id}/{instance_id}/{step_index}.log` 层次化存储。
   - **分片设计**: 日志按步骤 (`index`) 拆分为独立 `.log` 文件（`0`: 初始化, `1..N`: 各步骤, `N+1`: 结束清理）。
   - **增量查询**: 支持基于偏移量 (`offset`) 的流式解析，前端实现增量拉取。
-- **健壮性保障**: 
+- **健壮性保障**:
   - **超时中止**: 支持配置工作流级超时时间（默认 2h），超时自动触发 context cancel。任务状态精准识别 `Cancelled` 与 `Failed`。
   - **Panic 恢复**: 引擎捕获所有执行过程中的 panic，记录堆栈信息并安全标记任务失败。
   - **递归保护**: 拦截 `core/workflow_call` 对自身的循环调用。

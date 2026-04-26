@@ -29,14 +29,14 @@ type WorkflowMeta struct {
 	CronEnabled      bool                     `json:"cronEnabled"`
 	CronExpr         string                   `json:"cronExpr"`
 	WebhookEnabled   bool                     `json:"webhookEnabled"`
-	WebhookToken     string                   `json:"webhookToken"`
 	Vars             map[string]VarDefinition `json:"vars"`
 	Steps            []Step                   `json:"steps"`
 }
 
 type WorkflowStatus struct {
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+	WebhookToken string    `json:"webhookToken,omitempty"`
 }
 
 type Workflow struct {
@@ -55,7 +55,6 @@ func (w *Workflow) Bind(_ *http.Request) error {
 	w.Meta.Description = strings.TrimSpace(w.Meta.Description)
 	w.Meta.ServiceAccountID = strings.TrimSpace(w.Meta.ServiceAccountID)
 	w.Meta.CronExpr = strings.TrimSpace(w.Meta.CronExpr)
-	w.Meta.WebhookToken = strings.TrimSpace(w.Meta.WebhookToken)
 	if w.Meta.Name == "" {
 		return errors.New("workflow name is required")
 	}
@@ -120,7 +119,6 @@ type TaskInstanceMeta struct {
 	UserID           string            `json:"userId"`
 	ServiceAccountID string            `json:"serviceAccountId"`
 	Inputs           map[string]string `json:"inputs"`
-	Workspace        string            `json:"workspace"`
 	Steps            []Step            `json:"steps"`
 }
 
@@ -130,6 +128,7 @@ type TaskInstanceStatus struct {
 	StartedAt   time.Time           `json:"startedAt"`
 	FinishedAt  *time.Time          `json:"finishedAt,omitempty"`
 	Error       string              `json:"error,omitempty"`
+	Workspace   string              `json:"workspace,omitempty"`
 	Outputs     map[string]string   `json:"outputs"`
 	Logs        []LogEntry          `json:"logs"`
 	StepTimings map[int]*StepTiming `json:"stepTimings"`

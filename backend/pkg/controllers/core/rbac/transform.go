@@ -34,11 +34,11 @@ func toModelServiceAccount(api apiv1.ServiceAccount) rbacmodel.ServiceAccount {
 		ID: api.ID,
 		Meta: rbacmodel.ServiceAccountV1Meta{
 			Name:     api.Meta.Name,
-			Token:    api.Meta.Token,
 			Comments: api.Meta.Comments,
 			Enabled:  api.Meta.Enabled,
 		},
 		Status: rbacmodel.ServiceAccountV1Status{
+			Token:      api.Status.Token,
 			LastUsedAt: api.Status.LastUsedAt,
 		},
 		Generation:      api.Generation,
@@ -51,11 +51,11 @@ func toAPIServiceAccount(model rbacmodel.ServiceAccount) apiv1.ServiceAccount {
 		ID: model.ID,
 		Meta: apiv1.ServiceAccountMeta{
 			Name:     model.Meta.Name,
-			Token:    model.Meta.Token,
 			Comments: model.Meta.Comments,
 			Enabled:  model.Meta.Enabled,
 		},
 		Status: apiv1.ServiceAccountStatus{
+			Token:      model.Status.Token,
 			LastUsedAt: model.Status.LastUsedAt,
 		},
 		Generation:      model.Generation,

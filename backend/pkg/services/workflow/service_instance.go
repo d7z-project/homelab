@@ -2,8 +2,8 @@ package workflow
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	repo "homelab/pkg/repositories/workflow/actions"
@@ -83,18 +83,32 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 		return "", fmt.Errorf("failed to save pending instance: %v", err)
 	}
 
-	if runtimepkg.SubscriberFromContext(ctx) != nil {
-		payload := workflowmodel.WorkflowExecutePayload{
-			WorkflowID: workflow.ID,
-			InstanceID: instanceID,
-			UserID:     userID,
-			Trigger:    triggerSource,
-			Inputs:     finalInputs,
-		}
-		common.NotifyCluster(ctx, common.EventWorkflowExecute, payload)
-	} else {
-		// Standalone/Test mode fallback: execute locally
-		_, _ = MustRuntime(ctx).Executor.Execute(ctx, userID, workflow, triggerSource, finalInputs, instanceID)
+	dispatchQueue := runtimepkg.QueueFromContext(ctx)
+	if dispatchQueue == nil {
+		return "", fmt.Errorf("task queue is not configured")
+	}
+	payload, err := json.Marshal(workflowmodel.WorkflowExecuteJob{
+		WorkflowID: workflow.ID,
+		InstanceID: instanceID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to encode workflow dispatch job: %w", err)
+	}
+	messageID, err := dispatchQueue.Publish(ctx, workflowExecuteTopic, string(payload), nil)
+	if err != nil {
+		now := time.Now()
+		instance.Status.Status = shared.TaskStatusFailed
+		instance.Status.Error = fmt.Sprintf("failed to enqueue workflow execution: %v", err)
+		instance.Status.FinishedAt = &now
+		_ = repo.SaveTaskInstance(ctx, instance)
+		return "", fmt.Errorf("failed to enqueue workflow execution: %w", err)
+	}
+	queuedAt := time.Now()
+	instance.Status.QueueTopic = workflowExecuteTopic
+	instance.Status.QueueMessageID = messageID
+	instance.Status.QueuedAt = &queuedAt
+	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
+		return "", fmt.Errorf("failed to persist workflow queue metadata: %w", err)
 	}
 
 	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Meta.Name, instanceID)

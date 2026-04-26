@@ -45,7 +45,19 @@ type RecordMeta struct {
 	Comments string `json:"comments"`
 }
 
-type RecordStatus struct{}
+type SOAStatus struct {
+	MName   string `json:"mName,omitempty"`
+	RName   string `json:"rName,omitempty"`
+	Serial  string `json:"serial,omitempty"`
+	Refresh int    `json:"refresh,omitempty"`
+	Retry   int    `json:"retry,omitempty"`
+	Expire  int    `json:"expire,omitempty"`
+	Minimum int    `json:"minimum,omitempty"`
+}
+
+type RecordStatus struct {
+	SOA *SOAStatus `json:"soa,omitempty"`
+}
 
 type Record struct {
 	ID              string       `json:"id"`

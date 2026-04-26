@@ -3,9 +3,9 @@ package dns
 import (
 	"fmt"
 	commonauth "homelab/pkg/common/auth"
-	rbacmodel "homelab/pkg/models/core/rbac"
 	dnsmodel "homelab/pkg/models/network/dns"
 	workflowmodel "homelab/pkg/models/workflow"
+	authservice "homelab/pkg/services/core/auth"
 	actions "homelab/pkg/services/workflow"
 )
 
@@ -41,11 +41,6 @@ func (p *DnsRecordProcessor) Execute(ctx *actions.TaskContext, inputs map[string
 
 	ctx.Logger.Logf("Creating DNS record: %s %s -> %s in domain %s", name, recordType, value, domainID)
 
-	// Simulated Live RBAC Check
-	if ctx.UserID != "root" && ctx.UserID != "admin" {
-		return nil, fmt.Errorf("user %s does not have permission to modify DNS", ctx.UserID)
-	}
-
 	record := &dnsmodel.Record{Meta: dnsmodel.RecordV1Meta{
 		DomainID: domainID,
 		Name:     name,
@@ -54,11 +49,17 @@ func (p *DnsRecordProcessor) Execute(ctx *actions.TaskContext, inputs map[string
 		Enabled:  true,
 	}}
 
-	// Create a context with full permissions for the internal service call
-	// The service layer itself will perform the final validation
-	adminCtx := commonauth.WithPermissions(ctx.Context, &rbacmodel.ResourcePermissions{AllowedAll: true})
+	domain, err := GetDomain(ctx.Context, domainID)
+	if err != nil {
+		return nil, fmt.Errorf("load domain %s: %w", domainID, err)
+	}
+	resource := fmt.Sprintf("network/dns/%s/%s/%s", domain.Meta.Name, name, recordType)
+	perms, err := authservice.GetPermissions(ctx.Context, ctx.ServiceAccountID, "create", resource)
+	if err != nil {
+		return nil, fmt.Errorf("load workflow permissions: %w", err)
+	}
 
-	res, err := CreateRecord(adminCtx, record)
+	res, err := CreateRecord(commonauth.WithPermissions(ctx.Context, perms), record)
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,18 @@
 package dns
 
 import (
+	"fmt"
 	apiv1 "homelab/pkg/apis/network/dns/v1"
 	dnsmodel "homelab/pkg/models/network/dns"
 	"homelab/pkg/models/shared"
 )
+
+func composeSOAValue(soa *dnsmodel.SOAStatus) string {
+	if soa == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s %s %s %d %d %d %d", soa.MName, soa.RName, soa.Serial, soa.Refresh, soa.Retry, soa.Expire, soa.Minimum)
+}
 
 func toModelDomain(api apiv1.Domain) dnsmodel.Domain {
 	return dnsmodel.Domain{
@@ -41,6 +49,18 @@ func toAPIDomain(model dnsmodel.Domain) apiv1.Domain {
 }
 
 func toModelRecord(api apiv1.Record) dnsmodel.Record {
+	var soa *dnsmodel.SOAStatus
+	if api.Status.SOA != nil {
+		soa = &dnsmodel.SOAStatus{
+			MName:   api.Status.SOA.MName,
+			RName:   api.Status.SOA.RName,
+			Serial:  api.Status.SOA.Serial,
+			Refresh: api.Status.SOA.Refresh,
+			Retry:   api.Status.SOA.Retry,
+			Expire:  api.Status.SOA.Expire,
+			Minimum: api.Status.SOA.Minimum,
+		}
+	}
 	return dnsmodel.Record{
 		ID: api.ID,
 		Meta: dnsmodel.RecordV1Meta{
@@ -53,26 +73,42 @@ func toModelRecord(api apiv1.Record) dnsmodel.Record {
 			Enabled:  api.Meta.Enabled,
 			Comments: api.Meta.Comments,
 		},
-		Status:          dnsmodel.RecordV1Status{},
+		Status:          dnsmodel.RecordV1Status{SOA: soa},
 		Generation:      api.Generation,
 		ResourceVersion: api.ResourceVersion,
 	}
 }
 
 func toAPIRecord(model dnsmodel.Record) apiv1.Record {
+	var soa *apiv1.SOAStatus
+	if model.Status.SOA != nil {
+		soa = &apiv1.SOAStatus{
+			MName:   model.Status.SOA.MName,
+			RName:   model.Status.SOA.RName,
+			Serial:  model.Status.SOA.Serial,
+			Refresh: model.Status.SOA.Refresh,
+			Retry:   model.Status.SOA.Retry,
+			Expire:  model.Status.SOA.Expire,
+			Minimum: model.Status.SOA.Minimum,
+		}
+	}
+	value := model.Meta.Value
+	if model.Meta.Type == "SOA" {
+		value = composeSOAValue(model.Status.SOA)
+	}
 	return apiv1.Record{
 		ID: model.ID,
 		Meta: apiv1.RecordMeta{
 			DomainID: model.Meta.DomainID,
 			Name:     model.Meta.Name,
 			Type:     model.Meta.Type,
-			Value:    model.Meta.Value,
+			Value:    value,
 			TTL:      model.Meta.TTL,
 			Priority: model.Meta.Priority,
 			Enabled:  model.Meta.Enabled,
 			Comments: model.Meta.Comments,
 		},
-		Status:          apiv1.RecordStatus{},
+		Status:          apiv1.RecordStatus{SOA: soa},
 		Generation:      model.Generation,
 		ResourceVersion: model.ResourceVersion,
 	}

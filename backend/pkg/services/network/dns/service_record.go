@@ -91,6 +91,10 @@ func UpdateRecord(ctx context.Context, id string, record *dnsmodel.Record) (*dns
 		return nil, errors.New("domain not found")
 	}
 
+	if existing.Meta.Type == "SOA" {
+		return nil, errors.New("SOA managed by system")
+	}
+
 	release, err := lockDomain(ctx, dom.ID)
 	if err != nil {
 		return nil, err
@@ -114,24 +118,13 @@ func UpdateRecord(ctx context.Context, id string, record *dnsmodel.Record) (*dns
 	existing.Meta.TTL = record.Meta.TTL
 	existing.Meta.Enabled = record.Meta.Enabled
 	existing.Meta.Comments = record.Meta.Comments
-	if existing.Meta.Type == "SOA" {
-		existing.Meta.Name = "@"
-		existing.Meta.Type = "SOA"
-		existing.Meta.Enabled = true
-		if mName, rName, _, parseErr := parseSOA(record.Meta.Value); parseErr == nil {
-			existing.Meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", mName, rName, incrementSerial(existing.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
-		}
-	}
 	err = dnsrepo.SaveRecord(ctx, existing)
 
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateRecord", record.Meta.Name+"."+dom.Meta.Name, "Failed", false)
 		return nil, err
 	}
-
-	if existing.Meta.Type != "SOA" {
-		updateSOASerial(ctx, dom.ID)
-	}
+	updateSOASerial(ctx, dom.ID)
 
 	updated, _ := dnsrepo.GetRecord(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateRecord", record.Meta.Name+"."+dom.Meta.Name, "Updated", true)

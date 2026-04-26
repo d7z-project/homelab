@@ -44,10 +44,14 @@ func (m *IntelligenceSourceV1Meta) Validate(_ context.Context) error {
 }
 
 type IntelligenceSourceV1Status struct {
-	LastUpdatedAt time.Time         `json:"lastUpdatedAt"`
-	Status        shared.TaskStatus `json:"status"`
-	Progress      float64           `json:"progress"`
-	ErrorMessage  string            `json:"errorMessage"`
+	LastUpdatedAt  time.Time         `json:"lastUpdatedAt"`
+	Status         shared.TaskStatus `json:"status"`
+	Progress       float64           `json:"progress"`
+	ErrorMessage   string            `json:"errorMessage"`
+	QueueTopic     string            `json:"queueTopic,omitempty"`
+	QueueMessageID string            `json:"queueMessageId,omitempty"`
+	QueuedAt       *time.Time        `json:"queuedAt,omitempty"`
+	DispatchedAt   *time.Time        `json:"dispatchedAt,omitempty"`
 }
 
 type IntelligenceSource = shared.Resource[IntelligenceSourceV1Meta, IntelligenceSourceV1Status]

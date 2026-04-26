@@ -60,12 +60,16 @@ func (m *SiteSyncPolicyV1Meta) Validate(_ context.Context) error {
 }
 
 type SiteSyncPolicyV1Status struct {
-	CreatedAt    time.Time         `json:"createdAt"`
-	UpdatedAt    time.Time         `json:"updatedAt"`
-	LastRunAt    time.Time         `json:"lastRunAt"`
-	LastStatus   shared.TaskStatus `json:"lastStatus"`
-	Progress     float64           `json:"progress"`
-	ErrorMessage string            `json:"errorMessage"`
+	CreatedAt      time.Time         `json:"createdAt"`
+	UpdatedAt      time.Time         `json:"updatedAt"`
+	LastRunAt      time.Time         `json:"lastRunAt"`
+	LastStatus     shared.TaskStatus `json:"lastStatus"`
+	Progress       float64           `json:"progress"`
+	ErrorMessage   string            `json:"errorMessage"`
+	QueueTopic     string            `json:"queueTopic,omitempty"`
+	QueueMessageID string            `json:"queueMessageId,omitempty"`
+	QueuedAt       *time.Time        `json:"queuedAt,omitempty"`
+	DispatchedAt   *time.Time        `json:"dispatchedAt,omitempty"`
 }
 
 type SiteSyncPolicy = shared.Resource[SiteSyncPolicyV1Meta, SiteSyncPolicyV1Status]

@@ -77,6 +77,9 @@ func (m *Module) Start(ctx context.Context) error {
 	if err := m.runtime.TriggerManager.InitTriggers(ctx); err != nil {
 		return err
 	}
+	if err := m.runtime.StartExecutionConsumer(ctx); err != nil {
+		return err
+	}
 	m.runtime.TriggerManager.Start(ctx)
 	return nil
 }

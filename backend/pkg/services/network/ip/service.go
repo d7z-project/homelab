@@ -4,7 +4,6 @@ import (
 	"context"
 	"homelab/pkg/common"
 	commonauth "homelab/pkg/common/auth"
-	rbacmodel "homelab/pkg/models/core/rbac"
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
@@ -96,19 +95,6 @@ func NewIPPoolService(deps runtimepkg.ModuleDeps, ae *AnalysisEngine, em *Export
 		}
 	})
 
-	// 集群事件: 异步触发同步
-	common.RegisterEventHandler(common.EventIPSyncRun, func(ctx context.Context, policyID string) {
-		// 注入系统权限
-		sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
-			Type: "sa",
-			ID:   "system",
-		})
-		sysCtx = commonauth.WithPermissions(sysCtx, &rbacmodel.ResourcePermissions{AllowedAll: true})
-
-		// 由于我们迁移到了 task.Manager，它天然具备防重和分布式同步能力
-		go svc.doSync(sysCtx, policyID)
-	})
-
 	return svc
 }
 
@@ -131,17 +117,11 @@ func (s *IPPoolService) GetSyncTasks() *task.Manager[*SyncTask] {
 	return s.syncTasks
 }
 
-func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
+func (s *IPPoolService) Start(ctx context.Context) error {
 	s.cron.Start()
-	// 加载所有启用的策略
-	// 注入一个系统权限的 context
-	sysCtx := commonauth.WithAuth(ctx, &commonauth.AuthContext{
-		Type: "sa",
-		ID:   "system",
-	})
-	sysCtx = commonauth.WithPermissions(sysCtx, &rbacmodel.ResourcePermissions{AllowedAll: true})
+	sysCtx := commonauth.WithSystemSA(ctx)
 
-	// 1. 状态自愈 (Reconciliation) 使用全新框架接管
+	// 启动前先把遗留的 pending/running 任务收敛回最终状态。
 	s.syncTasks.Reconcile(sysCtx)
 	for _, t := range s.syncTasks.RangeAll() {
 		status := t.GetStatus()
@@ -156,7 +136,7 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 		}
 	}
 
-	// 然后调度启用的策略
+	// 再恢复启用策略的 cron 调度。
 	policies, err := repo.ScanAllSyncPolicies(sysCtx)
 	if err == nil {
 		for _, p := range policies {
@@ -165,6 +145,7 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 			}
 		}
 	}
+	return s.StartSyncConsumer(ctx)
 }
 
 func (s *IPPoolService) addCronJob(p ipmodel.IPSyncPolicy) {
@@ -180,12 +161,7 @@ func (s *IPPoolService) addCronJob(p ipmodel.IPSyncPolicy) {
 	id, err := common.AddDistributedCronJob(s.cron, p.Meta.Cron, lockKey, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
-		// 注入一个系统权限的 context
-		ctx = commonauth.WithAuth(ctx, &commonauth.AuthContext{
-			Type: "sa",
-			ID:   "system",
-		})
-		ctx = commonauth.WithPermissions(ctx, &rbacmodel.ResourcePermissions{AllowedAll: true})
+		ctx = commonauth.WithSystemSA(ctx)
 		_ = s.Sync(ctx, p.ID)
 	})
 	if err == nil {

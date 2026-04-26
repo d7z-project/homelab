@@ -1,93 +1,152 @@
-# Gemini 项目开发指南 (Gemini Development Guide)
+# Homelab 项目开发指南
 
-## 核心架构：分层开发范式 (Layered Architecture)
+## 核心架构
 
-本项目严格遵循四层分层架构。开发新功能时必须按此顺序进行，严禁跨层调用或产生循环依赖。
+本项目当前采用“模块化单体 + 分层实现”的后端结构。新增或修改后端能力时，默认沿着以下链路组织代码：
 
-### 1. 模型层 (Models) - `pkg/models/`
-- **职责**：定义业务实体、API DTO，承担基础格式校验。
-- **分页标准**：
-  - **请求**：必须使用 `PaginationRequest` 结构体。
-  - **响应**：必须返回 `PaginationResponse[T]` 泛型结构。
-  - **游标一致性**：`Cursor` 字段必须为 `string`。即使底层技术是字节偏移（如 VFS 预览），也必须在接口层转换为字符串，以确保生成库的类型一致性。
-- **校验规范**：结构体必须实现 `render.Binder` 接口，负责非空检查、正则表达式校验（ID 格式 `^[a-z0-9_\-]+$`）、枚举范围检查及字段预处理（如 `TrimSpace`）。
+`main -> runtime.App -> module -> controller -> service -> repository -> store/KV(+VFS)`
 
-### 2. 存储仓库层 (Repositories) - `pkg/repositories/{module}/`
-- **职责**：封装底层的 KV 存取逻辑（基于 `common.DB`）。
-- **命名规范**：
-  - **分页查询**：必须命名为 `ScanXXXX(ctx, cursor, limit, search)`。
-  - **全量查询**：仅限系统内部或初始化使用，命名为 `ScanAllXXXX(ctx)`。
-  - **严禁** 使用 `List` 作为方法前缀，以区分游标语义与传统的切片返回。
+禁止 controller 直接操作 repository，禁止 module 直接承载业务逻辑，禁止跨领域 service 形成随意双向依赖。
 
-### 3. 业务服务层 (Services) - `pkg/services/{module}/`
-- **职责**：编排业务流程、执行 **深度业务逻辑校验**、维护资源一致性。
-- **RBAC 精细化检查 (Critical)**：
-  - **实例级隔离**：在 `Update`, `Delete`, `Preview` 操作中，必须检查特定资源 ID 的权限（如 `perms.IsAllowed("network/ip/"+id)`）。
-  - **语义化错误包装**：权限拒绝相关的错误必须使用 `fmt.Errorf("%w: context message", commonauth.ErrPermissionDenied)` 方式抛出，以便控制器层精准映射 403 状态码。
-- **服务发现 (Discovery)**：
-  - 资源发现逻辑统一归口于 `pkg/runtime/registry` 包。
-  - 模块必须通过统一注册中心注册资源路径、动作集、lookup 与 SA usage 检查（DNS 仅限 CRUD，Actions/IP/Site 需包含 `execute`）。
-  - **联想过滤**：`DiscoverFunc` 必须根据 `ctx` 中的权限实时过滤返回项，实现“可见即有权”。
-- **任务执行逻辑**：
-  - 长时间任务必须继承自 `pkg/common/task.Manager` 框架。
-  - 必须支持 `taskCtx.Done()` 监听以实现平滑取消。
-  - 服务重启时需调用 `manager.Reconcile(ctx)` 实现状态自愈。
+## 后端分层约束
 
-### 4. 控制器层 (Controllers) - `pkg/controllers/`
-- **职责**：路由注册、参数解析、统一错误出口。
-- **规范**：
-  - **路由定义**：采用 `r.With(middlewares.RequirePermission(verb, resource)).Method(...)` 链式调用。
-  - **分页解析**：统一使用 `getCursorParams(r)` 辅助函数（默认 20，硬封顶 100）。
-  - **错误处理**：所有 Handler 必须统一通过 `controllers.HandleError(w, r, err)` 返回非成功响应。
-  - **成功响应**：分页结果必须使用 `common.CursorSuccess(w, r, res)` 包装。
+### 1. 入口与运行时 - `backend/main.go`, `backend/pkg/runtime/`
+- `main.go` 只负责基础设施初始化、模块装配、HTTP server 生命周期。
+- 基础设施依赖统一通过 `runtime.Dependencies` 和 `runtime.ModuleDeps` 下发。
+- 业务代码不要绕过 `runtime` 自建全局单例；需要 DB、Lock、PubSub、FS、Registry 时，优先从 context 读取。
+- 新增后端能力时，优先做成独立 `Module`，实现 `Name / Init / RegisterRoutes / Start / Stop`。
 
----
+### 2. 模块层 - `backend/pkg/modules/`
+- 模块负责组装 service、注册路由、在 `Start` 阶段注册 discovery / actions / cron / 事件订阅。
+- 路由注册统一使用 `routerx.Mount` 或 `routerx.WithScope`，不要再手写旧式 `r.With(...).Method(...)`。
+- 模块间共享的横切依赖通过 `runtime.ModuleDeps` 或显式构造参数传入，不要在 controller 里临时拼装。
+- 可选模块应在 `bootstrap.go` 中通过开关统一启停，保持装配入口单一。
 
-## 核心基础设施 (Core Infrastructure)
+### 3. 控制器层 - `backend/pkg/controllers/`
+- controller 负责请求绑定、路径参数提取、调用 service、映射 HTTP 响应。
+- JSON 绑定统一使用 `controllers.BindRequest` 或 `BindOptionalRequest`。
+- 分页参数统一使用 `controllers.GetCursorParams` 或 `GetSearchCursorParams`，默认 `20`，上限 `100`。
+- 非成功响应统一走 `controllers.HandleError`；成功分页响应统一走 `common.CursorSuccess`。
+- 模块专属 service 依赖通过中间件注入 request context，例如 `WithIPControllerDeps`、`WithSiteControllerDeps`，不要在 handler 中自行构造 service。
 
-### 1. 鉴权与安全架构
-- **SA 令牌哈希化**：数据库严禁存储明文 JWT。仅在创建/重置时下发一次，库中仅持久化其 SHA-256 哈希指纹。
-- **系统上下文**：内部系统任务（如背景引擎）应使用 `commonauth.SystemContext()` 以获得内部操作所需的 root 权限。
-- **SA 安全删除**：删除 ServiceAccount 前必须通过 `discovery.CheckSAUsage` 验证其是否正被工作流等资源引用。
+### 4. 服务层 - `backend/pkg/services/`
+- service 负责业务规则、权限细化、长任务编排、状态推进、事件发布、跨资源一致性。
+- 路由层权限检查不是 service 层权限检查的替代。涉及实例级资源、系统任务或内部调用时，service 仍应做必要的权限校验。
+- 权限拒绝错误必须包装为 `fmt.Errorf("%w: ...", commonauth.ErrPermissionDenied)`，保证 controller 能稳定映射成 `403`。
+- 长时间任务必须优先复用 `pkg/common/task.Manager`，支持取消、状态持久化、重启后自愈。
+- 需要后台执行时，应显式考虑 `context` 生命周期；如果任务必须脱离请求存活，使用 `runtime.DetachContext` 或新的后台 context。
 
-### 2. 集群事件总线 (Cluster Event Bus)
-- **结构化 Payload**：事件 Payload 必须在 `pkg/models/` 中定义专用结构体并带有 `json` 标签。
-- **发布规范**：在异步任务回调中发布事件，**必须使用 `context.Background()`**，防止因 `taskCtx` 取消导致 Pub/Sub 静默丢包。
+### 5. 仓储与存储层 - `backend/pkg/repositories/`, `backend/pkg/store/`
+- repository 负责领域对象的查询与持久化，不承载业务编排。
+- 当前标准资源型存储统一基于 `common.BaseRepository` + `store.ResourceStore`。
+- 新资源默认建模为 `shared.Resource[Meta, Status]`，而不是散装 KV 字段集合。
+- repository 命名保持现有风格：
+  - 分页查询：`ScanXxx(ctx, cursor, limit, search)`
+  - 全量查询：`ScanAllXxx(ctx)`
+  - 单项读写：`GetXxx / SaveXxx / DeleteXxx / UpdateXxxStatus`
+- 若数据天然属于资源对象，优先落入 `ResourceStore`；只有会话、全局版本号、任务快照这类非资源数据才直接使用底层 KV namespace。
 
-### 3. 网络与 SSRF 防护
-- **URL 下载**：所有用户指定的下载 URL 必须调用 `common.ValidateURL(url, allowPrivate)` 进行 SSRF 校验。
+### 6. 模型层 - `backend/pkg/models/`, `backend/pkg/apis/`
+- 领域模型优先使用 `shared.Resource[Meta, Status]` 组织配置与运行状态。
+- `Meta` 负责配置输入，`Status` 负责运行态、时间戳、任务结果等衍生状态。
+- `Meta.Validate(context.Context)` 是当前主校验入口；不要强制要求所有模型实现 `render.Binder`。
+- API DTO 与内部模型的转换应留在 controller 下的 `transform.go` 或同层辅助函数，不要把 API 结构直接下沉到 repository。
+- 分页响应统一使用 `shared.PaginationResponse[T]`，游标统一为 `string`。
 
----
+## 路由、鉴权与审计
 
-## 前端交互规范 (Frontend UX)
+### 1. 路由声明
+- 使用 `routerx.Scope` 统一声明：
+  - `Resource`: 权限资源前缀
+  - `Audit`: 审计资源名
+  - `UsesAuth`: 是否启用鉴权
+  - `Extra`: 模块附加中间件，如 controller 依赖注入或 workflow runtime 注入
+- 每条路由通过 `routerx.Get/Post/Put/Patch/Delete` 声明动作，如 `list/create/update/delete/execute/get/admin/simulate`。
 
-遵循 **Material Design 3 (M3)** 规范。
+### 2. 鉴权模型
+- 当前系统存在两类身份：
+  - `root`：基于 session 的人工登录
+  - `sa`：ServiceAccount token
+- `root` 会话需要校验 JWT、Session 是否存在、IP/UA 是否匹配。
+- `sa` token 当前采用 JWT 明文签发，但库中只持久化 token 的 SHA-256 哈希值，不存明文。
+- 后台系统任务如果需要全权限，不要盲目使用 `commonauth.SystemContext()` 丢掉运行时依赖；优先在现有 context 上注入 `AuthContext` 与 `Permissions`。
 
-### 1. 状态管理 (Angular Signals)
-- **Signal 优先**：组件状态（loading, list, cursors）必须使用 Angular Signals (`signal`, `computed`, `effect`) 管理。
-- **分页控制**：使用组件内的 `pageSize` 信号管理每页请求数量，严禁硬编码。
+### 3. 审计
+- 进入受审计路由时，统一通过 `AuditMiddleware` 注入 `AuditLogger`。
+- service 在关键变更、登录、撤销、清理等行为上应显式记录审计日志。
+- 新功能如果会改变资源状态或执行高影响动作，应补充审计记录，而不是只依赖 HTTP access log。
 
-### 2. 列表与动态加载
-- **无限滚动**：大列表数据展示必须配合容器（如 `mat-sidenav-content`）的滚动监听，实现基于游标的“滑动加载”。
-- **搜索重置**：当搜索关键词或过滤标签更变时，必须重置 `nextCursor` 并清空当前数据列表。
+## 资源注册与 Discovery
 
----
+- 资源发现、lookup、动作元数据统一通过 `runtime/registry` 注册。
+- 需要前端下拉、联想、动作探测、资源建议的能力时，优先注册：
+  - `RegisterResource`
+  - `RegisterLookup`
+  - `RegisterAction`
+- 模块通常在 `Start` 阶段完成注册。
+- lookup 返回结果必须按当前权限过滤；“能看到”默认意味着“当前身份可用”。
+- 新增可执行动作时，如果前端或 workflow 需要消费该动作，必须同步注册 action descriptor。
 
-## 测试框架与质量保证
+## 异步任务、定时任务与集群事件
 
-### 1. 验证要点
-- **实例级 RBAC**：必须编写测试模拟不同用户访问非授权实例的 `Deny` 场景。
-- **游标边界**：必须验证“刚好命中最后一条记录”、“Limit=1”等极端分页 Case。
-- **Discovery 联想**：必须验证带斜杠的多级路径（如 `network/dns/example.com/`）下的资源推荐准确性。
+### 1. 通用任务
+- 同步、导出、工作流实例等长任务优先复用 `pkg/common/task.Manager`。
+- 任务必须支持：
+  - 状态持久化
+  - 手动取消
+  - 分布式锁防重
+  - 重启后 `Reconcile`
 
-### 2. 测试工具
-- 单元测试模拟集群通知必须使用 `common.TriggerEvent`。
-- 测试用例必须通过 `tests.SetupMockRootContext()` 或 `SetupMockContext()` 构造。
+### 2. 定时任务
+- 定时调度统一基于 `robfig/cron`。
+- 集群内只允许一个节点实际执行的定时任务，必须配合分布式锁或现有的分布式 cron 封装。
 
----
+### 3. 事件总线
+- 集群事件通过 `common.NotifyCluster` / `RegisterEventHandler` / `StartEventLoop` 协作。
+- payload 可以是字符串或 JSON 结构体；新增事件时优先使用结构化 payload，避免把解析协议散落到调用方。
+- 如果事件发布不应受请求取消影响，应显式切换到合适的后台 context，不要默认复用可能已取消的 `taskCtx`。
+
+## 文件系统与工作目录
+
+- 用户数据目录和任务临时目录统一通过 `common.InitVFS` 初始化，底层使用 `afero.Fs`。
+- 持久文件写入使用 `deps.FS`，临时工作区使用 `deps.TempFS`。
+- workflow、导出等会创建工作目录的能力，必须负责清理临时目录。
+- 不要直接假设本地磁盘路径存在；优先通过 `afero` 抽象访问文件。
+
+## Workflow 相关约束
+
+- `workflow` 模块是独立运行时，不要把普通业务逻辑直接塞进 controller。
+- Step processor 通过注册表统一注册；新增处理器需要补充 manifest、输入校验和输出定义。
+- 工作流执行涉及：
+  - 分布式锁
+  - 任务实例持久化
+  - workspace/log 目录
+  - ServiceAccount impersonation
+- 新增 workflow 功能时，要同时考虑运行时上下文、日志、取消、中断恢复和权限边界。
+
+## 网络与安全
+
+- 所有用户提供的下载 URL 都必须经过 `common.ValidateURL(url, allowPrivate)` 做 SSRF 校验。
+- 涉及内部网络访问、HTTP processor、同步源拉取时，默认先考虑私网访问风险。
+- 不要在日志、接口响应或资源持久化中暴露明文敏感 token。
+
+## 测试与验证
+
+- 当前测试主要位于 `backend/.../*_test.go`，使用 Go 原生测试框架，不存在 `go test ./tests/unit/...` 这一统一入口。
+- 修改后端时，至少运行受影响包的 `go test ./...` 子集；如果改动了基础设施或公共抽象，优先跑整个 `backend` 测试集。
+- 模块装配、资源存储、discovery、权限判断、任务恢复是高价值测试点。
+- 需要模拟内存环境时，参考 [backend/bootstrap_test.go](/home/dragon/Documents/IDEA/homelab/backend/bootstrap_test.go:1) 的做法，使用 `memory://` KV 与 `afero.NewMemMapFs()`。
 
 ## 开发工作流
-1. **生成 API**：后端修改 Swagger 后运行 `make backend-gen`。
-2. **同步前端**：运行 `make frontend-gen` 更新 TypeScript 客户端。
-3. **构建验证**：运行 `make frontend-build` 确保全栈编译正确。
-4. **回归测试**：运行 `go test ./tests/unit/...`。
+
+1. 后端 Swagger 变更后运行 `make backend-gen`。
+2. 前端 API 客户端同步运行 `make frontend-gen`。
+3. Go 客户端同步运行 `make client-go-gen`。
+4. 全栈构建验证优先运行 `make frontend-build` 与 `make backend-build`。
+5. 后端测试优先在 `backend/` 下运行 `go test ./...` 或受影响包集合。
+
+## 文档维护原则
+
+- `AGENTS.md` 记录的是“当前仓库真实采用的约束”，不是理想化设计稿。
+- 当实现已经演进，优先更新本文档去匹配稳定现状；不要继续保留明显过时的规则。
+- 新增基础抽象、统一中间件、公共运行时或新的代码组织模式后，应同步补充到本文档。

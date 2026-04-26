@@ -58,15 +58,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 					isRoot, _ := authservice.Verify(r.Context(), token, ip, ua)
 					if isRoot {
 						// 1. Inject Identity
-						ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
+						ctx := commonauth.WithIdentity(r.Context(), &commonauth.AuthContext{
 							Type:      "root",
 							SessionID: jti,
-						})
-						// 2. Inject Global Permissions (important for manual service-layer checks)
-						perms := &rbacmodel.ResourcePermissions{
+						}, &rbacmodel.ResourcePermissions{
 							AllowedAll: true,
-						}
-						ctx = context.WithValue(ctx, commonauth.PermissionsContextKey, perms)
+						})
 
 						next.ServeHTTP(w, r.WithContext(ctx))
 						return
@@ -79,11 +76,10 @@ func AuthMiddleware(next http.Handler) http.Handler {
 						// Verb "*" and Resource "*" used here to load the generic permissions object
 						perms, _ := authservice.GetPermissions(r.Context(), saID, "*", "*")
 
-						ctx := context.WithValue(r.Context(), commonauth.AuthContextKey, &commonauth.AuthContext{
+						ctx := commonauth.WithIdentity(r.Context(), &commonauth.AuthContext{
 							Type: "sa",
 							ID:   saID,
-						})
-						ctx = context.WithValue(ctx, commonauth.PermissionsContextKey, perms)
+						}, perms)
 
 						authservice.UpdateSALastUsed(saID)
 						next.ServeHTTP(w, r.WithContext(ctx))
@@ -116,7 +112,7 @@ func RequireAnyPermission(resource string, verbs ...string) func(http.Handler) h
 					MatchedRule: &rbacmodel.PolicyRule{Resource: "*", Verbs: []string{"*"}},
 				}
 				w.Header().Set("X-Matched-Policy", "*:*")
-				ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, perms)
+				ctx := commonauth.WithPermissions(r.Context(), perms)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
@@ -128,7 +124,7 @@ func RequireAnyPermission(resource string, verbs ...string) func(http.Handler) h
 						if perms.MatchedRule != nil {
 							w.Header().Set("X-Matched-Policy", perms.MatchedRule.Resource)
 						}
-						ctx := context.WithValue(r.Context(), commonauth.PermissionsContextKey, perms)
+						ctx := commonauth.WithPermissions(r.Context(), perms)
 						next.ServeHTTP(w, r.WithContext(ctx))
 						return
 					}

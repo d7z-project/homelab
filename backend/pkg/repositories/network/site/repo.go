@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	groupRepo      = common.NewBaseRepository[sitemodel.SiteGroupV1Meta, sitemodel.SiteGroupV1Status]("network", "SiteGroup")
-	exportRepo     = common.NewBaseRepository[sitemodel.SiteExportV1Meta, sitemodel.SiteExportV1Status]("network", "SiteExport")
-	syncPolicyRepo = common.NewBaseRepository[sitemodel.SiteSyncPolicyV1Meta, sitemodel.SiteSyncPolicyV1Status]("network", "SiteSyncPolicy")
+	groupRepo      = common.NewResourceRepository[sitemodel.SiteGroupV1Meta, sitemodel.SiteGroupV1Status]("network", "SiteGroup")
+	exportRepo     = common.NewResourceRepository[sitemodel.SiteExportV1Meta, sitemodel.SiteExportV1Status]("network", "SiteExport")
+	syncPolicyRepo = common.NewResourceRepository[sitemodel.SiteSyncPolicyV1Meta, sitemodel.SiteSyncPolicyV1Status]("network", "SiteSyncPolicy")
 )
 
 // Group Repo

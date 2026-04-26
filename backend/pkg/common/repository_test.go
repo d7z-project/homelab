@@ -28,7 +28,7 @@ type repoTestStatus struct {
 	State string `json:"state"`
 }
 
-func newTestRepository(t *testing.T) (*BaseRepository[repoTestMeta, repoTestStatus], context.Context) {
+func newTestRepository(t *testing.T) (*ResourceRepository[repoTestMeta, repoTestStatus], context.Context) {
 	t.Helper()
 	db, err := kv.NewKVFromURL("memory://")
 	if err != nil {
@@ -45,23 +45,20 @@ func newTestRepository(t *testing.T) (*BaseRepository[repoTestMeta, repoTestStat
 		},
 		Registry: registryruntime.New(),
 	}
-	return NewBaseRepository[repoTestMeta, repoTestStatus]("test", "objects"), deps.WithContext(context.Background())
+	return NewResourceRepository[repoTestMeta, repoTestStatus]("test", "objects"), deps.WithContext(context.Background())
 }
 
-func TestBaseRepositoryCowPatchMetaAndStatus(t *testing.T) {
+func TestResourceRepositorySaveUpdateMetaAndStatus(t *testing.T) {
 	t.Parallel()
 
 	repo, ctx := newTestRepository(t)
 
-	if err := repo.Cow(ctx, "alpha", func(res *shared.Resource[repoTestMeta, repoTestStatus]) error {
-		res.ID = "alpha"
-		res.Meta = repoTestMeta{Value: "one"}
-		res.Status = repoTestStatus{State: "new"}
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
+	if err := repo.Save(ctx, &shared.Resource[repoTestMeta, repoTestStatus]{
+		ID:     "alpha",
+		Meta:   repoTestMeta{Value: "one"},
+		Status: repoTestStatus{State: "new"},
 	}); err != nil {
-		t.Fatalf("cow create: %v", err)
+		t.Fatalf("save create: %v", err)
 	}
 
 	got, err := repo.Get(ctx, "alpha")
@@ -71,11 +68,14 @@ func TestBaseRepositoryCowPatchMetaAndStatus(t *testing.T) {
 	if got.Meta.Value != "one" || got.Status.State != "new" {
 		t.Fatalf("unexpected object: %#v", got)
 	}
+	if got.Generation != 1 || got.ResourceVersion != 1 {
+		t.Fatalf("unexpected versions after create: %#v", got)
+	}
 
-	if err := repo.PatchMeta(ctx, "alpha", 1, func(meta *repoTestMeta) {
+	if err := repo.UpdateMeta(ctx, "alpha", 1, func(meta *repoTestMeta) {
 		meta.Value = "two"
 	}); err != nil {
-		t.Fatalf("patch meta: %v", err)
+		t.Fatalf("update meta: %v", err)
 	}
 
 	got, err = repo.Get(ctx, "alpha")
@@ -107,19 +107,16 @@ func TestBaseRepositoryCowPatchMetaAndStatus(t *testing.T) {
 	}
 }
 
-func TestBaseRepositoryListAndListAll(t *testing.T) {
+func TestResourceRepositoryListAndListAll(t *testing.T) {
 	t.Parallel()
 
 	repo, ctx := newTestRepository(t)
 
 	for _, name := range []string{"alpha", "beta", "gamma"} {
 		resourceName := name
-		if err := repo.Cow(ctx, resourceName, func(res *shared.Resource[repoTestMeta, repoTestStatus]) error {
-			res.ID = resourceName
-			res.Meta = repoTestMeta{Value: resourceName}
-			res.Generation = 1
-			res.ResourceVersion = 1
-			return nil
+		if err := repo.Save(ctx, &shared.Resource[repoTestMeta, repoTestStatus]{
+			ID:   resourceName,
+			Meta: repoTestMeta{Value: resourceName},
 		}); err != nil {
 			t.Fatalf("seed %s: %v", resourceName, err)
 		}

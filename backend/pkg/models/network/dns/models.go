@@ -63,7 +63,19 @@ func (m *RecordV1Meta) Validate(_ context.Context) error {
 	return nil
 }
 
-type RecordV1Status struct{}
+type SOAStatus struct {
+	MName   string `json:"mName,omitempty"`
+	RName   string `json:"rName,omitempty"`
+	Serial  string `json:"serial,omitempty"`
+	Refresh int    `json:"refresh,omitempty"`
+	Retry   int    `json:"retry,omitempty"`
+	Expire  int    `json:"expire,omitempty"`
+	Minimum int    `json:"minimum,omitempty"`
+}
+
+type RecordV1Status struct {
+	SOA *SOAStatus `json:"soa,omitempty"`
+}
 
 type Record = shared.Resource[RecordV1Meta, RecordV1Status]
 

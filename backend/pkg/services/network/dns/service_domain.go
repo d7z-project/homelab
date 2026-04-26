@@ -80,10 +80,20 @@ func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domai
 			DomainID: domain.ID,
 			Name:     "@",
 			Type:     "SOA",
-			Value:    fmt.Sprintf("ns1.%s. admin.%s. %s %d %d %d %d", domain.Meta.Name, domain.Meta.Name, generateSOASerial(), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum),
 			TTL:      3600,
 			Enabled:  true,
 			Comments: "System generated SOA",
+		},
+		Status: dnsmodel.RecordV1Status{
+			SOA: &dnsmodel.SOAStatus{
+				MName:   fmt.Sprintf("ns1.%s.", domain.Meta.Name),
+				RName:   fmt.Sprintf("admin.%s.", domain.Meta.Name),
+				Serial:  generateSOASerial(),
+				Refresh: defaultSOARefresh,
+				Retry:   defaultSOARetry,
+				Expire:  defaultSOAExpire,
+				Minimum: defaultSOAMinimum,
+			},
 		},
 	}
 	_ = dnsrepo.SaveRecord(ctx, defaultSOA)

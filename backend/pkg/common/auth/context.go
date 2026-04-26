@@ -50,10 +50,24 @@ func WithPermissions(ctx context.Context, perms *rbacmodel.ResourcePermissions) 
 	return context.WithValue(ctx, PermissionsContextKey, perms)
 }
 
-// SystemContext returns a background context with root permissions.
-func SystemContext() context.Context {
+func WithIdentity(ctx context.Context, auth *AuthContext, perms *rbacmodel.ResourcePermissions) context.Context {
+	ctx = WithAuth(ctx, auth)
+	if perms != nil {
+		ctx = WithPermissions(ctx, perms)
+	}
+	return ctx
+}
+
+func WithRoot(ctx context.Context) context.Context {
+	return WithIdentity(ctx, &AuthContext{Type: "root"}, &rbacmodel.ResourcePermissions{AllowedAll: true})
+}
+
+func WithSystemSA(ctx context.Context) context.Context {
+	return WithIdentity(ctx, &AuthContext{Type: "sa", ID: "system"}, &rbacmodel.ResourcePermissions{AllowedAll: true})
+}
+
+func RootContext() context.Context {
 	ctx := context.Background()
-	ctx = WithAuth(ctx, &AuthContext{Type: "root"})
-	ctx = WithPermissions(ctx, &rbacmodel.ResourcePermissions{AllowedAll: true})
+	ctx = WithRoot(ctx)
 	return ctx
 }

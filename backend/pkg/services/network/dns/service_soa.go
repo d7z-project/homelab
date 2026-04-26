@@ -2,8 +2,8 @@ package dns
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	dnsmodel "homelab/pkg/models/network/dns"
 	dnsrepo "homelab/pkg/repositories/network/dns"
 	"strings"
 	"time"
@@ -24,8 +24,10 @@ func updateSOASerial(ctx context.Context, domainID string) {
 		for _, r := range resp.Items {
 			if r.Meta.Type == "SOA" {
 				record := r
-				m, rn, _, _ := parseSOA(record.Meta.Value)
-				record.Meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(record.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+				if record.Status.SOA == nil {
+					continue
+				}
+				record.Status.SOA.Serial = incrementSOASerial(record.Status.SOA.Serial)
 				_ = dnsrepo.SaveRecord(ctx, &record)
 				break
 			}
@@ -33,21 +35,29 @@ func updateSOASerial(ctx context.Context, domainID string) {
 	}
 }
 
-func parseSOA(val string) (m, r, s string, err error) {
-	p := strings.Fields(val)
-	if len(p) < 3 {
-		return "", "", "", errors.New("invalid SOA")
+func formatSOA(soa *dnsmodel.SOAStatus) string {
+	if soa == nil {
+		return ""
 	}
-	return p[0], p[1], p[2], nil
+	return fmt.Sprintf("%s %s %s %d %d %d %d", soa.MName, soa.RName, soa.Serial, soa.Refresh, soa.Retry, soa.Expire, soa.Minimum)
 }
 
-func incrementSerial(old string) string {
-	_, _, s, err := parseSOA(old)
+func recordValue(record *dnsmodel.Record) string {
+	if record == nil {
+		return ""
+	}
+	if record.Meta.Type == "SOA" {
+		return formatSOA(record.Status.SOA)
+	}
+	return record.Meta.Value
+}
+
+func incrementSOASerial(serial string) string {
 	today := time.Now().Format("20060102")
-	if err != nil || !strings.HasPrefix(s, today) {
+	if !strings.HasPrefix(serial, today) {
 		return today + "01"
 	}
 	seq := 1
-	fmt.Sscanf(s[8:], "%d", &seq)
+	fmt.Sscanf(serial[8:], "%d", &seq)
 	return today + fmt.Sprintf("%02d", seq+1)
 }

@@ -14,9 +14,9 @@ import (
 var (
 	roleCache *lru.Cache[string, *rbacmodel.Role]
 
-	roleRepo           = common.NewBaseRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
-	bindingRepo        = common.NewBaseRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
-	serviceAccountRepo = common.NewBaseRepository[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status]("auth", "serviceaccounts")
+	roleRepo           = common.NewResourceRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
+	bindingRepo        = common.NewResourceRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
+	serviceAccountRepo = common.NewResourceRepository[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status]("auth", "serviceaccounts")
 )
 
 func init() {

@@ -5,11 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"homelab/pkg/common"
+	workflowmodel "homelab/pkg/models/workflow"
 	repo "homelab/pkg/repositories/workflow/actions"
 	"log"
 	"sync"
-
-	workflowmodel "homelab/pkg/models/workflow"
 
 	"github.com/robfig/cron/v3"
 )
@@ -45,34 +44,6 @@ func (m *TriggerManager) registerClusterHandlers(ctx context.Context) {
 			return
 		}
 		m.UpdateTriggers(*wf)
-	})
-
-	// 异步执行工作流事件
-	common.RegisterEventHandler(common.EventWorkflowExecute, func(ctx context.Context, req workflowmodel.WorkflowExecutePayload) {
-		ctx = rt.WithContext(ctx)
-		// 使用分布式锁确保同一实例 ID 只被一个节点执行
-		lockKey := "action:execute:" + req.InstanceID
-		release := rt.Deps.Locker.TryLock(ctx, lockKey)
-		if release == nil {
-			// 锁被占用，说明已有节点在执行
-			return
-		}
-		// 注意：Execute 内部会管理自己的生命周期，这里的 release 仅用于抢占权
-		// 我们不需要在这里 defer release()，因为 Execute 异步启动后，抢占权已完成
-		// 实际上，为了防止多节点竞争，拿到锁即视为“领任务成功”
-		// 但为了安全，我们可以保持锁一段时间，或者相信 Execute 内部的 local/global concurrency check
-
-		wf, err := repo.GetWorkflow(ctx, req.WorkflowID)
-		if err != nil {
-			log.Printf("TriggerManager: failed to fetch workflow %s for async execution: %v", req.WorkflowID, err)
-			return
-		}
-
-		log.Printf("TriggerManager: picking up async execution for instance %s", req.InstanceID)
-		_, err = rt.Executor.Execute(ctx, req.UserID, wf, req.Trigger, req.Inputs, req.InstanceID)
-		if err != nil {
-			log.Printf("TriggerManager: failed to start async execution for instance %s: %v", req.InstanceID, err)
-		}
 	})
 }
 

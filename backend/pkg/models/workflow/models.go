@@ -31,7 +31,6 @@ type WorkflowV1Meta struct {
 	CronEnabled      bool                     `json:"cronEnabled"`
 	CronExpr         string                   `json:"cronExpr"`
 	WebhookEnabled   bool                     `json:"webhookEnabled"`
-	WebhookToken     string                   `json:"webhookToken"`
 	Vars             map[string]VarDefinition `json:"vars"`
 	Steps            []Step                   `json:"steps"`
 }
@@ -74,8 +73,9 @@ func (m *WorkflowV1Meta) Validate(_ context.Context) error {
 }
 
 type WorkflowV1Status struct {
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+	WebhookToken string    `json:"webhookToken,omitempty"`
 }
 
 type Workflow = shared.Resource[WorkflowV1Meta, WorkflowV1Status]
@@ -100,7 +100,6 @@ type TaskInstanceV1Meta struct {
 	UserID           string            `json:"userId"`
 	ServiceAccountID string            `json:"serviceAccountId"`
 	Inputs           map[string]string `json:"inputs"`
-	Workspace        string            `json:"workspace"`
 	Steps            []Step            `json:"steps"`
 }
 
@@ -109,14 +108,19 @@ func (m *TaskInstanceV1Meta) Validate(_ context.Context) error {
 }
 
 type TaskInstanceV1Status struct {
-	Status      shared.TaskStatus   `json:"status"`
-	CurrentStep int                 `json:"currentStep"`
-	StartedAt   time.Time           `json:"startedAt"`
-	FinishedAt  *time.Time          `json:"finishedAt,omitempty"`
-	Error       string              `json:"error,omitempty"`
-	Outputs     map[string]string   `json:"outputs"`
-	Logs        []LogEntry          `json:"logs"`
-	StepTimings map[int]*StepTiming `json:"stepTimings"`
+	Status         shared.TaskStatus   `json:"status"`
+	CurrentStep    int                 `json:"currentStep"`
+	StartedAt      time.Time           `json:"startedAt"`
+	FinishedAt     *time.Time          `json:"finishedAt,omitempty"`
+	Error          string              `json:"error,omitempty"`
+	Workspace      string              `json:"workspace,omitempty"`
+	QueueTopic     string              `json:"queueTopic,omitempty"`
+	QueueMessageID string              `json:"queueMessageId,omitempty"`
+	QueuedAt       *time.Time          `json:"queuedAt,omitempty"`
+	DispatchedAt   *time.Time          `json:"dispatchedAt,omitempty"`
+	Outputs        map[string]string   `json:"outputs"`
+	Logs           []LogEntry          `json:"logs"`
+	StepTimings    map[int]*StepTiming `json:"stepTimings"`
 }
 
 type TaskInstance = shared.Resource[TaskInstanceV1Meta, TaskInstanceV1Status]
@@ -144,10 +148,7 @@ type StepManifest struct {
 	OutputParams []ParamDefinition `json:"outputParams"`
 }
 
-type WorkflowExecutePayload struct {
-	WorkflowID string            `json:"workflowId"`
-	InstanceID string            `json:"instanceId"`
-	UserID     string            `json:"userId"`
-	Trigger    string            `json:"trigger"`
-	Inputs     map[string]string `json:"inputs"`
+type WorkflowExecuteJob struct {
+	WorkflowID string `json:"workflowId"`
+	InstanceID string `json:"instanceId"`
 }

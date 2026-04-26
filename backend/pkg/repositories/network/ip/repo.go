@@ -3,43 +3,15 @@ package ip
 import (
 	"context"
 	"homelab/pkg/common"
-	runtimepkg "homelab/pkg/runtime"
 	"strings"
-	"time"
 
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
-
-	"gopkg.d7z.net/middleware/kv"
 )
 
-var poolRepo = common.NewBaseRepository[ipmodel.IPPoolV1Meta, ipmodel.IPPoolV1Status]("network", "IPPool")
-var exportRepo = common.NewBaseRepository[ipmodel.IPExportV1Meta, ipmodel.IPExportV1Status]("network", "IPExport")
-var syncPolicyRepo = common.NewBaseRepository[ipmodel.IPSyncPolicyV1Meta, ipmodel.IPSyncPolicyV1Status]("network", "IPSyncPolicy")
-
-func updateLastModified(ctx context.Context) {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
-		return
-	}
-	now := time.Now().Format(time.RFC3339)
-	_ = db.Child("network", "ip").Put(ctx, "last_modified", now, kv.TTLKeep)
-}
-
-func GetLastModified(ctx context.Context) time.Time {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
-		return time.Time{}
-	}
-	val, err := db.Child("network", "ip").Get(ctx, "last_modified")
-	if err == nil && val != "" {
-		t, err := time.Parse(time.RFC3339, val)
-		if err == nil {
-			return t
-		}
-	}
-	return time.Time{}
-}
+var poolRepo = common.NewResourceRepository[ipmodel.IPPoolV1Meta, ipmodel.IPPoolV1Status]("network", "IPPool")
+var exportRepo = common.NewResourceRepository[ipmodel.IPExportV1Meta, ipmodel.IPExportV1Status]("network", "IPExport")
+var syncPolicyRepo = common.NewResourceRepository[ipmodel.IPSyncPolicyV1Meta, ipmodel.IPSyncPolicyV1Status]("network", "IPSyncPolicy")
 
 func GetSyncPolicy(ctx context.Context, id string) (*ipmodel.IPSyncPolicy, error) {
 	return syncPolicyRepo.Get(ctx, id)

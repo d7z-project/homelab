@@ -38,15 +38,13 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 				if strings.HasPrefix(prefix, s+"/") {
 					idPrefix := strings.TrimPrefix(prefix, s+"/")
 					if s == "workflows" {
-						workflows, err := repo.ScanAllWorkflows(ctx)
+						workflows, err := repo.ScanAllWorkflowsByPrefix(ctx, idPrefix)
 						if err == nil {
 							for _, wf := range workflows {
-								if idPrefix == "" || strings.HasPrefix(wf.ID, idPrefix) {
-									res = append(res, discoverymodel.LookupItem{
-										ID:   "workflows/" + wf.ID,
-										Name: "Workflow: " + wf.Meta.Name,
-									})
-								}
+								res = append(res, discoverymodel.LookupItem{
+									ID:   "workflows/" + wf.ID,
+									Name: "Workflow: " + wf.Meta.Name,
+								})
 							}
 						}
 					} else {
@@ -63,19 +61,15 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 	})
 
 	_ = registry.RegisterLookup("actions/workflows", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
-		workflows, err := repo.ScanAllWorkflows(ctx)
+		workflows, err := repo.ScanWorkflows(ctx, cursor, limit, search)
 		if err != nil {
 			return nil, err
 		}
 		perms := commonauth.PermissionsFromContext(ctx)
 		hasGlobal := perms.IsAllowed("actions")
 		var items []discoverymodel.LookupItem
-		search = strings.ToLower(search)
-		for _, wf := range workflows {
+		for _, wf := range workflows.Items {
 			if !hasGlobal && !perms.IsAllowed("actions/"+wf.ID) {
-				continue
-			}
-			if search != "" && !strings.Contains(strings.ToLower(wf.ID), search) && !strings.Contains(strings.ToLower(wf.Meta.Name), search) {
 				continue
 			}
 			items = append(items, discoverymodel.LookupItem{
@@ -84,18 +78,20 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 				Description: wf.Meta.Description,
 			})
 		}
-		return registryruntime.Paginate(items, cursor, limit), nil
+		return &shared.PaginationResponse[discoverymodel.LookupItem]{
+			Items:      items,
+			NextCursor: workflows.NextCursor,
+			HasMore:    workflows.HasMore,
+		}, nil
 	})
 
 	registry.RegisterSAUsageChecker(func(ctx context.Context, id string) error {
-		workflows, err := repo.ScanAllWorkflows(ctx)
+		used, workflow, err := repo.WorkflowUsesServiceAccount(ctx, id)
 		if err != nil {
 			return nil
 		}
-		for _, wf := range workflows {
-			if wf.Meta.ServiceAccountID == id {
-				return fmt.Errorf("ServiceAccount '%s' is used by workflow '%s'", id, wf.Meta.Name)
-			}
+		if used && workflow != nil {
+			return fmt.Errorf("ServiceAccount '%s' is used by workflow '%s'", id, workflow.Meta.Name)
 		}
 		return nil
 	})

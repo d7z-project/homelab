@@ -9,7 +9,7 @@ import (
 	"homelab/pkg/models/shared"
 )
 
-var sourceRepo = common.NewBaseRepository[intelligencemodel.IntelligenceSourceV1Meta, intelligencemodel.IntelligenceSourceV1Status]("network", "IntelligenceSource")
+var sourceRepo = common.NewResourceRepository[intelligencemodel.IntelligenceSourceV1Meta, intelligencemodel.IntelligenceSourceV1Status]("network", "IntelligenceSource")
 
 func GetSource(ctx context.Context, id string) (*intelligencemodel.IntelligenceSource, error) {
 	return sourceRepo.Get(ctx, id)

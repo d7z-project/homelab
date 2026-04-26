@@ -26,7 +26,6 @@ func normalizeWorkflow(workflow *workflowmodel.Workflow) {
 	workflow.Meta.Description = strings.TrimSpace(workflow.Meta.Description)
 	workflow.Meta.ServiceAccountID = strings.TrimSpace(workflow.Meta.ServiceAccountID)
 	workflow.Meta.CronExpr = strings.TrimSpace(workflow.Meta.CronExpr)
-	workflow.Meta.WebhookToken = strings.TrimSpace(workflow.Meta.WebhookToken)
 
 	if workflow.Meta.Vars != nil {
 		normalizedVars := make(map[string]workflowmodel.VarDefinition, len(workflow.Meta.Vars))
@@ -273,8 +272,8 @@ func CreateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) (*wor
 		return nil, err
 	}
 
-	if workflow.Meta.WebhookEnabled && workflow.Meta.WebhookToken == "" {
-		workflow.Meta.WebhookToken = GenerateWebhookToken()
+	if workflow.Meta.WebhookEnabled && workflow.Status.WebhookToken == "" {
+		workflow.Status.WebhookToken = GenerateWebhookToken()
 	}
 
 	workflow.Status.CreatedAt = time.Now()
@@ -328,10 +327,10 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *workflowmodel.Work
 
 	old.Meta = workflow.Meta
 	old.Status.UpdatedAt = time.Now()
-	if old.Meta.WebhookEnabled && old.Meta.WebhookToken == "" {
-		old.Meta.WebhookToken = workflow.Meta.WebhookToken
-		if old.Meta.WebhookToken == "" {
-			old.Meta.WebhookToken = GenerateWebhookToken()
+	if old.Meta.WebhookEnabled && old.Status.WebhookToken == "" {
+		old.Status.WebhookToken = workflow.Status.WebhookToken
+		if old.Status.WebhookToken == "" {
+			old.Status.WebhookToken = GenerateWebhookToken()
 		}
 	}
 	err = repo.SaveWorkflow(ctx, old)
@@ -366,7 +365,7 @@ func ResetWebhookToken(ctx context.Context, id string) (string, error) {
 		return "", err
 	}
 	newToken := GenerateWebhookToken()
-	workflow.Meta.WebhookToken = newToken
+	workflow.Status.WebhookToken = newToken
 	workflow.Status.UpdatedAt = time.Now()
 	err = repo.SaveWorkflow(ctx, workflow)
 
@@ -391,6 +390,10 @@ func GetWorkflow(ctx context.Context, id string) (*workflowmodel.Workflow, error
 	return wf, nil
 }
 
+func GetWorkflowByWebhookToken(ctx context.Context, token string) (*workflowmodel.Workflow, error) {
+	return repo.GetWorkflowByWebhookToken(ctx, token)
+}
+
 func DeleteWorkflow(ctx context.Context, id string) error {
 	wf, err := repo.GetWorkflow(ctx, id)
 	if err != nil {
@@ -403,9 +406,9 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 	}
 
 	// Cascade delete instances and logs
-	res, err := repo.ScanTaskInstances(ctx, "", 10000, "", id)
+	instances, err := repo.ScanAllTaskInstancesByWorkflow(ctx, id)
 	if err == nil {
-		for _, inst := range res.Items {
+		for _, inst := range instances {
 			_ = repo.DeleteTaskInstance(ctx, inst.ID)
 		}
 		_ = RemoveWorkflowLogs(ctx, id)

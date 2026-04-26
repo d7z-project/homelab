@@ -45,7 +45,7 @@ func ExportAll(ctx context.Context) (*dnsmodel.DnsExportResponse, error) {
 		recordsByDomain[r.Meta.DomainID] = append(recordsByDomain[r.Meta.DomainID], dnsmodel.ExportRecord{
 			Name:     r.Meta.Name,
 			Type:     r.Meta.Type,
-			Value:    r.Meta.Value,
+			Value:    recordValue(&r),
 			TTL:      r.Meta.TTL,
 			Priority: r.Meta.Priority,
 		})

@@ -102,7 +102,7 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*sh
 		if len(parts) == 2 {
 			dataDB := db.Child("system", "audit", "data", parts[0], parts[1])
 			c, _ := dataDB.Count(ctx)
-			total += int64(c)
+			total += c
 		}
 	}
 

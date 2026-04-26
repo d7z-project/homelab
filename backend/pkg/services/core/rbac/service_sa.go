@@ -29,8 +29,8 @@ func CreateServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) (*r
 		return nil, errors.New("ServiceAccount already exists")
 	}
 
-	plainToken := sa.Meta.Token
-	if sa.Meta.Token == "" {
+	plainToken := sa.Status.Token
+	if sa.Status.Token == "" {
 		token, err := authservice.CreateSAToken(sa.ID)
 		if err != nil {
 			return nil, err
@@ -39,7 +39,8 @@ func CreateServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) (*r
 	}
 
 	// Always store hash
-	sa.Meta.Token = authservice.HashToken(plainToken)
+	sa.Status.TokenHash = authservice.HashToken(plainToken)
+	sa.Status.Token = ""
 	sa.Meta.Enabled = true
 
 	err := rbacrepo.SaveServiceAccount(ctx, sa)
@@ -51,9 +52,8 @@ func CreateServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) (*r
 	}
 	commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.ID, message, true)
 
-	// Set back plain token for the response
 	updated, _ := rbacrepo.GetServiceAccount(ctx, sa.ID)
-	updated.Meta.Token = plainToken
+	updated.Status.Token = plainToken
 	return updated, nil
 }
 
@@ -142,7 +142,8 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*rbacmodel.Servic
 	if err != nil {
 		return nil, err
 	}
-	updated.Meta.Token = authservice.HashToken(plainToken)
+	updated.Status.TokenHash = authservice.HashToken(plainToken)
+	updated.Status.Token = ""
 	err = rbacrepo.SaveServiceAccount(ctx, updated)
 
 	message := fmt.Sprintf("Reset token for ServiceAccount: %s", id)
@@ -154,6 +155,6 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*rbacmodel.Servic
 	updated, _ = rbacrepo.GetServiceAccount(ctx, id)
 	commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", id, message, true)
 
-	updated.Meta.Token = plainToken
+	updated.Status.Token = plainToken
 	return updated, nil
 }
