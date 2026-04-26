@@ -146,7 +146,11 @@
 - 当前测试主要位于 `backend/.../*_test.go`，使用 Go 原生测试框架，不存在 `go test ./tests/unit/...` 这一统一入口。
 - 修改后端时，至少运行受影响包的 `go test ./...` 子集；如果改动了基础设施或公共抽象，优先跑整个 `backend` 测试集。
 - 模块装配、资源存储、discovery、权限判断、任务恢复是高价值测试点。
-- 需要模拟内存环境时，参考 [backend/bootstrap_test.go](/home/dragon/Documents/IDEA/homelab/backend/bootstrap_test.go:1) 的做法，使用 `memory://` KV 与 `afero.NewMemMapFs()`。
+- 需要模拟内存环境时，优先复用 `backend/pkg/testkit`，不要在每个测试里重复手工拼 `memory://` KV、Queue、Subscriber、`afero` 文件系统。
+- repository 或 service 级测试优先使用 `testkit.NewModuleDeps(t)`，直接拿到统一的内存 `ModuleDeps`。
+- 模块级测试优先使用 `testkit.StartApp(t, modules...)`，走真实的 `runtime.App -> Init -> Start` 生命周期，而不是只手工调用局部函数。
+- 测试专用初始化逻辑优先用 `testkit.SeedModule(...)` 或底层 `runtime.FuncModule`，把 seed 数据、假注册或观测逻辑挂进模块生命周期，不要把初始化散落在测试主体里。
+- 需要验证 discovery、queue consumer、模块启动副作用时，应优先走真实模块启动路径；只有纯计算或纯仓储逻辑才退回更轻量的单元测试。
 
 ## 开发工作流
 

@@ -1,41 +1,21 @@
 package rbac_test
 
 import (
-	"context"
 	"testing"
 
 	commonauth "homelab/pkg/common/auth"
 	discoverymodel "homelab/pkg/models/core/discovery"
 	rbacmodel "homelab/pkg/models/core/rbac"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
-	runtimepkg "homelab/pkg/runtime"
-	registryruntime "homelab/pkg/runtime/registry"
 	rbacservice "homelab/pkg/services/core/rbac"
-
-	"github.com/spf13/afero"
-	"gopkg.d7z.net/middleware/kv"
+	"homelab/pkg/testkit"
 )
 
 func TestRegisterDiscovery(t *testing.T) {
 	t.Parallel()
 
-	db, err := kv.NewKVFromURL("memory://")
-	if err != nil {
-		t.Fatalf("new memory kv: %v", err)
-	}
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
-	registry := registryruntime.New()
-	deps := runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: registry,
-	}
-	ctx := deps.WithContext(context.Background())
+	deps := testkit.NewModuleDeps(t)
+	ctx := deps.WithContext(t.Context())
 
 	if err := rbacrepo.SaveServiceAccount(ctx, &rbacmodel.ServiceAccount{
 		ID:         "sa-1",
@@ -59,12 +39,12 @@ func TestRegisterDiscovery(t *testing.T) {
 		t.Fatalf("seed role binding: %v", err)
 	}
 
-	rbacservice.RegisterDiscovery(registry)
+	rbacservice.RegisterDiscovery(deps.Registry)
 
 	ctx = commonauth.WithPermissions(ctx, &rbacmodel.ResourcePermissions{AllowedAll: true})
 
 	for _, code := range []string{"rbac/serviceaccounts", "rbac/roles", "rbac/rolebindings"} {
-		res, err := registry.Lookup(ctx, discoverymodel.LookupRequest{Code: code, Limit: 20})
+		res, err := deps.Registry.Lookup(ctx, discoverymodel.LookupRequest{Code: code, Limit: 20})
 		if err != nil {
 			t.Fatalf("lookup %s: %v", code, err)
 		}
@@ -73,7 +53,7 @@ func TestRegisterDiscovery(t *testing.T) {
 		}
 	}
 
-	suggestions, err := registry.SuggestResources(ctx, "rbac/")
+	suggestions, err := deps.Registry.SuggestResources(ctx, "rbac/")
 	if err != nil {
 		t.Fatalf("suggest resources: %v", err)
 	}

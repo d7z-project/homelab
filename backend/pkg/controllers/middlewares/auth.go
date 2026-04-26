@@ -81,7 +81,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 							ID:   saID,
 						}, perms)
 
-						authservice.UpdateSALastUsed(saID)
+						authservice.UpdateSALastUsed(r.Context(), saID)
 						next.ServeHTTP(w, r.WithContext(ctx))
 						return
 					}

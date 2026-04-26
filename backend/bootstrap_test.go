@@ -5,35 +5,13 @@ import (
 
 	intelligencemodel "homelab/pkg/models/network/intelligence"
 	runtimepkg "homelab/pkg/runtime"
-
-	"github.com/spf13/afero"
-	"gopkg.d7z.net/middleware/kv"
+	"homelab/pkg/testkit"
 )
-
-func setupBootstrapTestEnv(t *testing.T) runtimepkg.ModuleDeps {
-	t.Helper()
-
-	db, err := kv.NewKVFromURL("memory://")
-	if err != nil {
-		t.Fatalf("new memory kv: %v", err)
-	}
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
-	return runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: runtimepkg.NewApp(runtimepkg.Dependencies{}).Registry(),
-	}
-}
 
 func TestRegisterCoreModules(t *testing.T) {
 	t.Parallel()
 
-	deps := setupBootstrapTestEnv(t)
+	deps := testkit.NewModuleDeps(t)
 
 	app := runtimepkg.NewApp(deps.Dependencies)
 	if err := registerModules(app, buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{
@@ -70,7 +48,7 @@ func TestRegisterCoreModules(t *testing.T) {
 func TestBuildModules(t *testing.T) {
 	t.Parallel()
 
-	deps := setupBootstrapTestEnv(t)
+	deps := testkit.NewModuleDeps(t)
 
 	modules := buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{
 		enableWorkflow:     true,
@@ -84,7 +62,7 @@ func TestBuildModules(t *testing.T) {
 func TestRegisterCoreModulesWithOptionalModulesDisabled(t *testing.T) {
 	t.Parallel()
 
-	deps := setupBootstrapTestEnv(t)
+	deps := testkit.NewModuleDeps(t)
 
 	app := runtimepkg.NewApp(deps.Dependencies)
 	if err := registerModules(app, buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{})); err != nil {

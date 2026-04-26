@@ -1,7 +1,6 @@
 package workflow_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -10,34 +9,15 @@ import (
 	rbacmodel "homelab/pkg/models/core/rbac"
 	workflowmodel "homelab/pkg/models/workflow"
 	actionrepo "homelab/pkg/repositories/workflow/actions"
-	runtimepkg "homelab/pkg/runtime"
-	registryruntime "homelab/pkg/runtime/registry"
 	actionservice "homelab/pkg/services/workflow"
-
-	"github.com/spf13/afero"
-	"gopkg.d7z.net/middleware/kv"
+	"homelab/pkg/testkit"
 )
 
 func TestRegisterDiscovery(t *testing.T) {
 	t.Parallel()
 
-	db, err := kv.NewKVFromURL("memory://")
-	if err != nil {
-		t.Fatalf("new memory kv: %v", err)
-	}
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
-	registry := registryruntime.New()
-	deps := runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: registry,
-	}
-	ctx := deps.WithContext(context.Background())
+	deps := testkit.NewModuleDeps(t)
+	ctx := deps.WithContext(t.Context())
 
 	if err := actionrepo.SaveWorkflow(ctx, &workflowmodel.Workflow{
 		ID: "wf-1",
@@ -56,11 +36,11 @@ func TestRegisterDiscovery(t *testing.T) {
 		t.Fatalf("seed workflow: %v", err)
 	}
 
-	actionservice.RegisterDiscovery(registry)
+	actionservice.RegisterDiscovery(deps.Registry)
 
 	ctx = commonauth.WithPermissions(ctx, &rbacmodel.ResourcePermissions{AllowedAll: true})
 
-	lookup, err := registry.Lookup(ctx, discoverymodel.LookupRequest{
+	lookup, err := deps.Registry.Lookup(ctx, discoverymodel.LookupRequest{
 		Code:  "actions/workflows",
 		Limit: 20,
 	})
@@ -71,7 +51,7 @@ func TestRegisterDiscovery(t *testing.T) {
 		t.Fatalf("unexpected workflow lookup result: %#v", lookup.Items)
 	}
 
-	suggestions, err := registry.SuggestResources(ctx, "actions/workflows/")
+	suggestions, err := deps.Registry.SuggestResources(ctx, "actions/workflows/")
 	if err != nil {
 		t.Fatalf("suggest resources: %v", err)
 	}
@@ -79,7 +59,7 @@ func TestRegisterDiscovery(t *testing.T) {
 		t.Fatal("expected actions resource suggestions")
 	}
 
-	err = registry.CheckSAUsage(ctx, "sa-build")
+	err = deps.Registry.CheckSAUsage(ctx, "sa-build")
 	if err == nil || !strings.Contains(err.Error(), "deploy") {
 		t.Fatalf("expected SA usage error mentioning workflow, got %v", err)
 	}

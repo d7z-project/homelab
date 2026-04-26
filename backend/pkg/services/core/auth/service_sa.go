@@ -7,6 +7,7 @@ import (
 	rbacmodel "homelab/pkg/models/core/rbac"
 	secretmodel "homelab/pkg/models/core/secret"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
+	runtimepkg "homelab/pkg/runtime"
 	secretservice "homelab/pkg/services/core/secret"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 
 var saLastUsed common.SyncMap[string, time.Time]
 
-func UpdateSALastUsed(saID string) {
+func UpdateSALastUsed(ctx context.Context, saID string) {
 	now := time.Now()
 	if lastUpdate, ok := saLastUsed.Load(saID); ok {
 		if now.Sub(lastUpdate) < 5*time.Minute {
@@ -26,11 +27,11 @@ func UpdateSALastUsed(saID string) {
 	saLastUsed.Store(saID, now)
 
 	go func() {
-		ctx := context.Background()
-		_ = rbacrepo.UpdateServiceAccountStatus(ctx, saID, func(status *rbacmodel.ServiceAccountV1Status) {
+		detached := runtimepkg.DetachContext(ctx)
+		_ = rbacrepo.UpdateServiceAccountStatus(detached, saID, func(status *rbacmodel.ServiceAccountV1Status) {
 			status.LastUsedAt = now.Format(time.RFC3339)
 		})
-		_ = secretservice.Touch(ctx, secretmodel.OwnerKindServiceAccount, saID, secretmodel.PurposeAuthToken)
+		_ = secretservice.Touch(detached, secretmodel.OwnerKindServiceAccount, saID, secretmodel.PurposeAuthToken)
 	}()
 }
 

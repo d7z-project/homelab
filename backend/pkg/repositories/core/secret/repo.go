@@ -8,6 +8,8 @@ import (
 	"homelab/pkg/common"
 	secretmodel "homelab/pkg/models/core/secret"
 	runtimepkg "homelab/pkg/runtime"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
 var secretRepo = common.NewResourceRepository[secretmodel.SecretV1Meta, secretmodel.SecretV1Status]("system", "Secret")
@@ -37,7 +39,7 @@ func PutDigestIndex(ctx context.Context, purpose, digest, secretID string) error
 	if db == nil {
 		return fmt.Errorf("db not configured")
 	}
-	return db.Child("system", "secrets", "index", purpose).Put(ctx, digest, secretID, 0)
+	return db.Child("system", "secrets", "index", purpose).Put(ctx, digest, secretID, kv.TTLKeep)
 }
 
 func GetDigestIndex(ctx context.Context, purpose, digest string) (string, error) {

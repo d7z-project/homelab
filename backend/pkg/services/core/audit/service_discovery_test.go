@@ -1,7 +1,6 @@
 package audit_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -9,34 +8,15 @@ import (
 	auditmodel "homelab/pkg/models/core/audit"
 	rbacmodel "homelab/pkg/models/core/rbac"
 	auditrepo "homelab/pkg/repositories/core/audit"
-	runtimepkg "homelab/pkg/runtime"
-	registryruntime "homelab/pkg/runtime/registry"
 	auditservice "homelab/pkg/services/core/audit"
-
-	"github.com/spf13/afero"
-	"gopkg.d7z.net/middleware/kv"
+	"homelab/pkg/testkit"
 )
 
 func TestRegisterDiscovery(t *testing.T) {
 	t.Parallel()
 
-	db, err := kv.NewKVFromURL("memory://")
-	if err != nil {
-		t.Fatalf("new memory kv: %v", err)
-	}
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
-	registry := registryruntime.New()
-	deps := runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: registry,
-	}
-	ctx := deps.WithContext(context.Background())
+	deps := testkit.NewModuleDeps(t)
+	ctx := deps.WithContext(t.Context())
 
 	if err := auditrepo.SaveLog(ctx, &auditmodel.AuditLog{
 		ID:        "log-1",
@@ -51,11 +31,11 @@ func TestRegisterDiscovery(t *testing.T) {
 		t.Fatalf("seed audit log: %v", err)
 	}
 
-	auditservice.RegisterDiscovery(registry)
+	auditservice.RegisterDiscovery(deps.Registry)
 
 	ctx = commonauth.WithPermissions(ctx, &rbacmodel.ResourcePermissions{AllowedAll: true})
 
-	suggestions, err := registry.SuggestResources(ctx, "audit/")
+	suggestions, err := deps.Registry.SuggestResources(ctx, "audit/")
 	if err != nil {
 		t.Fatalf("suggest resources: %v", err)
 	}

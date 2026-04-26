@@ -67,7 +67,7 @@ func (m *RecordV1Meta) Validate(_ context.Context) error {
 	if m.Type == "" {
 		return errors.New("record type is required")
 	}
-	if m.Value == "" {
+	if m.Type != "SOA" && m.Value == "" {
 		return errors.New("record value is required")
 	}
 	return nil
