@@ -41,8 +41,9 @@ func (m *ServiceAccountV1Meta) Validate(_ context.Context) error {
 }
 
 type ServiceAccountV1Status struct {
-	TokenHash  string `json:"tokenHash,omitempty"`
-	Token      string `json:"token,omitempty"`
+	// HasAuthSecret reports whether an authentication token secret exists for this service account.
+	HasAuthSecret bool `json:"hasAuthSecret"`
+	// LastUsedAt records the last successful authentication timestamp for this service account.
 	LastUsedAt string `json:"lastUsedAt,omitempty"`
 }
 

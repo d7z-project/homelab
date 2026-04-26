@@ -43,8 +43,13 @@ type ServiceAccountMeta struct {
 }
 
 type ServiceAccountStatus struct {
-	Token      string `json:"token,omitempty"`
+	HasAuthSecret bool   `json:"hasAuthSecret"`
 	LastUsedAt string `json:"lastUsedAt,omitempty"`
+}
+
+type ServiceAccountTokenResponse struct {
+	ServiceAccount ServiceAccount `json:"serviceAccount"`
+	Token          string         `json:"token"`
 }
 
 type ServiceAccount struct {

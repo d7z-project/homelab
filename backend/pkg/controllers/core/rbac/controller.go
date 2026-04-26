@@ -37,7 +37,7 @@ func ScanServiceAccountsHandler(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param sa body apiv1.ServiceAccount true "Service Account"
-// @Success 200 {object} apiv1.ServiceAccount
+// @Success 200 {object} apiv1.ServiceAccountTokenResponse
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -50,12 +50,12 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	model := toModelServiceAccount(sa)
-	res, err := rbacservice.CreateServiceAccount(r.Context(), &model)
+	res, token, err := rbacservice.CreateServiceAccount(r.Context(), &model)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, toAPIServiceAccount(*res))
+	common.Success(w, r, toAPIServiceAccountTokenResponse(*res, token))
 }
 
 // UpdateServiceAccountHandler godoc
@@ -65,7 +65,7 @@ func CreateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Service Account ID"
 // @Param sa body apiv1.ServiceAccount true "Service Account"
-// @Success 200 {object} apiv1.ServiceAccount
+// @Success 200 {object} apiv1.ServiceAccountTokenResponse
 // @Failure 400 {object} common.Response "Bad Request"
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
@@ -319,12 +319,12 @@ func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/serviceaccounts/{id}/reset [post]
 func ResetServiceAccountTokenHandler(w http.ResponseWriter, r *http.Request) {
 	id := controllercommon.PathID(r, "id")
-	res, err := rbacservice.ResetServiceAccountToken(r.Context(), id)
+	res, token, err := rbacservice.ResetServiceAccountToken(r.Context(), id)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, toAPIServiceAccount(*res))
+	common.Success(w, r, toAPIServiceAccountTokenResponse(*res, token))
 }
 
 // SimulatePermissionsHandler godoc

@@ -38,7 +38,7 @@ func toModelServiceAccount(api apiv1.ServiceAccount) rbacmodel.ServiceAccount {
 			Enabled:  api.Meta.Enabled,
 		},
 		Status: rbacmodel.ServiceAccountV1Status{
-			Token:      api.Status.Token,
+			HasAuthSecret: api.Status.HasAuthSecret,
 			LastUsedAt: api.Status.LastUsedAt,
 		},
 		Generation:      api.Generation,
@@ -55,11 +55,18 @@ func toAPIServiceAccount(model rbacmodel.ServiceAccount) apiv1.ServiceAccount {
 			Enabled:  model.Meta.Enabled,
 		},
 		Status: apiv1.ServiceAccountStatus{
-			Token:      model.Status.Token,
+			HasAuthSecret: model.Status.HasAuthSecret,
 			LastUsedAt: model.Status.LastUsedAt,
 		},
 		Generation:      model.Generation,
 		ResourceVersion: model.ResourceVersion,
+	}
+}
+
+func toAPIServiceAccountTokenResponse(model rbacmodel.ServiceAccount, token string) apiv1.ServiceAccountTokenResponse {
+	return apiv1.ServiceAccountTokenResponse{
+		ServiceAccount: toAPIServiceAccount(model),
+		Token:          token,
 	}
 }
 

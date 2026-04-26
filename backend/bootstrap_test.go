@@ -44,13 +44,14 @@ func TestRegisterCoreModules(t *testing.T) {
 	}
 
 	modules := app.Modules()
-	if len(modules) != 10 {
-		t.Fatalf("expected 10 modules, got %d", len(modules))
+	if len(modules) != 11 {
+		t.Fatalf("expected 11 modules, got %d", len(modules))
 	}
 	expectedNames := []string{
 		"core.discovery",
 		"core.auth",
 		"core.session",
+		"core.secret",
 		"core.rbac",
 		"core.audit",
 		"network.dns",
@@ -75,8 +76,8 @@ func TestBuildModules(t *testing.T) {
 		enableWorkflow:     true,
 		enableIntelligence: true,
 	})
-	if len(modules) != 10 {
-		t.Fatalf("expected 10 modules, got %d", len(modules))
+	if len(modules) != 11 {
+		t.Fatalf("expected 11 modules, got %d", len(modules))
 	}
 }
 
@@ -91,13 +92,14 @@ func TestRegisterCoreModulesWithOptionalModulesDisabled(t *testing.T) {
 	}
 
 	modules := app.Modules()
-	if len(modules) != 8 {
-		t.Fatalf("expected 8 modules, got %d", len(modules))
+	if len(modules) != 9 {
+		t.Fatalf("expected 9 modules, got %d", len(modules))
 	}
 	expectedNames := []string{
 		"core.discovery",
 		"core.auth",
 		"core.session",
+		"core.secret",
 		"core.rbac",
 		"core.audit",
 		"network.dns",

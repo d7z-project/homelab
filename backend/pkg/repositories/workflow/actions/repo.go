@@ -2,13 +2,12 @@ package actions
 
 import (
 	"context"
-	"fmt"
-	"homelab/pkg/common"
 	runtimepkg "homelab/pkg/runtime"
 	"strconv"
 	"strings"
 	"time"
 
+	"homelab/pkg/common"
 	"homelab/pkg/models/shared"
 	workflowmodel "homelab/pkg/models/workflow"
 )
@@ -28,6 +27,10 @@ func SaveWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) error {
 	return workflowRepo.Save(ctx, workflow)
 }
 
+func UpdateWorkflowStatus(ctx context.Context, id string, apply func(*workflowmodel.WorkflowV1Status)) error {
+	return workflowRepo.UpdateStatus(ctx, id, apply)
+}
+
 func DeleteWorkflow(ctx context.Context, id string) error {
 	return workflowRepo.Delete(ctx, id)
 }
@@ -41,19 +44,6 @@ func ScanWorkflows(ctx context.Context, cursor string, limit int, search string)
 
 func ScanAllWorkflows(ctx context.Context) ([]workflowmodel.Workflow, error) {
 	return workflowRepo.ListAll(ctx)
-}
-
-func GetWorkflowByWebhookToken(ctx context.Context, token string) (*workflowmodel.Workflow, error) {
-	items, err := workflowRepo.ListAllFiltered(ctx, func(wf *workflowmodel.Workflow) bool {
-		return wf.Meta.WebhookEnabled && wf.Status.WebhookToken == token
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(items) == 0 {
-		return nil, fmt.Errorf("%w: workflow webhook token not found", common.ErrNotFound)
-	}
-	return &items[0], nil
 }
 
 func ScanAllWorkflowsByPrefix(ctx context.Context, idPrefix string) ([]workflowmodel.Workflow, error) {

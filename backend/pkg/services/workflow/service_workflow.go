@@ -8,8 +8,10 @@ import (
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
+	secretmodel "homelab/pkg/models/core/secret"
 	repo "homelab/pkg/repositories/workflow/actions"
 	runtimepkg "homelab/pkg/runtime"
+	secretservice "homelab/pkg/services/core/secret"
 	"regexp"
 	"strings"
 	"time"
@@ -272,18 +274,32 @@ func CreateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) (*wor
 		return nil, err
 	}
 
-	if workflow.Meta.WebhookEnabled && workflow.Status.WebhookToken == "" {
-		workflow.Status.WebhookToken = GenerateWebhookToken()
-	}
-
-	workflow.Status.CreatedAt = time.Now()
-	workflow.Status.UpdatedAt = time.Now()
+	now := time.Now()
+	workflow.Status.CreatedAt = now
+	workflow.Status.UpdatedAt = now
+	workflow.Status.HasWebhookSecret = false
 	err := repo.SaveWorkflow(ctx, workflow)
 
 	message := fmt.Sprintf("Created workflow %s (Enabled: %v, Timeout: %ds, SA: %s, Cron: %v, Webhook: %v)", workflow.Meta.Name, workflow.Meta.Enabled, workflow.Meta.Timeout, workflow.Meta.ServiceAccountID, workflow.Meta.CronEnabled, workflow.Meta.WebhookEnabled)
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("CreateWorkflow", workflow.ID, message, false)
 		return nil, err
+	}
+
+	if workflow.Meta.WebhookEnabled {
+		token := GenerateWebhookToken()
+		if err := secretservice.Put(ctx, secretmodel.OwnerKindWorkflow, workflow.ID, secretmodel.PurposeWebhookToken, token); err != nil {
+			_ = repo.DeleteWorkflow(ctx, workflow.ID)
+			return nil, err
+		}
+		if err := repo.UpdateWorkflowStatus(ctx, workflow.ID, func(status *workflowmodel.WorkflowV1Status) {
+			status.UpdatedAt = time.Now()
+			status.HasWebhookSecret = true
+		}); err != nil {
+			_ = secretservice.Delete(ctx, secretmodel.OwnerKindWorkflow, workflow.ID, secretmodel.PurposeWebhookToken)
+			_ = repo.DeleteWorkflow(ctx, workflow.ID)
+			return nil, err
+		}
 	}
 
 	updated, _ := repo.GetWorkflow(ctx, workflow.ID)
@@ -327,12 +343,7 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *workflowmodel.Work
 
 	old.Meta = workflow.Meta
 	old.Status.UpdatedAt = time.Now()
-	if old.Meta.WebhookEnabled && old.Status.WebhookToken == "" {
-		old.Status.WebhookToken = workflow.Status.WebhookToken
-		if old.Status.WebhookToken == "" {
-			old.Status.WebhookToken = GenerateWebhookToken()
-		}
-	}
+	old.Status.HasWebhookSecret = false
 	err = repo.SaveWorkflow(ctx, old)
 
 	message := fmt.Sprintf("Updated workflow %s", workflow.Meta.Name)
@@ -345,6 +356,32 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *workflowmodel.Work
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, false)
 		return nil, err
+	}
+
+	if old.Meta.WebhookEnabled {
+		if !secretservice.Has(ctx, secretmodel.OwnerKindWorkflow, id, secretmodel.PurposeWebhookToken) {
+			if err := secretservice.Put(ctx, secretmodel.OwnerKindWorkflow, id, secretmodel.PurposeWebhookToken, GenerateWebhookToken()); err != nil {
+				return nil, err
+			}
+		}
+		if err := repo.UpdateWorkflowStatus(ctx, id, func(status *workflowmodel.WorkflowV1Status) {
+			status.UpdatedAt = time.Now()
+			status.HasWebhookSecret = true
+		}); err != nil {
+			return nil, err
+		}
+	} else {
+		if secretservice.Has(ctx, secretmodel.OwnerKindWorkflow, id, secretmodel.PurposeWebhookToken) {
+			if err := secretservice.Delete(ctx, secretmodel.OwnerKindWorkflow, id, secretmodel.PurposeWebhookToken); err != nil {
+				return nil, err
+			}
+		}
+		if err := repo.UpdateWorkflowStatus(ctx, id, func(status *workflowmodel.WorkflowV1Status) {
+			status.UpdatedAt = time.Now()
+			status.HasWebhookSecret = false
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	updated, _ := repo.GetWorkflow(ctx, id)
@@ -364,12 +401,21 @@ func ResetWebhookToken(ctx context.Context, id string) (string, error) {
 		commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, "Failed", false)
 		return "", err
 	}
+	if !workflow.Meta.WebhookEnabled {
+		commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, "Failed", false)
+		return "", fmt.Errorf("workflow %s webhook is disabled", id)
+	}
 	newToken := GenerateWebhookToken()
-	workflow.Status.WebhookToken = newToken
-	workflow.Status.UpdatedAt = time.Now()
-	err = repo.SaveWorkflow(ctx, workflow)
+	err = secretservice.Put(ctx, secretmodel.OwnerKindWorkflow, id, secretmodel.PurposeWebhookToken, newToken)
 
 	if err != nil {
+		commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, "Failed", false)
+		return "", err
+	}
+	if err := repo.UpdateWorkflowStatus(ctx, id, func(status *workflowmodel.WorkflowV1Status) {
+		status.UpdatedAt = time.Now()
+		status.HasWebhookSecret = true
+	}); err != nil {
 		commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, "Failed", false)
 		return "", err
 	}
@@ -391,7 +437,21 @@ func GetWorkflow(ctx context.Context, id string) (*workflowmodel.Workflow, error
 }
 
 func GetWorkflowByWebhookToken(ctx context.Context, token string) (*workflowmodel.Workflow, error) {
-	return repo.GetWorkflowByWebhookToken(ctx, token)
+	id, err := secretservice.FindOwnerIDByPlaintext(ctx, secretmodel.PurposeWebhookToken, token)
+	if err != nil {
+		return nil, err
+	}
+	wf, err := repo.GetWorkflow(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !wf.Meta.WebhookEnabled || !wf.Status.HasWebhookSecret {
+		return nil, fmt.Errorf("workflow %s webhook is disabled", id)
+	}
+	if err := secretservice.Touch(ctx, secretmodel.OwnerKindWorkflow, id, secretmodel.PurposeWebhookToken); err != nil {
+		return nil, err
+	}
+	return wf, nil
 }
 
 func DeleteWorkflow(ctx context.Context, id string) error {
@@ -417,6 +477,12 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 
 	snapshot, _ := json.Marshal(wf)
 	message := fmt.Sprintf("Deleted workflow %s. Snapshot: %s", wf.Meta.Name, string(snapshot))
+	if wf.Status.HasWebhookSecret {
+		if err := secretservice.Delete(ctx, secretmodel.OwnerKindWorkflow, id, secretmodel.PurposeWebhookToken); err != nil {
+			commonaudit.FromContext(ctx).Log("DeleteWorkflow", id, message, false)
+			return err
+		}
+	}
 	if err := repo.DeleteWorkflow(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteWorkflow", id, message, false)
 		return err

@@ -2,14 +2,13 @@ package auth
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"homelab/pkg/common"
-	rbacrepo "homelab/pkg/repositories/core/rbac"
-	"time"
-
 	rbacmodel "homelab/pkg/models/core/rbac"
+	secretmodel "homelab/pkg/models/core/secret"
+	rbacrepo "homelab/pkg/repositories/core/rbac"
+	secretservice "homelab/pkg/services/core/secret"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -31,6 +30,7 @@ func UpdateSALastUsed(saID string) {
 		_ = rbacrepo.UpdateServiceAccountStatus(ctx, saID, func(status *rbacmodel.ServiceAccountV1Status) {
 			status.LastUsedAt = now.Format(time.RFC3339)
 		})
+		_ = secretservice.Touch(ctx, secretmodel.OwnerKindServiceAccount, saID, secretmodel.PurposeAuthToken)
 	}()
 }
 
@@ -45,6 +45,7 @@ func CreateSAToken(saID string) (string, error) {
 }
 
 func VerifySAToken(ctx context.Context, tokenString string) (string, error) {
+	_ = ctx
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -70,21 +71,18 @@ func VerifySAToken(ctx context.Context, tokenString string) (string, error) {
 	return saID, nil
 }
 
-func HashToken(token string) string {
-	hash := sha256.Sum256([]byte(token))
-	return hex.EncodeToString(hash[:])
-}
-
 func IsSAEnabled(ctx context.Context, saID string, currentToken string) bool {
 	sa, err := rbacrepo.GetServiceAccount(ctx, saID)
 	if err != nil || sa == nil {
 		return false
 	}
-	// If currentToken is provided, it MUST match the hash stored in DB.
+	if !sa.Meta.Enabled || !sa.Status.HasAuthSecret {
+		return false
+	}
 	if currentToken != "" {
-		if sa.Status.TokenHash != HashToken(currentToken) {
+		if !secretservice.Matches(ctx, secretmodel.OwnerKindServiceAccount, saID, secretmodel.PurposeAuthToken, currentToken) {
 			return false
 		}
 	}
-	return sa.Meta.Enabled
+	return true
 }

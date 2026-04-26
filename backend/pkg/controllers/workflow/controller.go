@@ -428,7 +428,7 @@ func ValidateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags actions
 // @Produce json
 // @Param id path string true "Workflow ID"
-// @Success 200 {string} string "New Webhook Token"
+// @Success 200 {object} apiv1.WebhookTokenResponse
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Workflow Not Found"
@@ -441,7 +441,7 @@ func ResetWebhookTokenHandler(w http.ResponseWriter, r *http.Request) {
 		controllercommon.HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, token)
+	common.Success(w, r, apiv1.WebhookTokenResponse{Token: token})
 }
 
 // WebhookHandler godoc

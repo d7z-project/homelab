@@ -34,9 +34,13 @@ type WorkflowMeta struct {
 }
 
 type WorkflowStatus struct {
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
-	WebhookToken string    `json:"webhookToken,omitempty"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
+	HasWebhookSecret bool      `json:"hasWebhookSecret"`
+}
+
+type WebhookTokenResponse struct {
+	Token string `json:"token"`
 }
 
 type Workflow struct {

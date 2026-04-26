@@ -8,34 +8,36 @@ import (
 )
 
 var Opts = &Options{
-	Bind:         ":8080",
-	DB:           "memory://",
-	Lock:         "memory://",
-	Queue:        "memory://",
-	VFS:          "memory://",
-	TempDir:      "memory://",
-	PubSub:       "memory://",
-	RootPassword: "admin",
-	TotpAuth:     "",
-	JWTSecret:    "change-me-please",
-	Workflow:     true,
-	Intelligence: true,
+	Bind:            ":8080",
+	DB:              "memory://",
+	Lock:            "memory://",
+	Queue:           "memory://",
+	VFS:             "memory://",
+	TempDir:         "memory://",
+	PubSub:          "memory://",
+	SecretAES256Key: "0123456789abcdef0123456789abcdef",
+	RootPassword:    "admin",
+	TotpAuth:        "",
+	JWTSecret:       "change-me-please",
+	Workflow:        true,
+	Intelligence:    true,
 }
 
 type Options struct {
-	Bind         string `yaml:"bind" env:"HOMELAB_BIND"`
-	DB           string `yaml:"db" env:"HOMELAB_DB"`
-	Lock         string `yaml:"lock" env:"HOMELAB_LOCK"`
-	Queue        string `yaml:"queue" env:"HOMELAB_QUEUE"`
-	VFS          string `yaml:"vfs" env:"HOMELAB_VFS"`
-	TempDir      string `yaml:"temp_dir" env:"HOMELAB_TEMP_DIR"`
-	PubSub       string `yaml:"pub_sub" env:"HOMELAB_PUB_SUB"`
-	RootPassword string `yaml:"password" env:"HOMELAB_PASSWORD"`
-	TotpAuth     string `yaml:"totp_auth" env:"HOMELAB_TOTP_AUTH"`
-	JWTSecret    string `yaml:"jwt_secret" env:"HOMELAB_JWT_SECRET"`
-	SessionTTL   string `yaml:"session_ttl" env:"HOMELAB_SESSION_TTL"`
-	Workflow     bool   `yaml:"workflow" env:"HOMELAB_WORKFLOW"`
-	Intelligence bool   `yaml:"intelligence" env:"HOMELAB_INTELLIGENCE"`
+	Bind            string `yaml:"bind" env:"HOMELAB_BIND"`
+	DB              string `yaml:"db" env:"HOMELAB_DB"`
+	Lock            string `yaml:"lock" env:"HOMELAB_LOCK"`
+	Queue           string `yaml:"queue" env:"HOMELAB_QUEUE"`
+	VFS             string `yaml:"vfs" env:"HOMELAB_VFS"`
+	TempDir         string `yaml:"temp_dir" env:"HOMELAB_TEMP_DIR"`
+	PubSub          string `yaml:"pub_sub" env:"HOMELAB_PUB_SUB"`
+	SecretAES256Key string `yaml:"secret_aes256_key" env:"HOMELAB_SECRET_AES256_KEY"`
+	RootPassword    string `yaml:"password" env:"HOMELAB_PASSWORD"`
+	TotpAuth        string `yaml:"totp_auth" env:"HOMELAB_TOTP_AUTH"`
+	JWTSecret       string `yaml:"jwt_secret" env:"HOMELAB_JWT_SECRET"`
+	SessionTTL      string `yaml:"session_ttl" env:"HOMELAB_SESSION_TTL"`
+	Workflow        bool   `yaml:"workflow" env:"HOMELAB_WORKFLOW"`
+	Intelligence    bool   `yaml:"intelligence" env:"HOMELAB_INTELLIGENCE"`
 }
 
 func (o *Options) ParseEnv() {

@@ -73,9 +73,10 @@ func (m *WorkflowV1Meta) Validate(_ context.Context) error {
 }
 
 type WorkflowV1Status struct {
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
-	WebhookToken string    `json:"webhookToken,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	// HasWebhookSecret reports whether a webhook secret is provisioned for this workflow.
+	HasWebhookSecret bool `json:"hasWebhookSecret"`
 }
 
 type Workflow = shared.Resource[WorkflowV1Meta, WorkflowV1Status]
@@ -108,19 +109,24 @@ func (m *TaskInstanceV1Meta) Validate(_ context.Context) error {
 }
 
 type TaskInstanceV1Status struct {
-	Status         shared.TaskStatus   `json:"status"`
-	CurrentStep    int                 `json:"currentStep"`
-	StartedAt      time.Time           `json:"startedAt"`
-	FinishedAt     *time.Time          `json:"finishedAt,omitempty"`
-	Error          string              `json:"error,omitempty"`
-	Workspace      string              `json:"workspace,omitempty"`
-	QueueTopic     string              `json:"queueTopic,omitempty"`
-	QueueMessageID string              `json:"queueMessageId,omitempty"`
-	QueuedAt       *time.Time          `json:"queuedAt,omitempty"`
-	DispatchedAt   *time.Time          `json:"dispatchedAt,omitempty"`
-	Outputs        map[string]string   `json:"outputs"`
-	Logs           []LogEntry          `json:"logs"`
-	StepTimings    map[int]*StepTiming `json:"stepTimings"`
+	Status      shared.TaskStatus `json:"status"`
+	CurrentStep int               `json:"currentStep"`
+	StartedAt   time.Time         `json:"startedAt"`
+	FinishedAt  *time.Time        `json:"finishedAt,omitempty"`
+	Error       string            `json:"error,omitempty"`
+	// Workspace is the executor-owned runtime workspace path for the current task instance.
+	Workspace string `json:"workspace,omitempty"`
+	// QueueTopic records which dispatch topic accepted this instance for execution.
+	QueueTopic string `json:"queueTopic,omitempty"`
+	// QueueMessageID stores the queue message identifier used for dispatch tracking.
+	QueueMessageID string `json:"queueMessageId,omitempty"`
+	// QueuedAt records when the execution request was published to the queue.
+	QueuedAt *time.Time `json:"queuedAt,omitempty"`
+	// DispatchedAt records when a worker accepted the execution request from the queue.
+	DispatchedAt *time.Time          `json:"dispatchedAt,omitempty"`
+	Outputs      map[string]string   `json:"outputs"`
+	Logs         []LogEntry          `json:"logs"`
+	StepTimings  map[int]*StepTiming `json:"stepTimings"`
 }
 
 type TaskInstance = shared.Resource[TaskInstanceV1Meta, TaskInstanceV1Status]
