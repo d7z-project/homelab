@@ -4,15 +4,13 @@ import (
 	"context"
 	"homelab/pkg/common"
 	commonauth "homelab/pkg/common/auth"
+	taskpkg "homelab/pkg/common/task"
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
 	runtimepkg "homelab/pkg/runtime"
-
 	"sync"
 	"time"
-
-	"homelab/pkg/common/task"
 
 	"github.com/robfig/cron/v3"
 )
@@ -29,47 +27,10 @@ type IPPoolService struct {
 	cronLock       sync.Mutex
 	exportManager  *ExportManager
 	analysisEngine *AnalysisEngine
-	syncTasks      *task.Manager[*SyncTask]
+	syncTasks      *taskpkg.Manager[*SyncTask]
 }
 
-type SyncTask struct {
-	ID        string            `json:"id"`
-	Status    shared.TaskStatus `json:"status"`
-	Progress  float64           `json:"progress"`
-	Error     string            `json:"error"`
-	CreatedAt time.Time         `json:"createdAt"`
-	mu        sync.Mutex
-}
-
-func (t *SyncTask) GetID() string { return t.ID }
-func (t *SyncTask) GetStatus() shared.TaskStatus {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Status
-}
-func (t *SyncTask) SetStatus(status shared.TaskStatus) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Status = status
-}
-func (t *SyncTask) SetError(msg string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Error = msg
-}
-func (t *SyncTask) GetCreatedAt() time.Time { return t.CreatedAt }
-func (t *SyncTask) GetProgress() float64 {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Progress
-}
-func (t *SyncTask) SetProgress(progress float64) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Progress = progress
-}
-
-var _ shared.TaskInfo = (*SyncTask)(nil)
+type SyncTask = taskpkg.SimpleTask
 
 func NewIPPoolService(deps runtimepkg.ModuleDeps, ae *AnalysisEngine, em *ExportManager) *IPPoolService {
 	svc := &IPPoolService{
@@ -78,20 +39,20 @@ func NewIPPoolService(deps runtimepkg.ModuleDeps, ae *AnalysisEngine, em *Export
 		exportManager:  em,
 		cron:           cron.New(),
 		cronIDs:        make(map[string]cron.EntryID),
-		syncTasks:      task.NewManager[*SyncTask](deps, "action:ip_sync", "sync_tasks", "network", "ip"),
+		syncTasks:      taskpkg.NewManager[*SyncTask](deps, "action:ip_sync", "sync_tasks", "network", "ip"),
 	}
 
 	// 集群事件: 变更同步策略时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
-	common.RegisterEventHandler(common.EventIPSyncPolicyChanged, func(ctx context.Context, policyID string) {
-		policy, err := repo.GetSyncPolicy(ctx, policyID)
+	common.RegisterEventHandler(common.EventIPSyncPolicyChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
+		policy, err := repo.GetSyncPolicy(ctx, payload.ID)
 		if err != nil {
-			svc.removeCronJob(policyID)
+			svc.removeCronJob(payload.ID)
 			return
 		}
 		if policy.Meta.Enabled {
 			svc.addCronJob(*policy)
 		} else {
-			svc.removeCronJob(policyID)
+			svc.removeCronJob(payload.ID)
 		}
 	})
 
@@ -113,7 +74,7 @@ func (s *IPPoolService) lockPool(ctx context.Context, id string) (func(), error)
 	}
 }
 
-func (s *IPPoolService) GetSyncTasks() *task.Manager[*SyncTask] {
+func (s *IPPoolService) GetSyncTasks() *taskpkg.Manager[*SyncTask] {
 	return s.syncTasks
 }
 

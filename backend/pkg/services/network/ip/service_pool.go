@@ -301,5 +301,5 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursorS
 
 func notifyIPPoolChanged(ctx context.Context, groupID string) {
 	common.UpdateGlobalVersion(ctx, "network/ip/pool/"+groupID)
-	common.NotifyCluster(ctx, common.EventIPPoolChanged, groupID)
+	common.NotifyCluster(ctx, common.EventIPPoolChanged, common.ResourceEventPayload{ID: groupID})
 }

@@ -3,20 +3,23 @@ package intelligence
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
+	networkcommon "homelab/pkg/models/network/common"
 	"homelab/pkg/models/shared"
 )
 
 type IntelligenceSourceV1Meta struct {
-	Name       string            `json:"name"`
-	Type       string            `json:"type"`
-	URL        string            `json:"url"`
-	Enabled    bool              `json:"enabled"`
-	AutoUpdate bool              `json:"autoUpdate"`
-	UpdateCron string            `json:"cron"`
-	Config     map[string]string `json:"config"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	URL        string `json:"url"`
+	Enabled    bool   `json:"enabled"`
+	AutoUpdate bool   `json:"autoUpdate"`
+	UpdateCron string `json:"cron"`
+	// Config stores non-sensitive runtime options. Credentials must not be embedded here.
+	Config map[string]string `json:"config"`
 }
 
 func (m *IntelligenceSourceV1Meta) Validate(_ context.Context) error {
@@ -39,6 +42,11 @@ func (m *IntelligenceSourceV1Meta) Validate(_ context.Context) error {
 	}
 	if m.Config == nil {
 		m.Config = map[string]string{}
+	}
+	for key := range m.Config {
+		if networkcommon.LooksSensitiveConfigKey(key) {
+			return fmt.Errorf("config key %q is reserved for secret data and must not be stored in source config", key)
+		}
 	}
 	return nil
 }

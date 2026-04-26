@@ -3,6 +3,7 @@ package dns
 import (
 	"context"
 	"errors"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -11,15 +12,24 @@ import (
 
 type DomainV1Meta struct {
 	Name        string `json:"name"`
+	Email       string `json:"email"`
+	PrimaryNS   string `json:"primaryNs"`
 	Enabled     bool   `json:"enabled"`
 	Description string `json:"description"`
 }
 
 func (m *DomainV1Meta) Validate(_ context.Context) error {
 	m.Name = strings.TrimSpace(m.Name)
+	m.Email = strings.TrimSpace(m.Email)
+	m.PrimaryNS = strings.TrimSpace(m.PrimaryNS)
 	m.Description = strings.TrimSpace(m.Description)
 	if m.Name == "" {
 		return errors.New("domain name is required")
+	}
+	if m.Email != "" {
+		if _, err := mail.ParseAddress(m.Email); err != nil {
+			return errors.New("domain email is invalid")
+		}
 	}
 	return nil
 }

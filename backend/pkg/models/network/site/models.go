@@ -14,11 +14,12 @@ import (
 )
 
 type SiteSyncPolicyV1Meta struct {
-	Name          string            `json:"name"`
-	Description   string            `json:"description"`
-	SourceURL     string            `json:"sourceUrl"`
-	Format        string            `json:"format"`
-	Mode          string            `json:"mode"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	SourceURL   string `json:"sourceUrl"`
+	Format      string `json:"format"`
+	Mode        string `json:"mode"`
+	// Config stores non-sensitive parser and import options. Credentials must not be embedded here.
 	Config        map[string]string `json:"config"`
 	TargetGroupID string            `json:"targetGroupId"`
 	Cron          string            `json:"cron"`
@@ -55,6 +56,11 @@ func (m *SiteSyncPolicyV1Meta) Validate(_ context.Context) error {
 	}
 	if m.Config == nil {
 		m.Config = map[string]string{}
+	}
+	for key := range m.Config {
+		if networkcommon.LooksSensitiveConfigKey(key) {
+			return fmt.Errorf("config key %q is reserved for secret data and must not be stored in policy config", key)
+		}
 	}
 	return nil
 }

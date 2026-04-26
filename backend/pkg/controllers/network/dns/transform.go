@@ -19,6 +19,8 @@ func toModelDomain(api apiv1.Domain) dnsmodel.Domain {
 		ID: api.ID,
 		Meta: dnsmodel.DomainV1Meta{
 			Name:        api.Meta.Name,
+			Email:       api.Meta.Email,
+			PrimaryNS:   api.Meta.PrimaryNS,
 			Enabled:     api.Meta.Enabled,
 			Description: api.Meta.Description,
 		},
@@ -36,6 +38,8 @@ func toAPIDomain(model dnsmodel.Domain) apiv1.Domain {
 		ID: model.ID,
 		Meta: apiv1.DomainMeta{
 			Name:        model.Meta.Name,
+			Email:       model.Meta.Email,
+			PrimaryNS:   model.Meta.PrimaryNS,
 			Enabled:     model.Meta.Enabled,
 			Description: model.Meta.Description,
 		},

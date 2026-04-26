@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	runtimepkg "homelab/pkg/runtime"
 	"log"
-	"reflect"
 	"strings"
 	"sync"
 )
@@ -23,6 +22,10 @@ const (
 	EventWorkflowTriggerChanged = "workflow_trigger_changed"
 )
 
+type ResourceEventPayload struct {
+	ID string `json:"id"`
+}
+
 type eventDispatcher interface {
 	Dispatch(ctx context.Context, payload string)
 }
@@ -33,15 +36,6 @@ type genericDispatcher[T any] struct {
 
 func (d *genericDispatcher[T]) Dispatch(ctx context.Context, payloadStr string) {
 	var payload T
-	t := reflect.TypeOf(payload)
-	if t != nil && t.Kind() == reflect.String {
-		if s, ok := any(&payload).(*string); ok {
-			*s = payloadStr
-			d.handler(ctx, payload)
-			return
-		}
-	}
-
 	if err := json.Unmarshal([]byte(payloadStr), &payload); err != nil {
 		log.Printf("[Events] failed to unmarshal payload %q into %T: %v", payloadStr, payload, err)
 		return
@@ -136,14 +130,8 @@ func NotifyCluster(ctx context.Context, event string, payload any) {
 	}
 	msg := event
 	if payload != nil {
-		var pStr string
-		if s, ok := payload.(string); ok {
-			pStr = s
-		} else {
-			data, _ := json.Marshal(payload)
-			pStr = string(data)
-		}
-		msg = event + ":" + pStr
+		data, _ := json.Marshal(payload)
+		msg = event + ":" + string(data)
 	}
 
 	if err := subscriber.Publish(ctx, "homelab:cluster:events", msg); err != nil {
@@ -159,12 +147,8 @@ func TriggerEvent(ctx context.Context, event string, payload any) {
 
 	payloadStr := ""
 	if payload != nil {
-		if s, ok := payload.(string); ok {
-			payloadStr = s
-		} else {
-			data, _ := json.Marshal(payload)
-			payloadStr = string(data)
-		}
+		data, _ := json.Marshal(payload)
+		payloadStr = string(data)
 	}
 	for _, d := range dispatchers {
 		d.Dispatch(ctx, payloadStr)

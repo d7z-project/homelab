@@ -13,14 +13,18 @@
 ### 1. 入口与运行时 - `backend/main.go`, `backend/pkg/runtime/`
 - `main.go` 只负责基础设施初始化、模块装配、HTTP server 生命周期。
 - 基础设施依赖统一通过 `runtime.Dependencies` 和 `runtime.ModuleDeps` 下发。
-- 业务代码不要绕过 `runtime` 自建全局单例；需要 DB、Lock、PubSub、FS、Registry 时，优先从 context 读取。
+- 业务代码不要绕过 `runtime` 自建全局单例；需要 DB、Lock、Queue、PubSub、FS、Registry 时，优先从 context 读取。
 - 新增后端能力时，优先做成独立 `Module`，实现 `Name / Init / RegisterRoutes / Start / Stop`。
 
 ### 2. 模块层 - `backend/pkg/modules/`
-- 模块负责组装 service、注册路由、在 `Start` 阶段注册 discovery / actions / cron / 事件订阅。
+- 模块负责组装 service、注册路由、在 `Start` 阶段注册 discovery / actions / cron / queue consumer / 事件订阅。
 - 路由注册统一使用 `routerx.Mount` 或 `routerx.WithScope`，不要再手写旧式 `r.With(...).Method(...)`。
 - 模块间共享的横切依赖通过 `runtime.ModuleDeps` 或显式构造参数传入，不要在 controller 里临时拼装。
 - 可选模块应在 `bootstrap.go` 中通过开关统一启停，保持装配入口单一。
+- 当前模块开关统一放在 `Options.Modules` 下，而不是顶层平铺字段。
+- 现有配置项示例：
+  - YAML: `modules.workflow`, `modules.intelligence`
+  - ENV: `HOMELAB_WORKFLOW`, `HOMELAB_INTELLIGENCE`
 
 ### 3. 控制器层 - `backend/pkg/controllers/`
 - controller 负责请求绑定、路径参数提取、调用 service、映射 HTTP 响应。
@@ -34,11 +38,12 @@
 - 路由层权限检查不是 service 层权限检查的替代。涉及实例级资源、系统任务或内部调用时，service 仍应做必要的权限校验。
 - 权限拒绝错误必须包装为 `fmt.Errorf("%w: ...", commonauth.ErrPermissionDenied)`，保证 controller 能稳定映射成 `403`。
 - 长时间任务必须优先复用 `pkg/common/task.Manager`，支持取消、状态持久化、重启后自愈。
+- 跨节点异步执行默认通过 `queue` 分发；`task.Manager`、`workflow.Executor`、导出管理器负责运行时状态，不负责集群投递。
 - 需要后台执行时，应显式考虑 `context` 生命周期；如果任务必须脱离请求存活，使用 `runtime.DetachContext` 或新的后台 context。
 
 ### 5. 仓储与存储层 - `backend/pkg/repositories/`, `backend/pkg/store/`
 - repository 负责领域对象的查询与持久化，不承载业务编排。
-- 当前标准资源型存储统一基于 `common.BaseRepository` + `store.ResourceStore`。
+- 当前标准资源型存储统一基于 `common.ResourceRepository` + `store.ResourceStore`。
 - 新资源默认建模为 `shared.Resource[Meta, Status]`，而不是散装 KV 字段集合。
 - repository 命名保持现有风格：
   - 分页查询：`ScanXxx(ctx, cursor, limit, search)`
@@ -49,6 +54,7 @@
 ### 6. 模型层 - `backend/pkg/models/`, `backend/pkg/apis/`
 - 领域模型优先使用 `shared.Resource[Meta, Status]` 组织配置与运行状态。
 - `Meta` 负责配置输入，`Status` 负责运行态、时间戳、任务结果等衍生状态。
+- 不要把 secret 放进普通资源的 `Meta` 或 `Status`。敏感 token、webhook secret、凭据应优先落到 `core.secret` 模块，由资源仅暴露布尔状态或引用信息。
 - `Meta.Validate(context.Context)` 是当前主校验入口；不要强制要求所有模型实现 `render.Binder`。
 - API DTO 与内部模型的转换应留在 controller 下的 `transform.go` 或同层辅助函数，不要把 API 结构直接下沉到 repository。
 - 分页响应统一使用 `shared.PaginationResponse[T]`，游标统一为 `string`。
@@ -68,7 +74,7 @@
   - `root`：基于 session 的人工登录
   - `sa`：ServiceAccount token
 - `root` 会话需要校验 JWT、Session 是否存在、IP/UA 是否匹配。
-- `sa` token 当前采用 JWT 明文签发，但库中只持久化 token 的 SHA-256 哈希值，不存明文。
+- `sa` token 当前采用 JWT 明文签发，但实际持久化统一走 `core.secret`；资源对象只保留 `HasAuthSecret` 这类状态位，不暴露明文或哈希。
 - 后台系统任务如果需要全权限，不要盲目使用 `commonauth.SystemContext()` 丢掉运行时依赖；优先在现有 context 上注入 `AuthContext` 与 `Permissions`。
 
 ### 3. 审计
@@ -96,6 +102,7 @@
   - 手动取消
   - 分布式锁防重
   - 重启后 `Reconcile`
+- 如果任务需要跨节点分发，先通过 `queue.Publish/Consume` 交给某个节点，再进入现有 runtime；不要再用 cluster event 广播去模拟任务队列。
 
 ### 2. 定时任务
 - 定时调度统一基于 `robfig/cron`。
@@ -103,7 +110,7 @@
 
 ### 3. 事件总线
 - 集群事件通过 `common.NotifyCluster` / `RegisterEventHandler` / `StartEventLoop` 协作。
-- payload 可以是字符串或 JSON 结构体；新增事件时优先使用结构化 payload，避免把解析协议散落到调用方。
+- payload 应使用结构化 JSON；不要新增依赖裸字符串 payload 的事件协议。
 - 如果事件发布不应受请求取消影响，应显式切换到合适的后台 context，不要默认复用可能已取消的 `taskCtx`。
 
 ## 文件系统与工作目录
@@ -129,6 +136,10 @@
 - 所有用户提供的下载 URL 都必须经过 `common.ValidateURL(url, allowPrivate)` 做 SSRF 校验。
 - 涉及内部网络访问、HTTP processor、同步源拉取时，默认先考虑私网访问风险。
 - 不要在日志、接口响应或资源持久化中暴露明文敏感 token。
+- `core.secret` 的配置统一走 `Options.Secret` / `HOMELAB_SECRET`：
+  - `plain`：测试或本地开发可用，不做静态加密
+  - `aes256:<key>`：生产默认形式，使用 `AES-256-GCM`；`<key>` 解码后必须为 32 字节
+- 需要持久化 secret 时，统一通过 `core.secret` service 写入，不要直接拼装密文或自行操作 secret 索引 KV。
 
 ## 测试与验证
 

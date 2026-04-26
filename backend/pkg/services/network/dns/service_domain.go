@@ -16,6 +16,22 @@ import (
 	"github.com/google/uuid"
 )
 
+func defaultDomainEmail(domainName string) string {
+	return "admin@" + domainName
+}
+
+func defaultPrimaryNS(domainName string) string {
+	return fmt.Sprintf("ns1.%s.", domainName)
+}
+
+func soaRName(email string) string {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return ""
+	}
+	return strings.Replace(email, "@", ".", 1) + "."
+}
+
 func lockDomain(ctx context.Context, id string) (func(), error) {
 	return common.LockWithTimeout(ctx, "network:dns:domain:"+id, 0)
 }
@@ -65,6 +81,12 @@ func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domai
 	}
 
 	domain.ID = uuid.New().String()
+	if domain.Meta.Email == "" {
+		domain.Meta.Email = defaultDomainEmail(domain.Meta.Name)
+	}
+	if domain.Meta.PrimaryNS == "" {
+		domain.Meta.PrimaryNS = defaultPrimaryNS(domain.Meta.Name)
+	}
 	domain.Status.CreatedAt = time.Now()
 	domain.Status.UpdatedAt = time.Now()
 	err := dnsrepo.SaveDomain(ctx, domain)
@@ -86,8 +108,8 @@ func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domai
 		},
 		Status: dnsmodel.RecordV1Status{
 			SOA: &dnsmodel.SOAStatus{
-				MName:   fmt.Sprintf("ns1.%s.", domain.Meta.Name),
-				RName:   fmt.Sprintf("admin.%s.", domain.Meta.Name),
+				MName:   domain.Meta.PrimaryNS,
+				RName:   soaRName(domain.Meta.Email),
 				Serial:  generateSOASerial(),
 				Refresh: defaultSOARefresh,
 				Retry:   defaultSOARetry,
@@ -116,13 +138,34 @@ func UpdateDomain(ctx context.Context, id string, domain *dnsmodel.Domain) (*dns
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
+	if domain.Meta.Email == "" {
+		domain.Meta.Email = defaultDomainEmail(existing.Meta.Name)
+	}
+	if domain.Meta.PrimaryNS == "" {
+		domain.Meta.PrimaryNS = defaultPrimaryNS(existing.Meta.Name)
+	}
 	existing.Meta.Description = domain.Meta.Description
+	existing.Meta.Email = domain.Meta.Email
+	existing.Meta.PrimaryNS = domain.Meta.PrimaryNS
 	existing.Status.UpdatedAt = time.Now()
 	err = dnsrepo.SaveDomain(ctx, existing)
 
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Meta.Name, "Failed: "+err.Error(), false)
 		return nil, err
+	}
+	resp, _ := dnsrepo.ScanRecords(ctx, existing.ID, "", 100, "")
+	if resp != nil {
+		for _, record := range resp.Items {
+			if record.Meta.Type != "SOA" || record.Status.SOA == nil {
+				continue
+			}
+			record.Status.SOA.MName = existing.Meta.PrimaryNS
+			record.Status.SOA.RName = soaRName(existing.Meta.Email)
+			record.Status.SOA.Serial = incrementSOASerial(record.Status.SOA.Serial)
+			_ = dnsrepo.SaveRecord(ctx, &record)
+			break
+		}
 	}
 
 	updated, _ := dnsrepo.GetDomain(ctx, id)

@@ -47,9 +47,8 @@ func NewAnalysisEngine(enricher ruleservice.IPEnricher) *AnalysisEngine {
 		enricher:  enricher,
 	}
 
-	common.RegisterEventHandler(common.EventIPPoolChanged, func(ctx context.Context, payload string) {
-		groupID := payload
-		engine.RemoveCache(groupID)
+	common.RegisterEventHandler(common.EventIPPoolChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
+		engine.RemoveCache(payload.ID)
 	})
 
 	return engine

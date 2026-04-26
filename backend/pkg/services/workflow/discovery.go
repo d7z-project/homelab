@@ -12,6 +12,7 @@ import (
 
 	discoverymodel "homelab/pkg/models/core/discovery"
 	"homelab/pkg/models/shared"
+	workflowmodel "homelab/pkg/models/workflow"
 )
 
 func RegisterDiscovery(registry *registryruntime.Registry) {
@@ -38,7 +39,7 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 				if strings.HasPrefix(prefix, s+"/") {
 					idPrefix := strings.TrimPrefix(prefix, s+"/")
 					if s == "workflows" {
-						workflows, err := repo.ScanAllWorkflowsByPrefix(ctx, idPrefix)
+						workflows, err := scanWorkflowPrefixMatches(ctx, idPrefix, 50)
 						if err == nil {
 							for _, wf := range workflows {
 								res = append(res, discoverymodel.LookupItem{
@@ -95,4 +96,28 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 		}
 		return nil
 	})
+}
+
+func scanWorkflowPrefixMatches(ctx context.Context, idPrefix string, limit int) ([]workflowmodel.Workflow, error) {
+	items := make([]workflowmodel.Workflow, 0, limit)
+	cursor := ""
+	for len(items) < limit {
+		page, err := repo.ScanWorkflows(ctx, cursor, limit, idPrefix)
+		if err != nil {
+			return nil, err
+		}
+		for _, wf := range page.Items {
+			if idPrefix == "" || strings.HasPrefix(wf.ID, idPrefix) {
+				items = append(items, wf)
+				if len(items) >= limit {
+					break
+				}
+			}
+		}
+		if !page.HasMore {
+			break
+		}
+		cursor = page.NextCursor
+	}
+	return items, nil
 }

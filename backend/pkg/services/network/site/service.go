@@ -3,6 +3,7 @@ package site
 import (
 	"context"
 	commonauth "homelab/pkg/common/auth"
+	taskpkg "homelab/pkg/common/task"
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/site"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/robfig/cron/v3"
 	"homelab/pkg/common"
-	taskpkg "homelab/pkg/common/task"
 )
 
 const (
@@ -30,6 +30,8 @@ type SitePoolService struct {
 	cronLock sync.Mutex
 }
 
+type SyncTask = taskpkg.SimpleTask
+
 func NewSitePoolService(deps runtimepkg.ModuleDeps, engine *AnalysisEngine, em *ExportManager) *SitePoolService {
 	s := &SitePoolService{
 		deps:          deps,
@@ -42,16 +44,16 @@ func NewSitePoolService(deps runtimepkg.ModuleDeps, engine *AnalysisEngine, em *
 	s.cron.Start()
 
 	// 集群事件: 变更同步策略时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
-	common.RegisterEventHandler(common.EventSiteSyncPolicyChanged, func(ctx context.Context, policyID string) {
-		policy, err := repo.GetSyncPolicy(ctx, policyID)
+	common.RegisterEventHandler(common.EventSiteSyncPolicyChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
+		policy, err := repo.GetSyncPolicy(ctx, payload.ID)
 		if err != nil {
-			s.removeCronJob(policyID)
+			s.removeCronJob(payload.ID)
 			return
 		}
 		if policy.Meta.Enabled {
 			s.addCronJob(*policy)
 		} else {
-			s.removeCronJob(policyID)
+			s.removeCronJob(payload.ID)
 		}
 	})
 

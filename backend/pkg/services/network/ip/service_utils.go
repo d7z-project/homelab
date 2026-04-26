@@ -19,9 +19,5 @@ func generatePolicyID() string {
 }
 
 func validateSourceURL(urlStr string, policy *ipmodel.IPSyncPolicy) error {
-	allowPrivate := false
-	if policy != nil && policy.Meta.Config != nil && policy.Meta.Config["allowPrivate"] == "true" {
-		allowPrivate = true
-	}
-	return common.ValidateURL(urlStr, allowPrivate)
+	return common.ValidateSourceURL(urlStr, policy.Meta.Config)
 }

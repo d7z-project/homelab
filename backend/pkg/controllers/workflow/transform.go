@@ -167,7 +167,6 @@ func toAPITaskInstance(model workflowmodel.TaskInstance) apiv1.TaskInstance {
 			StartedAt:   model.Status.StartedAt,
 			FinishedAt:  model.Status.FinishedAt,
 			Error:       model.Status.Error,
-			Workspace:   model.Status.Workspace,
 			Outputs:     cloneStringMap(model.Status.Outputs),
 			Logs:        toAPILogEntries(model.Status.Logs),
 			StepTimings: toAPIStepTimings(model.Status.StepTimings),

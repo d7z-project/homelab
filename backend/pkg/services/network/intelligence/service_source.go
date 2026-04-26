@@ -29,7 +29,7 @@ func (s *IntelligenceService) CreateSource(ctx context.Context, source *intellig
 			*source = *updated
 			s.updateCronJob(*source)
 		}
-		common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, source.ID)
+		common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, common.ResourceEventPayload{ID: source.ID})
 	}
 	return err
 }
@@ -51,7 +51,7 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *intellig
 		if updated != nil {
 			s.updateCronJob(*updated)
 		}
-		common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, source.ID)
+		common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, common.ResourceEventPayload{ID: source.ID})
 		commonaudit.FromContext(ctx).Log("UpdateIntelligence", source.Meta.Name, "Success", true)
 	}
 	return err
@@ -93,7 +93,7 @@ func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error
 	_ = s.deps.FS.Remove(path)
 
 	// 通知集群：配置已变且库需卸载
-	common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, id)
+	common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, common.ResourceEventPayload{ID: id})
 	if src != nil {
 		common.NotifyCluster(ctx, common.EventMMDBUpdate, intelligencemodel.MMDBUpdatePayload{
 			ID:   id,

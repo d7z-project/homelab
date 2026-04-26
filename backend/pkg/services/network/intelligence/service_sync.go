@@ -118,11 +118,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 		_ = repo.SaveSource(taskCtx, source)
 
 		// SSRF 校验
-		allowPrivate := false
-		if source.Meta.Config != nil && source.Meta.Config["allowPrivate"] == "true" {
-			allowPrivate = true
-		}
-		if err := common.ValidateURL(source.Meta.URL, allowPrivate); err != nil {
+		if err := common.ValidateSourceURL(source.Meta.URL, source.Meta.Config); err != nil {
 			finalErr = err
 			return finalErr
 		}

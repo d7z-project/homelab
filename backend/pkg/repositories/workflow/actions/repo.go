@@ -42,16 +42,6 @@ func ScanWorkflows(ctx context.Context, cursor string, limit int, search string)
 	})
 }
 
-func ScanAllWorkflows(ctx context.Context) ([]workflowmodel.Workflow, error) {
-	return workflowRepo.ListAll(ctx)
-}
-
-func ScanAllWorkflowsByPrefix(ctx context.Context, idPrefix string) ([]workflowmodel.Workflow, error) {
-	return workflowRepo.ListAllFiltered(ctx, func(wf *workflowmodel.Workflow) bool {
-		return idPrefix == "" || strings.HasPrefix(wf.ID, idPrefix)
-	})
-}
-
 func WorkflowUsesServiceAccount(ctx context.Context, serviceAccountID string) (bool, *workflowmodel.Workflow, error) {
 	items, err := workflowRepo.ListAllFiltered(ctx, func(wf *workflowmodel.Workflow) bool {
 		return wf.Meta.ServiceAccountID == serviceAccountID

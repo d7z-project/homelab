@@ -173,6 +173,9 @@ func ValidateURL(urlStr string, allowPrivate bool) error {
 	if err != nil {
 		return fmt.Errorf("invalid URL: %w", err)
 	}
+	if u.User != nil {
+		return fmt.Errorf("%w: credentials in URL are not allowed", ErrBadRequest)
+	}
 
 	hostname := u.Hostname()
 	if hostname == "localhost" && !allowPrivate {
@@ -199,6 +202,14 @@ func ValidateURL(urlStr string, allowPrivate bool) error {
 	}
 
 	return nil
+}
+
+func AllowPrivateFromConfig(config map[string]string) bool {
+	return config != nil && config["allowPrivate"] == "true"
+}
+
+func ValidateSourceURL(urlStr string, config map[string]string) error {
+	return ValidateURL(urlStr, AllowPrivateFromConfig(config))
 }
 
 func isPrivateIP(ip net.IP) bool {

@@ -132,7 +132,6 @@ type TaskInstanceStatus struct {
 	StartedAt   time.Time           `json:"startedAt"`
 	FinishedAt  *time.Time          `json:"finishedAt,omitempty"`
 	Error       string              `json:"error,omitempty"`
-	Workspace   string              `json:"workspace,omitempty"`
 	Outputs     map[string]string   `json:"outputs"`
 	Logs        []LogEntry          `json:"logs"`
 	StepTimings map[int]*StepTiming `json:"stepTimings"`

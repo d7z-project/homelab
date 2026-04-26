@@ -36,11 +36,11 @@ func (m *TriggerManager) Start(ctx context.Context) {
 func (m *TriggerManager) registerClusterHandlers(ctx context.Context) {
 	rt := m.runtime
 	// 集群事件: 变更工作流触发器时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
-	common.RegisterEventHandler(common.EventWorkflowTriggerChanged, func(ctx context.Context, workflowID string) {
+	common.RegisterEventHandler(common.EventWorkflowTriggerChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
 		ctx = rt.WithContext(ctx)
-		wf, err := repo.GetWorkflow(ctx, workflowID)
+		wf, err := repo.GetWorkflow(ctx, payload.ID)
 		if err != nil {
-			m.RemoveTriggers(workflowID)
+			m.RemoveTriggers(payload.ID)
 			return
 		}
 		m.UpdateTriggers(*wf)
@@ -51,17 +51,23 @@ func (m *TriggerManager) InitTriggers(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	workflows, err := repo.ScanAllWorkflows(ctx)
-	if err != nil {
-		return err
-	}
-
 	count := 0
-	for _, wf := range workflows {
-		if wf.Meta.Enabled && wf.Meta.CronEnabled && wf.Meta.CronExpr != "" {
-			m.addCronJob(wf)
-			count++
+	cursor := ""
+	for {
+		workflows, err := repo.ScanWorkflows(ctx, cursor, 200, "")
+		if err != nil {
+			return err
 		}
+		for _, wf := range workflows.Items {
+			if wf.Meta.Enabled && wf.Meta.CronEnabled && wf.Meta.CronExpr != "" {
+				m.addCronJob(wf)
+				count++
+			}
+		}
+		if !workflows.HasMore {
+			break
+		}
+		cursor = workflows.NextCursor
 	}
 	log.Printf("TriggerManager: restored %d cron jobs from persistence", count)
 	return nil

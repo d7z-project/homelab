@@ -44,9 +44,8 @@ func NewAnalysisEngine(enricher ruleservice.IPEnricher) *AnalysisEngine {
 	cache, _ := lru.New[string, *CompositeMatcher](32)
 	engine := &AnalysisEngine{cache: cache, enricher: enricher}
 
-	common.RegisterEventHandler(common.EventSitePoolChanged, func(ctx context.Context, payload string) {
-		groupID := payload
-		engine.RemoveCache(groupID)
+	common.RegisterEventHandler(common.EventSitePoolChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
+		engine.RemoveCache(payload.ID)
 	})
 
 	return engine

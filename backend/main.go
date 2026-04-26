@@ -132,8 +132,8 @@ func main() {
 
 	mmdbSources, _ := intrepo.ScanAllSources(appCtx)
 	moduleOpts := moduleOptions{
-		enableWorkflow:     common.Opts.Workflow,
-		enableIntelligence: common.Opts.Intelligence,
+		enableWorkflow:     common.Opts.Modules.Workflow,
+		enableIntelligence: common.Opts.Modules.Intelligence,
 	}
 	modules := buildModules(moduleDeps, mmdbSources, moduleOpts)
 	if err := registerModules(app, modules); err != nil {

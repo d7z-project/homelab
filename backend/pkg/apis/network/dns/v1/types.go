@@ -3,12 +3,15 @@ package v1
 import (
 	"errors"
 	"net/http"
+	"net/mail"
 	"strings"
 	"time"
 )
 
 type DomainMeta struct {
 	Name        string `json:"name"`
+	Email       string `json:"email"`
+	PrimaryNS   string `json:"primaryNs"`
 	Enabled     bool   `json:"enabled"`
 	Description string `json:"description"`
 }
@@ -28,8 +31,15 @@ type Domain struct {
 
 func (d *Domain) Bind(_ *http.Request) error {
 	d.Meta.Name = strings.TrimSpace(d.Meta.Name)
+	d.Meta.Email = strings.TrimSpace(d.Meta.Email)
+	d.Meta.PrimaryNS = strings.TrimSpace(d.Meta.PrimaryNS)
 	if d.Meta.Name == "" {
 		return errors.New("domain name is required")
+	}
+	if d.Meta.Email != "" {
+		if _, err := mail.ParseAddress(d.Meta.Email); err != nil {
+			return errors.New("domain email is invalid")
+		}
 	}
 	return nil
 }

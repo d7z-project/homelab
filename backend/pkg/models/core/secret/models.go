@@ -24,20 +24,20 @@ type SecretV1Meta struct {
 	OwnerID string `json:"ownerId"`
 	// Purpose identifies the secret usage, for example "webhook_token" or "auth_token".
 	Purpose string `json:"purpose"`
-	// Algorithm records the encryption algorithm used for the ciphertext payload.
-	Algorithm string `json:"algorithm"`
+	// Mode records how the payload is stored, for example "plain" or "aes256-gcm".
+	Mode string `json:"mode"`
 }
 
 func (m *SecretV1Meta) Validate(_ context.Context) error {
 	m.OwnerKind = strings.TrimSpace(m.OwnerKind)
 	m.OwnerID = strings.TrimSpace(m.OwnerID)
 	m.Purpose = strings.TrimSpace(m.Purpose)
-	m.Algorithm = strings.TrimSpace(m.Algorithm)
+	m.Mode = strings.TrimSpace(m.Mode)
 	if m.OwnerKind == "" || m.OwnerID == "" || m.Purpose == "" {
 		return errors.New("ownerKind, ownerId and purpose are required")
 	}
-	if m.Algorithm == "" {
-		return errors.New("algorithm is required")
+	if m.Mode == "" {
+		return errors.New("mode is required")
 	}
 	return nil
 }
@@ -49,10 +49,10 @@ type SecretV1Status struct {
 	LastUsedAt time.Time `json:"lastUsedAt,omitempty"`
 	// Digest stores an HMAC digest used for O(1) lookup without decrypting the secret body.
 	Digest string `json:"digest"`
-	// Nonce stores the AES-GCM nonce used to encrypt CipherText.
+	// Nonce stores the payload nonce when the selected mode requires one.
 	Nonce string `json:"nonce"`
-	// CipherText stores the encrypted secret payload.
-	CipherText string `json:"cipherText"`
+	// Payload stores the persisted secret body. It is plaintext in plain mode and ciphertext in encrypted modes.
+	Payload string `json:"payload"`
 }
 
 type Secret = shared.Resource[SecretV1Meta, SecretV1Status]

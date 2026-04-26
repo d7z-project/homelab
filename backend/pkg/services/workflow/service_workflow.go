@@ -305,7 +305,7 @@ func CreateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) (*wor
 	updated, _ := repo.GetWorkflow(ctx, workflow.ID)
 	commonaudit.FromContext(ctx).Log("CreateWorkflow", workflow.ID, message, true)
 	MustRuntime(ctx).TriggerManager.UpdateTriggers(*updated)
-	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, workflow.ID)
+	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, common.ResourceEventPayload{ID: workflow.ID})
 	return updated, nil
 }
 
@@ -387,7 +387,7 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *workflowmodel.Work
 	updated, _ := repo.GetWorkflow(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, true)
 	MustRuntime(ctx).TriggerManager.UpdateTriggers(*updated)
-	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, id)
+	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, common.ResourceEventPayload{ID: id})
 	return updated, nil
 }
 
@@ -488,7 +488,7 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 		return err
 	}
 	commonaudit.FromContext(ctx).Log("DeleteWorkflow", id, message, true)
-	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, id)
+	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, common.ResourceEventPayload{ID: id})
 	return nil
 }
 

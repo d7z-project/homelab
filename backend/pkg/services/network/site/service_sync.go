@@ -15,58 +15,28 @@ import (
 	repo "homelab/pkg/repositories/network/site"
 	"io"
 	"net/http"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/spf13/afero"
 	"golang.org/x/net/idna"
 )
 
-type SyncTask struct {
-	ID        string            `json:"id"`
-	Status    shared.TaskStatus `json:"status"`
-	Progress  float64           `json:"progress"`
-	Error     string            `json:"error"`
-	CreatedAt time.Time         `json:"createdAt"`
-	mu        sync.Mutex
-}
-
-func (t *SyncTask) GetID() string { return t.ID }
-func (t *SyncTask) GetStatus() shared.TaskStatus {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Status
-}
-func (t *SyncTask) SetStatus(status shared.TaskStatus) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Status = status
-}
-func (t *SyncTask) SetError(err string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Error = err
-}
-func (t *SyncTask) GetCreatedAt() time.Time { return t.CreatedAt }
-func (t *SyncTask) GetProgress() float64 {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Progress
-}
-func (t *SyncTask) SetProgress(p float64) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Progress = p
-}
-
 func validateSourceURL(url string, policy *sitemodel.SiteSyncPolicy) error {
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		return fmt.Errorf("only http/https URLs are allowed")
 	}
-	return nil
+	parsed, err := neturl.Parse(url)
+	if err != nil {
+		return err
+	}
+	if parsed.User != nil {
+		return fmt.Errorf("%w: credentials in sourceUrl are not allowed", common.ErrBadRequest)
+	}
+	return common.ValidateSourceURL(url, policy.Meta.Config)
 }
 
 func (s *SitePoolService) CreateSyncPolicy(ctx context.Context, policy *sitemodel.SiteSyncPolicy) error {
@@ -96,7 +66,7 @@ func (s *SitePoolService) CreateSyncPolicy(ctx context.Context, policy *sitemode
 	err := repo.SaveSyncPolicy(ctx, policy)
 	if err == nil && policy.Meta.Enabled {
 		s.addCronJob(*policy)
-		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, policy.ID)
+		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, common.ResourceEventPayload{ID: policy.ID})
 	}
 	commonaudit.FromContext(ctx).Log("CreateSiteSyncPolicy", policy.Meta.Name, "Created", err == nil)
 	return err
@@ -123,7 +93,7 @@ func (s *SitePoolService) UpdateSyncPolicy(ctx context.Context, policy *sitemode
 				s.removeCronJob(updated.ID)
 			}
 		}
-		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, policy.ID)
+		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, common.ResourceEventPayload{ID: policy.ID})
 	}
 	commonaudit.FromContext(ctx).Log("UpdateSiteSyncPolicy", policy.Meta.Name, "Updated", err == nil)
 	return err
@@ -137,7 +107,7 @@ func (s *SitePoolService) DeleteSyncPolicy(ctx context.Context, id string) error
 	err = repo.DeleteSyncPolicy(ctx, id)
 	if err == nil {
 		s.removeCronJob(id)
-		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, id)
+		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, common.ResourceEventPayload{ID: id})
 	}
 	commonaudit.FromContext(ctx).Log("DeleteSiteSyncPolicy", old.Meta.Name, "Deleted", err == nil)
 	return err

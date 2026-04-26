@@ -4,15 +4,13 @@ import (
 	"context"
 	"fmt"
 	"homelab/pkg/common"
+	taskpkg "homelab/pkg/common/task"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/intelligence"
 	runtimepkg "homelab/pkg/runtime"
 	"homelab/pkg/services/network/ip"
 	"log"
 	"sync"
-	"time"
-
-	"homelab/pkg/common/task"
 
 	"github.com/robfig/cron/v3"
 )
@@ -27,47 +25,10 @@ type IntelligenceService struct {
 	cron    *cron.Cron
 	entries map[string]cron.EntryID
 	mu      sync.Mutex
-	tasks   *task.Manager[*SyncTask]
+	tasks   *taskpkg.Manager[*SyncTask]
 }
 
-type SyncTask struct {
-	ID        string            `json:"id"`
-	Status    shared.TaskStatus `json:"status"`
-	Progress  float64           `json:"progress"`
-	Error     string            `json:"error"`
-	CreatedAt time.Time         `json:"createdAt"`
-	mu        sync.Mutex
-}
-
-func (t *SyncTask) GetID() string { return t.ID }
-func (t *SyncTask) GetStatus() shared.TaskStatus {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Status
-}
-func (t *SyncTask) SetStatus(status shared.TaskStatus) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Status = status
-}
-func (t *SyncTask) SetError(msg string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Error = msg
-}
-func (t *SyncTask) GetCreatedAt() time.Time { return t.CreatedAt }
-func (t *SyncTask) GetProgress() float64 {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Progress
-}
-func (t *SyncTask) SetProgress(progress float64) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.Progress = progress
-}
-
-var _ shared.TaskInfo = (*SyncTask)(nil)
+type SyncTask = taskpkg.SimpleTask
 
 func NewIntelligenceService(deps runtimepkg.ModuleDeps, mmdb *ip.MMDBManager) *IntelligenceService {
 	s := &IntelligenceService{
@@ -75,15 +36,15 @@ func NewIntelligenceService(deps runtimepkg.ModuleDeps, mmdb *ip.MMDBManager) *I
 		mmdb:    mmdb,
 		cron:    cron.New(),
 		entries: make(map[string]cron.EntryID),
-		tasks:   task.NewManager[*SyncTask](deps, "action:intelligence_sync", "sync_tasks", "network", "intelligence"),
+		tasks:   taskpkg.NewManager[*SyncTask](deps, "action:intelligence_sync", "sync_tasks", "network", "intelligence"),
 	}
 	s.cron.Start()
 
 	// 集群事件: 变更数据源时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
-	common.RegisterEventHandler(common.EventIntelligenceSourceChanged, func(ctx context.Context, sourceID string) {
-		src, err := repo.GetSource(ctx, sourceID)
+	common.RegisterEventHandler(common.EventIntelligenceSourceChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
+		src, err := repo.GetSource(ctx, payload.ID)
 		if err != nil {
-			s.removeCronJob(sourceID)
+			s.removeCronJob(payload.ID)
 			return
 		}
 		s.updateCronJob(*src)
@@ -126,7 +87,7 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 	return s.StartSyncConsumer(ctx)
 }
 
-func (s *IntelligenceService) GetTasks() *task.Manager[*SyncTask] {
+func (s *IntelligenceService) GetTasks() *taskpkg.Manager[*SyncTask] {
 	return s.tasks
 }
 
