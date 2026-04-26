@@ -2,7 +2,6 @@ package discovery
 
 import (
 	"context"
-	controllercommon "homelab/pkg/controllers"
 	discoverycontroller "homelab/pkg/controllers/core/discovery"
 	"homelab/pkg/controllers/routerx"
 	runtimepkg "homelab/pkg/runtime"
@@ -30,7 +29,7 @@ func (m *Module) Routes() runtimepkg.RouteHandler {
 			Audit:    "discovery",
 			UsesAuth: true,
 			Extra: []func(http.Handler) http.Handler{
-				controllercommon.WithDiscoveryService(m.service),
+				discoverycontroller.WithService(m.service),
 			},
 		}),
 		routerx.Routes(

@@ -80,7 +80,11 @@ func (m *Module) Routes() runtimepkg.RouteHandler {
 }
 
 func (m *Module) Start(ctx context.Context) error {
-	_ = ctx
+	if m.enricher != nil {
+		if err := m.enricher.Init(ctx); err != nil {
+			return err
+		}
+	}
 	ruleservice.RegisterSiteDiscovery(m.registry)
 	siteservice.RegisterSiteProcessors(m.service)
 	return m.service.Start(ctx)

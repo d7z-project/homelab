@@ -3,7 +3,6 @@ package main
 import (
 	"testing"
 
-	intelligencemodel "homelab/pkg/models/network/intelligence"
 	runtimepkg "homelab/pkg/runtime"
 	"homelab/pkg/testkit"
 )
@@ -14,7 +13,7 @@ func TestRegisterCoreModules(t *testing.T) {
 	deps := testkit.NewModuleDeps(t)
 
 	app := runtimepkg.NewApp(deps.Dependencies)
-	if err := registerModules(app, buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{
+	if err := registerModules(app, buildModules(deps, moduleOptions{
 		enableWorkflow:     true,
 		enableIntelligence: true,
 	})); err != nil {
@@ -49,7 +48,7 @@ func TestBuildModules(t *testing.T) {
 
 	deps := testkit.NewModuleDeps(t)
 
-	modules := buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{
+	modules := buildModules(deps, moduleOptions{
 		enableWorkflow:     true,
 		enableIntelligence: true,
 	})
@@ -64,7 +63,7 @@ func TestRegisterCoreModulesWithOptionalModulesDisabled(t *testing.T) {
 	deps := testkit.NewModuleDeps(t)
 
 	app := runtimepkg.NewApp(deps.Dependencies)
-	if err := registerModules(app, buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{})); err != nil {
+	if err := registerModules(app, buildModules(deps, moduleOptions{})); err != nil {
 		t.Fatalf("register core modules: %v", err)
 	}
 

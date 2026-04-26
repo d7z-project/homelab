@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/go-chi/chi/v5"
 )
 
 // ScanWorkflowsHandler godoc
@@ -277,7 +275,7 @@ func CleanupInstancesHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/instances/{id}/logs [get]
 func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	stepIndexStr := r.URL.Query().Get("stepIndex")
 	offsetStr := r.URL.Query().Get("offset")
 
@@ -330,7 +328,7 @@ func GetInstanceLogsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /actions/instances/{id}/cancel [post]
 func CancelInstanceHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := workflowservice.CancelTaskInstance(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -457,7 +455,7 @@ func ResetWebhookTokenHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /actions/webhooks/{token} [post]
 // @Router /actions/webhooks/{token} [get]
 func WebhookHandler(w http.ResponseWriter, r *http.Request) {
-	token := chi.URLParam(r, "token")
+	token := controllercommon.PathID(r, "token")
 	if token == "" {
 		common.BadRequestError(w, r, http.StatusBadRequest, "token is required")
 		return

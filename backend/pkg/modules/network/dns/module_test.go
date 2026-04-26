@@ -76,4 +76,22 @@ func TestModuleStartRegistersDNSDiscoveryLookups(t *testing.T) {
 	if len(records.Items) != 1 || records.Items[0].Name != "www (A) - example.com" {
 		t.Fatalf("unexpected record lookup result: %#v", records.Items)
 	}
+
+	suggestions, err := env.Deps.Registry.SuggestResources(ctx, "network/dns/domain/example.com/record/name/")
+	if err != nil {
+		t.Fatalf("suggest resources: %v", err)
+	}
+	foundRecord := false
+	for _, item := range suggestions {
+		if item.FullID == "network/dns/domain/example.com/record/name/*" || item.FullID == "network/dns/domain/example.com/record/name/**" {
+			t.Fatalf("unexpected legacy wildcard suggestion: %#v", item)
+		}
+		if item.FullID == "network/dns/domain/example.com/record/name/www/type/A" {
+			foundRecord = true
+			break
+		}
+	}
+	if !foundRecord {
+		t.Fatalf("expected explicit dns record resource suggestion, got %#v", suggestions)
+	}
 }

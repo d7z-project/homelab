@@ -54,7 +54,9 @@ func (m *Module) Routes() runtimepkg.RouteHandler {
 }
 
 func (m *Module) Start(ctx context.Context) error {
-	_ = ctx
+	if err := m.enricher.Init(ctx); err != nil {
+		return err
+	}
 	intservice.RegisterDiscovery(m.registry)
 	return m.service.Init(ctx)
 }

@@ -2,7 +2,6 @@ package rbac
 
 import (
 	"context"
-	controllercommon "homelab/pkg/controllers"
 	rbaccontroller "homelab/pkg/controllers/core/rbac"
 	"homelab/pkg/controllers/routerx"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
@@ -36,7 +35,7 @@ func (m *Module) Routes() runtimepkg.RouteHandler {
 			Audit:    "rbac",
 			UsesAuth: true,
 			Extra: []func(http.Handler) http.Handler{
-				controllercommon.WithDiscoveryService(m.discovery),
+				rbaccontroller.WithDiscoveryService(m.discovery),
 			},
 		}),
 		routerx.Routes(

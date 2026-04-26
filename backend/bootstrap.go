@@ -1,7 +1,6 @@
 package main
 
 import (
-	intelligencemodel "homelab/pkg/models/network/intelligence"
 	moduleaudit "homelab/pkg/modules/core/audit"
 	moduleauth "homelab/pkg/modules/core/auth"
 	modulediscovery "homelab/pkg/modules/core/discovery"
@@ -21,10 +20,10 @@ type moduleOptions struct {
 	enableIntelligence bool
 }
 
-func buildModules(deps runtimepkg.ModuleDeps, mmdbSources []intelligencemodel.IntelligenceSource, options moduleOptions) []runtimepkg.Module {
+func buildModules(deps runtimepkg.ModuleDeps, options moduleOptions) []runtimepkg.Module {
 	var enricher *ip.MMDBManager
 	if options.enableIntelligence {
-		enricher = ip.NewMMDBManager(deps, mmdbSources)
+		enricher = ip.NewMMDBManager(deps)
 	}
 	modules := []runtimepkg.Module{
 		modulediscovery.New(),

@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 // Site Pools
@@ -99,12 +97,7 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := controllercommon.PathID(r, "id")
-	cursor := r.URL.Query().Get("cursor")
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit <= 0 {
-		limit = 100
-	}
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParamsWithDefault(r, 100)
 	res, err := deps.PoolService.PreviewPool(r.Context(), id, cursor, limit, search)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -182,18 +175,13 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var req struct {
-		Domain   string   `json:"domain"`
-		GroupIDs []string `json:"groupIds"`
-	}
-	decoded, ok := controllercommon.DecodeJSONRequest[struct {
+	req, ok := controllercommon.BindRequest[struct {
 		Domain   string   `json:"domain"`
 		GroupIDs []string `json:"groupIds"`
 	}](w, r)
 	if !ok {
 		return
 	}
-	req = decoded
 	res, err := deps.Analysis.HitTest(r.Context(), req.Domain, req.GroupIDs)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -335,7 +323,7 @@ func TriggerSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	format := r.URL.Query().Get("format")
 	if format == "" {
 		format = "text"
@@ -522,7 +510,7 @@ func UpdateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	policy.ID = chi.URLParam(r, "id")
+	policy.ID = controllercommon.PathID(r, "id")
 	model := toModelSyncPolicy(policy)
 	if err := deps.PoolService.UpdateSyncPolicy(r.Context(), &model); err != nil {
 		controllercommon.HandleError(w, r, err)
@@ -543,7 +531,7 @@ func DeleteSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := deps.PoolService.DeleteSyncPolicy(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -563,7 +551,7 @@ func TriggerSiteSyncHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := deps.PoolService.Sync(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -585,7 +573,7 @@ func UpdateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	group, ok := controllercommon.BindRequest[apiv1.Group](w, r)
 	if !ok {
 		return

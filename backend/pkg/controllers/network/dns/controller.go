@@ -6,8 +6,6 @@ import (
 	controllercommon "homelab/pkg/controllers"
 	dnsservice "homelab/pkg/services/network/dns"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
 )
 
 // ScanDomainsHandler godoc
@@ -23,8 +21,7 @@ import (
 // @Security ApiKeyAuth
 // @Router /network/dns/domains [get]
 func ScanDomainsHandler(w http.ResponseWriter, r *http.Request) {
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 
 	res, err := dnsservice.ScanDomains(r.Context(), cursor, limit, search)
 	if err != nil {
@@ -75,7 +72,7 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/dns/domains/{id} [put]
 func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	updated, ok := controllercommon.BindRequest[apiv1.Domain](w, r)
 	if !ok {
 		return
@@ -101,7 +98,7 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/dns/domains/{id} [delete]
 func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := dnsservice.DeleteDomain(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -123,8 +120,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/records [get]
 func ScanRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	domainID := r.URL.Query().Get("domainId")
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 
 	res, err := dnsservice.ScanRecords(r.Context(), domainID, cursor, limit, search)
 	if err != nil {
@@ -175,7 +171,7 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/dns/records/{id} [put]
 func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	updated, ok := controllercommon.BindRequest[apiv1.Record](w, r)
 	if !ok {
 		return
@@ -201,7 +197,7 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/dns/records/{id} [delete]
 func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := dnsservice.DeleteRecord(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return

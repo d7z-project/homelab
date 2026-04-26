@@ -9,8 +9,6 @@ import (
 	"homelab/assets"
 	"homelab/pkg/common"
 	runtimepkg "homelab/pkg/runtime"
-
-	intrepo "homelab/pkg/repositories/network/intelligence"
 	"io/fs"
 	"log"
 	"net/http"
@@ -129,13 +127,11 @@ func main() {
 	moduleDeps := app.ModuleDeps()
 	common.StartEventLoop(ctx)
 
-	intrepo.Configure(moduleDeps.DB)
-	mmdbSources, _ := intrepo.ScanAllSources(ctx)
 	moduleOpts := moduleOptions{
 		enableWorkflow:     common.Opts.Modules.Workflow,
 		enableIntelligence: common.Opts.Modules.Intelligence,
 	}
-	modules := buildModules(moduleDeps, mmdbSources, moduleOpts)
+	modules := buildModules(moduleDeps, moduleOpts)
 	if err := registerModules(app, modules); err != nil {
 		log.Fatalf("Failed to register core modules: %v", err)
 	}

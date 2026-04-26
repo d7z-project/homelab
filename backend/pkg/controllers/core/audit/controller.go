@@ -22,8 +22,7 @@ import (
 // @Security ApiKeyAuth
 // @Router /audit/logs [get]
 func ScanAuditLogsHandler(w http.ResponseWriter, r *http.Request) {
-	cursor, limit := controllercommon.GetCursorParams(r)
-	search := r.URL.Query().Get("search")
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 
 	res, err := auditservice.ScanLogs(r.Context(), cursor, limit, search)
 	if err != nil {

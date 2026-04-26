@@ -43,14 +43,14 @@ func ScanDomains(ctx context.Context, cursor string, limit int, search string) (
 	}
 
 	perms := commonauth.PermissionsFromContext(ctx)
-	if perms.IsAllowed("network/dns") {
+	if perms.IsAllowed(dnsResourceBase()) {
 		return resp, nil
 	}
 
 	// Filter by instance permissions
 	var filtered []dnsmodel.Domain
 	for _, d := range resp.Items {
-		if perms.IsAllowed("network/dns/" + d.Meta.Name) {
+		if perms.IsAllowed(dnsDomainResource(d.Meta.Name)) {
 			filtered = append(filtered, d)
 		}
 	}
@@ -66,8 +66,8 @@ func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domai
 	if err := normalizeDomain(domain); err != nil {
 		return nil, err
 	}
-	resource := "network/dns/" + domain.Meta.Name
-	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) && !commonauth.PermissionsFromContext(ctx).IsAllowed("network/dns") {
+	resource := dnsDomainResource(domain.Meta.Name)
+	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) && !commonauth.PermissionsFromContext(ctx).IsAllowed(dnsResourceBase()) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
@@ -133,7 +133,7 @@ func UpdateDomain(ctx context.Context, id string, domain *dnsmodel.Domain) (*dns
 	if err != nil {
 		return nil, errors.New("not found")
 	}
-	resource := "network/dns/" + existing.Meta.Name
+	resource := dnsDomainResource(existing.Meta.Name)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -178,7 +178,7 @@ func DeleteDomain(ctx context.Context, id string) error {
 	if err != nil {
 		return errors.New("not found")
 	}
-	resource := "network/dns/" + existing.Meta.Name
+	resource := dnsDomainResource(existing.Meta.Name)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}

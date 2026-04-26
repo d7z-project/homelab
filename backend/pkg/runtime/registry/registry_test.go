@@ -133,8 +133,13 @@ func TestRegistryLookupSuggestAndSAUsage(t *testing.T) {
 	if len(suggestions) == 0 {
 		t.Fatal("expected resource suggestions")
 	}
+	for _, item := range suggestions {
+		if item.FullID == "network/dns/*" || item.FullID == "network/dns/**" {
+			t.Fatalf("unexpected legacy wildcard suggestion: %#v", item)
+		}
+	}
 
-	verbs, err := r.SuggestVerbs(context.Background(), "network/dns/example.com")
+	verbs, err := r.SuggestVerbs(context.Background(), "network/dns/domain/example.com")
 	if err != nil {
 		t.Fatalf("suggest verbs: %v", err)
 	}
@@ -211,5 +216,10 @@ func TestRegistryScanCodesAndResourceSuggestions(t *testing.T) {
 	}
 	if len(suggestions) == 0 {
 		t.Fatal("expected resource suggestions")
+	}
+	for _, item := range suggestions {
+		if item.FullID == "test/wrapper/resource/*" || item.FullID == "test/wrapper/resource/**" {
+			t.Fatalf("unexpected legacy wildcard suggestion: %#v", item)
+		}
 	}
 }

@@ -31,25 +31,35 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 			}
 
 			for _, d := range resp.Items {
-				if prefix == "" || strings.HasPrefix(d.Meta.Name, prefix) {
-					items = append(items, discoverymodel.LookupItem{ID: d.Meta.Name, Name: d.Meta.Name})
+				domainID := "domain/" + normalizeDNSDomainResourcePart(d.Meta.Name)
+				if prefix == "" || strings.HasPrefix(domainID, strings.ToLower(prefix)) {
+					items = append(items, discoverymodel.LookupItem{ID: domainID, Name: d.Meta.Name})
 				}
 
-				if prefix != "" && (d.Meta.Name == prefix || strings.HasPrefix(prefix, d.Meta.Name+"/")) {
-					idPrefix := ""
-					if strings.HasPrefix(prefix, d.Meta.Name+"/") {
-						idPrefix = strings.TrimPrefix(prefix, d.Meta.Name+"/")
+				recordPrefix := domainID + "/record/name/"
+				if prefix != "" && (prefix == domainID || strings.HasPrefix(strings.ToLower(prefix), recordPrefix)) {
+					namePrefix := ""
+					if strings.HasPrefix(strings.ToLower(prefix), recordPrefix) {
+						namePrefix = prefix[len(recordPrefix):]
 					}
 
 					recordsResp, err := dnsrepo.ScanRecords(ctx, d.ID, "", 10000, "")
 					if err == nil {
 						seen := make(map[string]bool)
 						for _, r := range recordsResp.Items {
-							key := r.Meta.Name + "/" + r.Meta.Type
-							if strings.HasPrefix(r.Meta.Name, idPrefix) && !seen[key] {
+							key := dnsRecordResource(d.Meta.Name, r.Meta.Name, r.Meta.Type)
+							if strings.HasPrefix(strings.ToLower(key), strings.ToLower(dnsResourceBase()+"/"+prefix)) && !seen[key] {
 								seen[key] = true
 								items = append(items, discoverymodel.LookupItem{
-									ID:   d.Meta.Name + "/" + r.Meta.Name + "/" + r.Meta.Type,
+									ID:   strings.TrimPrefix(key, dnsResourceBase()+"/"),
+									Name: r.Meta.Name + " (" + r.Meta.Type + ")",
+								})
+								continue
+							}
+							if namePrefix == "" && !seen[key] {
+								seen[key] = true
+								items = append(items, discoverymodel.LookupItem{
+									ID:   strings.TrimPrefix(key, dnsResourceBase()+"/"),
 									Name: r.Meta.Name + " (" + r.Meta.Type + ")",
 								})
 							}
@@ -69,7 +79,7 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 		perms := commonauth.PermissionsFromContext(ctx)
 		items := make([]discoverymodel.LookupItem, 0, len(resp.Items))
 		for _, d := range resp.Items {
-			if perms.IsAllowed("network/dns/" + d.Meta.Name) {
+			if perms.IsAllowed(dnsDomainResource(d.Meta.Name)) {
 				items = append(items, discoverymodel.LookupItem{ID: d.ID, Name: d.Meta.Name})
 			}
 		}
@@ -93,8 +103,8 @@ func RegisterDiscovery(registry *registryruntime.Registry) {
 			if domain == nil {
 				continue
 			}
-			resourceDomain := fmt.Sprintf("network/dns/%s", domain.Meta.Name)
-			resourceRecord := fmt.Sprintf("network/dns/%s/%s/%s", domain.Meta.Name, r.Meta.Name, r.Meta.Type)
+			resourceDomain := dnsDomainResource(domain.Meta.Name)
+			resourceRecord := dnsRecordResource(domain.Meta.Name, r.Meta.Name, r.Meta.Type)
 			if perms.IsAllowed(resourceDomain) || perms.IsAllowed(resourceRecord) {
 				items = append(items, discoverymodel.LookupItem{
 					ID:          r.ID,

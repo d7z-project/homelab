@@ -40,8 +40,15 @@ func TestAuditModuleScanLogsAndPermissions(t *testing.T) {
 	rootBody := testkit.DecodeJSON[struct {
 		Items []map[string]any `json:"items"`
 	}](t, rootResp)
-	if len(rootBody.Items) != 1 {
-		t.Fatalf("expected 1 audit log, got %d", len(rootBody.Items))
+	found := false
+	for _, item := range rootBody.Items {
+		if item["id"] == "log-1" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected seeded audit log in response, got %v", rootBody.Items)
 	}
 
 	deniedToken, err := testkit.SeedServiceAccount(env.Context(), "sa-audit-denied", "audit denied")
@@ -59,4 +66,34 @@ func TestAuditModuleScanLogsAndPermissions(t *testing.T) {
 	}
 	allowedResp := env.DoJSON(http.MethodGet, "/api/v1/audit/logs", allowedToken, nil)
 	testkit.MustStatus(t, allowedResp, http.StatusOK)
+}
+
+func TestAuditModuleCleanupVerbMapping(t *testing.T) {
+	env := testkit.StartApp(t, moduleauth.New(), moduleaudit.New())
+
+	listToken, err := testkit.SeedServiceAccount(env.Context(), "sa-audit-list-only", "audit list only",
+		rbacmodel.PolicyRule{Resource: "audit", Verbs: []string{"list"}},
+	)
+	if err != nil {
+		t.Fatalf("seed list-only service account: %v", err)
+	}
+
+	listResp := env.DoJSON(http.MethodPost, "/api/v1/audit/logs/cleanup?days=1", listToken, nil)
+	testkit.MustStatus(t, listResp, http.StatusForbidden)
+	if got := listResp.Header().Get("X-Matched-Policy"); got != "" {
+		t.Fatalf("expected route-level denial for cleanup without delete, got %q", got)
+	}
+
+	deleteToken, err := testkit.SeedServiceAccount(env.Context(), "sa-audit-delete", "audit delete",
+		rbacmodel.PolicyRule{Resource: "audit", Verbs: []string{"delete"}},
+	)
+	if err != nil {
+		t.Fatalf("seed delete service account: %v", err)
+	}
+
+	deleteResp := env.DoJSON(http.MethodPost, "/api/v1/audit/logs/cleanup?days=1", deleteToken, nil)
+	testkit.MustStatus(t, deleteResp, http.StatusForbidden)
+	if got := deleteResp.Header().Get("X-Matched-Policy"); got != "audit" {
+		t.Fatalf("expected route pass then service denial for cleanup, got matched policy %q", got)
+	}
 }

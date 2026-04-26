@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"homelab/pkg/common"
 	networkcommon "homelab/pkg/models/network/common"
-	intelligencemodel "homelab/pkg/models/network/intelligence"
 	"log"
 	"net/netip"
 	"sync"
 
+	intelligencemodel "homelab/pkg/models/network/intelligence"
+	intrepo "homelab/pkg/repositories/network/intelligence"
 	runtimepkg "homelab/pkg/runtime"
 
 	"github.com/oschwald/geoip2-golang/v2"
@@ -21,26 +22,21 @@ const (
 )
 
 type MMDBManager struct {
-	mu      sync.RWMutex
-	fs      afero.Fs
-	asn     map[string]*geoip2.Reader
-	city    map[string]*geoip2.Reader
-	country map[string]*geoip2.Reader
+	mu       sync.RWMutex
+	initOnce sync.Once
+	initErr  error
+	fs       afero.Fs
+	asn      map[string]*geoip2.Reader
+	city     map[string]*geoip2.Reader
+	country  map[string]*geoip2.Reader
 }
 
-func NewMMDBManager(deps runtimepkg.ModuleDeps, sources []intelligencemodel.IntelligenceSource) *MMDBManager {
+func NewMMDBManager(deps runtimepkg.ModuleDeps) *MMDBManager {
 	m := &MMDBManager{
 		fs:      deps.FS,
 		asn:     make(map[string]*geoip2.Reader),
 		city:    make(map[string]*geoip2.Reader),
 		country: make(map[string]*geoip2.Reader),
-	}
-
-	// 首次全量加载 (在注册事件之前，由调用方查询 DB 传入)
-	for _, src := range sources {
-		if src.Meta.Enabled {
-			m.reloadOne(src)
-		}
 	}
 
 	// 注册集群事件: 当任意节点更新了 MMDB 文件时，增量重新加载
@@ -51,6 +47,28 @@ func NewMMDBManager(deps runtimepkg.ModuleDeps, sources []intelligencemodel.Inte
 	})
 
 	return m
+}
+
+func (m *MMDBManager) Init(ctx context.Context) error {
+	if m == nil {
+		return nil
+	}
+	m.initOnce.Do(func() {
+		sources, err := intrepo.ScanAllSources(ctx)
+		if err != nil {
+			m.initErr = err
+			return
+		}
+
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		for _, src := range sources {
+			if src.Meta.Enabled {
+				m.reloadOne(src)
+			}
+		}
+	})
+	return m.initErr
 }
 
 func (m *MMDBManager) reloadOne(src intelligencemodel.IntelligenceSource) {

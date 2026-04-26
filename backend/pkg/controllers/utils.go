@@ -53,10 +53,14 @@ func HandleError(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func GetCursorParams(r *http.Request) (string, int) {
+	return GetCursorParamsWithDefault(r, 20)
+}
+
+func GetCursorParamsWithDefault(r *http.Request, defaultLimit int) (string, int) {
 	cursor := r.URL.Query().Get("cursor")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 {
-		limit = 20
+		limit = defaultLimit
 	}
 	if limit > 100 {
 		limit = 100

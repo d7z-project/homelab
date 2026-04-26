@@ -30,7 +30,7 @@ func ClearCache() {
 
 func ExportAll(ctx context.Context) (*dnsmodel.DnsExportResponse, error) {
 	perms := commonauth.PermissionsFromContext(ctx)
-	if !perms.AllowedAll && !perms.IsAllowed("network/dns") && len(perms.AllowedInstances) == 0 {
+	if !perms.AllowedAll && !perms.IsAllowed(dnsResourceBase()) && len(perms.AllowedInstances) == 0 {
 		return nil, fmt.Errorf("%w: dns", commonauth.ErrPermissionDenied)
 	}
 
@@ -52,7 +52,7 @@ func ExportAll(ctx context.Context) (*dnsmodel.DnsExportResponse, error) {
 	}
 	resp := &dnsmodel.DnsExportResponse{Domains: make([]dnsmodel.ExportDomain, 0)}
 	for _, d := range domains {
-		if d.Meta.Enabled && perms.IsAllowed("network/dns/"+d.Meta.Name) {
+		if d.Meta.Enabled && perms.IsAllowed(dnsDomainResource(d.Meta.Name)) {
 			resp.Domains = append(resp.Domains, dnsmodel.ExportDomain{
 				Name:    d.Meta.Name,
 				Records: recordsByDomain[d.ID],

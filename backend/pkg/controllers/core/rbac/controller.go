@@ -100,7 +100,7 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/serviceaccounts/{id} [delete]
 func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	id := controllercommon.PathID(r, "id")
-	discovery, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	discovery, ok := discoveryServiceFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -367,7 +367,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/resources/suggest [get]
 func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 	prefix := r.URL.Query().Get("prefix")
-	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	service, ok := discoveryServiceFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -390,7 +390,7 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/verbs/suggest [get]
 func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
 	resource := r.URL.Query().Get("resource")
-	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	service, ok := discoveryServiceFromRequest(w, r)
 	if !ok {
 		return
 	}

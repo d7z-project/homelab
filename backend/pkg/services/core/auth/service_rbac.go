@@ -54,16 +54,18 @@ func GetPermissions(ctx context.Context, saID, verb, resource string) (*rbacmode
 							cleanedRes = strings.TrimSuffix(cleanedRes, "/*")
 						}
 
-						// Case 2: Exact Match or Prefix Match (e.g., resource "dns/a" matches rule "network/dns/*")
+						// Case 2: Exact Match or Prefix Match (e.g., resource "network/dns/domain/example.com"
+						// matches rule "network/dns/domain/*").
 						if cleanedRes == resource || strings.HasPrefix(resource, cleanedRes+"/") {
 							perms.AllowedAll = true
 							perms.MatchedRule = &rule
 							return perms, nil
 						}
 
-						// Case 3: Instance Suggestion (e.g., resource "network/dns" matches rule "dns/a")
+						// Case 3: Instance-scoped route access. Preserve the full resource path so
+						// downstream service checks can still call IsAllowed("base/...") directly.
 						if strings.HasPrefix(cleanedRes, resource+"/") {
-							inst := strings.TrimPrefix(cleanedRes, resource+"/")
+							inst := cleanedRes
 							if inst != "" && inst != "*" && inst != "**" {
 								perms.AllowedInstances = append(perms.AllowedInstances, inst)
 								// Note: We don't return early here as multiple rules might contribute to the instances list

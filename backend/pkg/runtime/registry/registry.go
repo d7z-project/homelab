@@ -227,20 +227,6 @@ func (r *Registry) SuggestResources(ctx context.Context, prefix string) ([]disco
 				})
 				seen[fullID] = struct{}{}
 			}
-			for _, wildcard := range []string{"*", "**"} {
-				if remaining == "" || strings.HasPrefix(wildcard, strings.ToLower(remaining)) {
-					fullID := key + "/" + wildcard
-					if _, exists := seen[fullID]; exists {
-						continue
-					}
-					suggestions = append(suggestions, discoverymodel.DiscoverResult{
-						FullID: fullID,
-						Name:   wildcard,
-						Final:  true,
-					})
-					seen[fullID] = struct{}{}
-				}
-			}
 		}
 	}
 

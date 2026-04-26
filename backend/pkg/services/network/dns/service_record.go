@@ -18,7 +18,7 @@ import (
 func ScanRecords(ctx context.Context, domainID string, cursor string, limit int, search string) (*shared.PaginationResponse[dnsmodel.Record], error) {
 	if domainID == "" {
 		perms := commonauth.PermissionsFromContext(ctx)
-		if perms.IsAllowed("network/dns") {
+		if perms.IsAllowed(dnsResourceBase()) {
 			return dnsrepo.ScanRecords(ctx, "", cursor, limit, search)
 		}
 		return &shared.PaginationResponse[dnsmodel.Record]{
@@ -32,8 +32,9 @@ func ScanRecords(ctx context.Context, domainID string, cursor string, limit int,
 	}
 
 	perms := commonauth.PermissionsFromContext(ctx)
-	if !perms.IsAllowed("network/dns") && !perms.IsAllowed("network/dns/"+dom.Meta.Name) {
-		return nil, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, dom.Meta.Name)
+	domainResource := dnsDomainResource(dom.Meta.Name)
+	if !perms.IsAllowed(dnsResourceBase()) && !perms.IsAllowed(domainResource) {
+		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, domainResource)
 	}
 	return dnsrepo.ScanRecords(ctx, domainID, cursor, limit, search)
 }
@@ -57,7 +58,7 @@ func CreateRecord(ctx context.Context, record *dnsmodel.Record) (*dnsmodel.Recor
 	}
 	defer release()
 
-	resource := fmt.Sprintf("network/dns/%s/%s/%s", dom.Meta.Name, record.Meta.Name, record.Meta.Type)
+	resource := dnsRecordResource(dom.Meta.Name, record.Meta.Name, record.Meta.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
@@ -101,8 +102,8 @@ func UpdateRecord(ctx context.Context, id string, record *dnsmodel.Record) (*dns
 	}
 	defer release()
 
-	resOld := fmt.Sprintf("network/dns/%s/%s/%s", dom.Meta.Name, existing.Meta.Name, existing.Meta.Type)
-	resNew := fmt.Sprintf("network/dns/%s/%s/%s", dom.Meta.Name, record.Meta.Name, record.Meta.Type)
+	resOld := dnsRecordResource(dom.Meta.Name, existing.Meta.Name, existing.Meta.Type)
+	resNew := dnsRecordResource(dom.Meta.Name, record.Meta.Name, record.Meta.Type)
 	perms := commonauth.PermissionsFromContext(ctx)
 	if !perms.IsAllowed(resOld) || !perms.IsAllowed(resNew) {
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resNew)
@@ -147,7 +148,7 @@ func DeleteRecord(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	resource := fmt.Sprintf("network/dns/%s/%s/%s", dom.Meta.Name, existing.Meta.Name, existing.Meta.Type)
+	resource := dnsRecordResource(dom.Meta.Name, existing.Meta.Name, existing.Meta.Type)
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed(resource) {
 		return fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}

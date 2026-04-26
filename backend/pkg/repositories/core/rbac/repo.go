@@ -81,6 +81,10 @@ func ScanRoles(ctx context.Context, cursor string, limit int, search string) (*s
 	})
 }
 
+func ScanAllRoles(ctx context.Context) ([]rbacmodel.Role, error) {
+	return roleRepo.ListAll(ctx)
+}
+
 func GetRole(ctx context.Context, id string) (*rbacmodel.Role, error) {
 	return roleRepo.Get(ctx, id)
 }

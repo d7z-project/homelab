@@ -53,7 +53,7 @@ func (p *DnsRecordProcessor) Execute(ctx *actions.TaskContext, inputs map[string
 	if err != nil {
 		return nil, fmt.Errorf("load domain %s: %w", domainID, err)
 	}
-	resource := fmt.Sprintf("network/dns/%s/%s/%s", domain.Meta.Name, name, recordType)
+	resource := dnsRecordResource(domain.Meta.Name, name, recordType)
 	perms, err := authservice.GetPermissions(ctx.Context, ctx.ServiceAccountID, "create", resource)
 	if err != nil {
 		return nil, fmt.Errorf("load workflow permissions: %w", err)

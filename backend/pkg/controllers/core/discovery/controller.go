@@ -24,12 +24,10 @@ import (
 // @Router /discovery/lookup [get]
 // @Security ApiKeyAuth
 func LookupHandler(w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
-	search := r.URL.Query().Get("search")
-	cursor, limit := controllercommon.GetCursorParams(r)
+	cursor, limit, search := controllercommon.GetSearchCursorParams(r)
 
 	req := apiv1.LookupRequest{
-		Code:   code,
+		Code:   r.URL.Query().Get("code"),
 		Search: search,
 		Cursor: cursor,
 		Limit:  limit,
@@ -40,7 +38,7 @@ func LookupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	service, ok := serviceFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -68,7 +66,7 @@ func LookupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /discovery/codes [get]
 // @Security ApiKeyAuth
 func ScanCodesHandler(w http.ResponseWriter, r *http.Request) {
-	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	service, ok := serviceFromRequest(w, r)
 	if !ok {
 		return
 	}

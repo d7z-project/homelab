@@ -42,17 +42,13 @@ func BindOptionalRequest[T any](w http.ResponseWriter, r *http.Request) (T, bool
 	return req, true
 }
 
-func DecodeJSONRequest[T any](w http.ResponseWriter, r *http.Request) (T, bool) {
-	var req T
-	if err := render.DecodeJSON(r.Body, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
-		return req, false
-	}
-	return req, true
-}
-
 func GetSearchCursorParams(r *http.Request) (string, int, string) {
 	cursor, limit := GetCursorParams(r)
+	return cursor, limit, r.URL.Query().Get("search")
+}
+
+func GetSearchCursorParamsWithDefault(r *http.Request, defaultLimit int) (string, int, string) {
+	cursor, limit := GetCursorParamsWithDefault(r, defaultLimit)
 	return cursor, limit, r.URL.Query().Get("search")
 }
 
