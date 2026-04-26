@@ -28,7 +28,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
 
-import { ActionsService, ModelsWorkflow, ModelsTaskInstance } from '../../generated';
+import { ActionsService, V1Workflow, V1TaskInstance } from '../../generated';
 import { UiService } from '../../ui.service';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { RunWorkflowDialogComponent } from './run-workflow-dialog.component';
@@ -89,8 +89,8 @@ export class ActionsComponent implements OnInit, OnDestroy {
     { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
-  workflows = signal<ModelsWorkflow[]>([]);
-  instances = signal<ModelsTaskInstance[]>([]);
+  workflows = signal<V1Workflow[]>([]);
+  instances = signal<V1TaskInstance[]>([]);
 
   wfTotal = signal(0);
   wfNextCursor = signal('');
@@ -252,14 +252,15 @@ export class ActionsComponent implements OnInit, OnDestroy {
           this.uiService.searchConfig()?.value,
         ),
       );
+      const items = (res.items || []) as V1Workflow[];
       if (reset) {
-        this.workflows.set(res.items || []);
+        this.workflows.set(items);
       } else {
         const current = this.workflows();
-        const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+        const newItems = items.filter((n) => !current.some((e) => e.id === n.id));
         this.workflows.update((prev) => [...prev, ...newItems]);
       }
-      this.wfTotal.set(res.total || 0);
+      this.wfTotal.set(items.length);
       this.wfNextCursor.set(res.nextCursor || '');
       this.wfHasMore.set(res.hasMore || false);
     } finally {
@@ -285,7 +286,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
         ),
       );
 
-      let newItems = res.items || [];
+      let newItems = (res.items || []) as V1TaskInstance[];
 
       if (reset) {
         this.instances.set(newItems);
@@ -295,7 +296,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
         this.instances.update((prev) => [...prev, ...newItems]);
       }
 
-      this.instTotal.set(res.total || 0);
+      this.instTotal.set(newItems.length);
       this.instNextCursor.set(res.nextCursor || '');
       this.instHasMore.set(res.hasMore || false);
     } finally {
@@ -376,7 +377,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
     this.loadInstances(true);
   }
 
-  async toggleWorkflow(workflow: ModelsWorkflow) {
+  async toggleWorkflow(workflow: V1Workflow) {
     const updated = {
       ...workflow,
       meta: { ...workflow.meta, enabled: !workflow.meta?.enabled },
@@ -397,15 +398,16 @@ export class ActionsComponent implements OnInit, OnDestroy {
     }
   }
 
-  copyWebhookUrl(workflow: ModelsWorkflow) {
-    if (!workflow.meta?.webhookEnabled || !workflow.meta?.webhookToken) return;
-    const url = `${window.location.origin}/api/v1/actions/webhooks/${workflow.meta.webhookToken}`;
-    navigator.clipboard.writeText(url).then(() => {
-      this.snackBar.open('Webhook URL 已复制', '了解', { duration: 2000 });
+  copyWebhookUrl(workflow: V1Workflow) {
+    if (!workflow.meta?.webhookEnabled || !workflow.status?.hasWebhookSecret) {
+      return;
+    }
+    this.snackBar.open('Webhook token 不会在列表接口回传，请先重置 token 后复制。', '了解', {
+      duration: 3000,
     });
   }
 
-  async resetWebhookToken(workflow: ModelsWorkflow) {
+  async resetWebhookToken(workflow: V1Workflow) {
     this.loading.set(true);
     try {
       await firstValueFrom(this.orchService.actionsWorkflowsIdWebhookResetPost(workflow.id!));
@@ -420,7 +422,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
     }
   }
 
-  runWorkflow(workflow: ModelsWorkflow) {
+  runWorkflow(workflow: V1Workflow) {
     this.dialog
       .open(RunWorkflowDialogComponent, {
         width: '500px',
@@ -450,7 +452,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       });
   }
 
-  viewLogs(instance: ModelsTaskInstance) {
+  viewLogs(instance: V1TaskInstance) {
     this.dialog.open(TaskDetailDialogComponent, {
       width: '100vw',
       height: '100vh',
@@ -476,7 +478,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       });
   }
 
-  editWorkflow(workflow: ModelsWorkflow) {
+  editWorkflow(workflow: V1Workflow) {
     this.dialog
       .open(CreateWorkflowDialogComponent, {
         width: '100vw',
@@ -492,7 +494,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       });
   }
 
-  deleteWorkflow(workflow: ModelsWorkflow) {
+  deleteWorkflow(workflow: V1Workflow) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: '删除工作流',
@@ -518,7 +520,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteInstance(instance: ModelsTaskInstance) {
+  deleteInstance(instance: V1TaskInstance) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: '删除记录',
@@ -544,7 +546,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
     });
   }
 
-  cancelInstance(instance: ModelsTaskInstance) {
+  cancelInstance(instance: V1TaskInstance) {
     this.orchService.actionsInstancesIdCancelPost(instance.id!).subscribe({
       next: () => {
         this.snackBar.open('已发送取消请求', '了解', { duration: 2000 });

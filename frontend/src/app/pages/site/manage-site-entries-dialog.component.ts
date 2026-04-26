@@ -12,9 +12,16 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { NetworkSiteService, ModelsSiteGroup, ModelsSitePoolEntry } from '../../generated';
+import {
+  NetworkSiteService,
+  V1Group,
+  V1GroupMeta,
+  HomelabPkgApisNetworkSiteV1PoolEntry,
+} from '../../generated';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
+type SiteGroupDialogModel = V1Group & { meta: V1GroupMeta };
 
 @Component({
   selector: 'app-manage-site-entries-dialog',
@@ -230,7 +237,7 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
   private siteService = inject(NetworkSiteService);
   private snackBar = inject(MatSnackBar);
 
-  entries = signal<ModelsSitePoolEntry[]>([]);
+  entries = signal<HomelabPkgApisNetworkSiteV1PoolEntry[]>([]);
   loading = signal(false);
   loadingMore = signal(false);
   submitting = signal(false);
@@ -263,7 +270,7 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<ManageSiteEntriesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { pool: ModelsSiteGroup },
+    @Inject(MAT_DIALOG_DATA) public data: { pool: SiteGroupDialogModel },
   ) {
     this.searchSubject
       .pipe(debounceTime(400), distinctUntilChanged())
@@ -325,7 +332,7 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
     if (target.scrollHeight - target.scrollTop - target.clientHeight < 100) this.loadEntries();
   }
 
-  editEntry(entry: ModelsSitePoolEntry) {
+  editEntry(entry: HomelabPkgApisNetworkSiteV1PoolEntry) {
     this.isEditMode.set(true);
     this.originalUserTags = (entry.tags || []).filter((t) => !t.startsWith('_'));
     this.form.patchValue({
@@ -377,7 +384,7 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
       });
   }
 
-  deleteEntry(entry: ModelsSitePoolEntry) {
+  deleteEntry(entry: HomelabPkgApisNetworkSiteV1PoolEntry) {
     if (!confirm(`确定要删除 ${entry.value} 吗？`)) return;
     this.submitting.set(true);
     this.siteService
@@ -397,11 +404,11 @@ export class ManageSiteEntriesDialogComponent implements OnInit {
       });
   }
 
-  hasUserTags(entry: ModelsSitePoolEntry): boolean {
+  hasUserTags(entry: HomelabPkgApisNetworkSiteV1PoolEntry): boolean {
     return (entry.tags || []).some((t) => !t.startsWith('_'));
   }
 
-  hasInternalTags(entry: ModelsSitePoolEntry): boolean {
+  hasInternalTags(entry: HomelabPkgApisNetworkSiteV1PoolEntry): boolean {
     return (entry.tags || []).some((t) => t.startsWith('_'));
   }
 }

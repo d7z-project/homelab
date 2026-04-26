@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsIPPool } from './modelsIPPool';
+import { V1Pool } from './v1Pool';
 
 export interface NetworkIpPoolsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsIPPool>;
+  items?: Array<V1Pool>;
   nextCursor?: string;
-  total?: number;
 }

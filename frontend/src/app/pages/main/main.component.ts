@@ -146,7 +146,7 @@ export class MainComponent {
   public uiService = inject(UiService);
 
   constructor() {
-    this.authService.infoGet().subscribe({
+    this.authService.authInfoGet().subscribe({
       error: () => {
         localStorage.clear();
         this.router.navigate(['/login']);
@@ -390,7 +390,7 @@ export class MainComponent {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.authService.logoutPost().subscribe({
+        this.authService.authLogoutPost().subscribe({
           next: () => {
             localStorage.clear();
             this.router.navigate(['/login']);

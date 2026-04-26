@@ -41,12 +41,12 @@ export class SystemService extends BaseService {
   /**
    * Ping the server
    * Returns pong if the server is alive
-   * @endpoint get /ping
+   * @endpoint get /auth/ping
    * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
    * @param reportProgress flag to report request and response progress.
    * @param options additional options
    */
-  public pingGet(
+  public authPingGet(
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -55,7 +55,7 @@ export class SystemService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<string>;
-  public pingGet(
+  public authPingGet(
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -64,7 +64,7 @@ export class SystemService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<HttpResponse<string>>;
-  public pingGet(
+  public authPingGet(
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -73,7 +73,7 @@ export class SystemService extends BaseService {
       transferCache?: boolean;
     },
   ): Observable<HttpEvent<string>>;
-  public pingGet(
+  public authPingGet(
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -105,7 +105,7 @@ export class SystemService extends BaseService {
       }
     }
 
-    let localVarPath = `/ping`;
+    let localVarPath = `/auth/ping`;
     const { basePath, withCredentials } = this.configuration;
     return this.httpClient.request<string>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,

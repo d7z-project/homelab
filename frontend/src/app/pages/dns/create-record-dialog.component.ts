@@ -8,7 +8,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
-import { ModelsDomain, ModelsRecord } from '../../generated';
+import { V1Domain, V1Record, V1RecordMeta, V1RecordStatus } from '../../generated';
+
+type RecordFormModel = V1Record & { meta: V1RecordMeta; status: V1RecordStatus };
 
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
 
@@ -328,7 +330,7 @@ export class CreateRecordDialogComponent implements AfterViewInit {
   private cdr = inject(ChangeDetectorRef);
   private dialogRef = inject(MatDialogRef<CreateRecordDialogComponent>);
   isEdit = false;
-  record: ModelsRecord = {
+  record: RecordFormModel = {
     id: '',
     meta: {
       domainId: '',
@@ -364,11 +366,15 @@ export class CreateRecordDialogComponent implements AfterViewInit {
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public data: { record: ModelsRecord | null; defaultDomainId?: string },
+    public data: { record: RecordFormModel | null; defaultDomainId?: string },
   ) {
     if (data.record) {
       this.isEdit = true;
-      this.record = { ...data.record };
+      this.record = {
+        ...data.record,
+        meta: { ...data.record.meta },
+        status: { ...data.record.status },
+      };
       if (this.record.meta.type === 'SOA') {
         if (!this.recordTypes.includes('SOA')) {
           this.recordTypes.push('SOA');

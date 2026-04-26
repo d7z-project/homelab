@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsAuditLog } from './modelsAuditLog';
+import { V1AuditLog } from './v1AuditLog';
 
 export interface AuditLogsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsAuditLog>;
+  items?: Array<V1AuditLog>;
   nextCursor?: string;
-  total?: number;
 }

@@ -24,9 +24,9 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { ModelsIntelligenceSource } from '../model/modelsIntelligenceSource';
-// @ts-ignore
 import { NetworkIntelligenceSourcesGet200Response } from '../model/networkIntelligenceSourcesGet200Response';
+// @ts-ignore
+import { V1Source } from '../model/v1Source';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -285,7 +285,7 @@ export class NetworkIntelligenceService extends BaseService {
    */
   public networkIntelligenceSourcesIdPut(
     id: string,
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -293,10 +293,10 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIntelligenceSource>;
+  ): Observable<V1Source>;
   public networkIntelligenceSourcesIdPut(
     id: string,
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -304,10 +304,10 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIntelligenceSource>>;
+  ): Observable<HttpResponse<V1Source>>;
   public networkIntelligenceSourcesIdPut(
     id: string,
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -315,10 +315,10 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIntelligenceSource>>;
+  ): Observable<HttpEvent<V1Source>>;
   public networkIntelligenceSourcesIdPut(
     id: string,
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -378,7 +378,7 @@ export class NetworkIntelligenceService extends BaseService {
 
     let localVarPath = `/network/intelligence/sources/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIntelligenceSource>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Source>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: source,
       responseType: <any>responseType_,
@@ -496,7 +496,7 @@ export class NetworkIntelligenceService extends BaseService {
    * @param options additional options
    */
   public networkIntelligenceSourcesPost(
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -504,9 +504,9 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIntelligenceSource>;
+  ): Observable<V1Source>;
   public networkIntelligenceSourcesPost(
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -514,9 +514,9 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIntelligenceSource>>;
+  ): Observable<HttpResponse<V1Source>>;
   public networkIntelligenceSourcesPost(
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -524,9 +524,9 @@ export class NetworkIntelligenceService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIntelligenceSource>>;
+  ): Observable<HttpEvent<V1Source>>;
   public networkIntelligenceSourcesPost(
-    source: ModelsIntelligenceSource,
+    source: V1Source,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -581,7 +581,7 @@ export class NetworkIntelligenceService extends BaseService {
 
     let localVarPath = `/network/intelligence/sources`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIntelligenceSource>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Source>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: source,
       responseType: <any>responseType_,

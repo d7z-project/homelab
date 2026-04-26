@@ -24,9 +24,9 @@ import { Router, ActivatedRoute } from '@angular/router';
 import {
   NetworkIpService,
   NetworkSiteService,
-  ModelsIPAnalysisResult,
-  ModelsIPInfoResponse,
-  ModelsSiteAnalysisResult,
+  HomelabPkgApisNetworkIpV1AnalysisResult,
+  V1IPInfoResponse,
+  HomelabPkgApisNetworkSiteV1AnalysisResult,
 } from '../../../generated';
 import { PageHeaderComponent } from '../../../shared/page-header.component';
 import * as echarts from 'echarts';
@@ -100,9 +100,9 @@ export class AnalysisComponent implements OnInit {
   hitTestLoading = signal(false);
 
   // Results
-  ipResult = signal<ModelsIPAnalysisResult | null>(null);
-  ipInfo = signal<ModelsIPInfoResponse | null>(null);
-  siteResult = signal<ModelsSiteAnalysisResult | null>(null);
+  ipResult = signal<HomelabPkgApisNetworkIpV1AnalysisResult | null>(null);
+  ipInfo = signal<V1IPInfoResponse | null>(null);
+  siteResult = signal<HomelabPkgApisNetworkSiteV1AnalysisResult | null>(null);
 
   // Expansion state
   dnsResolvedExpanded = signal(false);
@@ -140,7 +140,7 @@ export class AnalysisComponent implements OnInit {
     const info = this.ipInfo();
     const site = this.siteResult();
 
-    let infos: ModelsIPInfoResponse[] = [];
+    let infos: V1IPInfoResponse[] = [];
     if (info) {
       infos = [info];
     } else if (site && site.dns) {
@@ -163,7 +163,7 @@ export class AnalysisComponent implements OnInit {
     });
   }
 
-  private initChart(element: HTMLElement, infos: ModelsIPInfoResponse[]): void {
+  private initChart(element: HTMLElement, infos: V1IPInfoResponse[]): void {
     echarts.getInstanceByDom(element)?.dispose();
 
     const chart = echarts.init(element);

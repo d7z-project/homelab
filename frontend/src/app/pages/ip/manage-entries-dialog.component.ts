@@ -12,10 +12,18 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
-import { NetworkIpService, ModelsIPPool, ModelsIPPoolEntry } from '../../generated';
+import {
+  NetworkIpService,
+  V1Pool,
+  V1PoolMeta,
+  V1PoolStatus,
+  HomelabPkgApisNetworkIpV1PoolEntry,
+} from '../../generated';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Router } from '@angular/router';
+
+type PoolEntriesDialogModel = V1Pool & { meta: V1PoolMeta; status: V1PoolStatus };
 
 @Component({
   selector: 'app-manage-entries-dialog',
@@ -328,7 +336,7 @@ export class ManageEntriesDialogComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
 
-  entries = signal<ModelsIPPoolEntry[]>([]);
+  entries = signal<HomelabPkgApisNetworkIpV1PoolEntry[]>([]);
   loading = signal(false);
   loadingMore = signal(false);
   submitting = signal(false);
@@ -362,7 +370,7 @@ export class ManageEntriesDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<ManageEntriesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { pool: ModelsIPPool },
+    @Inject(MAT_DIALOG_DATA) public data: { pool: PoolEntriesDialogModel },
   ) {
     this.searchSubject.pipe(debounceTime(400), distinctUntilChanged()).subscribe(() => {
       this.loadEntries(true);
@@ -378,6 +386,7 @@ export class ManageEntriesDialogComponent implements OnInit {
   }
 
   loadEntries(reset = false) {
+    const poolID = this.data.pool.id || '';
     if (reset) {
       this.nextCursor = '';
       this.hasMore.set(true);
@@ -389,7 +398,7 @@ export class ManageEntriesDialogComponent implements OnInit {
     }
 
     this.ipService
-      .networkIpPoolsIdPreviewGet(this.data.pool.id, this.nextCursor, 50, this.searchQuery)
+      .networkIpPoolsIdPreviewGet(poolID, this.nextCursor, 50, this.searchQuery)
       .subscribe({
         next: (res) => {
           const newEntries = res.entries || [];
@@ -438,7 +447,7 @@ export class ManageEntriesDialogComponent implements OnInit {
     this.router.navigate(['/network/analysis'], { queryParams: { q: ip } });
   }
 
-  editEntry(entry: ModelsIPPoolEntry) {
+  editEntry(entry: HomelabPkgApisNetworkIpV1PoolEntry) {
     this.isEditMode.set(true);
     this.originalUserTags = (entry.tags || []).filter((t) => !t.startsWith('_'));
     this.form.patchValue({
@@ -447,7 +456,7 @@ export class ManageEntriesDialogComponent implements OnInit {
     });
   }
 
-  editTag(entry: ModelsIPPoolEntry, tag: string) {
+  editTag(entry: HomelabPkgApisNetworkIpV1PoolEntry, tag: string) {
     // 这种模式下，编辑单个标签实际上也是编辑该行所有非内部标签
     this.editEntry(entry);
   }
@@ -461,6 +470,7 @@ export class ManageEntriesDialogComponent implements OnInit {
   submit() {
     if (this.form.invalid) return;
     this.submitting.set(true);
+    const poolID = this.data.pool.id || '';
 
     const val = this.form.value;
     const newTags = val.tags
@@ -471,7 +481,7 @@ export class ManageEntriesDialogComponent implements OnInit {
       : [];
 
     this.ipService
-      .networkIpPoolsIdEntriesPost(this.data.pool.id, {
+      .networkIpPoolsIdEntriesPost(poolID, {
         cidr: val.cidr!,
         oldTags: this.isEditMode() ? this.originalUserTags : undefined,
         newTags: newTags,
@@ -494,11 +504,11 @@ export class ManageEntriesDialogComponent implements OnInit {
       });
   }
 
-  deleteEntry(entry: ModelsIPPoolEntry) {
+  deleteEntry(entry: HomelabPkgApisNetworkIpV1PoolEntry) {
     if (!confirm(`确定要彻底删除 ${entry.cidr} 吗？`)) return;
 
     this.submitting.set(true);
-    this.ipService.networkIpPoolsIdEntriesDelete(this.data.pool.id, entry.cidr!).subscribe({
+    this.ipService.networkIpPoolsIdEntriesDelete(this.data.pool.id || '', entry.cidr!).subscribe({
       next: () => {
         this.snackBar.open('删除成功', '关闭', { duration: 2000 });
         this.submitting.set(false);
@@ -513,7 +523,7 @@ export class ManageEntriesDialogComponent implements OnInit {
     });
   }
 
-  hasInternalTags(entry: ModelsIPPoolEntry): boolean {
+  hasInternalTags(entry: HomelabPkgApisNetworkIpV1PoolEntry): boolean {
     return (entry.tags || []).some((t) => t.startsWith('_'));
   }
 }

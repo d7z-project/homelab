@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsRole } from './modelsRole';
+import { V1Role } from './v1Role';
 
 export interface RbacRolesGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsRole>;
+  items?: Array<V1Role>;
   nextCursor?: string;
-  total?: number;
 }

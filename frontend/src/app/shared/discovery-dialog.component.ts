@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { FormsModule } from '@angular/forms';
-import { DiscoveryService, ModelsLookupItem } from '../generated';
+import { DiscoveryService, V1LookupItem } from '../generated';
 import {
   Subject,
   debounceTime,
@@ -147,7 +147,7 @@ export class DiscoveryDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<DiscoveryDialogComponent>);
 
   search = '';
-  items = signal<ModelsLookupItem[]>([]);
+  items = signal<V1LookupItem[]>([]);
   isLoading = signal(false);
   private searchSubject = new Subject<string>();
 
@@ -184,7 +184,7 @@ export class DiscoveryDialogComponent implements OnInit {
     this.searchSubject.next(val);
   }
 
-  onSelect(item: ModelsLookupItem) {
+  onSelect(item: V1LookupItem) {
     this.dialogRef.close(item);
   }
 }

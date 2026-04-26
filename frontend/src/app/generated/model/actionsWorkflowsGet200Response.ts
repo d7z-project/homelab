@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsWorkflow } from './modelsWorkflow';
+import { V1Workflow } from './v1Workflow';
 
 export interface ActionsWorkflowsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsWorkflow>;
+  items?: Array<V1Workflow>;
   nextCursor?: string;
-  total?: number;
 }

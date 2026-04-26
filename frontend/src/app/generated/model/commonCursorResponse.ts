@@ -12,5 +12,4 @@ export interface CommonCursorResponse {
   hasMore?: boolean;
   items?: object;
   nextCursor?: string;
-  total?: number;
 }

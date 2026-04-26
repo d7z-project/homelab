@@ -24,23 +24,29 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { ActionsInstancesGet200Response } from '../model/actionsInstancesGet200Response';
 // @ts-ignore
-import { ActionsProbeRequest } from '../model/actionsProbeRequest';
-// @ts-ignore
 import { ActionsWorkflowsGet200Response } from '../model/actionsWorkflowsGet200Response';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { ModelsRunWorkflowRequest } from '../model/modelsRunWorkflowRequest';
+import { V1ProbeRequest } from '../model/v1ProbeRequest';
 // @ts-ignore
-import { ModelsStepManifest } from '../model/modelsStepManifest';
+import { V1ProbeResponse } from '../model/v1ProbeResponse';
 // @ts-ignore
-import { ModelsTaskCleanupResponse } from '../model/modelsTaskCleanupResponse';
+import { V1RunWorkflowRequest } from '../model/v1RunWorkflowRequest';
 // @ts-ignore
-import { ModelsTaskInstance } from '../model/modelsTaskInstance';
+import { V1StepManifest } from '../model/v1StepManifest';
 // @ts-ignore
-import { ModelsTaskLogResponse } from '../model/modelsTaskLogResponse';
+import { V1TaskCleanupResponse } from '../model/v1TaskCleanupResponse';
 // @ts-ignore
-import { ModelsWorkflow } from '../model/modelsWorkflow';
+import { V1TaskInstance } from '../model/v1TaskInstance';
+// @ts-ignore
+import { V1TaskLogResponse } from '../model/v1TaskLogResponse';
+// @ts-ignore
+import { V1WebhookTokenResponse } from '../model/v1WebhookTokenResponse';
+// @ts-ignore
+import { V1Workflow } from '../model/v1Workflow';
+// @ts-ignore
+import { V1WorkflowSchemaResponse } from '../model/v1WorkflowSchemaResponse';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -73,19 +79,19 @@ export class ActionsService extends BaseService {
     observe?: 'body',
     reportProgress?: boolean,
     options?: { httpHeaderAccept?: '*/*'; context?: HttpContext; transferCache?: boolean },
-  ): Observable<ModelsTaskCleanupResponse>;
+  ): Observable<V1TaskCleanupResponse>;
   public actionsInstancesCleanupPost(
     days: number,
     observe?: 'response',
     reportProgress?: boolean,
     options?: { httpHeaderAccept?: '*/*'; context?: HttpContext; transferCache?: boolean },
-  ): Observable<HttpResponse<ModelsTaskCleanupResponse>>;
+  ): Observable<HttpResponse<V1TaskCleanupResponse>>;
   public actionsInstancesCleanupPost(
     days: number,
     observe?: 'events',
     reportProgress?: boolean,
     options?: { httpHeaderAccept?: '*/*'; context?: HttpContext; transferCache?: boolean },
-  ): Observable<HttpEvent<ModelsTaskCleanupResponse>>;
+  ): Observable<HttpEvent<V1TaskCleanupResponse>>;
   public actionsInstancesCleanupPost(
     days: number,
     observe: any = 'body',
@@ -140,20 +146,16 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/instances/cleanup`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsTaskCleanupResponse>(
-      'post',
-      `${basePath}${localVarPath}`,
-      {
-        context: localVarHttpContext,
-        params: localVarQueryParameters.toHttpParams(),
-        responseType: <any>responseType_,
-        ...(withCredentials ? { withCredentials } : {}),
-        headers: localVarHeaders,
-        observe: observe,
-        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-        reportProgress: reportProgress,
-      },
-    );
+    return this.httpClient.request<V1TaskCleanupResponse>('post', `${basePath}${localVarPath}`, {
+      context: localVarHttpContext,
+      params: localVarQueryParameters.toHttpParams(),
+      responseType: <any>responseType_,
+      ...(withCredentials ? { withCredentials } : {}),
+      headers: localVarHeaders,
+      observe: observe,
+      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+      reportProgress: reportProgress,
+    });
   }
 
   /**
@@ -500,7 +502,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsTaskInstance>;
+  ): Observable<V1TaskInstance>;
   public actionsInstancesIdGet(
     id: string,
     observe?: 'response',
@@ -510,7 +512,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsTaskInstance>>;
+  ): Observable<HttpResponse<V1TaskInstance>>;
   public actionsInstancesIdGet(
     id: string,
     observe?: 'events',
@@ -520,7 +522,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsTaskInstance>>;
+  ): Observable<HttpEvent<V1TaskInstance>>;
   public actionsInstancesIdGet(
     id: string,
     observe: any = 'body',
@@ -569,7 +571,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/instances/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsTaskInstance>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1TaskInstance>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       responseType: <any>responseType_,
       ...(withCredentials ? { withCredentials } : {}),
@@ -602,7 +604,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsTaskLogResponse>;
+  ): Observable<V1TaskLogResponse>;
   public actionsInstancesIdLogsGet(
     id: string,
     stepIndex?: number,
@@ -614,7 +616,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsTaskLogResponse>>;
+  ): Observable<HttpResponse<V1TaskLogResponse>>;
   public actionsInstancesIdLogsGet(
     id: string,
     stepIndex?: number,
@@ -626,7 +628,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsTaskLogResponse>>;
+  ): Observable<HttpEvent<V1TaskLogResponse>>;
   public actionsInstancesIdLogsGet(
     id: string,
     stepIndex?: number,
@@ -695,7 +697,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/instances/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}/logs`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsTaskLogResponse>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1TaskLogResponse>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       params: localVarQueryParameters.toHttpParams(),
       responseType: <any>responseType_,
@@ -723,7 +725,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<ModelsStepManifest>>;
+  ): Observable<Array<V1StepManifest>>;
   public actionsManifestsGet(
     observe?: 'response',
     reportProgress?: boolean,
@@ -732,7 +734,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<ModelsStepManifest>>>;
+  ): Observable<HttpResponse<Array<V1StepManifest>>>;
   public actionsManifestsGet(
     observe?: 'events',
     reportProgress?: boolean,
@@ -741,7 +743,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<ModelsStepManifest>>>;
+  ): Observable<HttpEvent<Array<V1StepManifest>>>;
   public actionsManifestsGet(
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -783,7 +785,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/manifests`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<ModelsStepManifest>>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<Array<V1StepManifest>>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       responseType: <any>responseType_,
       ...(withCredentials ? { withCredentials } : {}),
@@ -804,7 +806,7 @@ export class ActionsService extends BaseService {
    * @param options additional options
    */
   public actionsProbePost(
-    req: ActionsProbeRequest,
+    req: V1ProbeRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -812,9 +814,9 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<{ [key: string]: string }>;
+  ): Observable<V1ProbeResponse>;
   public actionsProbePost(
-    req: ActionsProbeRequest,
+    req: V1ProbeRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -822,9 +824,9 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<{ [key: string]: string }>>;
+  ): Observable<HttpResponse<V1ProbeResponse>>;
   public actionsProbePost(
-    req: ActionsProbeRequest,
+    req: V1ProbeRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -832,9 +834,9 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<{ [key: string]: string }>>;
+  ): Observable<HttpEvent<V1ProbeResponse>>;
   public actionsProbePost(
-    req: ActionsProbeRequest,
+    req: V1ProbeRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -889,20 +891,16 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/probe`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<{ [key: string]: string }>(
-      'post',
-      `${basePath}${localVarPath}`,
-      {
-        context: localVarHttpContext,
-        body: req,
-        responseType: <any>responseType_,
-        ...(withCredentials ? { withCredentials } : {}),
-        headers: localVarHeaders,
-        observe: observe,
-        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-        reportProgress: reportProgress,
-      },
-    );
+    return this.httpClient.request<V1ProbeResponse>('post', `${basePath}${localVarPath}`, {
+      context: localVarHttpContext,
+      body: req,
+      responseType: <any>responseType_,
+      ...(withCredentials ? { withCredentials } : {}),
+      headers: localVarHeaders,
+      observe: observe,
+      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+      reportProgress: reportProgress,
+    });
   }
 
   /**
@@ -1429,7 +1427,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsWorkflow>;
+  ): Observable<V1Workflow>;
   public actionsWorkflowsIdGet(
     id: string,
     observe?: 'response',
@@ -1439,7 +1437,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsWorkflow>>;
+  ): Observable<HttpResponse<V1Workflow>>;
   public actionsWorkflowsIdGet(
     id: string,
     observe?: 'events',
@@ -1449,7 +1447,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsWorkflow>>;
+  ): Observable<HttpEvent<V1Workflow>>;
   public actionsWorkflowsIdGet(
     id: string,
     observe: any = 'body',
@@ -1498,7 +1496,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/workflows/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsWorkflow>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Workflow>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       responseType: <any>responseType_,
       ...(withCredentials ? { withCredentials } : {}),
@@ -1521,7 +1519,7 @@ export class ActionsService extends BaseService {
    */
   public actionsWorkflowsIdPut(
     id: string,
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1529,10 +1527,10 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsWorkflow>;
+  ): Observable<V1Workflow>;
   public actionsWorkflowsIdPut(
     id: string,
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1540,10 +1538,10 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsWorkflow>>;
+  ): Observable<HttpResponse<V1Workflow>>;
   public actionsWorkflowsIdPut(
     id: string,
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1551,10 +1549,10 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsWorkflow>>;
+  ): Observable<HttpEvent<V1Workflow>>;
   public actionsWorkflowsIdPut(
     id: string,
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1614,7 +1612,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/workflows/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsWorkflow>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Workflow>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: workflow,
       responseType: <any>responseType_,
@@ -1644,7 +1642,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<string>;
+  ): Observable<V1WebhookTokenResponse>;
   public actionsWorkflowsIdWebhookResetPost(
     id: string,
     observe?: 'response',
@@ -1654,7 +1652,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<string>>;
+  ): Observable<HttpResponse<V1WebhookTokenResponse>>;
   public actionsWorkflowsIdWebhookResetPost(
     id: string,
     observe?: 'events',
@@ -1664,7 +1662,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<string>>;
+  ): Observable<HttpEvent<V1WebhookTokenResponse>>;
   public actionsWorkflowsIdWebhookResetPost(
     id: string,
     observe: any = 'body',
@@ -1713,7 +1711,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/workflows/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}/webhook/reset`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<string>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1WebhookTokenResponse>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       responseType: <any>responseType_,
       ...(withCredentials ? { withCredentials } : {}),
@@ -1734,7 +1732,7 @@ export class ActionsService extends BaseService {
    * @param options additional options
    */
   public actionsWorkflowsPost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1742,9 +1740,9 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsWorkflow>;
+  ): Observable<V1Workflow>;
   public actionsWorkflowsPost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1752,9 +1750,9 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsWorkflow>>;
+  ): Observable<HttpResponse<V1Workflow>>;
   public actionsWorkflowsPost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1762,9 +1760,9 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsWorkflow>>;
+  ): Observable<HttpEvent<V1Workflow>>;
   public actionsWorkflowsPost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1819,7 +1817,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/workflows`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsWorkflow>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Workflow>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: workflow,
       responseType: <any>responseType_,
@@ -1847,7 +1845,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<{ [key: string]: any }>;
+  ): Observable<V1WorkflowSchemaResponse>;
   public actionsWorkflowsSchemaGet(
     observe?: 'response',
     reportProgress?: boolean,
@@ -1856,7 +1854,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<{ [key: string]: any }>>;
+  ): Observable<HttpResponse<V1WorkflowSchemaResponse>>;
   public actionsWorkflowsSchemaGet(
     observe?: 'events',
     reportProgress?: boolean,
@@ -1865,7 +1863,7 @@ export class ActionsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<{ [key: string]: any }>>;
+  ): Observable<HttpEvent<V1WorkflowSchemaResponse>>;
   public actionsWorkflowsSchemaGet(
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -1907,7 +1905,7 @@ export class ActionsService extends BaseService {
 
     let localVarPath = `/actions/workflows/schema`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<{ [key: string]: any }>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1WorkflowSchemaResponse>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       responseType: <any>responseType_,
       ...(withCredentials ? { withCredentials } : {}),
@@ -1928,7 +1926,7 @@ export class ActionsService extends BaseService {
    * @param options additional options
    */
   public actionsWorkflowsValidatePost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1938,7 +1936,7 @@ export class ActionsService extends BaseService {
     },
   ): Observable<string>;
   public actionsWorkflowsValidatePost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1948,7 +1946,7 @@ export class ActionsService extends BaseService {
     },
   ): Observable<HttpResponse<string>>;
   public actionsWorkflowsValidatePost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1958,7 +1956,7 @@ export class ActionsService extends BaseService {
     },
   ): Observable<HttpEvent<string>>;
   public actionsWorkflowsValidatePost(
-    workflow: ModelsWorkflow,
+    workflow: V1Workflow,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2037,7 +2035,7 @@ export class ActionsService extends BaseService {
    */
   public actionsWorkflowsWorkflowIdRunPost(
     workflowId: string,
-    req?: ModelsRunWorkflowRequest,
+    req?: V1RunWorkflowRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -2048,7 +2046,7 @@ export class ActionsService extends BaseService {
   ): Observable<string>;
   public actionsWorkflowsWorkflowIdRunPost(
     workflowId: string,
-    req?: ModelsRunWorkflowRequest,
+    req?: V1RunWorkflowRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -2059,7 +2057,7 @@ export class ActionsService extends BaseService {
   ): Observable<HttpResponse<string>>;
   public actionsWorkflowsWorkflowIdRunPost(
     workflowId: string,
-    req?: ModelsRunWorkflowRequest,
+    req?: V1RunWorkflowRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -2070,7 +2068,7 @@ export class ActionsService extends BaseService {
   ): Observable<HttpEvent<string>>;
   public actionsWorkflowsWorkflowIdRunPost(
     workflowId: string,
-    req?: ModelsRunWorkflowRequest,
+    req?: V1RunWorkflowRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {

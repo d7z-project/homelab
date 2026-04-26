@@ -24,35 +24,35 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { IpExportTask } from '../model/ipExportTask';
+import { HomelabPkgApisNetworkIpV1AnalysisResult } from '../model/homelabPkgApisNetworkIpV1AnalysisResult';
 // @ts-ignore
-import { ModelsIPAnalysisResult } from '../model/modelsIPAnalysisResult';
+import { HomelabPkgApisNetworkIpV1Export } from '../model/homelabPkgApisNetworkIpV1Export';
 // @ts-ignore
-import { ModelsIPExport } from '../model/modelsIPExport';
+import { HomelabPkgApisNetworkIpV1ExportPreviewRequest } from '../model/homelabPkgApisNetworkIpV1ExportPreviewRequest';
 // @ts-ignore
-import { ModelsIPExportPreviewRequest } from '../model/modelsIPExportPreviewRequest';
+import { HomelabPkgApisNetworkIpV1ExportTask } from '../model/homelabPkgApisNetworkIpV1ExportTask';
 // @ts-ignore
-import { ModelsIPExportTriggerResponse } from '../model/modelsIPExportTriggerResponse';
+import { HomelabPkgApisNetworkIpV1ExportTriggerResponse } from '../model/homelabPkgApisNetworkIpV1ExportTriggerResponse';
 // @ts-ignore
-import { ModelsIPHitTestRequest } from '../model/modelsIPHitTestRequest';
+import { HomelabPkgApisNetworkIpV1HitTestRequest } from '../model/homelabPkgApisNetworkIpV1HitTestRequest';
 // @ts-ignore
-import { ModelsIPInfoResponse } from '../model/modelsIPInfoResponse';
+import { HomelabPkgApisNetworkIpV1PoolEntry } from '../model/homelabPkgApisNetworkIpV1PoolEntry';
 // @ts-ignore
-import { ModelsIPPool } from '../model/modelsIPPool';
+import { HomelabPkgApisNetworkIpV1PoolEntryRequest } from '../model/homelabPkgApisNetworkIpV1PoolEntryRequest';
 // @ts-ignore
-import { ModelsIPPoolEntry } from '../model/modelsIPPoolEntry';
+import { HomelabPkgApisNetworkIpV1PoolPreviewResponse } from '../model/homelabPkgApisNetworkIpV1PoolPreviewResponse';
 // @ts-ignore
-import { ModelsIPPoolEntryRequest } from '../model/modelsIPPoolEntryRequest';
-// @ts-ignore
-import { ModelsIPPoolPreviewResponse } from '../model/modelsIPPoolPreviewResponse';
-// @ts-ignore
-import { ModelsIPSyncPolicy } from '../model/modelsIPSyncPolicy';
+import { HomelabPkgApisNetworkIpV1SyncPolicy } from '../model/homelabPkgApisNetworkIpV1SyncPolicy';
 // @ts-ignore
 import { NetworkIpExportsGet200Response } from '../model/networkIpExportsGet200Response';
 // @ts-ignore
 import { NetworkIpPoolsGet200Response } from '../model/networkIpPoolsGet200Response';
 // @ts-ignore
 import { NetworkIpSyncGet200Response } from '../model/networkIpSyncGet200Response';
+// @ts-ignore
+import { V1IPInfoResponse } from '../model/v1IPInfoResponse';
+// @ts-ignore
+import { V1Pool } from '../model/v1Pool';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -80,7 +80,7 @@ export class NetworkIpService extends BaseService {
    * @param options additional options
    */
   public networkIpAnalysisHitTestPost(
-    request: ModelsIPHitTestRequest,
+    request: HomelabPkgApisNetworkIpV1HitTestRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -88,9 +88,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPAnalysisResult>;
+  ): Observable<HomelabPkgApisNetworkIpV1AnalysisResult>;
   public networkIpAnalysisHitTestPost(
-    request: ModelsIPHitTestRequest,
+    request: HomelabPkgApisNetworkIpV1HitTestRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -98,9 +98,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPAnalysisResult>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1AnalysisResult>>;
   public networkIpAnalysisHitTestPost(
-    request: ModelsIPHitTestRequest,
+    request: HomelabPkgApisNetworkIpV1HitTestRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -108,9 +108,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPAnalysisResult>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1AnalysisResult>>;
   public networkIpAnalysisHitTestPost(
-    request: ModelsIPHitTestRequest,
+    request: HomelabPkgApisNetworkIpV1HitTestRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -165,16 +165,20 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/analysis/hit-test`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPAnalysisResult>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: request,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1AnalysisResult>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: request,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -194,7 +198,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPInfoResponse>;
+  ): Observable<V1IPInfoResponse>;
   public networkIpAnalysisInfoGet(
     ip: string,
     observe?: 'response',
@@ -204,7 +208,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPInfoResponse>>;
+  ): Observable<HttpResponse<V1IPInfoResponse>>;
   public networkIpAnalysisInfoGet(
     ip: string,
     observe?: 'events',
@@ -214,7 +218,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPInfoResponse>>;
+  ): Observable<HttpEvent<V1IPInfoResponse>>;
   public networkIpAnalysisInfoGet(
     ip: string,
     observe: any = 'body',
@@ -273,7 +277,7 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/analysis/info`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPInfoResponse>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1IPInfoResponse>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       params: localVarQueryParameters.toHttpParams(),
       responseType: <any>responseType_,
@@ -605,7 +609,7 @@ export class NetworkIpService extends BaseService {
    */
   public networkIpExportsIdPut(
     id: string,
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -613,10 +617,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPExport>;
+  ): Observable<HomelabPkgApisNetworkIpV1Export>;
   public networkIpExportsIdPut(
     id: string,
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -624,10 +628,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPExport>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1Export>>;
   public networkIpExportsIdPut(
     id: string,
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -635,10 +639,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPExport>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1Export>>;
   public networkIpExportsIdPut(
     id: string,
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -698,16 +702,20 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/exports/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPExport>('put', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: _export,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1Export>(
+      'put',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: _export,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -729,7 +737,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPExportTriggerResponse>;
+  ): Observable<HomelabPkgApisNetworkIpV1ExportTriggerResponse>;
   public networkIpExportsIdTriggerPost(
     id: string,
     format?: string,
@@ -740,7 +748,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPExportTriggerResponse>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1ExportTriggerResponse>>;
   public networkIpExportsIdTriggerPost(
     id: string,
     format?: string,
@@ -751,7 +759,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPExportTriggerResponse>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1ExportTriggerResponse>>;
   public networkIpExportsIdTriggerPost(
     id: string,
     format?: string,
@@ -811,7 +819,7 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/exports/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}/trigger`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPExportTriggerResponse>(
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1ExportTriggerResponse>(
       'post',
       `${basePath}${localVarPath}`,
       {
@@ -836,7 +844,7 @@ export class NetworkIpService extends BaseService {
    * @param options additional options
    */
   public networkIpExportsPost(
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -844,9 +852,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPExport>;
+  ): Observable<HomelabPkgApisNetworkIpV1Export>;
   public networkIpExportsPost(
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -854,9 +862,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPExport>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1Export>>;
   public networkIpExportsPost(
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -864,9 +872,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPExport>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1Export>>;
   public networkIpExportsPost(
-    _export: ModelsIPExport,
+    _export: HomelabPkgApisNetworkIpV1Export,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -921,16 +929,20 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/exports`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPExport>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: _export,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1Export>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: _export,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -943,7 +955,7 @@ export class NetworkIpService extends BaseService {
    * @param options additional options
    */
   public networkIpExportsPreviewPost(
-    request: ModelsIPExportPreviewRequest,
+    request: HomelabPkgApisNetworkIpV1ExportPreviewRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -951,9 +963,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<ModelsIPPoolEntry>>;
+  ): Observable<Array<HomelabPkgApisNetworkIpV1PoolEntry>>;
   public networkIpExportsPreviewPost(
-    request: ModelsIPExportPreviewRequest,
+    request: HomelabPkgApisNetworkIpV1ExportPreviewRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -961,9 +973,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<ModelsIPPoolEntry>>>;
+  ): Observable<HttpResponse<Array<HomelabPkgApisNetworkIpV1PoolEntry>>>;
   public networkIpExportsPreviewPost(
-    request: ModelsIPExportPreviewRequest,
+    request: HomelabPkgApisNetworkIpV1ExportPreviewRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -971,9 +983,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<ModelsIPPoolEntry>>>;
+  ): Observable<HttpEvent<Array<HomelabPkgApisNetworkIpV1PoolEntry>>>;
   public networkIpExportsPreviewPost(
-    request: ModelsIPExportPreviewRequest,
+    request: HomelabPkgApisNetworkIpV1ExportPreviewRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1028,16 +1040,20 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/exports/preview`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<ModelsIPPoolEntry>>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: request,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<Array<HomelabPkgApisNetworkIpV1PoolEntry>>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: request,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1154,7 +1170,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<IpExportTask>;
+  ): Observable<HomelabPkgApisNetworkIpV1ExportTask>;
   public networkIpExportsTaskTaskIdGet(
     taskId: string,
     observe?: 'response',
@@ -1164,7 +1180,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<IpExportTask>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1ExportTask>>;
   public networkIpExportsTaskTaskIdGet(
     taskId: string,
     observe?: 'events',
@@ -1174,7 +1190,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<IpExportTask>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1ExportTask>>;
   public networkIpExportsTaskTaskIdGet(
     taskId: string,
     observe: any = 'body',
@@ -1223,15 +1239,19 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/exports/task/${this.configuration.encodeParam({ name: 'taskId', value: taskId, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<IpExportTask>('get', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1ExportTask>(
+      'get',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1249,7 +1269,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<IpExportTask>>;
+  ): Observable<Array<HomelabPkgApisNetworkIpV1ExportTask>>;
   public networkIpExportsTasksGet(
     observe?: 'response',
     reportProgress?: boolean,
@@ -1258,7 +1278,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<IpExportTask>>>;
+  ): Observable<HttpResponse<Array<HomelabPkgApisNetworkIpV1ExportTask>>>;
   public networkIpExportsTasksGet(
     observe?: 'events',
     reportProgress?: boolean,
@@ -1267,7 +1287,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<IpExportTask>>>;
+  ): Observable<HttpEvent<Array<HomelabPkgApisNetworkIpV1ExportTask>>>;
   public networkIpExportsTasksGet(
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -1309,15 +1329,19 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/exports/tasks`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<IpExportTask>>('get', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<Array<HomelabPkgApisNetworkIpV1ExportTask>>(
+      'get',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1692,7 +1716,7 @@ export class NetworkIpService extends BaseService {
    */
   public networkIpPoolsIdEntriesPost(
     id: string,
-    entry: ModelsIPPoolEntryRequest,
+    entry: HomelabPkgApisNetworkIpV1PoolEntryRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1703,7 +1727,7 @@ export class NetworkIpService extends BaseService {
   ): Observable<string>;
   public networkIpPoolsIdEntriesPost(
     id: string,
-    entry: ModelsIPPoolEntryRequest,
+    entry: HomelabPkgApisNetworkIpV1PoolEntryRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1714,7 +1738,7 @@ export class NetworkIpService extends BaseService {
   ): Observable<HttpResponse<string>>;
   public networkIpPoolsIdEntriesPost(
     id: string,
-    entry: ModelsIPPoolEntryRequest,
+    entry: HomelabPkgApisNetworkIpV1PoolEntryRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1725,7 +1749,7 @@ export class NetworkIpService extends BaseService {
   ): Observable<HttpEvent<string>>;
   public networkIpPoolsIdEntriesPost(
     id: string,
-    entry: ModelsIPPoolEntryRequest,
+    entry: HomelabPkgApisNetworkIpV1PoolEntryRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1820,7 +1844,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPPoolPreviewResponse>;
+  ): Observable<HomelabPkgApisNetworkIpV1PoolPreviewResponse>;
   public networkIpPoolsIdPreviewGet(
     id: string,
     cursor?: string,
@@ -1833,7 +1857,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPPoolPreviewResponse>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1PoolPreviewResponse>>;
   public networkIpPoolsIdPreviewGet(
     id: string,
     cursor?: string,
@@ -1846,7 +1870,7 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPPoolPreviewResponse>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1PoolPreviewResponse>>;
   public networkIpPoolsIdPreviewGet(
     id: string,
     cursor?: string,
@@ -1924,7 +1948,7 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/pools/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}/preview`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPPoolPreviewResponse>(
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1PoolPreviewResponse>(
       'get',
       `${basePath}${localVarPath}`,
       {
@@ -1951,7 +1975,7 @@ export class NetworkIpService extends BaseService {
    */
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPPool,
+    group: V1Pool,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1959,10 +1983,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPPool>;
+  ): Observable<V1Pool>;
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPPool,
+    group: V1Pool,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1970,10 +1994,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPPool>>;
+  ): Observable<HttpResponse<V1Pool>>;
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPPool,
+    group: V1Pool,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1981,10 +2005,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPPool>>;
+  ): Observable<HttpEvent<V1Pool>>;
   public networkIpPoolsIdPut(
     id: string,
-    group: ModelsIPPool,
+    group: V1Pool,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2044,7 +2068,7 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/pools/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPPool>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Pool>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: group,
       responseType: <any>responseType_,
@@ -2065,7 +2089,7 @@ export class NetworkIpService extends BaseService {
    * @param options additional options
    */
   public networkIpPoolsPost(
-    group: ModelsIPPool,
+    group: V1Pool,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -2073,9 +2097,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPPool>;
+  ): Observable<V1Pool>;
   public networkIpPoolsPost(
-    group: ModelsIPPool,
+    group: V1Pool,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -2083,9 +2107,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPPool>>;
+  ): Observable<HttpResponse<V1Pool>>;
   public networkIpPoolsPost(
-    group: ModelsIPPool,
+    group: V1Pool,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -2093,9 +2117,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPPool>>;
+  ): Observable<HttpEvent<V1Pool>>;
   public networkIpPoolsPost(
-    group: ModelsIPPool,
+    group: V1Pool,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2150,7 +2174,7 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/pools`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPPool>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Pool>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: group,
       responseType: <any>responseType_,
@@ -2402,7 +2426,7 @@ export class NetworkIpService extends BaseService {
    */
   public networkIpSyncIdPut(
     id: string,
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -2410,10 +2434,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPSyncPolicy>;
+  ): Observable<HomelabPkgApisNetworkIpV1SyncPolicy>;
   public networkIpSyncIdPut(
     id: string,
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -2421,10 +2445,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPSyncPolicy>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1SyncPolicy>>;
   public networkIpSyncIdPut(
     id: string,
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -2432,10 +2456,10 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPSyncPolicy>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1SyncPolicy>>;
   public networkIpSyncIdPut(
     id: string,
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2495,16 +2519,20 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/sync/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPSyncPolicy>('put', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: policy,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1SyncPolicy>(
+      'put',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: policy,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -2613,7 +2641,7 @@ export class NetworkIpService extends BaseService {
    * @param options additional options
    */
   public networkIpSyncPost(
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -2621,9 +2649,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsIPSyncPolicy>;
+  ): Observable<HomelabPkgApisNetworkIpV1SyncPolicy>;
   public networkIpSyncPost(
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -2631,9 +2659,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsIPSyncPolicy>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkIpV1SyncPolicy>>;
   public networkIpSyncPost(
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -2641,9 +2669,9 @@ export class NetworkIpService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsIPSyncPolicy>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkIpV1SyncPolicy>>;
   public networkIpSyncPost(
-    policy: ModelsIPSyncPolicy,
+    policy: HomelabPkgApisNetworkIpV1SyncPolicy,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2698,15 +2726,19 @@ export class NetworkIpService extends BaseService {
 
     let localVarPath = `/network/ip/sync`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsIPSyncPolicy>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: policy,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkIpV1SyncPolicy>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: policy,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 }

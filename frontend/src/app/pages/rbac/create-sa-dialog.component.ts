@@ -7,7 +7,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
-import { ModelsServiceAccount } from '../../generated';
+import { V1ServiceAccount, V1ServiceAccountMeta, V1ServiceAccountStatus } from '../../generated';
+
+type ServiceAccountFormModel = V1ServiceAccount & {
+  meta: V1ServiceAccountMeta;
+  status: V1ServiceAccountStatus;
+};
 
 @Component({
   selector: 'app-create-sa-dialog',
@@ -89,7 +94,9 @@ import { ModelsServiceAccount } from '../../generated';
         mat-flat-button
         color="primary"
         (click)="confirm()"
-        [disabled]="!sa.id.trim() || (!isEdit && (isDuplicate() || idInput.errors?.['pattern']))"
+        [disabled]="
+          !(sa.id || '').trim() || (!isEdit && (isDuplicate() || idInput.errors?.['pattern']))
+        "
         class="ml-2! px-8 rounded-full"
       >
         <mat-icon class="mr-1">check</mat-icon>
@@ -101,7 +108,7 @@ import { ModelsServiceAccount } from '../../generated';
 export class CreateSaDialogComponent {
   private dialogRef = inject(MatDialogRef<CreateSaDialogComponent>);
   isEdit = false;
-  sa: ModelsServiceAccount = {
+  sa: ServiceAccountFormModel = {
     id: '',
     meta: {
       name: '',
@@ -114,7 +121,7 @@ export class CreateSaDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public data: { sa: ModelsServiceAccount | null; existingIDs?: string[] },
+    public data: { sa: ServiceAccountFormModel | null; existingIDs?: string[] },
   ) {
     if (data.sa) {
       this.isEdit = true;
@@ -127,11 +134,11 @@ export class CreateSaDialogComponent {
   }
 
   isDuplicate(): boolean {
-    return this.existingIDs.includes(this.sa.id.trim());
+    return this.existingIDs.includes((this.sa.id || '').trim());
   }
 
   confirm() {
-    if (this.sa.id.trim() && (this.isEdit || !this.isDuplicate())) {
+    if ((this.sa.id || '').trim() && (this.isEdit || !this.isDuplicate())) {
       this.dialogRef.close(this.sa);
     }
   }

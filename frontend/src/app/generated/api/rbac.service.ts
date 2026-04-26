@@ -24,23 +24,25 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { ModelsDiscoverResult } from '../model/modelsDiscoverResult';
-// @ts-ignore
-import { ModelsResourcePermissions } from '../model/modelsResourcePermissions';
-// @ts-ignore
-import { ModelsRole } from '../model/modelsRole';
-// @ts-ignore
-import { ModelsRoleBinding } from '../model/modelsRoleBinding';
-// @ts-ignore
-import { ModelsServiceAccount } from '../model/modelsServiceAccount';
-// @ts-ignore
-import { ModelsSimulatePermissionsRequest } from '../model/modelsSimulatePermissionsRequest';
+import { HomelabPkgApisCoreRbacV1DiscoverResult } from '../model/homelabPkgApisCoreRbacV1DiscoverResult';
 // @ts-ignore
 import { RbacRolebindingsGet200Response } from '../model/rbacRolebindingsGet200Response';
 // @ts-ignore
 import { RbacRolesGet200Response } from '../model/rbacRolesGet200Response';
 // @ts-ignore
 import { RbacServiceaccountsGet200Response } from '../model/rbacServiceaccountsGet200Response';
+// @ts-ignore
+import { V1ResourcePermissions } from '../model/v1ResourcePermissions';
+// @ts-ignore
+import { V1Role } from '../model/v1Role';
+// @ts-ignore
+import { V1RoleBinding } from '../model/v1RoleBinding';
+// @ts-ignore
+import { V1ServiceAccount } from '../model/v1ServiceAccount';
+// @ts-ignore
+import { V1ServiceAccountTokenResponse } from '../model/v1ServiceAccountTokenResponse';
+// @ts-ignore
+import { V1SimulatePermissionsRequest } from '../model/v1SimulatePermissionsRequest';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -76,7 +78,7 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<ModelsDiscoverResult>>;
+  ): Observable<Array<HomelabPkgApisCoreRbacV1DiscoverResult>>;
   public rbacResourcesSuggestGet(
     prefix?: string,
     observe?: 'response',
@@ -86,7 +88,7 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<ModelsDiscoverResult>>>;
+  ): Observable<HttpResponse<Array<HomelabPkgApisCoreRbacV1DiscoverResult>>>;
   public rbacResourcesSuggestGet(
     prefix?: string,
     observe?: 'events',
@@ -96,7 +98,7 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<ModelsDiscoverResult>>>;
+  ): Observable<HttpEvent<Array<HomelabPkgApisCoreRbacV1DiscoverResult>>>;
   public rbacResourcesSuggestGet(
     prefix?: string,
     observe: any = 'body',
@@ -149,7 +151,7 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/resources/suggest`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<ModelsDiscoverResult>>(
+    return this.httpClient.request<Array<HomelabPkgApisCoreRbacV1DiscoverResult>>(
       'get',
       `${basePath}${localVarPath}`,
       {
@@ -405,7 +407,7 @@ export class RbacService extends BaseService {
    */
   public rbacRolebindingsIdPut(
     id: string,
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -413,10 +415,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsRoleBinding>;
+  ): Observable<V1RoleBinding>;
   public rbacRolebindingsIdPut(
     id: string,
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -424,10 +426,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsRoleBinding>>;
+  ): Observable<HttpResponse<V1RoleBinding>>;
   public rbacRolebindingsIdPut(
     id: string,
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -435,10 +437,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsRoleBinding>>;
+  ): Observable<HttpEvent<V1RoleBinding>>;
   public rbacRolebindingsIdPut(
     id: string,
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -498,7 +500,7 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/rolebindings/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsRoleBinding>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1RoleBinding>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: rb,
       responseType: <any>responseType_,
@@ -519,7 +521,7 @@ export class RbacService extends BaseService {
    * @param options additional options
    */
   public rbacRolebindingsPost(
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -527,9 +529,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsRoleBinding>;
+  ): Observable<V1RoleBinding>;
   public rbacRolebindingsPost(
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -537,9 +539,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsRoleBinding>>;
+  ): Observable<HttpResponse<V1RoleBinding>>;
   public rbacRolebindingsPost(
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -547,9 +549,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsRoleBinding>>;
+  ): Observable<HttpEvent<V1RoleBinding>>;
   public rbacRolebindingsPost(
-    rb: ModelsRoleBinding,
+    rb: V1RoleBinding,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -604,7 +606,7 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/rolebindings`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsRoleBinding>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1RoleBinding>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: rb,
       responseType: <any>responseType_,
@@ -852,7 +854,7 @@ export class RbacService extends BaseService {
    */
   public rbacRolesIdPut(
     id: string,
-    role: ModelsRole,
+    role: V1Role,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -860,10 +862,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsRole>;
+  ): Observable<V1Role>;
   public rbacRolesIdPut(
     id: string,
-    role: ModelsRole,
+    role: V1Role,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -871,10 +873,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsRole>>;
+  ): Observable<HttpResponse<V1Role>>;
   public rbacRolesIdPut(
     id: string,
-    role: ModelsRole,
+    role: V1Role,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -882,10 +884,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsRole>>;
+  ): Observable<HttpEvent<V1Role>>;
   public rbacRolesIdPut(
     id: string,
-    role: ModelsRole,
+    role: V1Role,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -941,7 +943,7 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/roles/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsRole>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Role>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: role,
       responseType: <any>responseType_,
@@ -962,7 +964,7 @@ export class RbacService extends BaseService {
    * @param options additional options
    */
   public rbacRolesPost(
-    role: ModelsRole,
+    role: V1Role,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -970,9 +972,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsRole>;
+  ): Observable<V1Role>;
   public rbacRolesPost(
-    role: ModelsRole,
+    role: V1Role,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -980,9 +982,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsRole>>;
+  ): Observable<HttpResponse<V1Role>>;
   public rbacRolesPost(
-    role: ModelsRole,
+    role: V1Role,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -990,9 +992,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsRole>>;
+  ): Observable<HttpEvent<V1Role>>;
   public rbacRolesPost(
-    role: ModelsRole,
+    role: V1Role,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1045,7 +1047,7 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/roles`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsRole>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Role>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: role,
       responseType: <any>responseType_,
@@ -1297,7 +1299,7 @@ export class RbacService extends BaseService {
    */
   public rbacServiceaccountsIdPut(
     id: string,
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1305,10 +1307,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsServiceAccount>;
+  ): Observable<V1ServiceAccountTokenResponse>;
   public rbacServiceaccountsIdPut(
     id: string,
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1316,10 +1318,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsServiceAccount>>;
+  ): Observable<HttpResponse<V1ServiceAccountTokenResponse>>;
   public rbacServiceaccountsIdPut(
     id: string,
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1327,10 +1329,10 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsServiceAccount>>;
+  ): Observable<HttpEvent<V1ServiceAccountTokenResponse>>;
   public rbacServiceaccountsIdPut(
     id: string,
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1390,16 +1392,20 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsServiceAccount>('put', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: sa,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<V1ServiceAccountTokenResponse>(
+      'put',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: sa,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1419,7 +1425,7 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsServiceAccount>;
+  ): Observable<V1ServiceAccountTokenResponse>;
   public rbacServiceaccountsIdResetPost(
     id: string,
     observe?: 'response',
@@ -1429,7 +1435,7 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsServiceAccount>>;
+  ): Observable<HttpResponse<V1ServiceAccountTokenResponse>>;
   public rbacServiceaccountsIdResetPost(
     id: string,
     observe?: 'events',
@@ -1439,7 +1445,7 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsServiceAccount>>;
+  ): Observable<HttpEvent<V1ServiceAccountTokenResponse>>;
   public rbacServiceaccountsIdResetPost(
     id: string,
     observe: any = 'body',
@@ -1488,15 +1494,19 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/serviceaccounts/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}/reset`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsServiceAccount>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<V1ServiceAccountTokenResponse>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1508,7 +1518,7 @@ export class RbacService extends BaseService {
    * @param options additional options
    */
   public rbacServiceaccountsPost(
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1516,9 +1526,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsServiceAccount>;
+  ): Observable<V1ServiceAccountTokenResponse>;
   public rbacServiceaccountsPost(
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1526,9 +1536,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsServiceAccount>>;
+  ): Observable<HttpResponse<V1ServiceAccountTokenResponse>>;
   public rbacServiceaccountsPost(
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1536,9 +1546,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsServiceAccount>>;
+  ): Observable<HttpEvent<V1ServiceAccountTokenResponse>>;
   public rbacServiceaccountsPost(
-    sa: ModelsServiceAccount,
+    sa: V1ServiceAccount,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1593,16 +1603,20 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/serviceaccounts`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsServiceAccount>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: sa,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<V1ServiceAccountTokenResponse>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: sa,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1614,7 +1628,7 @@ export class RbacService extends BaseService {
    * @param options additional options
    */
   public rbacSimulatePost(
-    request: ModelsSimulatePermissionsRequest,
+    request: V1SimulatePermissionsRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1622,9 +1636,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsResourcePermissions>;
+  ): Observable<V1ResourcePermissions>;
   public rbacSimulatePost(
-    request: ModelsSimulatePermissionsRequest,
+    request: V1SimulatePermissionsRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1632,9 +1646,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsResourcePermissions>>;
+  ): Observable<HttpResponse<V1ResourcePermissions>>;
   public rbacSimulatePost(
-    request: ModelsSimulatePermissionsRequest,
+    request: V1SimulatePermissionsRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1642,9 +1656,9 @@ export class RbacService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsResourcePermissions>>;
+  ): Observable<HttpEvent<V1ResourcePermissions>>;
   public rbacSimulatePost(
-    request: ModelsSimulatePermissionsRequest,
+    request: V1SimulatePermissionsRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1699,20 +1713,16 @@ export class RbacService extends BaseService {
 
     let localVarPath = `/rbac/simulate`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsResourcePermissions>(
-      'post',
-      `${basePath}${localVarPath}`,
-      {
-        context: localVarHttpContext,
-        body: request,
-        responseType: <any>responseType_,
-        ...(withCredentials ? { withCredentials } : {}),
-        headers: localVarHeaders,
-        observe: observe,
-        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-        reportProgress: reportProgress,
-      },
-    );
+    return this.httpClient.request<V1ResourcePermissions>('post', `${basePath}${localVarPath}`, {
+      context: localVarHttpContext,
+      body: request,
+      responseType: <any>responseType_,
+      ...(withCredentials ? { withCredentials } : {}),
+      headers: localVarHeaders,
+      observe: observe,
+      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+      reportProgress: reportProgress,
+    });
   }
 
   /**

@@ -69,7 +69,7 @@ export class WelcomeComponent {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.authService.logoutPost().subscribe({
+        this.authService.authLogoutPost().subscribe({
           next: () => {
             localStorage.clear();
             this.router.navigate(['/login']);

@@ -8,8 +8,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
 import {
   NetworkDnsService,
-  ModelsDomain,
-  ModelsRecord,
+  V1Domain,
+  V1Record,
   NetworkDnsDomainsGet200Response,
   NetworkDnsRecordsGet200Response,
 } from '../../generated';
@@ -77,8 +77,8 @@ export class DnsComponent implements OnInit, OnDestroy {
     { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
-  domains = signal<ModelsDomain[]>([]);
-  records = signal<ModelsRecord[]>([]);
+  domains = signal<V1Domain[]>([]);
+  records = signal<V1Record[]>([]);
 
   domainTotal = signal(0);
   recordTotal = signal(0);
@@ -276,15 +276,14 @@ export class DnsComponent implements OnInit, OnDestroy {
         this.domainSearch(),
       ),
     )) as NetworkDnsDomainsGet200Response;
-    if (reset) this.domains.set(data.items || []);
+    const items = (data.items || []) as V1Domain[];
+    if (reset) this.domains.set(items);
     else {
       const current = this.domains();
-      const newItems = (data.items || []).filter(
-        (n: ModelsDomain) => !current.some((e: ModelsDomain) => e.id === n.id),
-      );
+      const newItems = items.filter((n: V1Domain) => !current.some((e: V1Domain) => e.id === n.id));
       this.domains.update((prev) => [...prev, ...newItems]);
     }
-    this.domainTotal.set(data.total || 0);
+    this.domainTotal.set(items.length);
     this.domainNextCursor.set(data.nextCursor || '');
     this.hasMoreDomains.set(data.hasMore || false);
   }
@@ -301,15 +300,14 @@ export class DnsComponent implements OnInit, OnDestroy {
         this.recordSearch(),
       ),
     )) as NetworkDnsRecordsGet200Response;
-    if (reset) this.records.set(data.items || []);
+    const items = (data.items || []) as V1Record[];
+    if (reset) this.records.set(items);
     else {
       const current = this.records();
-      const newItems = (data.items || []).filter(
-        (n: ModelsRecord) => !current.some((e: ModelsRecord) => e.id === n.id),
-      );
+      const newItems = items.filter((n: V1Record) => !current.some((e: V1Record) => e.id === n.id));
       this.records.update((prev) => [...prev, ...newItems]);
     }
-    this.recordTotal.set(data.total || 0);
+    this.recordTotal.set(items.length);
     this.recordNextCursor.set(data.nextCursor || '');
     this.hasMoreRecords.set(data.hasMore || false);
   }
@@ -360,11 +358,11 @@ export class DnsComponent implements OnInit, OnDestroy {
     });
   }
 
-  async toggleDomain(domain: ModelsDomain) {
+  async toggleDomain(domain: V1Domain) {
     if (!domain.id) return;
     this.loading.set(true);
     try {
-      const updated: ModelsDomain = {
+      const updated: V1Domain = {
         ...domain,
         meta: { ...domain.meta, enabled: domain.meta!.enabled },
       };
@@ -380,11 +378,11 @@ export class DnsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async toggleRecord(record: ModelsRecord) {
+  async toggleRecord(record: V1Record) {
     if (!record.id) return;
     this.loading.set(true);
     try {
-      const updated: ModelsRecord = {
+      const updated: V1Record = {
         ...record,
         meta: { ...record.meta, enabled: record.meta!.enabled },
       };
@@ -423,7 +421,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     });
   }
 
-  editDomain(domain: ModelsDomain) {
+  editDomain(domain: V1Domain) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateDomainDialogComponent, {
         data: { domain: domain, existingNames: this.domains().map((d) => d.meta?.name || '') },
@@ -446,7 +444,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteDomain(domain: ModelsDomain) {
+  deleteDomain(domain: V1Domain) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
@@ -497,7 +495,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     });
   }
 
-  editRecord(record: ModelsRecord) {
+  editRecord(record: V1Record) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateRecordDialogComponent, {
         data: { record: record },
@@ -520,7 +518,7 @@ export class DnsComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteRecord(record: ModelsRecord) {
+  deleteRecord(record: V1Record) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {

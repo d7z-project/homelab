@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsLookupItem } from './modelsLookupItem';
+import { V1LookupItem } from './v1LookupItem';
 
 export interface DiscoveryLookupGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsLookupItem>;
+  items?: Array<V1LookupItem>;
   nextCursor?: string;
-  total?: number;
 }

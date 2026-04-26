@@ -15,9 +15,9 @@ import {
 import { FormsModule, NgModel } from '@angular/forms';
 import {
   RbacService,
-  ModelsServiceAccount,
-  ModelsResourcePermissions,
-  ModelsDiscoverResult,
+  V1ServiceAccount,
+  V1ResourcePermissions,
+  HomelabPkgApisCoreRbacV1DiscoverResult,
 } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -362,10 +362,10 @@ export class RbacSimulatorComponent implements OnInit {
   saId = signal('');
   verb = signal('');
   resource = signal('');
-  suggestions = signal<ModelsDiscoverResult[]>([]);
+  suggestions = signal<HomelabPkgApisCoreRbacV1DiscoverResult[]>([]);
   verbSuggestions = signal<string[]>([]);
   loading = signal(false);
-  result = signal<ModelsResourcePermissions | null>(null);
+  result = signal<V1ResourcePermissions | null>(null);
 
   ngOnInit() {}
 

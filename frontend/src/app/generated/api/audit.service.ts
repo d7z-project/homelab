@@ -26,7 +26,7 @@ import { AuditLogsGet200Response } from '../model/auditLogsGet200Response';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { ModelsAuditCleanupResponse } from '../model/modelsAuditCleanupResponse';
+import { V1AuditCleanupResponse } from '../model/v1AuditCleanupResponse';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -62,7 +62,7 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsAuditCleanupResponse>;
+  ): Observable<V1AuditCleanupResponse>;
   public auditLogsCleanupPost(
     days: number,
     observe?: 'response',
@@ -72,7 +72,7 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsAuditCleanupResponse>>;
+  ): Observable<HttpResponse<V1AuditCleanupResponse>>;
   public auditLogsCleanupPost(
     days: number,
     observe?: 'events',
@@ -82,7 +82,7 @@ export class AuditService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsAuditCleanupResponse>>;
+  ): Observable<HttpEvent<V1AuditCleanupResponse>>;
   public auditLogsCleanupPost(
     days: number,
     observe: any = 'body',
@@ -141,20 +141,16 @@ export class AuditService extends BaseService {
 
     let localVarPath = `/audit/logs/cleanup`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsAuditCleanupResponse>(
-      'post',
-      `${basePath}${localVarPath}`,
-      {
-        context: localVarHttpContext,
-        params: localVarQueryParameters.toHttpParams(),
-        responseType: <any>responseType_,
-        ...(withCredentials ? { withCredentials } : {}),
-        headers: localVarHeaders,
-        observe: observe,
-        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-        reportProgress: reportProgress,
-      },
-    );
+    return this.httpClient.request<V1AuditCleanupResponse>('post', `${basePath}${localVarPath}`, {
+      context: localVarHttpContext,
+      params: localVarQueryParameters.toHttpParams(),
+      responseType: <any>responseType_,
+      ...(withCredentials ? { withCredentials } : {}),
+      headers: localVarHeaders,
+      observe: observe,
+      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+      reportProgress: reportProgress,
+    });
   }
 
   /**

@@ -5,7 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
-import { ModelsRole } from '../../generated';
+import { V1Role, V1RoleMeta } from '../../generated';
+
+type RoleViewModel = V1Role & { meta: V1RoleMeta };
 
 @Component({
   selector: 'app-show-sa-roles-dialog',
@@ -88,5 +90,5 @@ import { ModelsRole } from '../../generated';
   `,
 })
 export class ShowSaRolesDialogComponent {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { saID: string; roles: ModelsRole[] }) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { saID: string; roles: RoleViewModel[] }) {}
 }

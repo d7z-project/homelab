@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { ModelsAuditLog } from '../../generated';
+import { V1AuditLog } from '../../generated';
 
 @Component({
   selector: 'app-audit-detail-dialog',
@@ -105,5 +105,5 @@ import { ModelsAuditLog } from '../../generated';
   `,
 })
 export class AuditDetailDialogComponent {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: ModelsAuditLog) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: V1AuditLog) {}
 }

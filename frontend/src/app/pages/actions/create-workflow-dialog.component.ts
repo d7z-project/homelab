@@ -47,10 +47,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import {
   ActionsService,
-  ModelsWorkflow,
-  ModelsStep,
-  ModelsStepManifest,
-  ModelsVarDefinition,
+  V1Workflow,
+  V1Step,
+  V1StepManifest,
+  V1VarDefinition,
 } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 import { ProcessorSelectorDialogComponent } from './processor-selector-dialog.component';
@@ -176,9 +176,9 @@ export class CreateWorkflowDialogComponent implements OnInit {
     tabSize: 2,
   };
 
-  manifests = signal<ModelsStepManifest[]>([]);
+  manifests = signal<V1StepManifest[]>([]);
   manifestMap = computed(() => {
-    const map = new Map<string, ModelsStepManifest>();
+    const map = new Map<string, V1StepManifest>();
     this.manifests().forEach((m) => {
       if (m.id) map.set(m.id, m);
     });
@@ -226,7 +226,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<CreateWorkflowDialogComponent>,
-    @Optional() @Inject(MAT_DIALOG_DATA) public data: { workflow: ModelsWorkflow | null } | null,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: { workflow: V1Workflow | null } | null,
   ) {
     effect(() => {
       const s = this.schema();
@@ -414,7 +414,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
       this.yamlCode.set(yaml.dump(cleaned, { indent: 2, noArrayIndent: true }));
     } else {
       try {
-        const parsed = yaml.load(this.yamlCode()) as ModelsWorkflow;
+        const parsed = yaml.load(this.yamlCode()) as V1Workflow;
         if (parsed) this.applyWorkflowToForms(parsed);
       } catch (e: any) {
         this.snackBar.open('YAML 解析失败: ' + e.message, '确定', { duration: 3000 });
@@ -425,9 +425,9 @@ export class CreateWorkflowDialogComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  getCurrentWorkflow(): ModelsWorkflow {
+  getCurrentWorkflow(): V1Workflow {
     const workflowValue = { ...this.infoForm.value };
-    const varsMap: { [key: string]: ModelsVarDefinition } = {};
+    const varsMap: { [key: string]: V1VarDefinition } = {};
 
     this.vars.controls.forEach((control) => {
       const v = control.value;
@@ -451,7 +451,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
       return s;
     });
 
-    const workflow: ModelsWorkflow = {
+    const workflow: V1Workflow = {
       id: this.data?.workflow?.id || '',
       generation: this.data?.workflow?.generation || 0,
       meta: {
@@ -496,7 +496,7 @@ export class CreateWorkflowDialogComponent implements OnInit {
     return prefix + Math.random().toString(36).substring(2, 8);
   }
 
-  applyWorkflowToForms(wf: ModelsWorkflow) {
+  applyWorkflowToForms(wf: V1Workflow) {
     this.infoForm.patchValue({
       name: wf.meta?.name,
       description: wf.meta?.description,
@@ -699,10 +699,10 @@ export class CreateWorkflowDialogComponent implements OnInit {
   }
 
   async submit() {
-    let workflow: ModelsWorkflow;
+    let workflow: V1Workflow;
     try {
       if (this.editMode() === 'yaml') {
-        workflow = yaml.load(this.yamlCode()) as ModelsWorkflow;
+        workflow = yaml.load(this.yamlCode()) as V1Workflow;
       } else {
         workflow = this.getCurrentWorkflow();
       }

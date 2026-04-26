@@ -17,7 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { ModelsStepManifest } from '../../generated';
+import { V1StepManifest } from '../../generated';
 
 @Component({
   selector: 'app-processor-selector-dialog',
@@ -103,11 +103,11 @@ export class ProcessorSelectorDialogComponent implements OnInit, AfterViewInit {
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
 
   searchQuery = '';
-  filteredManifests = signal<ModelsStepManifest[]>([]);
+  filteredManifests = signal<V1StepManifest[]>([]);
 
   constructor(
     public dialogRef: MatDialogRef<ProcessorSelectorDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { manifests: ModelsStepManifest[]; selectedId?: string },
+    @Inject(MAT_DIALOG_DATA) public data: { manifests: V1StepManifest[]; selectedId?: string },
   ) {}
 
   ngOnInit() {

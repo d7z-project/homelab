@@ -6,13 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
-import {
-  RbacService,
-  ModelsServiceAccount,
-  ModelsRole,
-  ModelsRoleBinding,
-  AuthService,
-} from '../../generated';
+import { RbacService, V1ServiceAccount, V1Role, V1RoleBinding, AuthService } from '../../generated';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -77,9 +71,9 @@ export class RbacComponent implements OnInit, OnDestroy {
     { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
-  serviceAccounts = signal<ModelsServiceAccount[]>([]);
-  roles = signal<ModelsRole[]>([]);
-  roleBindings = signal<ModelsRoleBinding[]>([]);
+  serviceAccounts = signal<V1ServiceAccount[]>([]);
+  roles = signal<V1Role[]>([]);
+  roleBindings = signal<V1RoleBinding[]>([]);
 
   saTotal = signal(0);
   roleTotal = signal(0);
@@ -111,7 +105,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       : ['enabled', 'name', 'id', 'comments', 'lastUsedAt', 'actions'],
   );
 
-  async toggleSa(sa: ModelsServiceAccount) {
+  async toggleSa(sa: V1ServiceAccount) {
     if (!sa.id) return;
     this.loading.set(true);
     try {
@@ -141,7 +135,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       : ['enabled', 'name', 'sa', 'role', 'actions'],
   );
 
-  async toggleRb(rb: ModelsRoleBinding) {
+  async toggleRb(rb: V1RoleBinding) {
     if (!rb.id) return;
     this.loading.set(true);
     try {
@@ -347,15 +341,16 @@ export class RbacComponent implements OnInit, OnDestroy {
         this.saSearch(),
       ),
     );
-    if (reset) this.serviceAccounts.set(data.items || []);
+    const saItems = (data.items || []) as V1ServiceAccount[];
+    if (reset) this.serviceAccounts.set(saItems);
     else {
       const current = this.serviceAccounts();
-      const newItems = (data.items || []).filter(
+      const newItems = saItems.filter(
         (newItem) => !current.some((existing) => existing.id === newItem.id),
       );
       this.serviceAccounts.update((prev) => [...prev, ...newItems]);
     }
-    this.saTotal.set(data.total || 0);
+    this.saTotal.set(saItems.length);
     this.saNextCursor.set(data.nextCursor || '');
     this.hasMoreSa.set(data.hasMore || false);
   }
@@ -367,15 +362,16 @@ export class RbacComponent implements OnInit, OnDestroy {
     const data = await firstValueFrom(
       this.rbacService.rbacRolesGet(this.roleNextCursor(), this.pageSize(), this.roleSearch()),
     );
-    if (reset) this.roles.set(data.items || []);
+    const roleItems = (data.items || []) as V1Role[];
+    if (reset) this.roles.set(roleItems);
     else {
       const current = this.roles();
-      const newItems = (data.items || []).filter(
+      const newItems = roleItems.filter(
         (newItem) => !current.some((existing) => existing.id === newItem.id),
       );
       this.roles.update((prev) => [...prev, ...newItems]);
     }
-    this.roleTotal.set(data.total || 0);
+    this.roleTotal.set(roleItems.length);
     this.roleNextCursor.set(data.nextCursor || '');
     this.hasMoreRoles.set(data.hasMore || false);
   }
@@ -387,15 +383,16 @@ export class RbacComponent implements OnInit, OnDestroy {
     const data = await firstValueFrom(
       this.rbacService.rbacRolebindingsGet(this.rbNextCursor(), this.pageSize(), this.rbSearch()),
     );
-    if (reset) this.roleBindings.set(data.items || []);
+    const bindingItems = (data.items || []) as V1RoleBinding[];
+    if (reset) this.roleBindings.set(bindingItems);
     else {
       const current = this.roleBindings();
-      const newItems = (data.items || []).filter(
+      const newItems = bindingItems.filter(
         (newItem) => !current.some((existing) => existing.id === newItem.id),
       );
       this.roleBindings.update((prev) => [...prev, ...newItems]);
     }
-    this.rbTotal.set(data.total || 0);
+    this.rbTotal.set(bindingItems.length);
     this.rbNextCursor.set(data.nextCursor || '');
     this.hasMoreRb.set(data.hasMore || false);
   }
@@ -435,7 +432,7 @@ export class RbacComponent implements OnInit, OnDestroy {
       const dialogRef = this.dialog.open(LogoutDialogComponent, { maxWidth: '90vw' });
       dialogRef.afterClosed().subscribe((result) => {
         if (result) {
-          this.authService.logoutPost().subscribe({
+          this.authService.authLogoutPost().subscribe({
             next: () => {
               localStorage.clear();
               this.router.navigate(['/login']);
@@ -450,7 +447,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  async showSaRoles(sa: ModelsServiceAccount) {
+  async showSaRoles(sa: V1ServiceAccount) {
     const saID = sa.id || '';
     const relevantRbs = this.roleBindings().filter(
       (rb) => rb.meta?.serviceAccountId === saID && rb.meta?.enabled,
@@ -458,7 +455,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     const roleIDs = Array.from(new Set(relevantRbs.flatMap((rb) => rb.meta?.roleIds || [])));
     const roles = roleIDs
       .map((id) => this.roles().find((r) => r.id === id))
-      .filter((r) => !!r) as ModelsRole[];
+      .filter((r) => !!r) as V1Role[];
 
     requestAnimationFrame(() => {
       this.dialog.open(ShowSaRolesDialogComponent, {
@@ -467,7 +464,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  editSA(sa: ModelsServiceAccount) {
+  editSA(sa: V1ServiceAccount) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateSaDialogComponent, {
         data: { sa: sa, existingIDs: this.serviceAccounts().map((x) => x.id || '') },
@@ -491,7 +488,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  editRole(role: ModelsRole) {
+  editRole(role: V1Role) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateRoleDialogComponent, {
         data: { role: role, existingIDs: this.roles().map((x) => x.id || '') },
@@ -513,7 +510,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  editRB(binding: ModelsRoleBinding) {
+  editRB(binding: V1RoleBinding) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateBindingDialogComponent, {
         data: {
@@ -552,7 +549,11 @@ export class RbacComponent implements OnInit, OnDestroy {
 
             requestAnimationFrame(() => {
               this.dialog.open(ShowTokenDialogComponent, {
-                data: { id: sa.id, name: sa.meta?.name, token: sa.meta?.token },
+                data: {
+                  id: sa.serviceAccount?.id,
+                  name: sa.serviceAccount?.meta?.name,
+                  token: sa.token,
+                },
                 disableClose: true,
               });
             });
@@ -566,7 +567,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteSA(sa: ModelsServiceAccount) {
+  deleteSA(sa: V1ServiceAccount) {
     const id = sa.id || '';
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
@@ -594,7 +595,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  resetToken(sa: ModelsServiceAccount) {
+  resetToken(sa: V1ServiceAccount) {
     const id = sa.id || '';
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
@@ -613,7 +614,11 @@ export class RbacComponent implements OnInit, OnDestroy {
             this.snackBar.open('令牌已重置', '关闭', { duration: 2000 });
             requestAnimationFrame(() => {
               this.dialog.open(ShowTokenDialogComponent, {
-                data: { id: res.id, name: res.meta?.name, token: res.meta?.token },
+                data: {
+                  id: res.serviceAccount?.id,
+                  name: res.serviceAccount?.meta?.name,
+                  token: res.token,
+                },
                 disableClose: true,
               });
             });
@@ -650,7 +655,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteRole(role: ModelsRole) {
+  deleteRole(role: V1Role) {
     const id = role.id || '';
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
@@ -700,7 +705,7 @@ export class RbacComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteRB(rb: ModelsRoleBinding) {
+  deleteRB(rb: V1RoleBinding) {
     const id = rb.id || '';
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {

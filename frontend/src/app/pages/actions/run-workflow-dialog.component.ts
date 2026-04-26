@@ -14,7 +14,9 @@ import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { ModelsWorkflow } from '../../generated';
+import { V1Workflow, V1WorkflowMeta } from '../../generated';
+
+type WorkflowDialogModel = V1Workflow & { meta: V1WorkflowMeta };
 
 @Component({
   selector: 'app-run-workflow-dialog',
@@ -68,7 +70,7 @@ export class RunWorkflowDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<RunWorkflowDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { workflow: ModelsWorkflow },
+    @Inject(MAT_DIALOG_DATA) public data: { workflow: WorkflowDialogModel },
   ) {}
 
   ngOnInit() {

@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsSiteSyncPolicy } from './modelsSiteSyncPolicy';
+import { HomelabPkgApisNetworkSiteV1SyncPolicy } from './homelabPkgApisNetworkSiteV1SyncPolicy';
 
 export interface NetworkSiteSyncGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsSiteSyncPolicy>;
+  items?: Array<HomelabPkgApisNetworkSiteV1SyncPolicy>;
   nextCursor?: string;
-  total?: number;
 }

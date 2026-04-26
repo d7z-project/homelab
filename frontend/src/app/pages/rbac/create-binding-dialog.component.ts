@@ -16,7 +16,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { FormsModule } from '@angular/forms';
-import { ModelsServiceAccount, ModelsRole, ModelsRoleBinding, RbacService } from '../../generated';
+import { V1ServiceAccount, V1Role, V1RoleBinding, RbacService } from '../../generated';
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
 
 @Component({
@@ -108,7 +108,7 @@ import { DiscoverySelectComponent } from '../../shared/discovery-select.componen
 export class CreateBindingDialogComponent implements OnInit, AfterViewInit {
   private cdr = inject(ChangeDetectorRef);
   isEdit = false;
-  binding: ModelsRoleBinding = {
+  binding: V1RoleBinding = {
     id: '',
     meta: {
       name: '',
@@ -122,7 +122,7 @@ export class CreateBindingDialogComponent implements OnInit, AfterViewInit {
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: {
-      binding?: ModelsRoleBinding;
+      binding?: V1RoleBinding;
     },
   ) {
     if (data.binding) {

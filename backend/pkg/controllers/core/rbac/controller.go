@@ -314,7 +314,7 @@ func DeleteRoleBindingHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Produce json
 // @Param id path string true "Service Account ID"
-// @Success 200 {object} apiv1.ServiceAccount
+// @Success 200 {object} apiv1.ServiceAccountTokenResponse
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Failure 403 {object} common.Response "Forbidden"
 // @Failure 404 {object} common.Response "Service Account Not Found"
@@ -361,7 +361,7 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags rbac
 // @Produce json
 // @Param prefix query string false "Prefix to filter resources"
-// @Success 200 {array} discoverymodel.DiscoverResult
+// @Success 200 {array} apiv1.DiscoverResult
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /rbac/resources/suggest [get]
@@ -376,7 +376,7 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 		controllercommon.HandleError(w, r, err)
 		return
 	}
-	common.Success(w, r, suggestions)
+	common.Success(w, r, mapDiscoverResults(suggestions))
 }
 
 // SuggestVerbsHandler godoc

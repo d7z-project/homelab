@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthService, ModelsSession } from '../../generated';
+import { AuthService, V1Session } from '../../generated';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -194,7 +194,7 @@ export class SessionComponent implements OnInit, OnDestroy {
   );
 
   loading = signal(false);
-  sessions = signal<ModelsSession[]>([]);
+  sessions = signal<V1Session[]>([]);
   showScrollTop = signal(false);
 
   displayedColumns = computed(() =>
@@ -254,7 +254,7 @@ export class SessionComponent implements OnInit, OnDestroy {
     }
   }
 
-  async revokeSession(session: ModelsSession) {
+  async revokeSession(session: V1Session) {
     if (!session.id) return;
 
     requestAnimationFrame(() => {

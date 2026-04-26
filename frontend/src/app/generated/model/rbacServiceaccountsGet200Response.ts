@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsServiceAccount } from './modelsServiceAccount';
+import { V1ServiceAccount } from './v1ServiceAccount';
 
 export interface RbacServiceaccountsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsServiceAccount>;
+  items?: Array<V1ServiceAccount>;
   nextCursor?: string;
-  total?: number;
 }

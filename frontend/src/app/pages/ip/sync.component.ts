@@ -24,7 +24,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
 import { ConfirmDialogComponent } from '../rbac/confirm-dialog.component';
 import { CreateSyncPolicyDialogComponent } from './create-sync-policy-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPPool } from '../../generated';
+import { NetworkIpService, HomelabPkgApisNetworkIpV1SyncPolicy, V1Pool } from '../../generated';
 
 @Component({
   selector: 'app-ip-sync',
@@ -83,7 +83,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
   loading = signal(false);
   loadingMore = signal(false);
   syncingRows = signal<Record<string, boolean>>({}); // Track per-row syncing
-  policies = signal<ModelsIPSyncPolicy[]>([]);
+  policies = signal<HomelabPkgApisNetworkIpV1SyncPolicy[]>([]);
   groups = signal<Map<string, string>>(new Map()); // ID -> Name
   search = signal('');
   nextCursor = signal('');
@@ -227,14 +227,15 @@ export class IpSyncComponent implements OnInit, OnDestroy {
       const res = await firstValueFrom(
         this.ipService.networkIpSyncGet(this.nextCursor(), this.pageSize(), this.search()),
       );
+      const items = (res.items || []) as HomelabPkgApisNetworkIpV1SyncPolicy[];
       if (reset) {
-        this.policies.set(res.items || []);
+        this.policies.set(items);
       } else {
         const current = this.policies();
-        const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+        const newItems = items.filter((n) => !current.some((e) => e.id === n.id));
         this.policies.update((prev) => [...prev, ...newItems]);
       }
-      this.total.set(res.total || 0);
+      this.total.set(items.length);
       this.nextCursor.set(res.nextCursor || '');
       this.hasMore.set(res.hasMore || false);
     } catch (err) {
@@ -257,7 +258,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     });
   }
 
-  editPolicy(policy: ModelsIPSyncPolicy) {
+  editPolicy(policy: HomelabPkgApisNetworkIpV1SyncPolicy) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateSyncPolicyDialogComponent, {
         width: '500px',
@@ -269,7 +270,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     });
   }
 
-  async togglePolicy(policy: ModelsIPSyncPolicy) {
+  async togglePolicy(policy: HomelabPkgApisNetworkIpV1SyncPolicy) {
     if (!policy.id) return;
     this.loading.set(true);
     try {
@@ -291,7 +292,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     }
   }
 
-  deletePolicy(policy: ModelsIPSyncPolicy) {
+  deletePolicy(policy: HomelabPkgApisNetworkIpV1SyncPolicy) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
@@ -320,7 +321,7 @@ export class IpSyncComponent implements OnInit, OnDestroy {
     });
   }
 
-  async triggerSync(policy: ModelsIPSyncPolicy) {
+  async triggerSync(policy: HomelabPkgApisNetworkIpV1SyncPolicy) {
     if (!policy.id) return;
     this.syncingRows.update((s) => ({ ...s, [policy.id!]: true }));
     try {

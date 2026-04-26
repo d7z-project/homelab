@@ -8,11 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import {
-  NetworkIntelligenceService,
-  ModelsIntelligenceSource,
-  ModelsTaskStatus,
-} from '../../../generated';
+import { NetworkIntelligenceService, V1Source, SharedTaskStatus } from '../../../generated';
 
 @Component({
   selector: 'app-create-source-dialog',
@@ -86,7 +82,7 @@ export class CreateSourceDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private intService = inject(NetworkIntelligenceService);
   private dialogRef = inject(MatDialogRef<CreateSourceDialogComponent>);
-  public data = inject<ModelsIntelligenceSource | null>(MAT_DIALOG_DATA, { optional: true });
+  public data = inject<V1Source | null>(MAT_DIALOG_DATA, { optional: true });
   private snackBar = inject(MatSnackBar);
 
   loading = false;
@@ -140,7 +136,7 @@ export class CreateSourceDialogComponent implements OnInit {
       delete config['allowPrivate'];
     }
 
-    const payload: ModelsIntelligenceSource = {
+    const payload: V1Source = {
       id: this.data ? this.data.id : '',
       generation: this.data ? this.data.generation : 0,
       meta: {

@@ -14,7 +14,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
-import { NetworkIpService, ModelsIPExport } from '../../generated';
+import { NetworkIpService, HomelabPkgApisNetworkIpV1Export } from '../../generated';
 
 @Component({
   selector: 'app-create-export-dialog',
@@ -148,7 +148,7 @@ export class CreateExportDialogComponent {
   loading = signal(false);
   form: any;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { export?: ModelsIPExport }) {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { export?: HomelabPkgApisNetworkIpV1Export }) {
     this.form = this.fb.group({
       name: [this.data.export?.meta?.name || '', Validators.required],
       description: [this.data.export?.meta?.description || ''],
@@ -162,7 +162,7 @@ export class CreateExportDialogComponent {
     this.loading.set(true);
     const val = this.form.value;
 
-    const exportData: ModelsIPExport = {
+    const exportData: HomelabPkgApisNetworkIpV1Export = {
       id: this.data.export?.id || '',
       generation: this.data.export?.generation || 0,
       meta: {

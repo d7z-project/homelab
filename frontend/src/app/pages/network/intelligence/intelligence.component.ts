@@ -9,7 +9,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NetworkIntelligenceService, ModelsIntelligenceSource } from '../../../generated';
+import { NetworkIntelligenceService, V1Source } from '../../../generated';
 import { PageHeaderComponent } from '../../../shared/page-header.component';
 import { CreateSourceDialogComponent } from './create-source-dialog.component';
 import { ConfirmDialogComponent } from '../../rbac/confirm-dialog.component';
@@ -36,7 +36,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
-  sources = signal<ModelsIntelligenceSource[]>([]);
+  sources = signal<V1Source[]>([]);
   loading = signal(false);
   private pollInterval: any;
 
@@ -66,7 +66,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.intService.networkIntelligenceSourcesGet('', 100).subscribe({
       next: (res) => {
-        this.sources.set(res.items || []);
+        this.sources.set((res.items || []) as V1Source[]);
         this.loading.set(false);
       },
       error: (err) => {
@@ -86,7 +86,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
       });
   }
 
-  editSource(source: ModelsIntelligenceSource) {
+  editSource(source: V1Source) {
     this.dialog
       .open(CreateSourceDialogComponent, { width: '500px', data: source })
       .afterClosed()
@@ -95,7 +95,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
       });
   }
 
-  syncSource(source: ModelsIntelligenceSource) {
+  syncSource(source: V1Source) {
     if (!source.id) return;
     this.intService.networkIntelligenceSourcesIdSyncPost(source.id).subscribe({
       next: () => {
@@ -109,7 +109,7 @@ export class IntelligenceComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteSource(source: ModelsIntelligenceSource) {
+  deleteSource(source: V1Source) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: { title: '删除确认', message: `确定要删除情报源 [${source.meta?.name}] 吗？` },
     });

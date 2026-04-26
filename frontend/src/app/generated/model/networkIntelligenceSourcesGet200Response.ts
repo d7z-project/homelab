@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsIntelligenceSource } from './modelsIntelligenceSource';
+import { V1Source } from './v1Source';
 
 export interface NetworkIntelligenceSourcesGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsIntelligenceSource>;
+  items?: Array<V1Source>;
   nextCursor?: string;
-  total?: number;
 }

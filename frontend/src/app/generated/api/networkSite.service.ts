@@ -24,21 +24,23 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { ModelsSiteAnalysisResult } from '../model/modelsSiteAnalysisResult';
+import { HomelabPkgApisNetworkSiteV1AnalysisResult } from '../model/homelabPkgApisNetworkSiteV1AnalysisResult';
 // @ts-ignore
-import { ModelsSiteExport } from '../model/modelsSiteExport';
+import { HomelabPkgApisNetworkSiteV1Export } from '../model/homelabPkgApisNetworkSiteV1Export';
 // @ts-ignore
-import { ModelsSiteExportPreviewRequest } from '../model/modelsSiteExportPreviewRequest';
+import { HomelabPkgApisNetworkSiteV1ExportPreviewRequest } from '../model/homelabPkgApisNetworkSiteV1ExportPreviewRequest';
 // @ts-ignore
-import { ModelsSiteGroup } from '../model/modelsSiteGroup';
+import { HomelabPkgApisNetworkSiteV1ExportTask } from '../model/homelabPkgApisNetworkSiteV1ExportTask';
 // @ts-ignore
-import { ModelsSitePoolEntry } from '../model/modelsSitePoolEntry';
+import { HomelabPkgApisNetworkSiteV1ExportTriggerResponse } from '../model/homelabPkgApisNetworkSiteV1ExportTriggerResponse';
 // @ts-ignore
-import { ModelsSitePoolEntryRequest } from '../model/modelsSitePoolEntryRequest';
+import { HomelabPkgApisNetworkSiteV1PoolEntry } from '../model/homelabPkgApisNetworkSiteV1PoolEntry';
 // @ts-ignore
-import { ModelsSitePoolPreviewResponse } from '../model/modelsSitePoolPreviewResponse';
+import { HomelabPkgApisNetworkSiteV1PoolEntryRequest } from '../model/homelabPkgApisNetworkSiteV1PoolEntryRequest';
 // @ts-ignore
-import { ModelsSiteSyncPolicy } from '../model/modelsSiteSyncPolicy';
+import { HomelabPkgApisNetworkSiteV1PoolPreviewResponse } from '../model/homelabPkgApisNetworkSiteV1PoolPreviewResponse';
+// @ts-ignore
+import { HomelabPkgApisNetworkSiteV1SyncPolicy } from '../model/homelabPkgApisNetworkSiteV1SyncPolicy';
 // @ts-ignore
 import { NetworkSiteExportsGet200Response } from '../model/networkSiteExportsGet200Response';
 // @ts-ignore
@@ -46,7 +48,7 @@ import { NetworkSitePoolsGet200Response } from '../model/networkSitePoolsGet200R
 // @ts-ignore
 import { NetworkSiteSyncGet200Response } from '../model/networkSiteSyncGet200Response';
 // @ts-ignore
-import { SiteExportTask } from '../model/siteExportTask';
+import { V1Group } from '../model/v1Group';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -82,7 +84,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSiteAnalysisResult>;
+  ): Observable<HomelabPkgApisNetworkSiteV1AnalysisResult>;
   public networkSiteAnalysisHitTestPost(
     request: object,
     observe?: 'response',
@@ -92,7 +94,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSiteAnalysisResult>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1AnalysisResult>>;
   public networkSiteAnalysisHitTestPost(
     request: object,
     observe?: 'events',
@@ -102,7 +104,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSiteAnalysisResult>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1AnalysisResult>>;
   public networkSiteAnalysisHitTestPost(
     request: object,
     observe: any = 'body',
@@ -152,16 +154,20 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/analysis/hit-test`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSiteAnalysisResult>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: request,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1AnalysisResult>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: request,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -470,7 +476,7 @@ export class NetworkSiteService extends BaseService {
    */
   public networkSiteExportsIdPut(
     id: string,
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -478,10 +484,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSiteExport>;
+  ): Observable<HomelabPkgApisNetworkSiteV1Export>;
   public networkSiteExportsIdPut(
     id: string,
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -489,10 +495,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSiteExport>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1Export>>;
   public networkSiteExportsIdPut(
     id: string,
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -500,10 +506,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSiteExport>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1Export>>;
   public networkSiteExportsIdPut(
     id: string,
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -563,16 +569,20 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/exports/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSiteExport>('put', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: _export,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1Export>(
+      'put',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: _export,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -594,7 +604,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<{ [key: string]: string }>;
+  ): Observable<HomelabPkgApisNetworkSiteV1ExportTriggerResponse>;
   public networkSiteExportsIdTriggerPost(
     id: string,
     format?: string,
@@ -605,7 +615,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<{ [key: string]: string }>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1ExportTriggerResponse>>;
   public networkSiteExportsIdTriggerPost(
     id: string,
     format?: string,
@@ -616,7 +626,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<{ [key: string]: string }>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1ExportTriggerResponse>>;
   public networkSiteExportsIdTriggerPost(
     id: string,
     format?: string,
@@ -669,7 +679,7 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/exports/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}/trigger`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<{ [key: string]: string }>(
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1ExportTriggerResponse>(
       'post',
       `${basePath}${localVarPath}`,
       {
@@ -694,7 +704,7 @@ export class NetworkSiteService extends BaseService {
    * @param options additional options
    */
   public networkSiteExportsPost(
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -702,9 +712,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSiteExport>;
+  ): Observable<HomelabPkgApisNetworkSiteV1Export>;
   public networkSiteExportsPost(
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -712,9 +722,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSiteExport>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1Export>>;
   public networkSiteExportsPost(
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -722,9 +732,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSiteExport>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1Export>>;
   public networkSiteExportsPost(
-    _export: ModelsSiteExport,
+    _export: HomelabPkgApisNetworkSiteV1Export,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -772,16 +782,20 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/exports`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSiteExport>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: _export,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1Export>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: _export,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -794,7 +808,7 @@ export class NetworkSiteService extends BaseService {
    * @param options additional options
    */
   public networkSiteExportsPreviewPost(
-    request: ModelsSiteExportPreviewRequest,
+    request: HomelabPkgApisNetworkSiteV1ExportPreviewRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -802,9 +816,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<ModelsSitePoolEntry>>;
+  ): Observable<Array<HomelabPkgApisNetworkSiteV1PoolEntry>>;
   public networkSiteExportsPreviewPost(
-    request: ModelsSiteExportPreviewRequest,
+    request: HomelabPkgApisNetworkSiteV1ExportPreviewRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -812,9 +826,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<ModelsSitePoolEntry>>>;
+  ): Observable<HttpResponse<Array<HomelabPkgApisNetworkSiteV1PoolEntry>>>;
   public networkSiteExportsPreviewPost(
-    request: ModelsSiteExportPreviewRequest,
+    request: HomelabPkgApisNetworkSiteV1ExportPreviewRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -822,9 +836,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<ModelsSitePoolEntry>>>;
+  ): Observable<HttpEvent<Array<HomelabPkgApisNetworkSiteV1PoolEntry>>>;
   public networkSiteExportsPreviewPost(
-    request: ModelsSiteExportPreviewRequest,
+    request: HomelabPkgApisNetworkSiteV1ExportPreviewRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -879,7 +893,7 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/exports/preview`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<ModelsSitePoolEntry>>(
+    return this.httpClient.request<Array<HomelabPkgApisNetworkSiteV1PoolEntry>>(
       'post',
       `${basePath}${localVarPath}`,
       {
@@ -1009,7 +1023,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<SiteExportTask>;
+  ): Observable<HomelabPkgApisNetworkSiteV1ExportTask>;
   public networkSiteExportsTaskTaskIdGet(
     taskId: string,
     observe?: 'response',
@@ -1019,7 +1033,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<SiteExportTask>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1ExportTask>>;
   public networkSiteExportsTaskTaskIdGet(
     taskId: string,
     observe?: 'events',
@@ -1029,7 +1043,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<SiteExportTask>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1ExportTask>>;
   public networkSiteExportsTaskTaskIdGet(
     taskId: string,
     observe: any = 'body',
@@ -1071,15 +1085,19 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/exports/task/${this.configuration.encodeParam({ name: 'taskId', value: taskId, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<SiteExportTask>('get', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1ExportTask>(
+      'get',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1097,7 +1115,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<Array<SiteExportTask>>;
+  ): Observable<Array<HomelabPkgApisNetworkSiteV1ExportTask>>;
   public networkSiteExportsTasksGet(
     observe?: 'response',
     reportProgress?: boolean,
@@ -1106,7 +1124,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<Array<SiteExportTask>>>;
+  ): Observable<HttpResponse<Array<HomelabPkgApisNetworkSiteV1ExportTask>>>;
   public networkSiteExportsTasksGet(
     observe?: 'events',
     reportProgress?: boolean,
@@ -1115,7 +1133,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<Array<SiteExportTask>>>;
+  ): Observable<HttpEvent<Array<HomelabPkgApisNetworkSiteV1ExportTask>>>;
   public networkSiteExportsTasksGet(
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -1157,15 +1175,19 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/exports/tasks`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<Array<SiteExportTask>>('get', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<Array<HomelabPkgApisNetworkSiteV1ExportTask>>(
+      'get',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -1523,7 +1545,7 @@ export class NetworkSiteService extends BaseService {
    */
   public networkSitePoolsIdEntriesPost(
     id: string,
-    entry: ModelsSitePoolEntryRequest,
+    entry: HomelabPkgApisNetworkSiteV1PoolEntryRequest,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1534,7 +1556,7 @@ export class NetworkSiteService extends BaseService {
   ): Observable<string>;
   public networkSitePoolsIdEntriesPost(
     id: string,
-    entry: ModelsSitePoolEntryRequest,
+    entry: HomelabPkgApisNetworkSiteV1PoolEntryRequest,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1545,7 +1567,7 @@ export class NetworkSiteService extends BaseService {
   ): Observable<HttpResponse<string>>;
   public networkSitePoolsIdEntriesPost(
     id: string,
-    entry: ModelsSitePoolEntryRequest,
+    entry: HomelabPkgApisNetworkSiteV1PoolEntryRequest,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1556,7 +1578,7 @@ export class NetworkSiteService extends BaseService {
   ): Observable<HttpEvent<string>>;
   public networkSitePoolsIdEntriesPost(
     id: string,
-    entry: ModelsSitePoolEntryRequest,
+    entry: HomelabPkgApisNetworkSiteV1PoolEntryRequest,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1644,7 +1666,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSitePoolPreviewResponse>;
+  ): Observable<HomelabPkgApisNetworkSiteV1PoolPreviewResponse>;
   public networkSitePoolsIdPreviewGet(
     id: string,
     cursor?: string,
@@ -1657,7 +1679,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSitePoolPreviewResponse>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1PoolPreviewResponse>>;
   public networkSitePoolsIdPreviewGet(
     id: string,
     cursor?: string,
@@ -1670,7 +1692,7 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSitePoolPreviewResponse>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1PoolPreviewResponse>>;
   public networkSitePoolsIdPreviewGet(
     id: string,
     cursor?: string,
@@ -1741,7 +1763,7 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/pools/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}/preview`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSitePoolPreviewResponse>(
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1PoolPreviewResponse>(
       'get',
       `${basePath}${localVarPath}`,
       {
@@ -1768,7 +1790,7 @@ export class NetworkSiteService extends BaseService {
    */
   public networkSitePoolsIdPut(
     id: string,
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1776,10 +1798,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSiteGroup>;
+  ): Observable<V1Group>;
   public networkSitePoolsIdPut(
     id: string,
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1787,10 +1809,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSiteGroup>>;
+  ): Observable<HttpResponse<V1Group>>;
   public networkSitePoolsIdPut(
     id: string,
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1798,10 +1820,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSiteGroup>>;
+  ): Observable<HttpEvent<V1Group>>;
   public networkSitePoolsIdPut(
     id: string,
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1854,7 +1876,7 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/pools/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSiteGroup>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Group>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: group,
       responseType: <any>responseType_,
@@ -1875,7 +1897,7 @@ export class NetworkSiteService extends BaseService {
    * @param options additional options
    */
   public networkSitePoolsPost(
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -1883,9 +1905,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSiteGroup>;
+  ): Observable<V1Group>;
   public networkSitePoolsPost(
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -1893,9 +1915,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSiteGroup>>;
+  ): Observable<HttpResponse<V1Group>>;
   public networkSitePoolsPost(
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -1903,9 +1925,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSiteGroup>>;
+  ): Observable<HttpEvent<V1Group>>;
   public networkSitePoolsPost(
-    group: ModelsSiteGroup,
+    group: V1Group,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1953,7 +1975,7 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/pools`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSiteGroup>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Group>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: group,
       responseType: <any>responseType_,
@@ -2191,7 +2213,7 @@ export class NetworkSiteService extends BaseService {
    */
   public networkSiteSyncIdPut(
     id: string,
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -2199,10 +2221,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSiteSyncPolicy>;
+  ): Observable<HomelabPkgApisNetworkSiteV1SyncPolicy>;
   public networkSiteSyncIdPut(
     id: string,
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -2210,10 +2232,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSiteSyncPolicy>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1SyncPolicy>>;
   public networkSiteSyncIdPut(
     id: string,
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -2221,10 +2243,10 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSiteSyncPolicy>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1SyncPolicy>>;
   public networkSiteSyncIdPut(
     id: string,
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2277,16 +2299,20 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/sync/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSiteSyncPolicy>('put', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: policy,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1SyncPolicy>(
+      'put',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: policy,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 
   /**
@@ -2388,7 +2414,7 @@ export class NetworkSiteService extends BaseService {
    * @param options additional options
    */
   public networkSiteSyncPost(
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -2396,9 +2422,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsSiteSyncPolicy>;
+  ): Observable<HomelabPkgApisNetworkSiteV1SyncPolicy>;
   public networkSiteSyncPost(
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -2406,9 +2432,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsSiteSyncPolicy>>;
+  ): Observable<HttpResponse<HomelabPkgApisNetworkSiteV1SyncPolicy>>;
   public networkSiteSyncPost(
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -2416,9 +2442,9 @@ export class NetworkSiteService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsSiteSyncPolicy>>;
+  ): Observable<HttpEvent<HomelabPkgApisNetworkSiteV1SyncPolicy>>;
   public networkSiteSyncPost(
-    policy: ModelsSiteSyncPolicy,
+    policy: HomelabPkgApisNetworkSiteV1SyncPolicy,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -2466,15 +2492,19 @@ export class NetworkSiteService extends BaseService {
 
     let localVarPath = `/network/site/sync`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsSiteSyncPolicy>('post', `${basePath}${localVarPath}`, {
-      context: localVarHttpContext,
-      body: policy,
-      responseType: <any>responseType_,
-      ...(withCredentials ? { withCredentials } : {}),
-      headers: localVarHeaders,
-      observe: observe,
-      ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-      reportProgress: reportProgress,
-    });
+    return this.httpClient.request<HomelabPkgApisNetworkSiteV1SyncPolicy>(
+      'post',
+      `${basePath}${localVarPath}`,
+      {
+        context: localVarHttpContext,
+        body: policy,
+        responseType: <any>responseType_,
+        ...(withCredentials ? { withCredentials } : {}),
+        headers: localVarHeaders,
+        observe: observe,
+        ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+        reportProgress: reportProgress,
+      },
+    );
   }
 }

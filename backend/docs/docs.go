@@ -970,9 +970,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "New Webhook Token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/v1.WebhookTokenResponse"
                         }
                     },
                     "401": {
@@ -4616,7 +4616,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/discovery.DiscoverResult"
+                                "$ref": "#/definitions/homelab_pkg_apis_core_rbac_v1.DiscoverResult"
                             }
                         }
                     },
@@ -5216,7 +5216,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccountTokenResponse"
                         }
                     },
                     "400": {
@@ -5279,7 +5279,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccountTokenResponse"
                         }
                     },
                     "400": {
@@ -5385,7 +5385,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ServiceAccount"
+                            "$ref": "#/definitions/v1.ServiceAccountTokenResponse"
                         }
                     },
                     "401": {
@@ -5546,7 +5546,7 @@ const docTemplate = `{
                 }
             }
         },
-        "discovery.DiscoverResult": {
+        "homelab_pkg_apis_core_rbac_v1.DiscoverResult": {
             "type": "object",
             "properties": {
                 "final": {
@@ -6243,10 +6243,16 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "email": {
+                    "type": "string"
+                },
                 "enabled": {
                     "type": "boolean"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "primaryNs": {
                     "type": "string"
                 }
             }
@@ -6594,7 +6600,12 @@ const docTemplate = `{
             }
         },
         "v1.RecordStatus": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "soa": {
+                    "$ref": "#/definitions/v1.SOAStatus"
+                }
+            }
         },
         "v1.ResourcePermissions": {
             "type": "object",
@@ -6710,6 +6721,32 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.SOAStatus": {
+            "type": "object",
+            "properties": {
+                "expire": {
+                    "type": "integer"
+                },
+                "mName": {
+                    "type": "string"
+                },
+                "minimum": {
+                    "type": "integer"
+                },
+                "rName": {
+                    "type": "string"
+                },
+                "refresh": {
+                    "type": "integer"
+                },
+                "retry": {
+                    "type": "integer"
+                },
+                "serial": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.ServiceAccount": {
             "type": "object",
             "properties": {
@@ -6741,16 +6778,27 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "token": {
-                    "type": "string"
                 }
             }
         },
         "v1.ServiceAccountStatus": {
             "type": "object",
             "properties": {
+                "hasAuthSecret": {
+                    "type": "boolean"
+                },
                 "lastUsedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ServiceAccountTokenResponse": {
+            "type": "object",
+            "properties": {
+                "serviceAccount": {
+                    "$ref": "#/definitions/v1.ServiceAccount"
+                },
+                "token": {
                     "type": "string"
                 }
             }
@@ -6972,9 +7020,6 @@ const docTemplate = `{
                 },
                 "workflowId": {
                     "type": "string"
-                },
-                "workspace": {
-                    "type": "string"
                 }
             }
         },
@@ -7050,6 +7095,14 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.WebhookTokenResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.Workflow": {
             "type": "object",
             "properties": {
@@ -7108,9 +7161,6 @@ const docTemplate = `{
                 },
                 "webhookEnabled": {
                     "type": "boolean"
-                },
-                "webhookToken": {
-                    "type": "string"
                 }
             }
         },
@@ -7128,6 +7178,9 @@ const docTemplate = `{
             "properties": {
                 "createdAt": {
                     "type": "string"
+                },
+                "hasWebhookSecret": {
+                    "type": "boolean"
                 },
                 "updatedAt": {
                     "type": "string"

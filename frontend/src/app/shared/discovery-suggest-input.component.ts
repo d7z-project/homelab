@@ -18,7 +18,11 @@ import {
 } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DiscoveryService, ModelsLookupItem, ModelsDiscoverResult } from '../generated';
+import {
+  DiscoveryService,
+  V1LookupItem,
+  HomelabPkgApisCoreRbacV1DiscoverResult,
+} from '../generated';
 import { debounceTime, distinctUntilChanged, switchMap, of, catchError, finalize } from 'rxjs';
 
 /**
@@ -169,7 +173,7 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
   @Input() staticSuggestions: string[] = [];
 
   /** Structured RBAC suggestions */
-  @Input() rbacSuggestions: ModelsDiscoverResult[] = [];
+  @Input() rbacSuggestions: HomelabPkgApisCoreRbacV1DiscoverResult[] = [];
 
   /** Whether the parent is currently fetching suggestions */
   @Input() loading = false;
@@ -178,7 +182,7 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
   @Input() rbacMode = false;
 
   control = new FormControl('');
-  items = signal<ModelsLookupItem[]>([]);
+  items = signal<V1LookupItem[]>([]);
   isLoading = signal(false);
   disabled = false;
 
@@ -202,7 +206,7 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((value) => {
-          // If value is a ModelsDiscoverResult (from selection), we don't want to trigger lookup
+          // If value is a HomelabPkgApisCoreRbacV1DiscoverResult (from selection), we don't want to trigger lookup
           if (typeof value !== 'string') return of({ items: [] });
 
           const search = value;
@@ -233,7 +237,7 @@ export class DiscoverySuggestInputComponent implements OnInit, ControlValueAcces
   onSelected(event: MatAutocompleteSelectedEvent) {
     const val = event.option.value;
     if (val && typeof val === 'object' && 'fullId' in val) {
-      const result = val as ModelsDiscoverResult;
+      const result = val as HomelabPkgApisCoreRbacV1DiscoverResult;
       let nextValue = result.fullId || '';
       if (!result.final) {
         nextValue += '/';

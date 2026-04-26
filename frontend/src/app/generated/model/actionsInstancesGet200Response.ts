@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsTaskInstance } from './modelsTaskInstance';
+import { V1TaskInstance } from './v1TaskInstance';
 
 export interface ActionsInstancesGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsTaskInstance>;
+  items?: Array<V1TaskInstance>;
   nextCursor?: string;
-  total?: number;
 }

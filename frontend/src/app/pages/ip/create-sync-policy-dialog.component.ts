@@ -11,7 +11,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
-import { NetworkIpService, ModelsIPSyncPolicy, ModelsIPPool } from '../../generated';
+import { NetworkIpService, HomelabPkgApisNetworkIpV1SyncPolicy, V1Pool } from '../../generated';
 
 @Component({
   selector: 'app-create-sync-policy-dialog',
@@ -237,7 +237,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
   private ipService = inject(NetworkIpService);
   private dialogRef = inject(MatDialogRef<CreateSyncPolicyDialogComponent>);
   private snackBar = inject(MatSnackBar);
-  public data = inject(MAT_DIALOG_DATA) as { policy?: ModelsIPSyncPolicy };
+  public data = inject(MAT_DIALOG_DATA) as { policy?: HomelabPkgApisNetworkIpV1SyncPolicy };
 
   loading = false;
 
@@ -348,7 +348,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
       config['tagMapping'] = JSON.stringify(mapping);
     }
 
-    const policy: ModelsIPSyncPolicy = {
+    const policy: HomelabPkgApisNetworkIpV1SyncPolicy = {
       id: val.id || '',
       generation: this.data.policy?.generation || 0,
       meta: {

@@ -33,7 +33,7 @@ import { ManageSiteEntriesDialogComponent } from './manage-site-entries-dialog.c
 import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
 import { PreviewExportDialogComponent } from '../../shared/preview-export-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkSiteService, ModelsSiteGroup, ModelsSiteExport } from '../../generated';
+import { NetworkSiteService, V1Group, HomelabPkgApisNetworkSiteV1Export } from '../../generated';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -92,14 +92,14 @@ export class SiteComponent implements OnInit, OnDestroy {
   );
 
   // Pools state
-  pools = signal<ModelsSiteGroup[]>([]);
+  pools = signal<V1Group[]>([]);
   poolTotal = signal(0);
   poolNextCursor = signal('');
   poolSearch = signal('');
   hasMorePools = signal(false);
 
   // Exports state
-  exports = signal<ModelsSiteExport[]>([]);
+  exports = signal<HomelabPkgApisNetworkSiteV1Export[]>([]);
   exportTotal = signal(0);
   exportNextCursor = signal('');
   exportSearch = signal('');
@@ -257,14 +257,15 @@ export class SiteComponent implements OnInit, OnDestroy {
 
     this.siteService.networkSitePoolsGet(this.poolNextCursor(), 20, this.poolSearch()).subscribe({
       next: (res) => {
+        const items = (res.items || []) as V1Group[];
         if (reset) {
-          this.pools.set(res.items || []);
+          this.pools.set(items);
         } else {
           const current = this.pools();
-          const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+          const newItems = items.filter((n) => !current.some((e) => e.id === n.id));
           this.pools.update((prev) => [...prev, ...newItems]);
         }
-        this.poolTotal.set(res.total || 0);
+        this.poolTotal.set(items.length);
         this.poolNextCursor.set(res.nextCursor || '');
         this.hasMorePools.set(res.hasMore || false);
         this.loading.set(false);
@@ -289,14 +290,15 @@ export class SiteComponent implements OnInit, OnDestroy {
       .networkSiteExportsGet(this.exportNextCursor(), 20, this.exportSearch())
       .subscribe({
         next: (res) => {
+          const items = (res.items || []) as HomelabPkgApisNetworkSiteV1Export[];
           if (reset) {
-            this.exports.set(res.items || []);
+            this.exports.set(items);
           } else {
             const current = this.exports();
-            const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+            const newItems = items.filter((n) => !current.some((e) => e.id === n.id));
             this.exports.update((prev) => [...prev, ...newItems]);
           }
-          this.exportTotal.set(res.total || 0);
+          this.exportTotal.set(items.length);
           this.exportNextCursor.set(res.nextCursor || '');
           this.hasMoreExports.set(res.hasMore || false);
           this.loading.set(false);
@@ -316,7 +318,7 @@ export class SiteComponent implements OnInit, OnDestroy {
     });
   }
 
-  manageEntries(pool: ModelsSiteGroup) {
+  manageEntries(pool: V1Group) {
     const dialogRef = this.dialog.open(ManageSiteEntriesDialogComponent, {
       width: '100vw',
       height: '100vh',
@@ -329,7 +331,7 @@ export class SiteComponent implements OnInit, OnDestroy {
     });
   }
 
-  deletePool(pool: ModelsSiteGroup) {
+  deletePool(pool: V1Group) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: { title: '删除确认', message: `确定要删除域名池 [${pool.meta?.name}] 吗？` },
     });
@@ -357,7 +359,7 @@ export class SiteComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteExport(exp: ModelsSiteExport) {
+  deleteExport(exp: HomelabPkgApisNetworkSiteV1Export) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: '删除确认',
@@ -382,7 +384,7 @@ export class SiteComponent implements OnInit, OnDestroy {
     });
   }
 
-  triggerExport(exp: ModelsSiteExport, format: string = 'text') {
+  triggerExport(exp: HomelabPkgApisNetworkSiteV1Export, format: string = 'text') {
     if (!exp.id) return;
     this.siteService.networkSiteExportsIdTriggerPost(exp.id, format).subscribe({
       next: (res: any) => {

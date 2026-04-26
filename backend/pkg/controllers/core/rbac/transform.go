@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	discoveryapiv1 "homelab/pkg/apis/core/discovery/v1"
 	apiv1 "homelab/pkg/apis/core/rbac/v1"
 	discoverymodel "homelab/pkg/models/core/discovery"
 	rbacmodel "homelab/pkg/models/core/rbac"
@@ -39,7 +40,7 @@ func toModelServiceAccount(api apiv1.ServiceAccount) rbacmodel.ServiceAccount {
 		},
 		Status: rbacmodel.ServiceAccountV1Status{
 			HasAuthSecret: api.Status.HasAuthSecret,
-			LastUsedAt: api.Status.LastUsedAt,
+			LastUsedAt:    api.Status.LastUsedAt,
 		},
 		Generation:      api.Generation,
 		ResourceVersion: api.ResourceVersion,
@@ -56,7 +57,7 @@ func toAPIServiceAccount(model rbacmodel.ServiceAccount) apiv1.ServiceAccount {
 		},
 		Status: apiv1.ServiceAccountStatus{
 			HasAuthSecret: model.Status.HasAuthSecret,
-			LastUsedAt: model.Status.LastUsedAt,
+			LastUsedAt:    model.Status.LastUsedAt,
 		},
 		Generation:      model.Generation,
 		ResourceVersion: model.ResourceVersion,
@@ -170,6 +171,14 @@ func mapRoleBindings(res *shared.PaginationResponse[rbacmodel.RoleBinding]) *sha
 	return &shared.PaginationResponse[apiv1.RoleBinding]{Items: items, NextCursor: res.NextCursor, HasMore: res.HasMore}
 }
 
-func mapDiscoverResults(items []discoverymodel.DiscoverResult) []discoverymodel.DiscoverResult {
-	return append([]discoverymodel.DiscoverResult(nil), items...)
+func mapDiscoverResults(items []discoverymodel.DiscoverResult) []discoveryapiv1.DiscoverResult {
+	res := make([]discoveryapiv1.DiscoverResult, 0, len(items))
+	for _, item := range items {
+		res = append(res, discoveryapiv1.DiscoverResult{
+			FullID: item.FullID,
+			Name:   item.Name,
+			Final:  item.Final,
+		})
+	}
+	return res
 }

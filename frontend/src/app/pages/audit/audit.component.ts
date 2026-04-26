@@ -8,7 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { AuditService, ModelsAuditLog, AuthService, ControllersAuthInfo } from '../../generated';
+import { AuditService, V1AuditLog, AuthService, AuthAuthInfo } from '../../generated';
 import { firstValueFrom } from 'rxjs';
 import { UiService } from '../../ui.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -51,7 +51,7 @@ export class AuditComponent implements OnInit, OnDestroy {
     { initialValue: this.breakpointObserver.isMatched(Breakpoints.Handset) },
   );
 
-  logs = signal<ModelsAuditLog[]>([]);
+  logs = signal<V1AuditLog[]>([]);
   total = signal(0);
   nextCursor = signal('');
   hasMore = signal(false);
@@ -62,7 +62,7 @@ export class AuditComponent implements OnInit, OnDestroy {
   showScrollTop = signal(false);
 
   // User auth state
-  authInfo = signal<ControllersAuthInfo | null>(null);
+  authInfo = signal<AuthAuthInfo | null>(null);
   isRoot = computed(() => this.authInfo()?.type === 'root');
 
   displayedColumns = computed(() =>
@@ -100,7 +100,7 @@ export class AuditComponent implements OnInit, OnDestroy {
 
   async loadAuthInfo() {
     try {
-      const info = await firstValueFrom(this.authService.infoGet());
+      const info = await firstValueFrom(this.authService.authInfoGet());
       this.authInfo.set(info);
     } catch (e) {}
   }
@@ -147,7 +147,7 @@ export class AuditComponent implements OnInit, OnDestroy {
         );
         this.logs.update((prev) => [...prev, ...newItems]);
       }
-      this.total.set(res.total || 0);
+      this.total.set((res.items || []).length);
       this.nextCursor.set(res.nextCursor || '');
       this.hasMore.set(res.hasMore || false);
     } catch (err) {
@@ -180,7 +180,7 @@ export class AuditComponent implements OnInit, OnDestroy {
     });
   }
 
-  showDetail(log: ModelsAuditLog, event?: Event) {
+  showDetail(log: V1AuditLog, event?: Event) {
     if (event) {
       event.stopPropagation();
     }

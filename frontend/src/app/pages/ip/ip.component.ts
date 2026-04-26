@@ -28,7 +28,7 @@ import { CreateExportDialogComponent } from './create-export-dialog.component';
 import { ExportTasksDialogComponent } from '../../shared/export-tasks-dialog.component';
 import { PreviewExportDialogComponent } from '../../shared/preview-export-dialog.component';
 import { UiService } from '../../ui.service';
-import { NetworkIpService, ModelsIPPool, ModelsIPExport } from '../../generated';
+import { NetworkIpService, V1Pool, HomelabPkgApisNetworkIpV1Export } from '../../generated';
 
 @Component({
   selector: 'app-ip',
@@ -81,14 +81,14 @@ export class IpComponent implements OnInit, OnDestroy {
   showScrollTop = signal(false);
 
   // Address Pools
-  pools = signal<ModelsIPPool[]>([]);
+  pools = signal<V1Pool[]>([]);
   poolSearch = signal('');
   poolNextCursor = signal('');
   poolTotal = signal(0);
   hasMorePools = signal(false);
 
   // Dynamic Exports
-  exports = signal<ModelsIPExport[]>([]);
+  exports = signal<HomelabPkgApisNetworkIpV1Export[]>([]);
   exportSearch = signal('');
   exportNextCursor = signal('');
   exportTotal = signal(0);
@@ -218,14 +218,15 @@ export class IpComponent implements OnInit, OnDestroy {
       const res = await firstValueFrom(
         this.ipService.networkIpPoolsGet(this.poolNextCursor(), 20, this.poolSearch()),
       );
+      const items = (res.items || []) as V1Pool[];
       if (reset) {
-        this.pools.set(res.items || []);
+        this.pools.set(items);
       } else {
         const current = this.pools();
-        const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+        const newItems = items.filter((n) => !current.some((e) => e.id === n.id));
         this.pools.update((prev) => [...prev, ...newItems]);
       }
-      this.poolTotal.set(res.total || 0);
+      this.poolTotal.set(items.length);
       this.poolNextCursor.set(res.nextCursor || '');
       this.hasMorePools.set(res.hasMore || false);
     } catch (err) {
@@ -248,14 +249,15 @@ export class IpComponent implements OnInit, OnDestroy {
       const res = await firstValueFrom(
         this.ipService.networkIpExportsGet(this.exportNextCursor(), 20, this.exportSearch()),
       );
+      const items = (res.items || []) as HomelabPkgApisNetworkIpV1Export[];
       if (reset) {
-        this.exports.set(res.items || []);
+        this.exports.set(items);
       } else {
         const current = this.exports();
-        const newItems = (res.items || []).filter((n) => !current.some((e) => e.id === n.id));
+        const newItems = items.filter((n) => !current.some((e) => e.id === n.id));
         this.exports.update((prev) => [...prev, ...newItems]);
       }
-      this.exportTotal.set(res.total || 0);
+      this.exportTotal.set(items.length);
       this.exportNextCursor.set(res.nextCursor || '');
       this.hasMoreExports.set(res.hasMore || false);
     } catch (err) {
@@ -298,7 +300,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  editPool(pool: ModelsIPPool) {
+  editPool(pool: V1Pool) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreatePoolDialogComponent, {
         width: '400px',
@@ -310,7 +312,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  deletePool(pool: ModelsIPPool) {
+  deletePool(pool: V1Pool) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
@@ -335,7 +337,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  manageEntries(pool: ModelsIPPool) {
+  manageEntries(pool: V1Pool) {
     requestAnimationFrame(() => {
       this.dialog.open(ManageEntriesDialogComponent, {
         width: '100vw',
@@ -357,7 +359,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  editExport(exp: ModelsIPExport) {
+  editExport(exp: HomelabPkgApisNetworkIpV1Export) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(CreateExportDialogComponent, {
         width: '500px',
@@ -369,7 +371,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteExport(exp: ModelsIPExport) {
+  deleteExport(exp: HomelabPkgApisNetworkIpV1Export) {
     requestAnimationFrame(() => {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         data: {
@@ -394,7 +396,7 @@ export class IpComponent implements OnInit, OnDestroy {
     });
   }
 
-  async triggerExport(exp: ModelsIPExport, format: string = 'text') {
+  async triggerExport(exp: HomelabPkgApisNetworkIpV1Export, format: string = 'text') {
     if (!exp.id) return;
     try {
       await firstValueFrom(this.ipService.networkIpExportsIdTriggerPost(exp.id, format));

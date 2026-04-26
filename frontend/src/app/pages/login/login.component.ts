@@ -104,7 +104,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
       try {
         const res = await firstValueFrom(
-          this.authService.loginPost({
+          this.authService.authLoginPost({
             password: this.validateForm.value.password,
             totp: this.validateForm.value.totp,
           }),

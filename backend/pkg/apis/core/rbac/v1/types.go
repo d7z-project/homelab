@@ -44,7 +44,7 @@ type ServiceAccountMeta struct {
 
 type ServiceAccountStatus struct {
 	HasAuthSecret bool   `json:"hasAuthSecret"`
-	LastUsedAt string `json:"lastUsedAt,omitempty"`
+	LastUsedAt    string `json:"lastUsedAt,omitempty"`
 }
 
 type ServiceAccountTokenResponse struct {
@@ -101,6 +101,12 @@ type ResourcePermissions struct {
 	AllowedAll       bool        `json:"allowedAll"`
 	AllowedInstances []string    `json:"allowedInstances"`
 	MatchedRule      *PolicyRule `json:"matchedRule,omitempty"`
+}
+
+type DiscoverResult struct {
+	FullID string `json:"fullId"`
+	Name   string `json:"name"`
+	Final  bool   `json:"final"`
 }
 
 type SimulatePermissionsRequest struct {

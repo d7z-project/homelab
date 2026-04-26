@@ -14,7 +14,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
-import { NetworkSiteService, ModelsSiteExport } from '../../generated';
+import { NetworkSiteService, HomelabPkgApisNetworkSiteV1Export } from '../../generated';
 
 @Component({
   selector: 'app-create-site-export-dialog',
@@ -148,7 +148,9 @@ export class CreateSiteExportDialogComponent {
   loading = signal(false);
   form: any;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { export?: ModelsSiteExport }) {
+  constructor(
+    @Inject(MAT_DIALOG_DATA) public data: { export?: HomelabPkgApisNetworkSiteV1Export },
+  ) {
     this.form = this.fb.group({
       name: [this.data.export?.meta?.name || '', Validators.required],
       description: [this.data.export?.meta?.description || ''],
@@ -162,7 +164,7 @@ export class CreateSiteExportDialogComponent {
     this.loading.set(true);
     const val = this.form.value;
 
-    const exportData: ModelsSiteExport = {
+    const exportData: HomelabPkgApisNetworkSiteV1Export = {
       id: this.data.export?.id || '',
       generation: this.data.export?.generation || 0,
       meta: {

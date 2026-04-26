@@ -7,12 +7,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import {
-  NetworkIpService,
-  ModelsIPPool,
-  ModelsIPPoolV1Meta,
-  ModelsIPPoolV1Status,
-} from '../../generated';
+import { NetworkIpService, V1Pool, V1PoolMeta, V1PoolStatus } from '../../generated';
+
+type PoolDialogModel = V1Pool & { meta: V1PoolMeta; status: V1PoolStatus };
 
 @Component({
   selector: 'app-create-pool-dialog',
@@ -71,7 +68,7 @@ export class CreatePoolDialogComponent implements OnInit {
   private ipService = inject(NetworkIpService);
   private dialogRef = inject(MatDialogRef<CreatePoolDialogComponent>);
   private snackBar = inject(MatSnackBar);
-  public data = inject(MAT_DIALOG_DATA) as { pool?: ModelsIPPool };
+  public data = inject(MAT_DIALOG_DATA) as { pool?: PoolDialogModel };
 
   loading = false;
 
@@ -96,7 +93,7 @@ export class CreatePoolDialogComponent implements OnInit {
     this.loading = true;
     const val = this.form.value;
 
-    const poolData: ModelsIPPool = {
+    const poolData: PoolDialogModel = {
       id: val.id!,
       generation: this.data.pool?.generation || 0,
       meta: {

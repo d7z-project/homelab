@@ -11,7 +11,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DiscoverySelectComponent } from '../../shared/discovery-select.component';
-import { NetworkSiteService, ModelsSiteSyncPolicy, ModelsSiteGroup } from '../../generated';
+import {
+  NetworkSiteService,
+  HomelabPkgApisNetworkSiteV1SyncPolicy,
+  V1Group,
+} from '../../generated';
 
 @Component({
   selector: 'app-create-sync-policy-dialog',
@@ -225,7 +229,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
   private siteService = inject(NetworkSiteService);
   private dialogRef = inject(MatDialogRef<CreateSyncPolicyDialogComponent>);
   private snackBar = inject(MatSnackBar);
-  public data = inject(MAT_DIALOG_DATA) as { policy?: ModelsSiteSyncPolicy };
+  public data = inject(MAT_DIALOG_DATA) as { policy?: HomelabPkgApisNetworkSiteV1SyncPolicy };
 
   loading = false;
 
@@ -336,7 +340,7 @@ export class CreateSyncPolicyDialogComponent implements OnInit {
       config['tagMapping'] = JSON.stringify(mapping);
     }
 
-    const policy: ModelsSiteSyncPolicy = {
+    const policy: HomelabPkgApisNetworkSiteV1SyncPolicy = {
       id: val.id || '',
       generation: this.data.policy?.generation || 0,
       meta: {

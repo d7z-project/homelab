@@ -12,8 +12,8 @@ import { DiscoverySelectComponent } from './discovery-select.component';
 import {
   NetworkIpService,
   NetworkSiteService,
-  ModelsIPPoolEntry,
-  ModelsSitePoolEntry,
+  HomelabPkgApisNetworkIpV1PoolEntry,
+  HomelabPkgApisNetworkSiteV1PoolEntry,
 } from '../generated';
 import { firstValueFrom } from 'rxjs';
 
@@ -305,8 +305,8 @@ export class PreviewExportDialogComponent implements OnInit {
 
   loading = signal(false);
   error = signal<string | null>(null);
-  ipResults = signal<ModelsIPPoolEntry[]>([]);
-  siteResults = signal<ModelsSitePoolEntry[]>([]);
+  ipResults = signal<HomelabPkgApisNetworkIpV1PoolEntry[]>([]);
+  siteResults = signal<HomelabPkgApisNetworkSiteV1PoolEntry[]>([]);
 
   form = this.fb.group({
     rule: [this.data.rule || 'true', Validators.required],

@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsSiteExport } from './modelsSiteExport';
+import { HomelabPkgApisNetworkSiteV1Export } from './homelabPkgApisNetworkSiteV1Export';
 
 export interface NetworkSiteExportsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsSiteExport>;
+  items?: Array<HomelabPkgApisNetworkSiteV1Export>;
   nextCursor?: string;
-  total?: number;
 }

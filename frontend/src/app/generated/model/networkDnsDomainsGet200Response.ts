@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsDomain } from './modelsDomain';
+import { V1Domain } from './v1Domain';
 
 export interface NetworkDnsDomainsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsDomain>;
+  items?: Array<V1Domain>;
   nextCursor?: string;
-  total?: number;
 }

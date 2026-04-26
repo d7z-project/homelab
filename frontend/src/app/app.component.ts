@@ -17,7 +17,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.authService
-      .infoGet()
+      .authInfoGet()
       .pipe(finalize(() => this.uiService.initializing.set(false)))
       .subscribe({
         next: (info) => {

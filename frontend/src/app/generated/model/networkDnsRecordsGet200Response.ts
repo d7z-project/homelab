@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsRecord } from './modelsRecord';
+import { V1Record } from './v1Record';
 
 export interface NetworkDnsRecordsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsRecord>;
+  items?: Array<V1Record>;
   nextCursor?: string;
-  total?: number;
 }

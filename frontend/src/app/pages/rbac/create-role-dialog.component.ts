@@ -22,13 +22,18 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule, NgModel } from '@angular/forms';
-import { ModelsRole, ModelsPolicyRule, RbacService, ModelsDiscoverResult } from '../../generated';
+import {
+  V1Role,
+  V1PolicyRule,
+  RbacService,
+  HomelabPkgApisCoreRbacV1DiscoverResult,
+} from '../../generated';
 import { firstValueFrom } from 'rxjs';
 
 import { DiscoverySuggestInputComponent } from '../../shared/discovery-suggest-input.component';
 
-interface RuleWithUI extends ModelsPolicyRule {
-  resourceSuggestions: ModelsDiscoverResult[];
+interface RuleWithUI extends V1PolicyRule {
+  resourceSuggestions: HomelabPkgApisCoreRbacV1DiscoverResult[];
   verbSuggestions: string[];
   loading: boolean;
 }
@@ -201,7 +206,7 @@ export class CreateRoleDialogComponent implements AfterViewInit {
   @ViewChildren('resourceModel') resourceModels!: QueryList<NgModel>;
 
   isEdit = false;
-  role: ModelsRole = {
+  role: V1Role = {
     id: '',
     meta: {
       name: '',
@@ -214,7 +219,7 @@ export class CreateRoleDialogComponent implements AfterViewInit {
   formValid = signal(false);
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { role: ModelsRole | null; existingIDs?: string[] },
+    @Inject(MAT_DIALOG_DATA) public data: { role: V1Role | null; existingIDs?: string[] },
   ) {
     if (data.role) {
       this.isEdit = true;

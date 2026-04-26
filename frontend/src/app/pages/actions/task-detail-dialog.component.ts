@@ -19,14 +19,14 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
-import { ActionsService, ModelsTaskInstance, ModelsLogEntry } from '../../generated';
+import { ActionsService, V1TaskInstance, V1LogEntry } from '../../generated';
 import { interval, Subscription, firstValueFrom } from 'rxjs';
 
 interface StepState {
   index: number;
   id: string;
   name: string;
-  logs: ModelsLogEntry[];
+  logs: V1LogEntry[];
   offset: number;
   expanded: boolean;
   loading: boolean;
@@ -288,7 +288,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((r) => r.matches)),
     { initialValue: false },
   );
-  instance = signal<ModelsTaskInstance | undefined>(this.dialogData?.instance);
+  instance = signal<V1TaskInstance | undefined>(this.dialogData?.instance);
   workflowName = signal<string>('');
   stepStates = signal<StepState[]>([]);
   autoScroll = signal(true);
@@ -413,7 +413,7 @@ export class TaskDetailDialogComponent implements OnInit, OnDestroy {
     try {
       const updated = await firstValueFrom(this.orchService.actionsInstancesIdGet(inst.id!));
       if (updated) {
-        this.instance.set(updated);
+        this.instance.set(updated as V1TaskInstance);
         const expanded = this.stepStates().filter((s) => s.expanded);
         for (const s of expanded) {
           await this.loadLogsForStep(s.index);

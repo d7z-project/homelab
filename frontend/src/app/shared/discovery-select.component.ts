@@ -34,7 +34,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ErrorStateMatcher } from '@angular/material/core';
-import { DiscoveryService, ModelsLookupItem } from '../generated';
+import { DiscoveryService, V1LookupItem } from '../generated';
 import {
   debounceTime,
   distinctUntilChanged,
@@ -271,8 +271,8 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
   @ViewChild('inputElement') inputElement!: ElementRef<HTMLInputElement>;
 
   inputControl = new FormControl('');
-  items = signal<ModelsLookupItem[]>([]);
-  selectedItems = signal<ModelsLookupItem[]>([]);
+  items = signal<V1LookupItem[]>([]);
+  selectedItems = signal<V1LookupItem[]>([]);
   isLoading = signal(false);
   lastSearch = signal('');
   disabled = false;
@@ -326,7 +326,7 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
   }
 
   onSelected(event: MatAutocompleteSelectedEvent) {
-    const item = event.option.value as ModelsLookupItem;
+    const item = event.option.value as V1LookupItem;
     if (this.multiple) {
       const current = this.selectedItems();
       if (!current.find((i) => i.id === item.id)) {
@@ -342,7 +342,7 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     this.onTouched();
   }
 
-  removeItem(item: ModelsLookupItem) {
+  removeItem(item: V1LookupItem) {
     this.selectedItems.set(this.selectedItems().filter((i) => i.id !== item.id));
     this.triggerChange();
   }
@@ -400,7 +400,7 @@ export class DiscoverySelectComponent implements OnInit, ControlValueAccessor, V
     );
 
     forkJoin(lookups).subscribe((items) => {
-      const validItems = items.filter((i): i is ModelsLookupItem => !!i);
+      const validItems = items.filter((i): i is V1LookupItem => !!i);
       this.selectedItems.set(validItems);
       if (!this.multiple && validItems.length > 0) {
         this.inputControl.setValue(validItems[0].name || '', { emitEvent: false });

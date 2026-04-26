@@ -24,15 +24,15 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CommonResponse } from '../model/commonResponse';
 // @ts-ignore
-import { ModelsDnsExportResponse } from '../model/modelsDnsExportResponse';
-// @ts-ignore
-import { ModelsDomain } from '../model/modelsDomain';
-// @ts-ignore
-import { ModelsRecord } from '../model/modelsRecord';
-// @ts-ignore
 import { NetworkDnsDomainsGet200Response } from '../model/networkDnsDomainsGet200Response';
 // @ts-ignore
 import { NetworkDnsRecordsGet200Response } from '../model/networkDnsRecordsGet200Response';
+// @ts-ignore
+import { V1Domain } from '../model/v1Domain';
+// @ts-ignore
+import { V1ExportResponse } from '../model/v1ExportResponse';
+// @ts-ignore
+import { V1Record } from '../model/v1Record';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS } from '../variables';
@@ -291,7 +291,7 @@ export class NetworkDnsService extends BaseService {
    */
   public networkDnsDomainsIdPut(
     id: string,
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -299,10 +299,10 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsDomain>;
+  ): Observable<V1Domain>;
   public networkDnsDomainsIdPut(
     id: string,
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -310,10 +310,10 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsDomain>>;
+  ): Observable<HttpResponse<V1Domain>>;
   public networkDnsDomainsIdPut(
     id: string,
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -321,10 +321,10 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsDomain>>;
+  ): Observable<HttpEvent<V1Domain>>;
   public networkDnsDomainsIdPut(
     id: string,
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -384,7 +384,7 @@ export class NetworkDnsService extends BaseService {
 
     let localVarPath = `/network/dns/domains/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsDomain>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Domain>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: domain,
       responseType: <any>responseType_,
@@ -405,7 +405,7 @@ export class NetworkDnsService extends BaseService {
    * @param options additional options
    */
   public networkDnsDomainsPost(
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -413,9 +413,9 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsDomain>;
+  ): Observable<V1Domain>;
   public networkDnsDomainsPost(
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -423,9 +423,9 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsDomain>>;
+  ): Observable<HttpResponse<V1Domain>>;
   public networkDnsDomainsPost(
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -433,9 +433,9 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsDomain>>;
+  ): Observable<HttpEvent<V1Domain>>;
   public networkDnsDomainsPost(
-    domain: ModelsDomain,
+    domain: V1Domain,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -490,7 +490,7 @@ export class NetworkDnsService extends BaseService {
 
     let localVarPath = `/network/dns/domains`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsDomain>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Domain>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: domain,
       responseType: <any>responseType_,
@@ -518,7 +518,7 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsDnsExportResponse>;
+  ): Observable<V1ExportResponse>;
   public networkDnsExportGet(
     observe?: 'response',
     reportProgress?: boolean,
@@ -527,7 +527,7 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsDnsExportResponse>>;
+  ): Observable<HttpResponse<V1ExportResponse>>;
   public networkDnsExportGet(
     observe?: 'events',
     reportProgress?: boolean,
@@ -536,7 +536,7 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsDnsExportResponse>>;
+  ): Observable<HttpEvent<V1ExportResponse>>;
   public networkDnsExportGet(
     observe: any = 'body',
     reportProgress: boolean = false,
@@ -578,7 +578,7 @@ export class NetworkDnsService extends BaseService {
 
     let localVarPath = `/network/dns/export`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsDnsExportResponse>('get', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1ExportResponse>('get', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       responseType: <any>responseType_,
       ...(withCredentials ? { withCredentials } : {}),
@@ -842,7 +842,7 @@ export class NetworkDnsService extends BaseService {
    */
   public networkDnsRecordsIdPut(
     id: string,
-    record: ModelsRecord,
+    record: V1Record,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -850,10 +850,10 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsRecord>;
+  ): Observable<V1Record>;
   public networkDnsRecordsIdPut(
     id: string,
-    record: ModelsRecord,
+    record: V1Record,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -861,10 +861,10 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsRecord>>;
+  ): Observable<HttpResponse<V1Record>>;
   public networkDnsRecordsIdPut(
     id: string,
-    record: ModelsRecord,
+    record: V1Record,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -872,10 +872,10 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsRecord>>;
+  ): Observable<HttpEvent<V1Record>>;
   public networkDnsRecordsIdPut(
     id: string,
-    record: ModelsRecord,
+    record: V1Record,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -935,7 +935,7 @@ export class NetworkDnsService extends BaseService {
 
     let localVarPath = `/network/dns/records/${this.configuration.encodeParam({ name: 'id', value: id, in: 'path', style: 'simple', explode: false, dataType: 'string', dataFormat: undefined })}`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsRecord>('put', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Record>('put', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: record,
       responseType: <any>responseType_,
@@ -956,7 +956,7 @@ export class NetworkDnsService extends BaseService {
    * @param options additional options
    */
   public networkDnsRecordsPost(
-    record: ModelsRecord,
+    record: V1Record,
     observe?: 'body',
     reportProgress?: boolean,
     options?: {
@@ -964,9 +964,9 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<ModelsRecord>;
+  ): Observable<V1Record>;
   public networkDnsRecordsPost(
-    record: ModelsRecord,
+    record: V1Record,
     observe?: 'response',
     reportProgress?: boolean,
     options?: {
@@ -974,9 +974,9 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpResponse<ModelsRecord>>;
+  ): Observable<HttpResponse<V1Record>>;
   public networkDnsRecordsPost(
-    record: ModelsRecord,
+    record: V1Record,
     observe?: 'events',
     reportProgress?: boolean,
     options?: {
@@ -984,9 +984,9 @@ export class NetworkDnsService extends BaseService {
       context?: HttpContext;
       transferCache?: boolean;
     },
-  ): Observable<HttpEvent<ModelsRecord>>;
+  ): Observable<HttpEvent<V1Record>>;
   public networkDnsRecordsPost(
-    record: ModelsRecord,
+    record: V1Record,
     observe: any = 'body',
     reportProgress: boolean = false,
     options?: {
@@ -1041,7 +1041,7 @@ export class NetworkDnsService extends BaseService {
 
     let localVarPath = `/network/dns/records`;
     const { basePath, withCredentials } = this.configuration;
-    return this.httpClient.request<ModelsRecord>('post', `${basePath}${localVarPath}`, {
+    return this.httpClient.request<V1Record>('post', `${basePath}${localVarPath}`, {
       context: localVarHttpContext,
       body: record,
       responseType: <any>responseType_,

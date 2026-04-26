@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsSiteGroup } from './modelsSiteGroup';
+import { V1Group } from './v1Group';
 
 export interface NetworkSitePoolsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsSiteGroup>;
+  items?: Array<V1Group>;
   nextCursor?: string;
-  total?: number;
 }

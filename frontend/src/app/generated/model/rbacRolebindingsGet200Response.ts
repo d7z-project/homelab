@@ -7,11 +7,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ModelsRoleBinding } from './modelsRoleBinding';
+import { V1RoleBinding } from './v1RoleBinding';
 
 export interface RbacRolebindingsGet200Response {
   hasMore?: boolean;
-  items?: Array<ModelsRoleBinding>;
+  items?: Array<V1RoleBinding>;
   nextCursor?: string;
-  total?: number;
 }

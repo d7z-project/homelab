@@ -8,7 +8,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
-import { ModelsDomain } from '../../generated';
+import { V1Domain, V1DomainMeta, V1DomainStatus } from '../../generated';
+
+type DomainFormModel = V1Domain & { meta: V1DomainMeta; status: V1DomainStatus };
 
 @Component({
   selector: 'app-create-domain-dialog',
@@ -97,7 +99,7 @@ import { ModelsDomain } from '../../generated';
 export class CreateDomainDialogComponent {
   private dialogRef = inject(MatDialogRef<CreateDomainDialogComponent>);
   isEdit = false;
-  domain: ModelsDomain = {
+  domain: DomainFormModel = {
     id: '',
     meta: {
       name: '',
@@ -110,11 +112,15 @@ export class CreateDomainDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public data: { domain: ModelsDomain | null; existingNames?: string[] },
+    public data: { domain: DomainFormModel | null; existingNames?: string[] },
   ) {
     if (data.domain) {
       this.isEdit = true;
-      this.domain = { ...data.domain };
+      this.domain = {
+        ...data.domain,
+        meta: { ...data.domain.meta },
+        status: { ...data.domain.status },
+      };
     }
     this.existingNames = data.existingNames || [];
   }
