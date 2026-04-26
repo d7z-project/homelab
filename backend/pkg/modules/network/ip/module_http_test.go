@@ -48,7 +48,7 @@ func TestIPModuleCRUDAndPermissions(t *testing.T) {
 			"name": "blocked",
 		},
 	})
-	testkit.MustStatus(t, deniedCreate, http.StatusUnauthorized)
+	testkit.MustStatus(t, deniedCreate, http.StatusForbidden)
 
 	allowedToken, err := testkit.SeedServiceAccount(env.Context(), "sa-ip-read", "ip read",
 		rbacmodel.PolicyRule{Resource: "network/ip", Verbs: []string{"list"}},

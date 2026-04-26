@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"encoding/json"
-	runtimepkg "homelab/pkg/runtime"
 	"log"
 	"strings"
 	"sync"
@@ -62,7 +61,7 @@ func RegisterEventHandler[T any](event string, handler func(ctx context.Context,
 func StartEventLoop(ctx context.Context) {
 	eventLoopMu.Lock()
 	defer eventLoopMu.Unlock()
-	subscriber := runtimepkg.SubscriberFromContext(ctx)
+	subscriber := infrastructure.subscriber
 	if eventLoopStarted || subscriber == nil {
 		return
 	}
@@ -124,7 +123,7 @@ func ResetEventHandlers() {
 
 // NotifyCluster broadcasts an event with an optional payload to the cluster.
 func NotifyCluster(ctx context.Context, event string, payload any) {
-	subscriber := runtimepkg.SubscriberFromContext(ctx)
+	subscriber := infrastructure.subscriber
 	if subscriber == nil {
 		return
 	}

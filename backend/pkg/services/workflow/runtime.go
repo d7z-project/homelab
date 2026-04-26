@@ -39,7 +39,6 @@ func NewRuntime(deps runtimepkg.ModuleDeps) (*Runtime, error) {
 }
 
 func (rt *Runtime) WithContext(ctx context.Context) context.Context {
-	ctx = rt.Deps.WithContext(ctx)
 	return context.WithValue(ctx, workflowRuntimeContextKey, rt)
 }
 

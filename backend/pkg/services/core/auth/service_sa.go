@@ -7,7 +7,6 @@ import (
 	rbacmodel "homelab/pkg/models/core/rbac"
 	secretmodel "homelab/pkg/models/core/secret"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
-	runtimepkg "homelab/pkg/runtime"
 	secretservice "homelab/pkg/services/core/secret"
 	"time"
 
@@ -27,11 +26,11 @@ func UpdateSALastUsed(ctx context.Context, saID string) {
 	saLastUsed.Store(saID, now)
 
 	go func() {
-		detached := runtimepkg.DetachContext(ctx)
-		_ = rbacrepo.UpdateServiceAccountStatus(detached, saID, func(status *rbacmodel.ServiceAccountV1Status) {
+		bg := context.Background()
+		_ = rbacrepo.UpdateServiceAccountStatus(bg, saID, func(status *rbacmodel.ServiceAccountV1Status) {
 			status.LastUsedAt = now.Format(time.RFC3339)
 		})
-		_ = secretservice.Touch(detached, secretmodel.OwnerKindServiceAccount, saID, secretmodel.PurposeAuthToken)
+		_ = secretservice.Touch(bg, secretmodel.OwnerKindServiceAccount, saID, secretmodel.PurposeAuthToken)
 	}()
 }
 

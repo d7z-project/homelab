@@ -6,7 +6,6 @@ import (
 	"fmt"
 	commonauth "homelab/pkg/common/auth"
 	repo "homelab/pkg/repositories/workflow/actions"
-	runtimepkg "homelab/pkg/runtime"
 	authservice "homelab/pkg/services/core/auth"
 	"regexp"
 	"runtime/debug"
@@ -118,9 +117,9 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflo
 	var cancel context.CancelFunc
 
 	if timeout > 0 {
-		taskCtx, cancel = context.WithTimeout(runtimepkg.DetachContext(ctx), timeout)
+		taskCtx, cancel = context.WithTimeout(context.Background(), timeout)
 	} else {
-		taskCtx, cancel = context.WithCancel(runtimepkg.DetachContext(ctx))
+		taskCtx, cancel = context.WithCancel(context.Background())
 	}
 	taskCtx = rt.WithContext(taskCtx)
 
@@ -196,12 +195,8 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 
 	// 前置校验: 确认执行身份 (ServiceAccount) 仍然存在
 	if instance.Meta.ServiceAccountID != "" && instance.Meta.ServiceAccountID != "root" {
-		registry := runtimepkg.RegistryFromContext(ctx)
-		if registry == nil {
-			e.fail(instance, fmt.Errorf("registry not configured"), logger)
-			return
-		}
-		saCtx := commonauth.WithRoot(runtimepkg.DetachContext(ctx))
+		registry := rt.Deps.Registry
+		saCtx := commonauth.WithRoot(context.Background())
 		saExists, err := registry.Verify(saCtx, "rbac/serviceaccounts", instance.Meta.ServiceAccountID)
 		if err != nil || !saExists {
 			e.fail(instance, fmt.Errorf("service account '%s' no longer exists, workflow cannot execute", instance.Meta.ServiceAccountID), logger)
@@ -344,7 +339,7 @@ func (e *Executor) updateInstanceState(instance *workflowmodel.TaskInstance, log
 		return
 	}
 	if repo.StorageReady(logger.Context()) {
-		_ = repo.SaveTaskInstance(runtimepkg.DetachContext(logger.Context()), instance)
+		_ = repo.SaveTaskInstance(context.Background(), instance)
 	}
 }
 

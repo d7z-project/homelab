@@ -17,18 +17,22 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/spf13/afero"
+	"gopkg.d7z.net/middleware/lock"
 )
 
 type AnalysisEngine struct {
 	mu       sync.RWMutex
 	cache    *lru.Cache[string, *CompositeMatcher]
 	enricher ruleservice.IPEnricher
+	fs       afero.Fs
+	locker   lock.Locker
 }
 
 func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error) {
 	lockKey := "network:site:matcher:build:" + id
 	for {
-		release := runtimepkg.LockerFromContext(ctx).TryLock(ctx, lockKey)
+		release := e.locker.TryLock(ctx, lockKey)
 		if release != nil {
 			return release, nil
 		}
@@ -40,9 +44,9 @@ func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error
 	}
 }
 
-func NewAnalysisEngine(enricher ruleservice.IPEnricher) *AnalysisEngine {
+func NewAnalysisEngine(deps runtimepkg.ModuleDeps, enricher ruleservice.IPEnricher) *AnalysisEngine {
 	cache, _ := lru.New[string, *CompositeMatcher](32)
-	engine := &AnalysisEngine{cache: cache, enricher: enricher}
+	engine := &AnalysisEngine{cache: cache, enricher: enricher, fs: deps.FS, locker: deps.Locker}
 
 	common.RegisterEventHandler(common.EventSitePoolChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
 		engine.RemoveCache(payload.ID)
@@ -76,7 +80,7 @@ func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*Compo
 	}
 
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	f, err := runtimepkg.FSFromContext(ctx).Open(poolPath)
+	f, err := e.fs.Open(poolPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open pool data: %w", err)
 	}

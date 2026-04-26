@@ -91,7 +91,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 		var finalErr error
 		defer func() {
 			// 这里必须使用 Background 因为 taskCtx 已经被 Cancel 了，如果用 taskCtx 会导致 DB 操作失败
-			source, _ := repo.GetSource(s.deps.WithContext(context.Background()), id)
+			source, _ := repo.GetSource(context.Background(), id)
 			if source == nil {
 				return
 			}
@@ -106,7 +106,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 				source.Status.ErrorMessage = ""
 				source.Status.LastUpdatedAt = time.Now()
 			}
-			_ = repo.SaveSource(s.deps.WithContext(context.Background()), source)
+			_ = repo.SaveSource(context.Background(), source)
 		}()
 
 		if err != nil || source == nil {
@@ -131,7 +131,7 @@ func (s *IntelligenceService) runDownload(bgCtx context.Context, id string) {
 			// 因为 taskCtx 在任务完成后会被 cancel，使用已取消的 ctx 发布事件
 			// 会导致 MemorySubscriber.Publish 的 select 直接走 ctx.Done() 分支，
 			// 消息被静默丢弃，MMDB Reload 永远无法被触发。
-			common.NotifyCluster(s.deps.WithContext(context.Background()), common.EventMMDBUpdate, intelligencemodel.MMDBUpdatePayload{
+			common.NotifyCluster(context.Background(), common.EventMMDBUpdate, intelligencemodel.MMDBUpdatePayload{
 				ID:   source.ID,
 				Type: source.Meta.Type,
 			})

@@ -15,7 +15,8 @@ func TestRegisterDiscovery(t *testing.T) {
 	t.Parallel()
 
 	deps := testkit.NewModuleDeps(t)
-	ctx := deps.WithContext(t.Context())
+	rbacrepo.Configure(deps.DB)
+	ctx := t.Context()
 
 	if err := rbacrepo.SaveServiceAccount(ctx, &rbacmodel.ServiceAccount{
 		ID:         "sa-1",

@@ -69,5 +69,5 @@ func TestRBACModuleCRUDAndPermissions(t *testing.T) {
 		t.Fatalf("seed denied service account: %v", err)
 	}
 	deniedList := env.DoJSON(http.MethodGet, "/api/v1/rbac/serviceaccounts", deniedToken, nil)
-	testkit.MustStatus(t, deniedList, http.StatusUnauthorized)
+	testkit.MustStatus(t, deniedList, http.StatusForbidden)
 }

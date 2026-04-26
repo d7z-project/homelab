@@ -17,7 +17,8 @@ func TestRegisterDiscovery(t *testing.T) {
 	t.Parallel()
 
 	deps := testkit.NewModuleDeps(t)
-	ctx := deps.WithContext(t.Context())
+	actionrepo.Configure(deps.DB)
+	ctx := t.Context()
 
 	if err := actionrepo.SaveWorkflow(ctx, &workflowmodel.Workflow{
 		ID: "wf-1",

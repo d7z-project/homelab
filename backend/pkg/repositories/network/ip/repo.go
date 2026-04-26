@@ -7,11 +7,19 @@ import (
 
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
-var poolRepo = common.NewResourceRepository[ipmodel.IPPoolV1Meta, ipmodel.IPPoolV1Status]("network", "IPPool")
-var exportRepo = common.NewResourceRepository[ipmodel.IPExportV1Meta, ipmodel.IPExportV1Status]("network", "IPExport")
-var syncPolicyRepo = common.NewResourceRepository[ipmodel.IPSyncPolicyV1Meta, ipmodel.IPSyncPolicyV1Status]("network", "IPSyncPolicy")
+var poolRepo *common.ResourceRepository[ipmodel.IPPoolV1Meta, ipmodel.IPPoolV1Status]
+var exportRepo *common.ResourceRepository[ipmodel.IPExportV1Meta, ipmodel.IPExportV1Status]
+var syncPolicyRepo *common.ResourceRepository[ipmodel.IPSyncPolicyV1Meta, ipmodel.IPSyncPolicyV1Status]
+
+func Configure(db kv.KV) {
+	poolRepo = common.NewResourceRepository[ipmodel.IPPoolV1Meta, ipmodel.IPPoolV1Status](db, "network", "IPPool")
+	exportRepo = common.NewResourceRepository[ipmodel.IPExportV1Meta, ipmodel.IPExportV1Status](db, "network", "IPExport")
+	syncPolicyRepo = common.NewResourceRepository[ipmodel.IPSyncPolicyV1Meta, ipmodel.IPSyncPolicyV1Status](db, "network", "IPSyncPolicy")
+}
 
 func GetSyncPolicy(ctx context.Context, id string) (*ipmodel.IPSyncPolicy, error) {
 	return syncPolicyRepo.Get(ctx, id)

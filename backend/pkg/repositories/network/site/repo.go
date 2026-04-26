@@ -7,13 +7,21 @@ import (
 
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
 var (
-	groupRepo      = common.NewResourceRepository[sitemodel.SiteGroupV1Meta, sitemodel.SiteGroupV1Status]("network", "SiteGroup")
-	exportRepo     = common.NewResourceRepository[sitemodel.SiteExportV1Meta, sitemodel.SiteExportV1Status]("network", "SiteExport")
-	syncPolicyRepo = common.NewResourceRepository[sitemodel.SiteSyncPolicyV1Meta, sitemodel.SiteSyncPolicyV1Status]("network", "SiteSyncPolicy")
+	groupRepo      *common.ResourceRepository[sitemodel.SiteGroupV1Meta, sitemodel.SiteGroupV1Status]
+	exportRepo     *common.ResourceRepository[sitemodel.SiteExportV1Meta, sitemodel.SiteExportV1Status]
+	syncPolicyRepo *common.ResourceRepository[sitemodel.SiteSyncPolicyV1Meta, sitemodel.SiteSyncPolicyV1Status]
 )
+
+func Configure(db kv.KV) {
+	groupRepo = common.NewResourceRepository[sitemodel.SiteGroupV1Meta, sitemodel.SiteGroupV1Status](db, "network", "SiteGroup")
+	exportRepo = common.NewResourceRepository[sitemodel.SiteExportV1Meta, sitemodel.SiteExportV1Status](db, "network", "SiteExport")
+	syncPolicyRepo = common.NewResourceRepository[sitemodel.SiteSyncPolicyV1Meta, sitemodel.SiteSyncPolicyV1Status](db, "network", "SiteSyncPolicy")
+}
 
 // Group Repo
 func GetGroup(ctx context.Context, id string) (*sitemodel.SiteGroup, error) {

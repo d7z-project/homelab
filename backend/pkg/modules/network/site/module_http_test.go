@@ -48,7 +48,7 @@ func TestSiteModuleCRUDAndPermissions(t *testing.T) {
 			"name": "blocked",
 		},
 	})
-	testkit.MustStatus(t, deniedCreate, http.StatusUnauthorized)
+	testkit.MustStatus(t, deniedCreate, http.StatusForbidden)
 
 	allowedToken, err := testkit.SeedServiceAccount(env.Context(), "sa-site-read", "site read",
 		rbacmodel.PolicyRule{Resource: "network/site", Verbs: []string{"list"}},

@@ -16,7 +16,8 @@ func TestRegisterDiscovery(t *testing.T) {
 	t.Parallel()
 
 	deps := testkit.NewModuleDeps(t)
-	ctx := deps.WithContext(t.Context())
+	auditrepo.Configure(deps.DB)
+	ctx := t.Context()
 
 	if err := auditrepo.SaveLog(ctx, &auditmodel.AuditLog{
 		ID:        "log-1",

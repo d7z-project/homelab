@@ -4,7 +4,6 @@ import (
 	apiv1 "homelab/pkg/apis/core/rbac/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
-	runtimepkg "homelab/pkg/runtime"
 	rbacservice "homelab/pkg/services/core/rbac"
 	"net/http"
 )
@@ -101,7 +100,11 @@ func UpdateServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/serviceaccounts/{id} [delete]
 func DeleteServiceAccountHandler(w http.ResponseWriter, r *http.Request) {
 	id := controllercommon.PathID(r, "id")
-	if err := rbacservice.DeleteServiceAccount(r.Context(), id); err != nil {
+	discovery, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	if !ok {
+		return
+	}
+	if err := rbacservice.DeleteServiceAccount(r.Context(), discovery, id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
 	}
@@ -364,12 +367,11 @@ func SimulatePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/resources/suggest [get]
 func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 	prefix := r.URL.Query().Get("prefix")
-	registry := runtimepkg.RegistryFromContext(r.Context())
-	if registry == nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, "registry not configured")
+	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	if !ok {
 		return
 	}
-	suggestions, err := registry.SuggestResources(r.Context(), prefix)
+	suggestions, err := service.SuggestResources(r.Context(), prefix)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -388,12 +390,11 @@ func SuggestResourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /rbac/verbs/suggest [get]
 func SuggestVerbsHandler(w http.ResponseWriter, r *http.Request) {
 	resource := r.URL.Query().Get("resource")
-	registry := runtimepkg.RegistryFromContext(r.Context())
-	if registry == nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, "registry not configured")
+	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	if !ok {
 		return
 	}
-	verbs, err := registry.SuggestVerbs(r.Context(), resource)
+	verbs, err := service.SuggestVerbs(r.Context(), resource)
 	if err != nil {
 		controllercommon.HandleError(w, r, err)
 		return

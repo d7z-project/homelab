@@ -2,14 +2,18 @@ package runtime
 
 import (
 	"context"
-
-	"github.com/go-chi/chi/v5"
+	"net/http"
 )
+
+type RouteHandler interface {
+	http.Handler
+	MountPath() string
+}
 
 type Module interface {
 	Name() string
 	Init(deps ModuleDeps) error
-	RegisterRoutes(r chi.Router)
+	Routes() RouteHandler
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
 }

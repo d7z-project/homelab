@@ -54,7 +54,7 @@ func (m *Manager[T]) SetCleanupHook(hook func(T)) {
 func (m *Manager[T]) loadTasks() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	data, err := m.db().Get(m.deps.WithContext(context.Background()), m.dbKey)
+	data, err := m.db().Get(context.Background(), m.dbKey)
 	if err == nil && data != "" {
 		_ = json.Unmarshal([]byte(data), &m.tasks)
 	}
@@ -65,7 +65,7 @@ func (m *Manager[T]) Save() {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	b, _ := json.Marshal(m.tasks)
-	_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
+	_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 }
 
 // Reconcile 扫描所有任务，清理僵死状态 (由外层 Cron 或系统启动时调用)
@@ -90,7 +90,7 @@ func (m *Manager[T]) Reconcile(ctx context.Context) {
 	}
 	if changed {
 		b, _ := json.Marshal(m.tasks)
-		_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
+		_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 	}
 }
 
@@ -100,7 +100,7 @@ func (m *Manager[T]) AddTask(t T) {
 	defer m.mu.Unlock()
 	m.tasks[t.GetID()] = t
 	b, _ := json.Marshal(m.tasks)
-	_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
+	_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 }
 
 // GetTask 获取任务
@@ -129,7 +129,7 @@ func (m *Manager[T]) CancelTask(id string) bool {
 		if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
 			t.SetStatus(shared.TaskStatusCancelled)
 			b, _ := json.Marshal(m.tasks)
-			_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
+			_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 			return true
 		}
 	}
@@ -148,7 +148,7 @@ func (m *Manager[T]) DeleteTask(id string) {
 		}
 		delete(m.tasks, id)
 		b, _ := json.Marshal(m.tasks)
-		_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
+		_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 	}
 }
 
@@ -181,7 +181,7 @@ func (m *Manager[T]) DeleteTasksByPrefix(prefix string) {
 	}
 	if changed {
 		b, _ := json.Marshal(m.tasks)
-		_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
+		_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
 	}
 }
 

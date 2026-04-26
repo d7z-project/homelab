@@ -7,9 +7,15 @@ import (
 
 	intelligencemodel "homelab/pkg/models/network/intelligence"
 	"homelab/pkg/models/shared"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
-var sourceRepo = common.NewResourceRepository[intelligencemodel.IntelligenceSourceV1Meta, intelligencemodel.IntelligenceSourceV1Status]("network", "IntelligenceSource")
+var sourceRepo *common.ResourceRepository[intelligencemodel.IntelligenceSourceV1Meta, intelligencemodel.IntelligenceSourceV1Status]
+
+func Configure(db kv.KV) {
+	sourceRepo = common.NewResourceRepository[intelligencemodel.IntelligenceSourceV1Meta, intelligencemodel.IntelligenceSourceV1Status](db, "network", "IntelligenceSource")
+}
 
 func GetSource(ctx context.Context, id string) (*intelligencemodel.IntelligenceSource, error) {
 	return sourceRepo.Get(ctx, id)

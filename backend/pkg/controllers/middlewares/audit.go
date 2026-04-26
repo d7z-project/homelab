@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"context"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	"net/http"
@@ -36,7 +35,7 @@ func AuditMiddleware(resource string) func(http.Handler) http.Handler {
 				UserAgent: r.UserAgent(),
 			}
 
-			ctx := context.WithValue(r.Context(), commonaudit.LoggerContextKey, logger)
+			ctx := commonaudit.WithLogger(r.Context(), logger)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

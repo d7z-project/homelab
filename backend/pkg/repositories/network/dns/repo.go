@@ -7,10 +7,17 @@ import (
 
 	dnsmodel "homelab/pkg/models/network/dns"
 	"homelab/pkg/models/shared"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
-var domainRepo = common.NewResourceRepository[dnsmodel.DomainV1Meta, dnsmodel.DomainV1Status]("network", "Domain")
-var recordRepo = common.NewResourceRepository[dnsmodel.RecordV1Meta, dnsmodel.RecordV1Status]("network", "Record")
+var domainRepo *common.ResourceRepository[dnsmodel.DomainV1Meta, dnsmodel.DomainV1Status]
+var recordRepo *common.ResourceRepository[dnsmodel.RecordV1Meta, dnsmodel.RecordV1Status]
+
+func Configure(db kv.KV) {
+	domainRepo = common.NewResourceRepository[dnsmodel.DomainV1Meta, dnsmodel.DomainV1Status](db, "network", "Domain")
+	recordRepo = common.NewResourceRepository[dnsmodel.RecordV1Meta, dnsmodel.RecordV1Status](db, "network", "Record")
+}
 
 func GetDomain(ctx context.Context, id string) (*dnsmodel.Domain, error) {
 	return domainRepo.Get(ctx, id)

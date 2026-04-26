@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"homelab/pkg/common/contextx"
 	rbacmodel "homelab/pkg/models/core/rbac"
 )
 
@@ -27,7 +28,7 @@ const (
 )
 
 func FromContext(ctx context.Context) *AuthContext {
-	val, ok := ctx.Value(AuthContextKey).(*AuthContext)
+	val, ok := contextx.Value[*AuthContext](ctx, AuthContextKey)
 	if !ok {
 		return nil
 	}
@@ -35,11 +36,11 @@ func FromContext(ctx context.Context) *AuthContext {
 }
 
 func WithAuth(ctx context.Context, auth *AuthContext) context.Context {
-	return context.WithValue(ctx, AuthContextKey, auth)
+	return contextx.WithValue(ctx, AuthContextKey, auth)
 }
 
 func PermissionsFromContext(ctx context.Context) *rbacmodel.ResourcePermissions {
-	val, ok := ctx.Value(PermissionsContextKey).(*rbacmodel.ResourcePermissions)
+	val, ok := contextx.Value[*rbacmodel.ResourcePermissions](ctx, PermissionsContextKey)
 	if !ok || val == nil {
 		return &rbacmodel.ResourcePermissions{}
 	}
@@ -47,7 +48,7 @@ func PermissionsFromContext(ctx context.Context) *rbacmodel.ResourcePermissions 
 }
 
 func WithPermissions(ctx context.Context, perms *rbacmodel.ResourcePermissions) context.Context {
-	return context.WithValue(ctx, PermissionsContextKey, perms)
+	return contextx.WithValue(ctx, PermissionsContextKey, perms)
 }
 
 func WithIdentity(ctx context.Context, auth *AuthContext, perms *rbacmodel.ResourcePermissions) context.Context {

@@ -10,27 +10,31 @@ import (
 
 	auditmodel "homelab/pkg/models/core/audit"
 	"homelab/pkg/models/shared"
-	runtimepkg "homelab/pkg/runtime"
 
 	"github.com/google/uuid"
 	"gopkg.d7z.net/middleware/kv"
 )
 
+var auditDB kv.KV
+
+func Configure(db kv.KV) {
+	auditDB = db
+}
+
 func getAuditDB(ctx context.Context, t time.Time) kv.KV {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if auditDB == nil {
 		return nil
 	}
 	year := t.Format("2006")
 	month := t.Format("01")
-	return db.Child("system", "audit", "data", year, month)
+	return auditDB.Child("system", "audit", "data", year, month)
 }
 
 func SaveLog(ctx context.Context, log *auditmodel.AuditLog) error {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if auditDB == nil {
 		return nil
 	}
+	db := auditDB
 	var t time.Time
 	var err error
 
@@ -67,10 +71,10 @@ func SaveLog(ctx context.Context, log *auditmodel.AuditLog) error {
 }
 
 func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[auditmodel.AuditLog], error) {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if auditDB == nil {
 		return nil, nil
 	}
+	db := auditDB
 	indexDB := db.Child("system", "audit", "index")
 	indexItems, _ := indexDB.List(ctx, "")
 
@@ -172,10 +176,10 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*sh
 }
 
 func CleanupLogs(ctx context.Context, days int) (int, error) {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if auditDB == nil {
 		return 0, nil
 	}
+	db := auditDB
 	cutoff := time.Now().AddDate(0, 0, -days)
 	indexDB := db.Child("system", "audit", "index")
 	indexItems, _ := indexDB.List(ctx, "")

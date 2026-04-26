@@ -10,7 +10,6 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	secretmodel "homelab/pkg/models/core/secret"
 	repo "homelab/pkg/repositories/workflow/actions"
-	runtimepkg "homelab/pkg/runtime"
 	secretservice "homelab/pkg/services/core/secret"
 	"regexp"
 	"strings"
@@ -66,10 +65,7 @@ func ValidateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) err
 	}
 
 	// Verify ServiceAccount exists using discovery service
-	registry := runtimepkg.RegistryFromContext(ctx)
-	if registry == nil {
-		return fmt.Errorf("registry not configured")
-	}
+	registry := MustRuntime(ctx).Deps.Registry
 	exists, err := registry.Verify(ctx, "rbac/serviceaccounts", workflow.Meta.ServiceAccountID)
 	if err != nil {
 		return fmt.Errorf("failed to verify service account: %v", err)
@@ -233,10 +229,7 @@ func ValidateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) err
 					if pDef.LookupCode == "actions/workflows" && workflow.ID != "" && v == workflow.ID {
 						// Skip discovery verify for self-reference, direct recursion check happens below
 					} else {
-						registry := runtimepkg.RegistryFromContext(ctx)
-						if registry == nil {
-							return fmt.Errorf("registry not configured")
-						}
+						registry := MustRuntime(ctx).Deps.Registry
 						exists, err := registry.Verify(ctx, pDef.LookupCode, v)
 						if err != nil {
 							return fmt.Errorf("step %s: failed to verify parameter %s via discovery code %s: %v", step.ID, k, pDef.LookupCode, err)
@@ -431,7 +424,7 @@ func GetWorkflow(ctx context.Context, id string) (*workflowmodel.Workflow, error
 	}
 	// Permission check: actions/<workflow-id>
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + id) {
-		return nil, fmt.Errorf("permission denied: actions/%s", id)
+		return nil, fmt.Errorf("%w: actions/%s", commonauth.ErrPermissionDenied, id)
 	}
 	return wf, nil
 }

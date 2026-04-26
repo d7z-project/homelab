@@ -4,13 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"gopkg.d7z.net/middleware/kv"
 	"homelab/pkg/common"
 	rbacmodel "homelab/pkg/models/core/rbac"
-	runtimepkg "homelab/pkg/runtime"
-	registryruntime "homelab/pkg/runtime/registry"
-
-	"github.com/spf13/afero"
-	"gopkg.d7z.net/middleware/kv"
 )
 
 func TestGetCachedRoleAndInvalidateCache(t *testing.T) {
@@ -23,16 +19,9 @@ func TestGetCachedRoleAndInvalidateCache(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	roleRepo = common.NewResourceRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
+	roleRepo = common.NewResourceRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status](db, "auth", "roles")
 	ClearCache()
-	ctx := runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: registryruntime.New(),
-	}.WithContext(context.Background())
+	ctx := context.Background()
 
 	if err := roleRepo.Save(ctx, &rbacmodel.Role{
 		ID:              "role-1",
@@ -89,15 +78,8 @@ func TestScanAllRoleBindings(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	bindingRepo = common.NewResourceRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
-	ctx := runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: registryruntime.New(),
-	}.WithContext(context.Background())
+	bindingRepo = common.NewResourceRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status](db, "auth", "rolebindings")
+	ctx := context.Background()
 
 	for _, id := range []string{"binding-a", "binding-b"} {
 		bindingID := id

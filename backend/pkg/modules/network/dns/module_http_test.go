@@ -82,7 +82,7 @@ func TestDNSModuleCRUDAndPermissions(t *testing.T) {
 			"enabled": true,
 		},
 	})
-	testkit.MustStatus(t, deniedCreate, http.StatusUnauthorized)
+	testkit.MustStatus(t, deniedCreate, http.StatusForbidden)
 
 	allowedToken, err := testkit.SeedServiceAccount(env.Context(), "sa-dns-read", "dns read",
 		rbacmodel.PolicyRule{Resource: "network/dns", Verbs: []string{"list"}},

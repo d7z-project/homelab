@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	runtimepkg "homelab/pkg/runtime"
-
 	"github.com/go-chi/render"
 	"gopkg.d7z.net/middleware/kv"
 )
@@ -26,23 +24,21 @@ func UpdateGlobalVersion(ctx context.Context, module string) int64 {
 	parts := strings.Split(module, "/")
 	ns := append([]string{"system", "sync", "version"}, parts[:len(parts)-1]...)
 	key := parts[len(parts)-1]
-	db := runtimepkg.DBFromContext(ctx)
-	if db != nil {
-		_ = db.Child(ns...).Put(ctx, key, strconv.FormatInt(version, 10), kv.TTLKeep)
+	if infrastructure.db != nil {
+		_ = infrastructure.db.Child(ns...).Put(ctx, key, strconv.FormatInt(version, 10), kv.TTLKeep)
 	}
 	return version
 }
 
 // GetGlobalVersion 获取指定模块的全局版本号
 func GetGlobalVersion(ctx context.Context, module string) int64 {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if infrastructure.db == nil {
 		return 0
 	}
 	parts := strings.Split(module, "/")
 	ns := append([]string{"system", "sync", "version"}, parts[:len(parts)-1]...)
 	key := parts[len(parts)-1]
-	val, err := db.Child(ns...).Get(ctx, key)
+	val, err := infrastructure.db.Child(ns...).Get(ctx, key)
 	if err != nil || val == "" {
 		return 0
 	}
@@ -52,10 +48,10 @@ func GetGlobalVersion(ctx context.Context, module string) int64 {
 
 // LockWithTimeout 尝试获取分布式锁，带重试和超时机制
 func LockWithTimeout(ctx context.Context, lockKey string, timeout time.Duration) (func(), error) {
-	locker := runtimepkg.LockerFromContext(ctx)
-	if locker == nil {
+	if infrastructure.locker == nil {
 		return func() {}, nil // 单机模式或未配置锁，跳过逻辑
 	}
+	locker := infrastructure.locker
 	start := time.Now()
 	for {
 		release := locker.TryLock(ctx, lockKey)

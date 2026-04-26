@@ -49,7 +49,7 @@ func TestAuditModuleScanLogsAndPermissions(t *testing.T) {
 		t.Fatalf("seed denied service account: %v", err)
 	}
 	deniedResp := env.DoJSON(http.MethodGet, "/api/v1/audit/logs", deniedToken, nil)
-	testkit.MustStatus(t, deniedResp, http.StatusUnauthorized)
+	testkit.MustStatus(t, deniedResp, http.StatusForbidden)
 
 	allowedToken, err := testkit.SeedServiceAccount(env.Context(), "sa-audit-read", "audit read",
 		rbacmodel.PolicyRule{Resource: "audit", Verbs: []string{"list"}},

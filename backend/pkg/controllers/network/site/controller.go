@@ -5,7 +5,6 @@ import (
 	apiv1 "homelab/pkg/apis/network/site/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
-	runtimepkg "homelab/pkg/runtime"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -26,7 +25,7 @@ import (
 // @Success 200 {object} common.CursorResponse{items=[]apiv1.Group}
 // @Router /network/site/pools [get]
 func ScanSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -48,7 +47,7 @@ func ScanSiteGroupsHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.Group
 // @Router /network/site/pools [post]
 func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -72,7 +71,7 @@ func CreateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "success"
 // @Router /network/site/pools/{id} [delete]
 func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -95,7 +94,7 @@ func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.PoolPreviewResponse
 // @Router /network/site/pools/{id}/preview [get]
 func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -124,7 +123,7 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "success"
 // @Router /network/site/pools/{id}/entries [post]
 func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -151,7 +150,7 @@ func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "success"
 // @Router /network/site/pools/{id}/entries [delete]
 func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -179,7 +178,7 @@ func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.AnalysisResult
 // @Router /network/site/analysis/hit-test [post]
 func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -215,7 +214,7 @@ func SiteHitTestHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} common.CursorResponse{items=[]apiv1.Export}
 // @Router /network/site/exports [get]
 func ScanSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -237,7 +236,7 @@ func ScanSiteExportsHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.Export
 // @Router /network/site/exports [post]
 func CreateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -268,7 +267,7 @@ func CreateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/site/exports/{id} [put]
 func UpdateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -294,7 +293,7 @@ func UpdateSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "success"
 // @Router /network/site/exports/{id} [delete]
 func DeleteSiteExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -314,7 +313,7 @@ func DeleteSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/site/exports/tasks [get]
 func ScanSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -332,7 +331,7 @@ func ScanSiteExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.ExportTriggerResponse
 // @Router /network/site/exports/{id}/trigger [post]
 func TriggerSiteExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -357,7 +356,7 @@ func TriggerSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.ExportTask
 // @Router /network/site/exports/task/{taskId} [get]
 func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -381,7 +380,7 @@ func SiteExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/site/exports/task/{taskId}/cancel [post]
 func CancelSiteExportTaskHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -407,7 +406,7 @@ func CancelSiteExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/site/exports/preview [post]
 func PreviewSiteExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -433,7 +432,7 @@ func PreviewSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {file} file
 // @Router /network/site/exports/download/{taskId} [get]
 func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -444,7 +443,7 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tempFileName := fmt.Sprintf("site_export_%s.%s", id, task.Format)
-	f, err := runtimepkg.TempFSFromContext(r.Context()).Open(filepath.Join("temp", tempFileName))
+	f, err := deps.TempFS.Open(filepath.Join("temp", tempFileName))
 	if err != nil {
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
@@ -467,7 +466,7 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} common.CursorResponse{items=[]apiv1.SyncPolicy}
 // @Router /network/site/sync [get]
 func ScanSiteSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -489,7 +488,7 @@ func ScanSiteSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.SyncPolicy
 // @Router /network/site/sync [post]
 func CreateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -515,7 +514,7 @@ func CreateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.SyncPolicy
 // @Router /network/site/sync/{id} [put]
 func UpdateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -540,7 +539,7 @@ func UpdateSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "success"
 // @Router /network/site/sync/{id} [delete]
 func DeleteSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -560,7 +559,7 @@ func DeleteSiteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "success"
 // @Router /network/site/sync/{id}/trigger [post]
 func TriggerSiteSyncHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -582,7 +581,7 @@ func TriggerSiteSyncHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} apiv1.Group
 // @Router /network/site/pools/{id} [put]
 func UpdateSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.SiteDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}

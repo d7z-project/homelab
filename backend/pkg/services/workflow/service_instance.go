@@ -12,7 +12,6 @@ import (
 
 	"homelab/pkg/models/shared"
 	workflowmodel "homelab/pkg/models/workflow"
-	runtimepkg "homelab/pkg/runtime"
 )
 
 func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, userID string, triggerSource string, inputs map[string]string) (string, error) {
@@ -24,7 +23,7 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 	// Permission check for the workflow itself
 	if triggerSource == "Manual" {
 		if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + workflow.ID) {
-			return "", fmt.Errorf("permission denied: actions/%s", workflow.ID)
+			return "", fmt.Errorf("%w: actions/%s", commonauth.ErrPermissionDenied, workflow.ID)
 		}
 	}
 
@@ -83,8 +82,8 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 		return "", fmt.Errorf("failed to save pending instance: %v", err)
 	}
 
-	dispatchQueue := runtimepkg.QueueFromContext(ctx)
-	if dispatchQueue == nil {
+	rt := MustRuntime(ctx)
+	if rt.Deps.Queue == nil {
 		return "", fmt.Errorf("task queue is not configured")
 	}
 	payload, err := json.Marshal(workflowmodel.WorkflowExecuteJob{
@@ -94,7 +93,7 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 	if err != nil {
 		return "", fmt.Errorf("failed to encode workflow dispatch job: %w", err)
 	}
-	messageID, err := dispatchQueue.Publish(ctx, workflowExecuteTopic, string(payload), nil)
+	messageID, err := rt.Deps.Queue.Publish(ctx, workflowExecuteTopic, string(payload), nil)
 	if err != nil {
 		now := time.Now()
 		instance.Status.Status = shared.TaskStatusFailed
@@ -119,7 +118,8 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]string, triggerSource string) (string, error) {
 	// Use distributed lock to prevent concurrent triggers for the same workflow
 	lockKey := "action:trigger:" + workflowID
-	release := runtimepkg.LockerFromContext(ctx).TryLock(ctx, lockKey)
+	rt := MustRuntime(ctx)
+	release := rt.Deps.Locker.TryLock(ctx, lockKey)
 	if release == nil {
 		return "", fmt.Errorf("workflow '%s' is already being triggered, please wait", workflowID)
 	}
@@ -160,7 +160,7 @@ func GetTaskInstance(ctx context.Context, id string) (*workflowmodel.TaskInstanc
 	}
 	// Check permission for the parent workflow
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + inst.Meta.WorkflowID) {
-		return nil, fmt.Errorf("permission denied: actions/%s", inst.Meta.WorkflowID)
+		return nil, fmt.Errorf("%w: actions/%s", commonauth.ErrPermissionDenied, inst.Meta.WorkflowID)
 	}
 
 	// Populate logs from all parts

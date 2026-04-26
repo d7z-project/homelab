@@ -3,6 +3,7 @@ package audit
 import (
 	"context"
 
+	"homelab/pkg/common/contextx"
 	auditmodel "homelab/pkg/models/core/audit"
 	auditrepo "homelab/pkg/repositories/core/audit"
 )
@@ -43,8 +44,12 @@ func (l *AuditLogger) Log(action string, targetID string, message string, succes
 	}()
 }
 
+func WithLogger(ctx context.Context, logger *AuditLogger) context.Context {
+	return contextx.WithValue(ctx, LoggerContextKey, logger)
+}
+
 // FromContext retrieves the AuditLogger from the context
 func FromContext(ctx context.Context) *AuditLogger {
-	val, _ := ctx.Value(LoggerContextKey).(*AuditLogger)
+	val, _ := contextx.Value[*AuditLogger](ctx, LoggerContextKey)
 	return val
 }

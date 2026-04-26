@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	apiv1 "homelab/pkg/apis/core/auth/v1"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
@@ -10,9 +9,18 @@ import (
 	"net/http"
 
 	authservice "homelab/pkg/services/core/auth"
-
-	"github.com/go-chi/chi/v5"
 )
+
+// PingHandler godoc
+// @Summary Ping the server
+// @Description Returns pong if the server is alive
+// @Tags system
+// @Produce json
+// @Success 200 {string} string "pong"
+// @Router /auth/ping [get]
+func PingHandler(w http.ResponseWriter, r *http.Request) {
+	common.Success(w, r, "pong")
+}
 
 // LoginHandler godoc
 // @Summary Login to get session
@@ -33,7 +41,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	ua := r.UserAgent()
 
 	// Inject logger for login phase
-	ctx := context.WithValue(r.Context(), commonaudit.LoggerContextKey, &commonaudit.AuditLogger{
+	ctx := commonaudit.WithLogger(r.Context(), &commonaudit.AuditLogger{
 		Subject:   "anonymous",
 		Resource:  "auth",
 		IPAddress: ip,
@@ -112,7 +120,7 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 func ScanSessionsHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := authservice.ScanSessions(r.Context())
 	if err != nil {
-		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
+		controllercommon.HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, toAPISessions(res))
@@ -130,9 +138,9 @@ func ScanSessionsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /auth/sessions/{id} [delete]
 func RevokeSessionHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := controllercommon.PathID(r, "id")
 	if err := authservice.RevokeSession(r.Context(), id); err != nil {
-		common.UnauthorizedError(w, r, http.StatusUnauthorized, err.Error())
+		controllercommon.HandleError(w, r, err)
 		return
 	}
 	common.Success(w, r, "success")

@@ -20,7 +20,7 @@ import (
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sources [get]
 func ScanIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IntelligenceDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -46,7 +46,7 @@ func ScanIntelligenceSourcesHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sources [post]
 func CreateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IntelligenceDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -77,7 +77,7 @@ func CreateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sources/{id} [put]
 func UpdateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IntelligenceDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -107,7 +107,7 @@ func UpdateIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sources/{id} [delete]
 func DeleteIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IntelligenceDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -131,7 +131,7 @@ func DeleteIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sources/{id}/sync [post]
 func SyncIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IntelligenceDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -154,7 +154,7 @@ func SyncIntelligenceSourceHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/intelligence/sync/{id}/cancel [post]
 func CancelIntelligenceSyncHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IntelligenceDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}

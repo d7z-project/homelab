@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"context"
 	"fmt"
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
@@ -27,7 +26,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			IPAddress: ip,
 			UserAgent: ua,
 		}
-		r = r.WithContext(context.WithValue(r.Context(), commonaudit.LoggerContextKey, authLogger))
+		r = r.WithContext(commonaudit.WithLogger(r.Context(), authLogger))
 
 		authHeader := r.Header.Get("Authorization")
 		token := authHeader
@@ -131,7 +130,7 @@ func RequireAnyPermission(resource string, verbs ...string) func(http.Handler) h
 				}
 			}
 
-			common.UnauthorizedError(w, r, 10002, "Permission Denied")
+			common.Error(w, r, http.StatusForbidden, 10002, "Permission Denied")
 		})
 	}
 }

@@ -2,7 +2,6 @@ package actions
 
 import (
 	"context"
-	runtimepkg "homelab/pkg/runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -10,12 +9,21 @@ import (
 	"homelab/pkg/common"
 	"homelab/pkg/models/shared"
 	workflowmodel "homelab/pkg/models/workflow"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
 var (
-	workflowRepo     = common.NewResourceRepository[workflowmodel.WorkflowV1Meta, workflowmodel.WorkflowV1Status]("actions", "workflows")
-	taskInstanceRepo = common.NewResourceRepository[workflowmodel.TaskInstanceV1Meta, workflowmodel.TaskInstanceV1Status]("actions", "instances")
+	workflowRepo     *common.ResourceRepository[workflowmodel.WorkflowV1Meta, workflowmodel.WorkflowV1Status]
+	taskInstanceRepo *common.ResourceRepository[workflowmodel.TaskInstanceV1Meta, workflowmodel.TaskInstanceV1Status]
+	logDB            kv.KV
 )
+
+func Configure(db kv.KV) {
+	workflowRepo = common.NewResourceRepository[workflowmodel.WorkflowV1Meta, workflowmodel.WorkflowV1Status](db, "actions", "workflows")
+	taskInstanceRepo = common.NewResourceRepository[workflowmodel.TaskInstanceV1Meta, workflowmodel.TaskInstanceV1Status](db, "actions", "instances")
+	logDB = db
+}
 
 // Workflow helpers
 
@@ -90,21 +98,19 @@ func ScanTaskInstances(ctx context.Context, cursor string, limit int, search str
 }
 
 func StorageReady(ctx context.Context) bool {
-	return runtimepkg.DBFromContext(ctx) != nil
+	return logDB != nil
 }
 
 func AppendTaskLogLine(ctx context.Context, instanceID string, stepIndex int, key string, line string, ttl time.Duration) error {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if logDB == nil {
 		return nil
 	}
-	return db.Child("system", "task:logs", instanceID, strconv.Itoa(stepIndex)).Put(ctx, key, line, ttl)
+	return logDB.Child("system", "task:logs", instanceID, strconv.Itoa(stepIndex)).Put(ctx, key, line, ttl)
 }
 
 func DeleteTaskLogs(ctx context.Context, instanceID string) error {
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if logDB == nil {
 		return nil
 	}
-	return db.Child("system", "task:logs", instanceID).DeleteAll(ctx)
+	return logDB.Child("system", "task:logs", instanceID).DeleteAll(ctx)
 }

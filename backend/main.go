@@ -127,10 +127,10 @@ func main() {
 		TempFS:     tempFs,
 	})
 	moduleDeps := app.ModuleDeps()
-	appCtx := moduleDeps.WithContext(ctx)
-	common.StartEventLoop(appCtx)
+	common.StartEventLoop(ctx)
 
-	mmdbSources, _ := intrepo.ScanAllSources(appCtx)
+	intrepo.Configure(moduleDeps.DB)
+	mmdbSources, _ := intrepo.ScanAllSources(ctx)
 	moduleOpts := moduleOptions{
 		enableWorkflow:     common.Opts.Modules.Workflow,
 		enableIntelligence: common.Opts.Modules.Intelligence,
@@ -139,7 +139,7 @@ func main() {
 	if err := registerModules(app, modules); err != nil {
 		log.Fatalf("Failed to register core modules: %v", err)
 	}
-	if err := app.Start(appCtx); err != nil {
+	if err := app.Start(ctx); err != nil {
 		log.Fatalf("Failed to start app modules: %v", err)
 	}
 
@@ -165,9 +165,7 @@ func main() {
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Logger)
-		r.Route("/api/v1", func(r chi.Router) {
-			app.RegisterRoutes(r)
-		})
+		r.Mount("/api/v1", app.Handler())
 	})
 
 	r.Get("/api/swagger", func(w http.ResponseWriter, r *http.Request) {

@@ -11,11 +11,9 @@ import (
 	sitemodel "homelab/pkg/models/network/site"
 	iprepo "homelab/pkg/repositories/network/ip"
 	siterepo "homelab/pkg/repositories/network/site"
-	runtimepkg "homelab/pkg/runtime"
 	registryruntime "homelab/pkg/runtime/registry"
 	ruleservice "homelab/pkg/services/rules"
 
-	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 )
 
@@ -30,15 +28,9 @@ func TestRegisterDiscovery(t *testing.T) {
 		_ = db.Close()
 	})
 	registry := registryruntime.New()
-	deps := runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: registry,
-	}
-	ctx := deps.WithContext(context.Background())
+	iprepo.Configure(db)
+	siterepo.Configure(db)
+	ctx := context.Background()
 
 	if err := iprepo.SavePool(ctx, &ipmodel.IPPool{
 		ID:         "pool-1",

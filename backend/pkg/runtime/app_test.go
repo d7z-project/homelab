@@ -6,13 +6,13 @@ import (
 	"reflect"
 	"testing"
 
+	"homelab/pkg/controllers/routerx"
 	runtimepkg "homelab/pkg/runtime"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type testModule struct {
 	name      string
+	mountPath string
 	log       *[]string
 	startErr  error
 	stopErr   error
@@ -23,11 +23,11 @@ func (m *testModule) Name() string { return m.name }
 
 func (m *testModule) Init(runtimepkg.ModuleDeps) error { return nil }
 
-func (m *testModule) RegisterRoutes(r chi.Router) {
+func (m *testModule) Routes() runtimepkg.RouteHandler {
 	if m.routesHit != nil {
 		*m.routesHit = true
 	}
-	_ = r
+	return routerx.New(m.mountPath)
 }
 
 func (m *testModule) Start(_ context.Context) error {
@@ -48,14 +48,14 @@ func TestAppStartStopOrder(t *testing.T) {
 	routeA := false
 	routeB := false
 
-	if err := app.RegisterModule(&testModule{name: "a", log: &logs, routesHit: &routeA}); err != nil {
+	if err := app.RegisterModule(&testModule{name: "a", mountPath: "/a", log: &logs, routesHit: &routeA}); err != nil {
 		t.Fatalf("register a: %v", err)
 	}
-	if err := app.RegisterModule(&testModule{name: "b", log: &logs, routesHit: &routeB}); err != nil {
+	if err := app.RegisterModule(&testModule{name: "b", mountPath: "/b", log: &logs, routesHit: &routeB}); err != nil {
 		t.Fatalf("register b: %v", err)
 	}
 
-	app.RegisterRoutes(chi.NewRouter())
+	_ = app.Handler()
 	if !routeA || !routeB {
 		t.Fatal("expected routes to be registered for all modules")
 	}
@@ -79,10 +79,10 @@ func TestAppRollsBackStartedModulesOnFailure(t *testing.T) {
 	app := runtimepkg.NewApp(runtimepkg.Dependencies{})
 	logs := make([]string, 0)
 
-	if err := app.RegisterModule(&testModule{name: "a", log: &logs}); err != nil {
+	if err := app.RegisterModule(&testModule{name: "a", mountPath: "/a", log: &logs}); err != nil {
 		t.Fatalf("register a: %v", err)
 	}
-	if err := app.RegisterModule(&testModule{name: "b", log: &logs, startErr: errors.New("boom")}); err != nil {
+	if err := app.RegisterModule(&testModule{name: "b", mountPath: "/b", log: &logs, startErr: errors.New("boom")}); err != nil {
 		t.Fatalf("register b: %v", err)
 	}
 
@@ -96,24 +96,37 @@ func TestAppRollsBackStartedModulesOnFailure(t *testing.T) {
 	}
 }
 
-func TestFuncModuleHooks(t *testing.T) {
+type hookModule struct {
+	name   string
+	routes func() runtimepkg.RouteHandler
+	start  func(context.Context) error
+	stop   func(context.Context) error
+}
+
+func (m *hookModule) Name() string                     { return m.name }
+func (m *hookModule) Init(runtimepkg.ModuleDeps) error { return nil }
+func (m *hookModule) Routes() runtimepkg.RouteHandler  { return m.routes() }
+func (m *hookModule) Start(ctx context.Context) error  { return m.start(ctx) }
+func (m *hookModule) Stop(ctx context.Context) error   { return m.stop(ctx) }
+
+func TestHookModuleHooks(t *testing.T) {
 	t.Parallel()
 
 	logs := make([]string, 0)
 	routeHit := false
 
 	app := runtimepkg.NewApp(runtimepkg.Dependencies{})
-	if err := app.RegisterModule(runtimepkg.FuncModule{
-		ModuleName: "func",
-		Routes: func(r chi.Router) {
+	if err := app.RegisterModule(&hookModule{
+		name: "func",
+		routes: func() runtimepkg.RouteHandler {
 			routeHit = true
-			_ = r
+			return routerx.New("/func")
 		},
-		OnStart: func(context.Context) error {
+		start: func(context.Context) error {
 			logs = append(logs, "start")
 			return nil
 		},
-		OnStop: func(context.Context) error {
+		stop: func(context.Context) error {
 			logs = append(logs, "stop")
 			return nil
 		},
@@ -121,7 +134,7 @@ func TestFuncModuleHooks(t *testing.T) {
 		t.Fatalf("register func module: %v", err)
 	}
 
-	app.RegisterRoutes(chi.NewRouter())
+	_ = app.Handler()
 	if !routeHit {
 		t.Fatal("expected routes hook to run")
 	}
@@ -134,6 +147,6 @@ func TestFuncModuleHooks(t *testing.T) {
 
 	expected := []string{"start", "stop"}
 	if !reflect.DeepEqual(logs, expected) {
-		t.Fatalf("unexpected func module lifecycle: %#v", logs)
+		t.Fatalf("unexpected hook module lifecycle: %#v", logs)
 	}
 }

@@ -25,7 +25,7 @@ func (s *IPPoolService) StartSyncConsumer(ctx context.Context) error {
 	if s.deps.Queue == nil {
 		return errors.New("task queue is not configured")
 	}
-	go s.consumeSyncQueue(s.deps.WithContext(ctx))
+	go s.consumeSyncQueue(ctx)
 	return nil
 }
 
@@ -75,7 +75,7 @@ func (s *IPPoolService) handleSyncMessage(ctx context.Context, msg *queue.Messag
 		return
 	}
 
-	sysCtx := commonauth.WithSystemSA(s.deps.WithContext(context.Background()))
+	sysCtx := commonauth.WithSystemSA(context.Background())
 	go func() {
 		_ = s.doSync(sysCtx, job.PolicyID)
 	}()

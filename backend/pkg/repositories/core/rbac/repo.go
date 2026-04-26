@@ -9,18 +9,25 @@ import (
 	"homelab/pkg/models/shared"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"gopkg.d7z.net/middleware/kv"
 )
 
 var (
 	roleCache *lru.Cache[string, *rbacmodel.Role]
 
-	roleRepo           = common.NewResourceRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
-	bindingRepo        = common.NewResourceRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
-	serviceAccountRepo = common.NewResourceRepository[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status]("auth", "serviceaccounts")
+	roleRepo           *common.ResourceRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]
+	bindingRepo        *common.ResourceRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]
+	serviceAccountRepo *common.ResourceRepository[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status]
 )
 
 func init() {
 	roleCache, _ = lru.New[string, *rbacmodel.Role](1024)
+}
+
+func Configure(db kv.KV) {
+	roleRepo = common.NewResourceRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status](db, "auth", "roles")
+	bindingRepo = common.NewResourceRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status](db, "auth", "rolebindings")
+	serviceAccountRepo = common.NewResourceRepository[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status](db, "auth", "serviceaccounts")
 }
 
 func ClearCache() {

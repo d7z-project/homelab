@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"fmt"
-	runtimepkg "homelab/pkg/runtime"
 	"math/rand"
 	"time"
 
@@ -37,11 +36,11 @@ func AddDistributedCronJob(c *cron.Cron, spec, lockKey string, fn func()) (cron.
 			ttl = maxAllowed
 		}
 
-		db := runtimepkg.DBFromContext(ctx)
-		if db == nil {
+		if infrastructure.db == nil {
 			fmt.Printf("cron_lease: db not configured for %s\n", lockKey)
 			return
 		}
+		db := infrastructure.db
 
 		val := fmt.Sprintf("%d", now.UnixNano())
 		acquired, err := db.Child("system", "cron", "lease").PutIfNotExists(ctx, lockKey, val, ttl)

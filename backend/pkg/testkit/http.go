@@ -7,19 +7,13 @@ import (
 	"net/http/httptest"
 
 	"homelab/pkg/common"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func (e *Env) ensureRouter() http.Handler {
 	if e.Router != nil {
 		return e.Router
 	}
-	r := chi.NewRouter()
-	r.Route("/api/v1", func(r chi.Router) {
-		e.App.RegisterRoutes(r)
-	})
-	e.Router = r
+	e.Router = http.StripPrefix("/api/v1", e.App.Handler())
 	return e.Router
 }
 

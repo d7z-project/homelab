@@ -17,18 +17,22 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/spf13/afero"
+	"gopkg.d7z.net/middleware/lock"
 )
 
 type AnalysisEngine struct {
 	mu        sync.RWMutex
 	trieCache *lru.Cache[string, *IPPoolTrie]
 	enricher  ruleservice.IPEnricher
+	fs        afero.Fs
+	locker    lock.Locker
 }
 
 func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error) {
 	lockKey := "network:ip:trie:build:" + id
 	for {
-		release := runtimepkg.LockerFromContext(ctx).TryLock(ctx, lockKey)
+		release := e.locker.TryLock(ctx, lockKey)
 		if release != nil {
 			return release, nil
 		}
@@ -40,11 +44,13 @@ func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error
 	}
 }
 
-func NewAnalysisEngine(enricher ruleservice.IPEnricher) *AnalysisEngine {
+func NewAnalysisEngine(deps runtimepkg.ModuleDeps, enricher ruleservice.IPEnricher) *AnalysisEngine {
 	cache, _ := lru.New[string, *IPPoolTrie](32) // 缓存 32 个池的 Trie
 	engine := &AnalysisEngine{
 		trieCache: cache,
 		enricher:  enricher,
+		fs:        deps.FS,
+		locker:    deps.Locker,
 	}
 
 	common.RegisterEventHandler(common.EventIPPoolChanged, func(ctx context.Context, payload common.ResourceEventPayload) {
@@ -85,7 +91,7 @@ func (e *AnalysisEngine) GetTrie(ctx context.Context, groupID string) (*IPPoolTr
 
 	// 从 VFS 加载并构建
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	f, err := runtimepkg.FSFromContext(ctx).Open(poolPath)
+	f, err := e.fs.Open(poolPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open pool data: %w", err)
 	}

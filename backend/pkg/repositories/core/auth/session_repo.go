@@ -3,22 +3,29 @@ package auth
 import (
 	"context"
 	"fmt"
-	runtimepkg "homelab/pkg/runtime"
 	"strings"
 	"time"
 
 	authmodel "homelab/pkg/models/core/auth"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
+var sessionDB kv.KV
+
+func Configure(db kv.KV) {
+	sessionDB = db
+}
+
 func SaveSession(ctx context.Context, sessionID string, userType string, ip string, ua string, ttl time.Duration) error {
-	db := runtimepkg.DBFromContext(ctx).Child("auth", "sessions")
+	db := sessionDB.Child("auth", "sessions")
 	// Store as userType|createdAt|ip|ua
 	val := fmt.Sprintf("%s|%s|%s|%s", userType, time.Now().Format(time.RFC3339), ip, ua)
 	return db.Put(ctx, sessionID, val, ttl)
 }
 
 func GetSession(ctx context.Context, sessionID string) (userType string, ip string, ua string, err error) {
-	db := runtimepkg.DBFromContext(ctx).Child("auth", "sessions")
+	db := sessionDB.Child("auth", "sessions")
 	val, err := db.Get(ctx, sessionID)
 	if err != nil {
 		return "", "", "", err
@@ -35,7 +42,7 @@ func GetSession(ctx context.Context, sessionID string) (userType string, ip stri
 }
 
 func ScanSessions(ctx context.Context) ([]authmodel.Session, error) {
-	db := runtimepkg.DBFromContext(ctx).Child("auth", "sessions")
+	db := sessionDB.Child("auth", "sessions")
 	items, err := db.List(ctx, "")
 	if err != nil {
 		return nil, err
@@ -68,13 +75,13 @@ func ScanSessions(ctx context.Context) ([]authmodel.Session, error) {
 }
 
 func RevokeSession(ctx context.Context, sessionID string) error {
-	db := runtimepkg.DBFromContext(ctx).Child("auth", "sessions")
+	db := sessionDB.Child("auth", "sessions")
 	_, err := db.Delete(ctx, sessionID)
 	return err
 }
 
 func RefreshSession(ctx context.Context, sessionID string, ttl time.Duration) error {
-	db := runtimepkg.DBFromContext(ctx).Child("auth", "sessions")
+	db := sessionDB.Child("auth", "sessions")
 	val, err := db.Get(ctx, sessionID)
 	if err != nil {
 		return err

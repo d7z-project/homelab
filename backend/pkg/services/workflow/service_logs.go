@@ -17,7 +17,7 @@ func GetTaskLogs(ctx context.Context, id string) ([]workflowmodel.LogEntry, erro
 
 	// Check permission for the parent workflow
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.Meta.WorkflowID) {
-		return nil, fmt.Errorf("permission denied: actions/%s", instance.Meta.WorkflowID)
+		return nil, fmt.Errorf("%w: actions/%s", commonauth.ErrPermissionDenied, instance.Meta.WorkflowID)
 	}
 
 	// Read all logs from VFS
@@ -37,7 +37,7 @@ func GetStepLogs(ctx context.Context, id string, stepIndex int, offset int) ([]w
 
 	// Check permission for the parent workflow
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("actions/" + instance.Meta.WorkflowID) {
-		return nil, 0, fmt.Errorf("permission denied: actions/%s", instance.Meta.WorkflowID)
+		return nil, 0, fmt.Errorf("%w: actions/%s", commonauth.ErrPermissionDenied, instance.Meta.WorkflowID)
 	}
 
 	return ReadStepLogs(ctx, instance.Meta.WorkflowID, id, stepIndex, offset)

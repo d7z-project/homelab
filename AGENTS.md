@@ -13,12 +13,14 @@
 ### 1. 入口与运行时 - `backend/main.go`, `backend/pkg/runtime/`
 - `main.go` 只负责基础设施初始化、模块装配、HTTP server 生命周期。
 - 基础设施依赖统一通过 `runtime.Dependencies` 和 `runtime.ModuleDeps` 下发。
-- 业务代码不要绕过 `runtime` 自建全局单例；需要 DB、Lock、Queue、PubSub、FS、Registry 时，优先从 context 读取。
-- 新增后端能力时，优先做成独立 `Module`，实现 `Name / Init / RegisterRoutes / Start / Stop`。
+- 业务代码不要绕过 `runtime` 自建全局单例；需要基础设施依赖时，优先通过显式构造参数、`runtime.ModuleDeps` 或模块自有 runtime/wiring 注入，不要继续扩散 `runtime.*FromContext` 这类细粒度 helper。
+- 新增后端能力时，优先做成独立 `Module`，实现 `Name / Init / Routes / Start / Stop`。
+- `runtime.App` 对外统一暴露 `http.Handler`；模块不要再直接操作外层 `chi.Router`。
 
 ### 2. 模块层 - `backend/pkg/modules/`
 - 模块负责组装 service、注册路由、在 `Start` 阶段注册 discovery / actions / cron / queue consumer / 事件订阅。
-- 路由注册统一使用 `routerx.Mount` 或 `routerx.WithScope`，不要再手写旧式 `r.With(...).Method(...)`。
+- 模块路由统一返回 `routerx.Handler`，通过 `routerx.New / Group / Mount / Use / WithScope / Routes` 声明路由树；不要在模块里直接使用 `chi.Router`。
+- 模块只声明路由结构和中间件，不负责手动 build 外层 router；最终 `http.Handler` 由 `runtime.App` 装配。
 - 模块间共享的横切依赖通过 `runtime.ModuleDeps` 或显式构造参数传入，不要在 controller 里临时拼装。
 - 可选模块应在 `bootstrap.go` 中通过开关统一启停，保持装配入口单一。
 - 当前模块开关统一放在 `Options.Modules` 下，而不是顶层平铺字段。
@@ -31,7 +33,9 @@
 - JSON 绑定统一使用 `controllers.BindRequest` 或 `BindOptionalRequest`。
 - 分页参数统一使用 `controllers.GetCursorParams` 或 `GetSearchCursorParams`，默认 `20`，上限 `100`。
 - 非成功响应统一走 `controllers.HandleError`；成功分页响应统一走 `common.CursorSuccess`。
-- 模块专属 service 依赖通过中间件注入 request context，例如 `WithIPControllerDeps`、`WithSiteControllerDeps`，不要在 handler 中自行构造 service。
+- controller 依赖注入统一复用 `controllers.WithValue / ValueFromRequest` 这类公共 wiring 原语；不要在每个包里重复手写 `context.WithValue`、类型断言和缺失依赖报错模板。
+- 具体依赖结构和校验规则保留在各 controller 包自己的 `context.go` 中，不要再回到跨模块共享的大一统 deps 文件。
+- 模块专属 service 依赖仍通过中间件注入 request context，不要在 handler 中自行构造 service。
 
 ### 4. 服务层 - `backend/pkg/services/`
 - service 负责业务规则、权限细化、长任务编排、状态推进、事件发布、跨资源一致性。
@@ -39,7 +43,7 @@
 - 权限拒绝错误必须包装为 `fmt.Errorf("%w: ...", commonauth.ErrPermissionDenied)`，保证 controller 能稳定映射成 `403`。
 - 长时间任务必须优先复用 `pkg/common/task.Manager`，支持取消、状态持久化、重启后自愈。
 - 跨节点异步执行默认通过 `queue` 分发；`task.Manager`、`workflow.Executor`、导出管理器负责运行时状态，不负责集群投递。
-- 需要后台执行时，应显式考虑 `context` 生命周期；如果任务必须脱离请求存活，使用 `runtime.DetachContext` 或新的后台 context。
+- 需要后台执行时，应显式考虑 `context` 生命周期；如果任务必须脱离请求存活，基于已有 `ModuleDeps`/模块 runtime 构造新的后台 context，不要直接复用已取消的请求 context。
 
 ### 5. 仓储与存储层 - `backend/pkg/repositories/`, `backend/pkg/store/`
 - repository 负责领域对象的查询与持久化，不承载业务编排。
@@ -62,12 +66,17 @@
 ## 路由、鉴权与审计
 
 ### 1. 路由声明
-- 使用 `routerx.Scope` 统一声明：
+- 使用 `routerx` 路由树统一声明：
+  - `routerx.Group`: 定义前缀分组
+  - `routerx.Mount`: 挂载已有 `http.Handler`
+  - `routerx.Use`: 声明当前分组中间件
+  - `routerx.WithScope`: 声明鉴权、审计和附加中间件
+- `routerx.Scope` 统一描述：
   - `Resource`: 权限资源前缀
   - `Audit`: 审计资源名
   - `UsesAuth`: 是否启用鉴权
   - `Extra`: 模块附加中间件，如 controller 依赖注入或 workflow runtime 注入
-- 每条路由通过 `routerx.Get/Post/Put/Patch/Delete` 声明动作，如 `list/create/update/delete/execute/get/admin/simulate`。
+- 每条叶子路由通过 `routerx.Get/Post/Put/Patch/Delete` 声明动作，如 `list/create/update/delete/execute/get/admin/simulate`。
 
 ### 2. 鉴权模型
 - 当前系统存在两类身份：
@@ -149,7 +158,7 @@
 - 需要模拟内存环境时，优先复用 `backend/pkg/testkit`，不要在每个测试里重复手工拼 `memory://` KV、Queue、Subscriber、`afero` 文件系统。
 - repository 或 service 级测试优先使用 `testkit.NewModuleDeps(t)`，直接拿到统一的内存 `ModuleDeps`。
 - 模块级测试优先使用 `testkit.StartApp(t, modules...)`，走真实的 `runtime.App -> Init -> Start` 生命周期，而不是只手工调用局部函数。
-- 测试专用初始化逻辑优先用 `testkit.SeedModule(...)` 或底层 `runtime.FuncModule`，把 seed 数据、假注册或观测逻辑挂进模块生命周期，不要把初始化散落在测试主体里。
+- 测试专用初始化逻辑优先用 `testkit.SeedModule(...)`，把 seed 数据、假注册或观测逻辑挂进模块生命周期，不要把初始化散落在测试主体里。
 - 需要验证 discovery、queue consumer、模块启动副作用时，应优先走真实模块启动路径；只有纯计算或纯仓储逻辑才退回更轻量的单元测试。
 
 ## 开发工作流

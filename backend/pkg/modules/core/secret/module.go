@@ -2,10 +2,9 @@ package secret
 
 import (
 	"context"
+	secretrepo "homelab/pkg/repositories/core/secret"
 	runtimepkg "homelab/pkg/runtime"
 	secretservice "homelab/pkg/services/core/secret"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type Module struct{}
@@ -14,9 +13,12 @@ func New() *Module { return &Module{} }
 
 func (m *Module) Name() string { return "core.secret" }
 
-func (m *Module) Init(runtimepkg.ModuleDeps) error { return nil }
+func (m *Module) Init(deps runtimepkg.ModuleDeps) error {
+	secretrepo.Configure(deps.DB)
+	return nil
+}
 
-func (m *Module) RegisterRoutes(chi.Router) {}
+func (m *Module) Routes() runtimepkg.RouteHandler { return nil }
 
 func (m *Module) Start(context.Context) error { return secretservice.ValidateConfig() }
 

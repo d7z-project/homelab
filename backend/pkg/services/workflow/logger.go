@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	repo "homelab/pkg/repositories/workflow/actions"
-	runtimepkg "homelab/pkg/runtime"
 	"os"
 	"path"
 	"sync"
@@ -77,7 +76,7 @@ func (l *TaskLogger) promoteTmpFile(index int) {
 	rt := MustRuntime(l.ctx)
 	if exists, _ := afero.Exists(rt.LogFS, oldPath); exists {
 		// Acquire distributed lock for final rename
-		ctx, cancel := context.WithTimeout(runtimepkg.DetachContext(l.ctx), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		lockKey := fmt.Sprintf("actions:log_rename:%s:%s:%d", l.workflowID, l.instanceID, index)
 		release := rt.Deps.Locker.TryLock(ctx, lockKey)
@@ -120,7 +119,7 @@ func (l *TaskLogger) Log(message string) {
 	}
 
 	// Distributed temporary storage in DB for real-time aggregation across nodes
-	ctx, cancel := context.WithTimeout(runtimepkg.DetachContext(l.ctx), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	key := fmt.Sprintf("%08d", l.lineCount)
 	l.lineCount++
@@ -221,7 +220,7 @@ func ReadAllTaskLogs(ctx context.Context, workflowID, instanceID string) ([]work
 func RemoveTaskLogs(ctx context.Context, workflowID, instanceID string) error {
 	rt := MustRuntime(ctx)
 	dir := path.Join("actions", workflowID, instanceID)
-	_ = repo.DeleteTaskLogs(runtimepkg.DetachContext(ctx), instanceID)
+	_ = repo.DeleteTaskLogs(context.Background(), instanceID)
 	return rt.LogFS.RemoveAll(dir)
 }
 

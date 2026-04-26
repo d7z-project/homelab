@@ -2,28 +2,42 @@ package discovery
 
 import (
 	"context"
+	controllercommon "homelab/pkg/controllers"
 	discoverycontroller "homelab/pkg/controllers/core/discovery"
-	"homelab/pkg/controllers/middlewares"
+	"homelab/pkg/controllers/routerx"
 	runtimepkg "homelab/pkg/runtime"
-
-	"github.com/go-chi/chi/v5"
+	discoveryservice "homelab/pkg/services/core/discovery"
+	"net/http"
 )
 
-type Module struct{}
+type Module struct {
+	service *discoveryservice.Service
+}
 
 func New() *Module { return &Module{} }
 
 func (m *Module) Name() string { return "core.discovery" }
 
-func (m *Module) Init(runtimepkg.ModuleDeps) error { return nil }
+func (m *Module) Init(deps runtimepkg.ModuleDeps) error {
+	m.service = discoveryservice.NewService(deps)
+	return nil
+}
 
-func (m *Module) RegisterRoutes(r chi.Router) {
-	r.Route("/discovery", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AuthMiddleware)
-			discoverycontroller.DiscoveryController(r)
-		})
-	})
+func (m *Module) Routes() runtimepkg.RouteHandler {
+	return routerx.New("/discovery",
+		routerx.WithScope(routerx.Scope{
+			Resource: "discovery",
+			Audit:    "discovery",
+			UsesAuth: true,
+			Extra: []func(http.Handler) http.Handler{
+				controllercommon.WithDiscoveryService(m.service),
+			},
+		}),
+		routerx.Routes(
+			routerx.Get("/lookup", discoverycontroller.LookupHandler, "list"),
+			routerx.Get("/codes", discoverycontroller.ScanCodesHandler, "list"),
+		),
+	)
 }
 
 func (m *Module) Start(context.Context) error { return nil }

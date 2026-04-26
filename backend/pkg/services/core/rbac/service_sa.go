@@ -8,8 +8,8 @@ import (
 	commonauth "homelab/pkg/common/auth"
 	secretmodel "homelab/pkg/models/core/secret"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
-	runtimepkg "homelab/pkg/runtime"
 	authservice "homelab/pkg/services/core/auth"
+	discoveryservice "homelab/pkg/services/core/discovery"
 	secretservice "homelab/pkg/services/core/secret"
 
 	rbacmodel "homelab/pkg/models/core/rbac"
@@ -94,7 +94,7 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *rbacmodel.ServiceA
 	return updated, nil
 }
 
-func DeleteServiceAccount(ctx context.Context, id string) error {
+func DeleteServiceAccount(ctx context.Context, discovery *discoveryservice.Service, id string) error {
 	if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
 		return fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
@@ -110,12 +110,10 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 		return errors.New("ServiceAccount not found")
 	}
 
-	// Usage Check
-	registry := runtimepkg.RegistryFromContext(ctx)
-	if registry == nil {
-		return fmt.Errorf("registry not configured")
+	if discovery == nil {
+		return fmt.Errorf("discovery service not configured")
 	}
-	if err := registry.CheckSAUsage(ctx, id); err != nil {
+	if err := discovery.CheckSAUsage(ctx, id); err != nil {
 		return err
 	}
 

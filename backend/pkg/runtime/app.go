@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"homelab/pkg/common"
+	"net/http"
 	"sync"
 
 	registryruntime "homelab/pkg/runtime/registry"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 	"gopkg.d7z.net/middleware/lock"
@@ -34,6 +35,7 @@ type App struct {
 }
 
 func NewApp(deps Dependencies) *App {
+	common.ConfigureInfrastructure(deps.DB, deps.Locker, deps.Subscriber)
 	return &App{
 		deps:     deps,
 		registry: registryruntime.New(),
@@ -80,14 +82,21 @@ func (a *App) Modules() []Module {
 	return modules
 }
 
-func (a *App) RegisterRoutes(r chi.Router) {
-	deps := a.ModuleDeps()
+func (a *App) Handler() http.Handler {
+	mux := http.NewServeMux()
 	for _, module := range a.Modules() {
-		r.Group(func(r chi.Router) {
-			r.Use(ContextMiddleware(deps))
-			module.RegisterRoutes(r)
-		})
+		routes := module.Routes()
+		if routes == nil {
+			continue
+		}
+		path := routes.MountPath()
+		if path == "" {
+			continue
+		}
+		mux.Handle(path, http.StripPrefix(path, routes))
+		mux.Handle(path+"/", http.StripPrefix(path, routes))
 	}
+	return mux
 }
 
 func (a *App) Start(ctx context.Context) error {
@@ -101,9 +110,8 @@ func (a *App) Start(ctx context.Context) error {
 			return fmt.Errorf("init module %s: %w", module.Name(), err)
 		}
 	}
-	moduleCtx := moduleDeps.WithContext(ctx)
 	for _, module := range a.modules {
-		if err := module.Start(moduleCtx); err != nil {
+		if err := module.Start(ctx); err != nil {
 			_ = a.stopStartedLocked(ctx)
 			return fmt.Errorf("start module %s: %w", module.Name(), err)
 		}
@@ -120,10 +128,9 @@ func (a *App) Stop(ctx context.Context) error {
 
 func (a *App) stopStartedLocked(ctx context.Context) error {
 	var stopErr error
-	moduleCtx := a.ModuleDeps().WithContext(ctx)
 	for i := len(a.started) - 1; i >= 0; i-- {
 		module := a.started[i]
-		if err := module.Stop(moduleCtx); err != nil {
+		if err := module.Stop(ctx); err != nil {
 			stopErr = errors.Join(stopErr, fmt.Errorf("stop module %s: %w", module.Name(), err))
 		}
 	}

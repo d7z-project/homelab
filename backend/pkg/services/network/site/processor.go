@@ -9,7 +9,6 @@ import (
 	sitemodel "homelab/pkg/models/network/site"
 	workflowmodel "homelab/pkg/models/workflow"
 	repo "homelab/pkg/repositories/network/site"
-	runtimepkg "homelab/pkg/runtime"
 	actions "homelab/pkg/services/workflow"
 	"io"
 	"os"
@@ -145,7 +144,7 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	tagSet := make(map[string]struct{})
 
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	fs := runtimepkg.FSFromContext(ctx.Context)
+	fs := p.service.deps.FS
 	if exists, _ := afero.Exists(fs, poolPath); exists {
 		pf, _ := fs.Open(poolPath)
 		reader, _ := NewReader(pf)

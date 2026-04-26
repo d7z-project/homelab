@@ -10,17 +10,19 @@ import (
 	metav1 "homelab/pkg/apis/meta/v1"
 	"homelab/pkg/models/shared"
 	"homelab/pkg/store"
+
+	"gopkg.d7z.net/middleware/kv"
 )
 
 type ResourceRepository[M any, S any] struct {
 	store *store.ResourceStore[M, S]
 }
 
-func NewResourceRepository[M any, S any](module, model string) *ResourceRepository[M, S] {
+func NewResourceRepository[M any, S any](db kv.KV, module, model string) *ResourceRepository[M, S] {
 	resource := strings.ToLower(strings.ReplaceAll(module+"-"+model, "/", "-"))
 	return &ResourceRepository[M, S]{
 		store: store.NewResourceStore[M, S](
-			nil,
+			db,
 			"internal/v1",
 			model,
 			resource,

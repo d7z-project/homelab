@@ -7,7 +7,6 @@ import (
 	modulediscovery "homelab/pkg/modules/core/discovery"
 	modulerbac "homelab/pkg/modules/core/rbac"
 	modulesecret "homelab/pkg/modules/core/secret"
-	modulesession "homelab/pkg/modules/core/session"
 	moduledns "homelab/pkg/modules/network/dns"
 	moduleintelligence "homelab/pkg/modules/network/intelligence"
 	moduleip "homelab/pkg/modules/network/ip"
@@ -30,7 +29,6 @@ func buildModules(deps runtimepkg.ModuleDeps, mmdbSources []intelligencemodel.In
 	modules := []runtimepkg.Module{
 		modulediscovery.New(),
 		moduleauth.New(),
-		modulesession.New(),
 		modulesecret.New(),
 		modulerbac.New(),
 		moduleaudit.New(),

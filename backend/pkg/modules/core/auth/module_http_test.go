@@ -5,12 +5,11 @@ import (
 	"testing"
 
 	moduleauth "homelab/pkg/modules/core/auth"
-	modulesession "homelab/pkg/modules/core/session"
 	"homelab/pkg/testkit"
 )
 
 func TestAuthModuleLoginInfoLogoutFlow(t *testing.T) {
-	env := testkit.StartApp(t, moduleauth.New(), modulesession.New())
+	env := testkit.StartApp(t, moduleauth.New())
 
 	token := testkit.RootToken(t, env)
 

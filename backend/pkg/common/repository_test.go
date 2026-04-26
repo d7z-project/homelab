@@ -6,10 +6,7 @@ import (
 	"testing"
 
 	"homelab/pkg/models/shared"
-	runtimepkg "homelab/pkg/runtime"
-	registryruntime "homelab/pkg/runtime/registry"
 
-	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 )
 
@@ -37,15 +34,7 @@ func newTestRepository(t *testing.T) (*ResourceRepository[repoTestMeta, repoTest
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	deps := runtimepkg.ModuleDeps{
-		Dependencies: runtimepkg.Dependencies{
-			DB:     db,
-			FS:     afero.NewMemMapFs(),
-			TempFS: afero.NewMemMapFs(),
-		},
-		Registry: registryruntime.New(),
-	}
-	return NewResourceRepository[repoTestMeta, repoTestStatus]("test", "objects"), deps.WithContext(context.Background())
+	return NewResourceRepository[repoTestMeta, repoTestStatus](db, "test", "objects"), context.Background()
 }
 
 func TestResourceRepositorySaveUpdateMetaAndStatus(t *testing.T) {

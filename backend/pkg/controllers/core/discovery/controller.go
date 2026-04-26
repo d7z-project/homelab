@@ -4,18 +4,9 @@ import (
 	apiv1 "homelab/pkg/apis/core/discovery/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
-	runtimepkg "homelab/pkg/runtime"
 	registryruntime "homelab/pkg/runtime/registry"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
 )
-
-// DiscoveryController handles lookups for frontend dropdowns/selectors
-func DiscoveryController(r chi.Router) {
-	r.Get("/lookup", lookupHandler)
-	r.Get("/codes", ScanCodesHandler)
-}
 
 // @Summary Discovery lookup
 // @Description Search for items in a specific discovery code (e.g. network/dns/domains)
@@ -32,7 +23,7 @@ func DiscoveryController(r chi.Router) {
 // @Failure 404 {object} common.Response "Code Not Found"
 // @Router /discovery/lookup [get]
 // @Security ApiKeyAuth
-func lookupHandler(w http.ResponseWriter, r *http.Request) {
+func LookupHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	search := r.URL.Query().Get("search")
 	cursor, limit := controllercommon.GetCursorParams(r)
@@ -49,13 +40,12 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	registry := runtimepkg.RegistryFromContext(r.Context())
-	if registry == nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, "registry not configured")
+	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	if !ok {
 		return
 	}
 
-	res, err := registry.Lookup(r.Context(), toModelLookupRequest(req))
+	res, err := service.Lookup(r.Context(), toModelLookupRequest(req))
 	if err != nil {
 		if err == registryruntime.ErrCodeNotFound {
 			common.Error(w, r, http.StatusNotFound, http.StatusNotFound, err.Error())
@@ -78,11 +68,14 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /discovery/codes [get]
 // @Security ApiKeyAuth
 func ScanCodesHandler(w http.ResponseWriter, r *http.Request) {
-	registry := runtimepkg.RegistryFromContext(r.Context())
-	if registry == nil {
-		common.InternalServerError(w, r, http.StatusInternalServerError, "registry not configured")
+	service, ok := controllercommon.DiscoveryServiceFromRequest(w, r)
+	if !ok {
 		return
 	}
-	codes := registry.ScanCodes()
+	codes, err := service.ScanCodes(r.Context())
+	if err != nil {
+		controllercommon.HandleError(w, r, err)
+		return
+	}
 	common.Success(w, r, codes)
 }

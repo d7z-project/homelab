@@ -10,7 +10,6 @@ import (
 	"time"
 
 	metav1 "homelab/pkg/apis/meta/v1"
-	runtimepkg "homelab/pkg/runtime"
 
 	"gopkg.d7z.net/middleware/kv"
 )
@@ -52,14 +51,10 @@ func NewResourceStore[Spec any, Status any](db kv.KV, apiVersion string, kind st
 }
 
 func (s *ResourceStore[Spec, Status]) childDB(ctx context.Context) kv.KV {
-	if s.db != nil {
-		return s.db.Child(s.prefix...)
-	}
-	db := runtimepkg.DBFromContext(ctx)
-	if db == nil {
+	if s.db == nil {
 		panic("resource store db is not configured in context")
 	}
-	return db.Child(s.prefix...)
+	return s.db.Child(s.prefix...)
 }
 
 func (s *ResourceStore[Spec, Status]) Create(ctx context.Context, obj *Resource[Spec, Status]) error {

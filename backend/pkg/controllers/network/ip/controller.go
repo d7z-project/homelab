@@ -5,7 +5,6 @@ import (
 	apiv1 "homelab/pkg/apis/network/ip/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
-	runtimepkg "homelab/pkg/runtime"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -27,7 +26,7 @@ import (
 // @Security ApiKeyAuth
 // @Router /network/ip/pools [get]
 func ScanGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -53,7 +52,7 @@ func ScanGroupsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/pools [post]
 func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -84,7 +83,7 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/pools/{id} [put]
 func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -116,7 +115,7 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/pools/{id}/preview [get]
 func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -149,7 +148,7 @@ func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/pools/{id} [delete]
 func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -173,7 +172,7 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports [get]
 func ScanExportsHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -199,7 +198,7 @@ func ScanExportsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports [post]
 func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -230,7 +229,7 @@ func CreateExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/{id} [put]
 func UpdateExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -260,7 +259,7 @@ func UpdateExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/{id} [delete]
 func DeleteExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -284,7 +283,7 @@ func DeleteExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/analysis/hit-test [post]
 func HitTestHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -311,7 +310,7 @@ func HitTestHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/analysis/info [get]
 func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -332,7 +331,7 @@ func IPInfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/tasks [get]
 func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -352,7 +351,7 @@ func ScanExportTasksHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/{id}/trigger [post]
 func TriggerIPExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -380,7 +379,7 @@ func TriggerIPExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/task/{taskId} [get]
 func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -404,7 +403,7 @@ func ExportTaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/task/{taskId}/cancel [post]
 func CancelExportTaskHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -430,7 +429,7 @@ func CancelExportTaskHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/exports/preview [post]
 func PreviewExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -456,7 +455,7 @@ func PreviewExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} common.Response "File Not Found"
 // @Router /network/ip/exports/download/{taskId} [get]
 func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -470,7 +469,7 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 	tempFileName := fmt.Sprintf("export_%s.%s", taskId, task.Format)
 	tempPath := filepath.Join("temp", tempFileName)
 
-	f, err := runtimepkg.TempFSFromContext(r.Context()).Open(tempPath)
+	f, err := deps.TempFS.Open(tempPath)
 	if err != nil {
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
@@ -498,7 +497,7 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/pools/{id}/entries [post]
 func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -535,7 +534,7 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/pools/{id}/entries [delete]
 func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -571,7 +570,7 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/sync [get]
 func ScanSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -597,7 +596,7 @@ func ScanSyncPoliciesHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/sync [post]
 func CreateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -627,7 +626,7 @@ func CreateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/sync/{id} [put]
 func UpdateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -656,7 +655,7 @@ func UpdateSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/sync/{id} [delete]
 func DeleteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
@@ -679,7 +678,7 @@ func DeleteSyncPolicyHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/ip/sync/{id}/trigger [post]
 func TriggerSyncHandler(w http.ResponseWriter, r *http.Request) {
-	deps, ok := controllercommon.IPDepsFromRequest(w, r)
+	deps, ok := depsFromRequest(w, r)
 	if !ok {
 		return
 	}
