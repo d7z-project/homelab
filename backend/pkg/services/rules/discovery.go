@@ -3,52 +3,45 @@ package rules
 import (
 	"context"
 	"strings"
-	"sync"
 
 	metav1 "homelab/pkg/apis/meta/v1"
 	commonauth "homelab/pkg/common/auth"
 	discoverymodel "homelab/pkg/models/core/discovery"
-	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	iprepo "homelab/pkg/repositories/network/ip"
 	siterepo "homelab/pkg/repositories/network/site"
 	registryruntime "homelab/pkg/runtime/registry"
 )
 
-var (
-	registerDiscoveryOnce sync.Once
-	registerIPOnce        sync.Once
-	registerSiteOnce      sync.Once
-)
-
-func RegisterDiscovery() {
-	registerDiscoveryOnce.Do(func() {
-		RegisterIPDiscovery()
-		RegisterSiteDiscovery()
-	})
+func RegisterDiscovery(registry *registryruntime.Registry) {
+	RegisterIPDiscovery(registry)
+	RegisterSiteDiscovery(registry)
 }
 
-func RegisterIPDiscovery() {
-	registerIPOnce.Do(registerIPDiscovery)
+func RegisterIPDiscovery(registry *registryruntime.Registry) {
+	registerIPDiscovery(registry)
 }
 
-func RegisterSiteDiscovery() {
-	registerSiteOnce.Do(registerSiteDiscovery)
+func RegisterSiteDiscovery(registry *registryruntime.Registry) {
+	registerSiteDiscovery(registry)
 }
 
-func registerIPDiscovery() {
-	_ = registryruntime.Default().RegisterResource(registryruntime.ResourceDescriptor{
+func registerIPDiscovery(registry *registryruntime.Registry) {
+	if registry == nil {
+		return
+	}
+	_ = registry.RegisterResource(registryruntime.ResourceDescriptor{
 		Group:    "network",
 		Resource: "ip",
 		Kind:     "network.ip",
 		Verbs:    []string{"get", "list", "create", "update", "delete", "execute", "*"},
 		DiscoverFunc: func(ctx context.Context, prefix string, _ string, _ int) (*metav1.List[discoverymodel.LookupItem], error) {
-			groupsRes, err := iprepo.PoolRepo.List(ctx, "", 1000, nil)
+			groupsRes, err := iprepo.ScanAllPools(ctx)
 			if err != nil {
 				return nil, err
 			}
-			items := make([]discoverymodel.LookupItem, 0, len(groupsRes.Items))
-			for _, g := range groupsRes.Items {
+			items := make([]discoverymodel.LookupItem, 0, len(groupsRes))
+			for _, g := range groupsRes {
 				if prefix == "" || strings.HasPrefix(g.ID, prefix) || strings.HasPrefix(g.Meta.Name, prefix) {
 					items = append(items, discoverymodel.LookupItem{ID: g.ID, Name: g.Meta.Name})
 				}
@@ -57,10 +50,8 @@ func registerIPDiscovery() {
 		},
 	})
 
-	_ = registryruntime.Default().RegisterLookup("network/ip/pools", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
-		groupsRes, err := iprepo.PoolRepo.List(ctx, "", 1000, func(p *ipmodel.IPPool) bool {
-			return search == "" || strings.Contains(strings.ToLower(p.Meta.Name), strings.ToLower(search)) || strings.Contains(strings.ToLower(p.ID), strings.ToLower(search))
-		})
+	_ = registry.RegisterLookup("network/ip/pools", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
+		groupsRes, err := iprepo.ScanPools(ctx, "", 1000, search)
 		if err != nil {
 			return nil, err
 		}
@@ -80,8 +71,11 @@ func registerIPDiscovery() {
 	})
 }
 
-func registerSiteDiscovery() {
-	_ = registryruntime.Default().RegisterResource(registryruntime.ResourceDescriptor{
+func registerSiteDiscovery(registry *registryruntime.Registry) {
+	if registry == nil {
+		return
+	}
+	_ = registry.RegisterResource(registryruntime.ResourceDescriptor{
 		Group:    "network",
 		Resource: "site",
 		Kind:     "network.site",
@@ -101,7 +95,7 @@ func registerSiteDiscovery() {
 		},
 	})
 
-	_ = registryruntime.Default().RegisterLookup("network/site/pools", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
+	_ = registry.RegisterLookup("network/site/pools", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
 		resp, err := siterepo.ScanGroups(ctx, "", 1000, search)
 		if err != nil {
 			return nil, err

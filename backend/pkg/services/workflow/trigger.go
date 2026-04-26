@@ -15,24 +15,30 @@ import (
 )
 
 type TriggerManager struct {
+	runtime *Runtime
 	cron    *cron.Cron
 	entries map[string]cron.EntryID // workflowID -> entryID
 	mu      sync.Mutex
 }
 
-var GlobalTriggerManager = &TriggerManager{
-	cron:    cron.New(),
-	entries: make(map[string]cron.EntryID),
+func NewTriggerManager(rt *Runtime) *TriggerManager {
+	return &TriggerManager{
+		runtime: rt,
+		cron:    cron.New(),
+		entries: make(map[string]cron.EntryID),
+	}
 }
 
-func (m *TriggerManager) Start() {
-	m.registerClusterHandlers()
+func (m *TriggerManager) Start(ctx context.Context) {
+	m.registerClusterHandlers(ctx)
 	m.cron.Start()
 }
 
-func (m *TriggerManager) registerClusterHandlers() {
+func (m *TriggerManager) registerClusterHandlers(ctx context.Context) {
+	rt := m.runtime
 	// 集群事件: 变更工作流触发器时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
 	common.RegisterEventHandler(common.EventWorkflowTriggerChanged, func(ctx context.Context, workflowID string) {
+		ctx = rt.WithContext(ctx)
 		wf, err := repo.GetWorkflow(ctx, workflowID)
 		if err != nil {
 			m.RemoveTriggers(workflowID)
@@ -43,9 +49,10 @@ func (m *TriggerManager) registerClusterHandlers() {
 
 	// 异步执行工作流事件
 	common.RegisterEventHandler(common.EventWorkflowExecute, func(ctx context.Context, req workflowmodel.WorkflowExecutePayload) {
+		ctx = rt.WithContext(ctx)
 		// 使用分布式锁确保同一实例 ID 只被一个节点执行
 		lockKey := "action:execute:" + req.InstanceID
-		release := common.Locker.TryLock(ctx, lockKey)
+		release := rt.Deps.Locker.TryLock(ctx, lockKey)
 		if release == nil {
 			// 锁被占用，说明已有节点在执行
 			return
@@ -62,7 +69,7 @@ func (m *TriggerManager) registerClusterHandlers() {
 		}
 
 		log.Printf("TriggerManager: picking up async execution for instance %s", req.InstanceID)
-		_, err = GlobalExecutor.Execute(ctx, req.UserID, wf, req.Trigger, req.Inputs, req.InstanceID)
+		_, err = rt.Executor.Execute(ctx, req.UserID, wf, req.Trigger, req.Inputs, req.InstanceID)
 		if err != nil {
 			log.Printf("TriggerManager: failed to start async execution for instance %s: %v", req.InstanceID, err)
 		}
@@ -120,14 +127,15 @@ func (m *TriggerManager) addCronJob(wf workflowmodel.Workflow) {
 	id := wf.ID
 	entryID, err := common.AddDistributedCronJob(m.cron, wf.Meta.CronExpr, lockKey, func() {
 		// fetch latest workflow from db to avoid stale struct capture and missed updates
-		latestWf, err := repo.GetWorkflow(context.Background(), id)
+		ctx := m.runtime.WithContext(context.Background())
+		latestWf, err := repo.GetWorkflow(ctx, id)
 		if err != nil || !latestWf.Meta.Enabled || !latestWf.Meta.CronEnabled {
 			return
 		}
 
 		log.Printf("Triggering cron job for workflow: %s (%s)", latestWf.Meta.Name, latestWf.ID)
 		// Use the configured ServiceAccount for execution
-		_, err = TriggerWorkflow(context.Background(), latestWf, latestWf.Meta.ServiceAccountID, "Cron", nil)
+		_, err = TriggerWorkflow(ctx, latestWf, latestWf.Meta.ServiceAccountID, "Cron", nil)
 		if err != nil {
 			log.Printf("Failed to trigger cron job for %s: %v", latestWf.ID, err)
 		}

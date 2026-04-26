@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"homelab/pkg/common"
 	"homelab/pkg/common/task"
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/site"
+	runtimepkg "homelab/pkg/runtime"
 	"io"
 	"path/filepath"
 	"strings"
@@ -87,23 +87,25 @@ type ExportTaskDTO struct {
 }
 
 type ExportManager struct {
+	deps     runtimepkg.ModuleDeps
 	core     *task.Manager[*ExportTask]
 	analysis *AnalysisEngine
 	wg       sync.WaitGroup
 }
 
-func NewExportManager(analysis *AnalysisEngine) *ExportManager {
-	core := task.NewManager[*ExportTask]("action:site_export", "export_tasks", "network", "site")
+func NewExportManager(deps runtimepkg.ModuleDeps, analysis *AnalysisEngine) *ExportManager {
+	core := task.NewManager[*ExportTask](deps, "action:site_export", "export_tasks", "network", "site")
 
 	core.SetCleanupHook(func(t *ExportTask) {
 		tempFileName := fmt.Sprintf("site_export_%s.%s", t.ID, t.Format)
 		tempPath := filepath.Join("temp", tempFileName)
-		_ = common.TempDir.Remove(tempPath)
+		_ = deps.TempFS.Remove(tempPath)
 	})
 
 	core.StartCleanupTimer(24*time.Hour, 1*time.Hour)
 
 	return &ExportManager{
+		deps:     deps,
 		core:     core,
 		analysis: analysis,
 	}
@@ -173,7 +175,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 			status := t.GetStatus()
 			if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
 				lockKey := "action:site_export:" + t.ID
-				if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				if release := m.deps.Locker.TryLock(ctx, lockKey); release != nil {
 					toCancel = append(toCancel, t.ID)
 					release()
 				} else {
@@ -233,8 +235,8 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *sitem
 
 		tempFileName := fmt.Sprintf("site_export_%s.%s", task.ID, task.Format)
 		tempPath := filepath.Join("temp", tempFileName)
-		_ = common.TempDir.MkdirAll("temp", 0755)
-		f, err := common.TempDir.Create(tempPath)
+		_ = m.deps.TempFS.MkdirAll("temp", 0755)
+		f, err := m.deps.TempFS.Create(tempPath)
 		if err != nil {
 			return fmt.Errorf("File create error: %w", err)
 		}
@@ -254,7 +256,7 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *sitem
 
 		for _, gid := range e.Meta.GroupIDs {
 			poolPath := filepath.Join(PoolsDir, gid+".bin")
-			pf, err := common.FS.Open(poolPath)
+			pf, err := m.deps.FS.Open(poolPath)
 			if err != nil {
 				continue
 			}

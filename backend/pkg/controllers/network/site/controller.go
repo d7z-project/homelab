@@ -5,6 +5,7 @@ import (
 	apiv1 "homelab/pkg/apis/network/site/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
+	runtimepkg "homelab/pkg/runtime"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -75,10 +76,7 @@ func DeleteSiteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	if err := deps.PoolService.DeleteGroup(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -101,10 +99,7 @@ func PreviewSitePoolHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	cursor := r.URL.Query().Get("cursor")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 {
@@ -133,10 +128,7 @@ func ManageSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	req, ok := controllercommon.BindRequest[apiv1.PoolEntryRequest](w, r)
 	if !ok {
 		return
@@ -163,10 +155,7 @@ func DeleteSitePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkSiteResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	value := r.URL.Query().Get("value")
 
 	t, _ := strconv.Atoi(r.URL.Query().Get("type"))
@@ -455,7 +444,7 @@ func DownloadSiteExportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tempFileName := fmt.Sprintf("site_export_%s.%s", id, task.Format)
-	f, err := common.TempDir.Open(filepath.Join("temp", tempFileName))
+	f, err := runtimepkg.TempFSFromContext(r.Context()).Open(filepath.Join("temp", tempFileName))
 	if err != nil {
 		http.Error(w, "file not found", http.StatusNotFound)
 		return

@@ -16,22 +16,24 @@ import (
 )
 
 type Module struct {
+	enricher *ipservice.MMDBManager
 	service  *siteservice.SitePoolService
 	analysis *siteservice.AnalysisEngine
 	exports  *siteservice.ExportManager
 }
 
 func New(enricher *ipservice.MMDBManager) *Module {
-	analysis := siteservice.NewAnalysisEngine(enricher)
-	exports := siteservice.NewExportManager(analysis)
-	return &Module{
-		service:  siteservice.NewSitePoolService(analysis, exports),
-		analysis: analysis,
-		exports:  exports,
-	}
+	return &Module{enricher: enricher}
 }
 
 func (m *Module) Name() string { return "network.site" }
+
+func (m *Module) Init(deps runtimepkg.ModuleDeps) error {
+	m.analysis = siteservice.NewAnalysisEngine(m.enricher)
+	m.exports = siteservice.NewExportManager(deps, m.analysis)
+	m.service = siteservice.NewSitePoolService(deps, m.analysis, m.exports)
+	return nil
+}
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	routerx.Mount(r, "/network/site", routerx.Scope{
@@ -69,7 +71,7 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 }
 
 func (m *Module) Start(ctx context.Context) error {
-	ruleservice.RegisterSiteDiscovery()
+	ruleservice.RegisterSiteDiscovery(runtimepkg.RegistryFromContext(ctx))
 	siteservice.RegisterSiteProcessors(m.service)
 	m.service.Start(ctx)
 	return nil

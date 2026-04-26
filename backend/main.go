@@ -71,59 +71,45 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	common.DB = db
 	defer db.Close()
 
 	locker, err := lock.NewLocker(common.Opts.Lock)
 	if err != nil {
 		log.Fatalf("Failed to initialize locker: %v", err)
 	}
-	common.Locker = locker
 
 	subscriber, err := subscribe.NewSubscriberFromURL(common.Opts.PubSub)
 	if err != nil {
 		log.Fatalf("Failed to initialize subscriber: %v", err)
 	}
-	common.Subscriber = subscriber
 
 	// Initialize VFS (User Data)
 	vfs, err := common.InitVFS(common.Opts.VFS)
 	if err != nil {
 		log.Fatalf("Failed to initialize VFS: %v", err)
 	}
-	common.FS = vfs
 
 	// Initialize Temp FS (Task Workspaces)
 	tempFs, err := common.InitVFS(common.Opts.TempDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize Temp FS: %v", err)
 	}
-	common.TempDir = tempFs
 
 	// Smoke test VFS: write and delete a random file
 	testFile := ".homelab_vfs_test_" + uuid.New().String()
-	if err := afero.WriteFile(common.FS, testFile, []byte("ok"), 0644); err != nil {
+	if err := afero.WriteFile(vfs, testFile, []byte("ok"), 0644); err != nil {
 		log.Fatalf("VFS smoke test failed (write): %v", err)
 	}
-	_ = common.FS.Remove(testFile)
+	_ = vfs.Remove(testFile)
 
 	// Smoke test Temp FS
-	if err := afero.WriteFile(common.TempDir, testFile, []byte("ok"), 0644); err != nil {
+	if err := afero.WriteFile(tempFs, testFile, []byte("ok"), 0644); err != nil {
 		log.Fatalf("Temp FS smoke test failed (write): %v", err)
 	}
-	_ = common.TempDir.Remove(testFile)
+	_ = tempFs.Remove(testFile)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	common.StartEventLoop(ctx)
-
-	mmdbSources, _ := intrepo.ScanAllSources(ctx)
-	moduleOpts := moduleOptions{
-		enableWorkflow:     common.Opts.Workflow,
-		enableIntelligence: common.Opts.Intelligence,
-	}
-	modules := buildModules(mmdbSources, moduleOpts)
 
 	app := runtimepkg.NewApp(runtimepkg.Dependencies{
 		DB:         db,
@@ -132,10 +118,20 @@ func main() {
 		FS:         vfs,
 		TempFS:     tempFs,
 	})
+	moduleDeps := app.ModuleDeps()
+	appCtx := moduleDeps.WithContext(ctx)
+	common.StartEventLoop(appCtx)
+
+	mmdbSources, _ := intrepo.ScanAllSources(appCtx)
+	moduleOpts := moduleOptions{
+		enableWorkflow:     common.Opts.Workflow,
+		enableIntelligence: common.Opts.Intelligence,
+	}
+	modules := buildModules(moduleDeps, mmdbSources, moduleOpts)
 	if err := registerModules(app, modules); err != nil {
 		log.Fatalf("Failed to register core modules: %v", err)
 	}
-	if err := app.Start(ctx); err != nil {
+	if err := app.Start(appCtx); err != nil {
 		log.Fatalf("Failed to start app modules: %v", err)
 	}
 

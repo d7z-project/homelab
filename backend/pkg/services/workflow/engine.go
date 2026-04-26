@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"homelab/pkg/common"
 	commonauth "homelab/pkg/common/auth"
+	rbacmodel "homelab/pkg/models/core/rbac"
 	repo "homelab/pkg/repositories/workflow/actions"
-	registryruntime "homelab/pkg/runtime/registry"
+	runtimepkg "homelab/pkg/runtime"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -28,20 +28,6 @@ const (
 	DefaultTimeout = 7200 * time.Second
 )
 
-var (
-	actionsFS afero.Fs
-	logFS     afero.Fs
-)
-
-// Init initializes the module-scoped virtual filesystems.
-// Must be called after common.FS and common.TempDir are initialized.
-func Init() {
-	_ = common.TempDir.MkdirAll(ActionsSubDir, 0755)
-	_ = common.FS.MkdirAll(LogSubDir, 0755)
-	actionsFS = afero.NewBasePathFs(common.TempDir, ActionsSubDir)
-	logFS = afero.NewBasePathFs(common.FS, LogSubDir)
-}
-
 // Updated paramRegex to support steps.ID.status
 // Groups: 1:stepID, 2:refType(outputs.KEY or status), 3:outputKey, 4:varKey, 5:isOptional(?)
 var paramRegex = regexp.MustCompile(`\$\{\{\s*(?:steps\.([^.]+)\.(outputs\.([^ \.?]+)|status)|vars\.([^ \.?]+))\s*(\??)\s*\}\}`)
@@ -51,9 +37,8 @@ type Executor struct {
 	activeWorkflows sync.Map // workflowID -> instanceID
 }
 
-var GlobalExecutor = &Executor{}
-
 func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflowmodel.Workflow, trigger string, inputs map[string]string, instanceID string) (string, error) {
+	rt := MustRuntime(ctx)
 	// 1. Concurrency Control: Only one instance per workflow (Local Check)
 	if existingInstance, loaded := e.activeWorkflows.LoadOrStore(workflow.ID, "placeholder"); loaded {
 		return "", fmt.Errorf("workflow %s is already running locally (instance: %v)", workflow.ID, existingInstance)
@@ -69,7 +54,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflo
 		if inst.Meta.WorkflowID == workflow.ID && (inst.Status.Status == "Running" || inst.Status.Status == "Pending") {
 			// 健壮性：探测锁状态。如果能拿到锁，说明之前的执行者已挂
 			lockKey := "action:task:" + inst.ID
-			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+			if release := rt.Deps.Locker.TryLock(ctx, lockKey); release != nil {
 				// 能拿到锁，说明是僵死状态，我们手动清理并允许新任务开始
 				inst.Status.Status = shared.TaskStatusFailed
 				inst.Status.Error = "Interrupted by system restart or node failure"
@@ -108,7 +93,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflo
 	// Update activeWorkflows with the real instance ID
 	e.activeWorkflows.Store(workflow.ID, instance.ID)
 
-	workspace, err := afero.TempDir(actionsFS, "", instance.ID)
+	workspace, err := afero.TempDir(rt.ActionsFS, "", instance.ID)
 	if err != nil {
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
@@ -116,7 +101,7 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflo
 	instance.Meta.Workspace = workspace
 
 	if err := repo.SaveTaskInstance(ctx, instance); err != nil {
-		_ = actionsFS.RemoveAll(workspace)
+		_ = rt.ActionsFS.RemoveAll(workspace)
 		e.activeWorkflows.Delete(workflow.ID)
 		return "", err
 	}
@@ -133,14 +118,15 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflo
 	var cancel context.CancelFunc
 
 	if timeout > 0 {
-		taskCtx, cancel = context.WithTimeout(context.Background(), timeout)
+		taskCtx, cancel = context.WithTimeout(runtimepkg.DetachContext(ctx), timeout)
 	} else {
-		taskCtx, cancel = context.WithCancel(context.Background())
+		taskCtx, cancel = context.WithCancel(runtimepkg.DetachContext(ctx))
 	}
+	taskCtx = rt.WithContext(taskCtx)
 
 	e.runningTasks.Store(instance.ID, cancel)
 
-	logger, err := NewTaskLogger(workflow.ID, instance.ID)
+	logger, err := NewTaskLogger(taskCtx, workflow.ID, instance.ID)
 	if err != nil {
 		e.activeWorkflows.Delete(workflow.ID)
 		cancel()
@@ -159,7 +145,8 @@ func (e *Executor) Execute(ctx context.Context, userID string, workflow *workflo
 func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance, workflow *workflowmodel.Workflow, logger *TaskLogger, cancel context.CancelFunc) {
 	// 获取分布式锁，证明该节点正在处理该任务
 	lockKey := "action:task:" + instance.ID
-	release := common.Locker.TryLock(ctx, lockKey)
+	rt := MustRuntime(ctx)
+	release := rt.Deps.Locker.TryLock(ctx, lockKey)
 	if release == nil {
 		logger.Logf("Task %s already handled by another node", instance.ID)
 		return
@@ -181,7 +168,7 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 		}
 		if instance.Meta.Workspace != "" {
 			logger.Logf("Cleaning up workspace...")
-			_ = actionsFS.RemoveAll(instance.Meta.Workspace)
+			_ = rt.ActionsFS.RemoveAll(instance.Meta.Workspace)
 		}
 		if instance.Status.Status == "Running" {
 			instance.Status.Status = "Success"
@@ -209,7 +196,15 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 
 	// 前置校验: 确认执行身份 (ServiceAccount) 仍然存在
 	if instance.Meta.ServiceAccountID != "" && instance.Meta.ServiceAccountID != "root" {
-		saExists, err := registryruntime.Default().Verify(commonauth.SystemContext(), "rbac/serviceaccounts", instance.Meta.ServiceAccountID)
+		registry := runtimepkg.RegistryFromContext(ctx)
+		if registry == nil {
+			e.fail(instance, fmt.Errorf("registry not configured"), logger)
+			return
+		}
+		saCtx := runtimepkg.DetachContext(ctx)
+		saCtx = commonauth.WithAuth(saCtx, &commonauth.AuthContext{Type: "root"})
+		saCtx = commonauth.WithPermissions(saCtx, &rbacmodel.ResourcePermissions{AllowedAll: true})
+		saExists, err := registry.Verify(saCtx, "rbac/serviceaccounts", instance.Meta.ServiceAccountID)
 		if err != nil || !saExists {
 			e.fail(instance, fmt.Errorf("service account '%s' no longer exists, workflow cannot execute", instance.Meta.ServiceAccountID), logger)
 			return
@@ -309,7 +304,7 @@ func (e *Executor) run(ctx context.Context, instance *workflowmodel.TaskInstance
 		taskCtx := &TaskContext{
 			WorkflowID:       workflow.ID,
 			InstanceID:       instance.ID,
-			Workspace:        afero.NewBasePathFs(actionsFS, instance.Meta.Workspace),
+			Workspace:        afero.NewBasePathFs(rt.ActionsFS, instance.Meta.Workspace),
 			UserID:           instance.Meta.UserID,
 			ServiceAccountID: workflow.Meta.ServiceAccountID,
 			Context:          impersonatedCtx, // Use impersonated context
@@ -339,8 +334,8 @@ func (e *Executor) updateInstanceState(instance *workflowmodel.TaskInstance, log
 	if instance == nil {
 		return
 	}
-	if common.DB != nil {
-		_ = repo.SaveTaskInstance(context.Background(), instance)
+	if repo.StorageReady(logger.Context()) {
+		_ = repo.SaveTaskInstance(runtimepkg.DetachContext(logger.Context()), instance)
 	}
 }
 

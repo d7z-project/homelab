@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"homelab/pkg/common"
 	"log"
 	"sync"
 	"time"
 
 	"homelab/pkg/models/shared"
+	runtimepkg "homelab/pkg/runtime"
 
 	"gopkg.d7z.net/middleware/kv"
 )
@@ -21,19 +21,19 @@ type Manager[T shared.TaskInfo] struct {
 	mu          sync.RWMutex
 	tasks       map[string]T
 	activeTasks map[string]context.CancelFunc // 保存运行中任务的取消句柄
-	dbPath      []string                      // common.DB.Child(dbPath...)
+	deps        runtimepkg.ModuleDeps
+	dbPath      []string // deps.DB.Child(dbPath...)
 	dbKey       string
 	lockPrefix  string
 	cleanupHook func(T)
 }
 
-// NewManager 实例化框架。自动引用 common.DB，无需外部传递。
-
 // dbPath 为 DB 的 namespace，如 "network", "site"
-func NewManager[T shared.TaskInfo](lockPrefix string, dbKey string, dbPath ...string) *Manager[T] {
+func NewManager[T shared.TaskInfo](deps runtimepkg.ModuleDeps, lockPrefix string, dbKey string, dbPath ...string) *Manager[T] {
 	m := &Manager[T]{
 		tasks:       make(map[string]T),
 		activeTasks: make(map[string]context.CancelFunc),
+		deps:        deps,
 		dbPath:      dbPath,
 		dbKey:       dbKey,
 		lockPrefix:  lockPrefix,
@@ -43,7 +43,7 @@ func NewManager[T shared.TaskInfo](lockPrefix string, dbKey string, dbPath ...st
 }
 
 func (m *Manager[T]) db() kv.KV {
-	return common.DB.Child(m.dbPath...)
+	return m.deps.DB.Child(m.dbPath...)
 }
 
 func (m *Manager[T]) SetCleanupHook(hook func(T)) {
@@ -54,7 +54,7 @@ func (m *Manager[T]) SetCleanupHook(hook func(T)) {
 func (m *Manager[T]) loadTasks() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	data, err := m.db().Get(context.Background(), m.dbKey)
+	data, err := m.db().Get(m.deps.WithContext(context.Background()), m.dbKey)
 	if err == nil && data != "" {
 		_ = json.Unmarshal([]byte(data), &m.tasks)
 	}
@@ -65,7 +65,7 @@ func (m *Manager[T]) Save() {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	b, _ := json.Marshal(m.tasks)
-	_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
+	_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
 }
 
 // Reconcile 扫描所有任务，清理僵死状态 (由外层 Cron 或系统启动时调用)
@@ -79,7 +79,7 @@ func (m *Manager[T]) Reconcile(ctx context.Context) {
 		if status == shared.TaskStatusRunning || status == shared.TaskStatusPending {
 			// 探测锁状态
 			lockKey := fmt.Sprintf("%s:%s", m.lockPrefix, t.GetID())
-			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+			if release := m.deps.Locker.TryLock(ctx, lockKey); release != nil {
 				// 能拿到锁说明执行者已挂
 				t.SetStatus(shared.TaskStatusFailed)
 				t.SetError("Interrupted by system restart or node failure")
@@ -90,7 +90,7 @@ func (m *Manager[T]) Reconcile(ctx context.Context) {
 	}
 	if changed {
 		b, _ := json.Marshal(m.tasks)
-		_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
+		_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
 	}
 }
 
@@ -100,7 +100,7 @@ func (m *Manager[T]) AddTask(t T) {
 	defer m.mu.Unlock()
 	m.tasks[t.GetID()] = t
 	b, _ := json.Marshal(m.tasks)
-	_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
+	_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
 }
 
 // GetTask 获取任务
@@ -129,7 +129,7 @@ func (m *Manager[T]) CancelTask(id string) bool {
 		if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
 			t.SetStatus(shared.TaskStatusCancelled)
 			b, _ := json.Marshal(m.tasks)
-			_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
+			_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
 			return true
 		}
 	}
@@ -148,7 +148,7 @@ func (m *Manager[T]) DeleteTask(id string) {
 		}
 		delete(m.tasks, id)
 		b, _ := json.Marshal(m.tasks)
-		_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
+		_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
 	}
 }
 
@@ -181,7 +181,7 @@ func (m *Manager[T]) DeleteTasksByPrefix(prefix string) {
 	}
 	if changed {
 		b, _ := json.Marshal(m.tasks)
-		_ = m.db().Put(context.Background(), m.dbKey, string(b), kv.TTLKeep)
+		_ = m.db().Put(m.deps.WithContext(context.Background()), m.dbKey, string(b), kv.TTLKeep)
 	}
 }
 
@@ -239,7 +239,7 @@ func (m *Manager[T]) RunTask(ctx context.Context, id string, fn func(ctx context
 
 	// 1. 获取分布式锁，证明该节点正在处理该任务
 	lockKey := fmt.Sprintf("%s:%s", m.lockPrefix, t.GetID())
-	release := common.Locker.TryLock(ctx, lockKey)
+	release := m.deps.Locker.TryLock(ctx, lockKey)
 	if release == nil {
 		log.Printf("Task %s is already handled by another node", id)
 		return

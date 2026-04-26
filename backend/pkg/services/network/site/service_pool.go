@@ -42,8 +42,8 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	var entryToUpdate *sitemodel.SitePoolEntry
 
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	if exists, _ := afero.Exists(common.FS, poolPath); exists {
-		pf, err := common.FS.Open(poolPath)
+	if exists, _ := afero.Exists(s.deps.FS, poolPath); exists {
+		pf, err := s.deps.FS.Open(poolPath)
 		if err == nil {
 			reader, _ := NewReader(pf)
 			for {
@@ -125,9 +125,9 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 		entries = append(entries, Entry{Type: req.Type, Value: req.Value, TagIndices: tagIndices})
 	}
 
-	_ = common.FS.MkdirAll(PoolsDir, 0755)
+	_ = s.deps.FS.MkdirAll(PoolsDir, 0755)
 	tempFile := poolPath + ".tmp"
-	tf, err := common.FS.Create(tempFile)
+	tf, err := s.deps.FS.Create(tempFile)
 	if err != nil {
 		return err
 	}
@@ -135,14 +135,14 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	err = codec.WritePool(tf, allTags, entries)
 	tf.Close()
 	if err != nil {
-		_ = common.FS.Remove(tempFile)
+		_ = s.deps.FS.Remove(tempFile)
 		return err
 	}
 
 	// 计算哈希并更新元数据
-	content, err := afero.ReadFile(common.FS, tempFile)
+	content, err := afero.ReadFile(s.deps.FS, tempFile)
 	if err != nil {
-		_ = common.FS.Remove(tempFile)
+		_ = s.deps.FS.Remove(tempFile)
 		return err
 	}
 	hf := sha256.New()
@@ -152,7 +152,7 @@ func (s *SitePoolService) ManagePoolEntry(ctx context.Context, groupID string, r
 	group.Status.UpdatedAt = time.Now()
 	group.Status.Checksum = hex.EncodeToString(hf.Sum(nil))
 
-	if err := common.FS.Rename(tempFile, poolPath); err != nil {
+	if err := s.deps.FS.Rename(tempFile, poolPath); err != nil {
 		return err
 	}
 
@@ -176,7 +176,7 @@ func (s *SitePoolService) PreviewPool(ctx context.Context, groupID string, curso
 		return nil, err
 	}
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	f, err := common.FS.Open(poolPath)
+	f, err := s.deps.FS.Open(poolPath)
 	if err != nil {
 		return nil, err
 	}

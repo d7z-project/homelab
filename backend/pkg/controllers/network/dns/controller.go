@@ -1,16 +1,13 @@
 package dns
 
 import (
-	"fmt"
 	apiv1 "homelab/pkg/apis/network/dns/v1"
 	"homelab/pkg/common"
-	commonauth "homelab/pkg/common/auth"
 	controllercommon "homelab/pkg/controllers"
 	dnsservice "homelab/pkg/services/network/dns"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 // ScanDomainsHandler godoc
@@ -50,12 +47,10 @@ func ScanDomainsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/dns/domains [post]
 func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
-	var domain apiv1.Domain
-	if err := render.Bind(r, &domain); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	domain, ok := controllercommon.BindRequest[apiv1.Domain](w, r)
+	if !ok {
 		return
 	}
-
 	model := toModelDomain(domain)
 	res, err := dnsservice.CreateDomain(r.Context(), &model)
 	if err != nil {
@@ -81,18 +76,8 @@ func CreateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/domains/{id} [put]
 func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	domain, err := dnsservice.GetDomain(r.Context(), id)
-	if err != nil {
-		controllercommon.HandleError(w, r, err)
-		return
-	}
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-		controllercommon.HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
-		return
-	}
-	var updated apiv1.Domain
-	if err := render.Bind(r, &updated); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	updated, ok := controllercommon.BindRequest[apiv1.Domain](w, r)
+	if !ok {
 		return
 	}
 	model := toModelDomain(updated)
@@ -117,15 +102,6 @@ func UpdateDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/domains/{id} [delete]
 func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	domain, err := dnsservice.GetDomain(r.Context(), id)
-	if err != nil {
-		controllercommon.HandleError(w, r, err)
-		return
-	}
-	if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-		controllercommon.HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
-		return
-	}
 	if err := dnsservice.DeleteDomain(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -146,17 +122,7 @@ func DeleteDomainHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/dns/records [get]
 func ScanRecordsHandler(w http.ResponseWriter, r *http.Request) {
-
 	domainID := r.URL.Query().Get("domainId")
-	if domainID != "" {
-		domain, err := dnsservice.GetDomain(r.Context(), domainID)
-		if err == nil {
-			if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-				controllercommon.HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
-				return
-			}
-		}
-	}
 	cursor, limit := controllercommon.GetCursorParams(r)
 	search := r.URL.Query().Get("search")
 
@@ -181,17 +147,9 @@ func ScanRecordsHandler(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Router /network/dns/records [post]
 func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
-	var record apiv1.Record
-	if err := render.Bind(r, &record); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	record, ok := controllercommon.BindRequest[apiv1.Record](w, r)
+	if !ok {
 		return
-	}
-	domain, err := dnsservice.GetDomain(r.Context(), record.Meta.DomainID)
-	if err == nil {
-		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-			controllercommon.HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
-			return
-		}
 	}
 	model := toModelRecord(record)
 	res, err := dnsservice.CreateRecord(r.Context(), &model)
@@ -218,21 +176,8 @@ func CreateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/records/{id} [put]
 func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	record, err := dnsservice.GetRecord(r.Context(), id)
-	if err != nil {
-		controllercommon.HandleError(w, r, err)
-		return
-	}
-	domain, err := dnsservice.GetDomain(r.Context(), record.Meta.DomainID)
-	if err == nil {
-		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-			controllercommon.HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
-			return
-		}
-	}
-	var updated apiv1.Record
-	if err := render.Bind(r, &updated); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	updated, ok := controllercommon.BindRequest[apiv1.Record](w, r)
+	if !ok {
 		return
 	}
 	model := toModelRecord(updated)
@@ -257,18 +202,6 @@ func UpdateRecordHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /network/dns/records/{id} [delete]
 func DeleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	record, err := dnsservice.GetRecord(r.Context(), id)
-	if err != nil {
-		controllercommon.HandleError(w, r, err)
-		return
-	}
-	domain, err := dnsservice.GetDomain(r.Context(), record.Meta.DomainID)
-	if err == nil {
-		if !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns/"+domain.Meta.Name) && !commonauth.PermissionsFromContext(r.Context()).IsAllowed("network/dns") {
-			controllercommon.HandleError(w, r, fmt.Errorf("%w: network/dns/%s", commonauth.ErrPermissionDenied, domain.Meta.Name))
-			return
-		}
-	}
 	if err := dnsservice.DeleteRecord(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return

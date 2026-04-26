@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"homelab/pkg/common"
 	"sort"
 	"strings"
 	"time"
 
 	auditmodel "homelab/pkg/models/core/audit"
 	"homelab/pkg/models/shared"
+	runtimepkg "homelab/pkg/runtime"
 
 	"github.com/google/uuid"
 	"gopkg.d7z.net/middleware/kv"
 )
 
-func getAuditDB(t time.Time) kv.KV {
-	db := common.DB
+func getAuditDB(ctx context.Context, t time.Time) kv.KV {
+	db := runtimepkg.DBFromContext(ctx)
 	if db == nil {
 		return nil
 	}
@@ -27,7 +27,7 @@ func getAuditDB(t time.Time) kv.KV {
 }
 
 func SaveLog(ctx context.Context, log *auditmodel.AuditLog) error {
-	db := common.DB
+	db := runtimepkg.DBFromContext(ctx)
 	if db == nil {
 		return nil
 	}
@@ -53,7 +53,7 @@ func SaveLog(ctx context.Context, log *auditmodel.AuditLog) error {
 	indexDB := db.Child("system", "audit", "index")
 	_, _ = indexDB.PutIfNotExists(ctx, yearMonth, "1", kv.TTLKeep)
 
-	auditDB := getAuditDB(t)
+	auditDB := getAuditDB(ctx, t)
 	if auditDB == nil {
 		return nil
 	}
@@ -67,7 +67,7 @@ func SaveLog(ctx context.Context, log *auditmodel.AuditLog) error {
 }
 
 func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[auditmodel.AuditLog], error) {
-	db := common.DB
+	db := runtimepkg.DBFromContext(ctx)
 	if db == nil {
 		return nil, nil
 	}
@@ -172,7 +172,7 @@ func ScanLogs(ctx context.Context, cursor string, limit int, search string) (*sh
 }
 
 func CleanupLogs(ctx context.Context, days int) (int, error) {
-	db := common.DB
+	db := runtimepkg.DBFromContext(ctx)
 	if db == nil {
 		return 0, nil
 	}

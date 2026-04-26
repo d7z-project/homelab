@@ -21,7 +21,7 @@ func GetTaskLogs(ctx context.Context, id string) ([]workflowmodel.LogEntry, erro
 	}
 
 	// Read all logs from VFS
-	logs, err := ReadAllTaskLogs(instance.Meta.WorkflowID, id)
+	logs, err := ReadAllTaskLogs(ctx, instance.Meta.WorkflowID, id)
 	if err != nil {
 		return []workflowmodel.LogEntry{}, nil
 	}
@@ -40,5 +40,5 @@ func GetStepLogs(ctx context.Context, id string, stepIndex int, offset int) ([]w
 		return nil, 0, fmt.Errorf("permission denied: actions/%s", instance.Meta.WorkflowID)
 	}
 
-	return ReadStepLogs(instance.Meta.WorkflowID, id, stepIndex, offset)
+	return ReadStepLogs(ctx, instance.Meta.WorkflowID, id, stepIndex, offset)
 }

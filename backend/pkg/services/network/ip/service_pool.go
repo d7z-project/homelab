@@ -31,7 +31,7 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	}
 	defer release()
 
-	group, err := repo.PoolRepo.Get(ctx, groupID)
+	group, err := repo.GetPool(ctx, groupID)
 	if err != nil {
 		return err
 	}
@@ -61,8 +61,8 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	found := false
 
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	if exists, _ := afero.Exists(common.FS, poolPath); exists {
-		pf, err := common.FS.Open(poolPath)
+	if exists, _ := afero.Exists(s.deps.FS, poolPath); exists {
+		pf, err := s.deps.FS.Open(poolPath)
 		if err == nil {
 			reader, _ := NewReader(pf)
 			for {
@@ -172,9 +172,9 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	}
 
 	// 2. 写回
-	_ = common.FS.MkdirAll(PoolsDir, 0755)
+	_ = s.deps.FS.MkdirAll(PoolsDir, 0755)
 	tempFile := filepath.Join(PoolsDir, groupID+".bin.tmp")
-	tf, err := common.FS.Create(tempFile)
+	tf, err := s.deps.FS.Create(tempFile)
 	if err != nil {
 		return err
 	}
@@ -182,24 +182,24 @@ func (s *IPPoolService) ManagePoolEntry(ctx context.Context, groupID string, req
 	err = codec.WritePool(tf, allTags, entries)
 	tf.Close()
 	if err != nil {
-		_ = common.FS.Remove(tempFile)
+		_ = s.deps.FS.Remove(tempFile)
 		return err
 	}
 
 	// 计算哈希并更新元数据（在 Rename 之前，确保元数据与即将生效的文件一致）
-	content, err := afero.ReadFile(common.FS, tempFile)
+	content, err := afero.ReadFile(s.deps.FS, tempFile)
 	if err != nil {
-		_ = common.FS.Remove(tempFile)
+		_ = s.deps.FS.Remove(tempFile)
 		return err
 	}
 	hf := sha256.New()
 	hf.Write(content)
 
-	if err := common.FS.Rename(tempFile, poolPath); err != nil {
+	if err := s.deps.FS.Rename(tempFile, poolPath); err != nil {
 		return err
 	}
 
-	err = repo.PoolRepo.UpdateStatus(ctx, group.ID, func(s *ipmodel.IPPoolV1Status) {
+	err = repo.UpdatePoolStatus(ctx, group.ID, func(s *ipmodel.IPPoolV1Status) {
 		s.EntryCount = int64(len(entries))
 		s.UpdatedAt = time.Now()
 		s.Checksum = hex.EncodeToString(hf.Sum(nil))
@@ -220,7 +220,7 @@ func (s *IPPoolService) PreviewPool(ctx context.Context, groupID string, cursorS
 		return nil, err
 	}
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	f, err := common.FS.Open(poolPath)
+	f, err := s.deps.FS.Open(poolPath)
 	if err != nil {
 		return nil, err
 	}

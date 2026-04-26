@@ -15,14 +15,20 @@ import (
 )
 
 type Module struct {
-	service *intservice.IntelligenceService
+	enricher *ipservice.MMDBManager
+	service  *intservice.IntelligenceService
 }
 
 func New(enricher *ipservice.MMDBManager) *Module {
-	return &Module{service: intservice.NewIntelligenceService(enricher)}
+	return &Module{enricher: enricher}
 }
 
 func (m *Module) Name() string { return "network.intelligence" }
+
+func (m *Module) Init(deps runtimepkg.ModuleDeps) error {
+	m.service = intservice.NewIntelligenceService(deps, m.enricher)
+	return nil
+}
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	routerx.Mount(r, "/network/intelligence", routerx.Scope{
@@ -43,7 +49,7 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 }
 
 func (m *Module) Start(ctx context.Context) error {
-	intservice.RegisterDiscovery()
+	intservice.RegisterDiscovery(runtimepkg.RegistryFromContext(ctx))
 	return m.service.Init(ctx)
 }
 

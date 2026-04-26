@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	commonauth "homelab/pkg/common/auth"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
@@ -15,80 +14,79 @@ import (
 	"homelab/pkg/models/shared"
 )
 
-var registerDiscoveryOnce sync.Once
+func RegisterDiscovery(registry *registryruntime.Registry) {
+	if registry == nil {
+		return
+	}
+	registerResourceDiscovery(registry)
 
-func RegisterDiscovery() {
-	registerDiscoveryOnce.Do(func() {
-		registerResourceDiscovery()
+	_ = registry.RegisterLookup("rbac/serviceaccounts", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+			return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+		}
+		res, err := rbacrepo.ScanServiceAccounts(ctx, cursor, limit, search)
+		if err != nil {
+			return nil, err
+		}
+		var items []discoverymodel.LookupItem
+		for _, sa := range res.Items {
+			items = append(items, discoverymodel.LookupItem{
+				ID:          sa.ID,
+				Name:        sa.Meta.Name,
+				Description: sa.Meta.Comments,
+			})
+		}
+		return &shared.PaginationResponse[discoverymodel.LookupItem]{
+			Items:      items,
+			NextCursor: res.NextCursor,
+			HasMore:    res.HasMore,
+		}, nil
+	})
 
-		_ = registryruntime.Default().RegisterLookup("rbac/serviceaccounts", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
-			if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-				return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
-			}
-			res, err := rbacrepo.ScanServiceAccounts(ctx, cursor, limit, search)
-			if err != nil {
-				return nil, err
-			}
-			var items []discoverymodel.LookupItem
-			for _, sa := range res.Items {
-				items = append(items, discoverymodel.LookupItem{
-					ID:          sa.ID,
-					Name:        sa.Meta.Name,
-					Description: sa.Meta.Comments,
-				})
-			}
-			return &shared.PaginationResponse[discoverymodel.LookupItem]{
-				Items:      items,
-				NextCursor: res.NextCursor,
-				HasMore:    res.HasMore,
-			}, nil
-		})
+	_ = registry.RegisterLookup("rbac/roles", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+			return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+		}
+		res, err := rbacrepo.ScanRoles(ctx, cursor, limit, search)
+		if err != nil {
+			return nil, err
+		}
+		var items []discoverymodel.LookupItem
+		for _, r := range res.Items {
+			items = append(items, discoverymodel.LookupItem{
+				ID:          r.ID,
+				Name:        r.Meta.Name,
+				Description: r.Meta.Comments,
+			})
+		}
+		return &shared.PaginationResponse[discoverymodel.LookupItem]{
+			Items:      items,
+			NextCursor: res.NextCursor,
+			HasMore:    res.HasMore,
+		}, nil
+	})
 
-		_ = registryruntime.Default().RegisterLookup("rbac/roles", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
-			if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-				return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
-			}
-			res, err := rbacrepo.ScanRoles(ctx, cursor, limit, search)
-			if err != nil {
-				return nil, err
-			}
-			var items []discoverymodel.LookupItem
-			for _, r := range res.Items {
-				items = append(items, discoverymodel.LookupItem{
-					ID:          r.ID,
-					Name:        r.Meta.Name,
-					Description: r.Meta.Comments,
-				})
-			}
-			return &shared.PaginationResponse[discoverymodel.LookupItem]{
-				Items:      items,
-				NextCursor: res.NextCursor,
-				HasMore:    res.HasMore,
-			}, nil
-		})
-
-		_ = registryruntime.Default().RegisterLookup("rbac/rolebindings", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
-			if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
-				return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
-			}
-			res, err := rbacrepo.ScanRoleBindings(ctx, cursor, limit, search)
-			if err != nil {
-				return nil, err
-			}
-			var items []discoverymodel.LookupItem
-			for _, rb := range res.Items {
-				items = append(items, discoverymodel.LookupItem{
-					ID:          rb.ID,
-					Name:        rb.ID,
-					Description: fmt.Sprintf("%s -> %s", rb.Meta.ServiceAccountID, strings.Join(rb.Meta.RoleIDs, ", ")),
-				})
-			}
-			return &shared.PaginationResponse[discoverymodel.LookupItem]{
-				Items:      items,
-				NextCursor: res.NextCursor,
-				HasMore:    res.HasMore,
-			}, nil
-		})
+	_ = registry.RegisterLookup("rbac/rolebindings", func(ctx context.Context, search string, cursor string, limit int) (*shared.PaginationResponse[discoverymodel.LookupItem], error) {
+		if !commonauth.PermissionsFromContext(ctx).IsAllowed("rbac") {
+			return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
+		}
+		res, err := rbacrepo.ScanRoleBindings(ctx, cursor, limit, search)
+		if err != nil {
+			return nil, err
+		}
+		var items []discoverymodel.LookupItem
+		for _, rb := range res.Items {
+			items = append(items, discoverymodel.LookupItem{
+				ID:          rb.ID,
+				Name:        rb.ID,
+				Description: fmt.Sprintf("%s -> %s", rb.Meta.ServiceAccountID, strings.Join(rb.Meta.RoleIDs, ", ")),
+			})
+		}
+		return &shared.PaginationResponse[discoverymodel.LookupItem]{
+			Items:      items,
+			NextCursor: res.NextCursor,
+			HasMore:    res.HasMore,
+		}, nil
 	})
 }
 

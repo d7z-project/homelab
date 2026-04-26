@@ -9,7 +9,7 @@ import (
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	repo "homelab/pkg/repositories/workflow/actions"
-	registryruntime "homelab/pkg/runtime/registry"
+	runtimepkg "homelab/pkg/runtime"
 	"regexp"
 	"strings"
 	"time"
@@ -65,7 +65,11 @@ func ValidateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) err
 	}
 
 	// Verify ServiceAccount exists using discovery service
-	exists, err := registryruntime.Default().Verify(ctx, "rbac/serviceaccounts", workflow.Meta.ServiceAccountID)
+	registry := runtimepkg.RegistryFromContext(ctx)
+	if registry == nil {
+		return fmt.Errorf("registry not configured")
+	}
+	exists, err := registry.Verify(ctx, "rbac/serviceaccounts", workflow.Meta.ServiceAccountID)
 	if err != nil {
 		return fmt.Errorf("failed to verify service account: %v", err)
 	}
@@ -228,7 +232,11 @@ func ValidateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) err
 					if pDef.LookupCode == "actions/workflows" && workflow.ID != "" && v == workflow.ID {
 						// Skip discovery verify for self-reference, direct recursion check happens below
 					} else {
-						exists, err := registryruntime.Default().Verify(ctx, pDef.LookupCode, v)
+						registry := runtimepkg.RegistryFromContext(ctx)
+						if registry == nil {
+							return fmt.Errorf("registry not configured")
+						}
+						exists, err := registry.Verify(ctx, pDef.LookupCode, v)
 						if err != nil {
 							return fmt.Errorf("step %s: failed to verify parameter %s via discovery code %s: %v", step.ID, k, pDef.LookupCode, err)
 						}
@@ -269,14 +277,9 @@ func CreateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) (*wor
 		workflow.Meta.WebhookToken = GenerateWebhookToken()
 	}
 
-	err := repo.WorkflowRepo.Cow(ctx, workflow.ID, func(res *shared.Resource[workflowmodel.WorkflowV1Meta, workflowmodel.WorkflowV1Status]) error {
-		res.Meta = workflow.Meta
-		res.Status.CreatedAt = time.Now()
-		res.Status.UpdatedAt = time.Now()
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	workflow.Status.CreatedAt = time.Now()
+	workflow.Status.UpdatedAt = time.Now()
+	err := repo.SaveWorkflow(ctx, workflow)
 
 	message := fmt.Sprintf("Created workflow %s (Enabled: %v, Timeout: %ds, SA: %s, Cron: %v, Webhook: %v)", workflow.Meta.Name, workflow.Meta.Enabled, workflow.Meta.Timeout, workflow.Meta.ServiceAccountID, workflow.Meta.CronEnabled, workflow.Meta.WebhookEnabled)
 	if err != nil {
@@ -286,7 +289,7 @@ func CreateWorkflow(ctx context.Context, workflow *workflowmodel.Workflow) (*wor
 
 	updated, _ := repo.GetWorkflow(ctx, workflow.ID)
 	commonaudit.FromContext(ctx).Log("CreateWorkflow", workflow.ID, message, true)
-	GlobalTriggerManager.UpdateTriggers(*updated)
+	MustRuntime(ctx).TriggerManager.UpdateTriggers(*updated)
 	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, workflow.ID)
 	return updated, nil
 }
@@ -323,15 +326,15 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *workflowmodel.Work
 	}
 	// ... (rest of changes logic)
 
-	err = repo.WorkflowRepo.PatchMeta(ctx, id, workflow.Generation, func(meta *workflowmodel.WorkflowV1Meta) {
-		*meta = workflow.Meta
-		if meta.WebhookEnabled && meta.WebhookToken == "" {
-			meta.WebhookToken = old.Meta.WebhookToken
-			if meta.WebhookToken == "" {
-				meta.WebhookToken = GenerateWebhookToken()
-			}
+	old.Meta = workflow.Meta
+	old.Status.UpdatedAt = time.Now()
+	if old.Meta.WebhookEnabled && old.Meta.WebhookToken == "" {
+		old.Meta.WebhookToken = workflow.Meta.WebhookToken
+		if old.Meta.WebhookToken == "" {
+			old.Meta.WebhookToken = GenerateWebhookToken()
 		}
-	})
+	}
+	err = repo.SaveWorkflow(ctx, old)
 
 	message := fmt.Sprintf("Updated workflow %s", workflow.Meta.Name)
 	if len(changes) > 0 {
@@ -347,7 +350,7 @@ func UpdateWorkflow(ctx context.Context, id string, workflow *workflowmodel.Work
 
 	updated, _ := repo.GetWorkflow(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateWorkflow", id, message, true)
-	GlobalTriggerManager.UpdateTriggers(*updated)
+	MustRuntime(ctx).TriggerManager.UpdateTriggers(*updated)
 	common.NotifyCluster(ctx, common.EventWorkflowTriggerChanged, id)
 	return updated, nil
 }
@@ -357,11 +360,15 @@ func ResetWebhookToken(ctx context.Context, id string) (string, error) {
 		return "", fmt.Errorf("%w: actions/%s (write access required)", commonauth.ErrPermissionDenied, id)
 	}
 
-	var newToken string
-	err := repo.WorkflowRepo.PatchMeta(ctx, id, 0, func(meta *workflowmodel.WorkflowV1Meta) {
-		newToken = GenerateWebhookToken()
-		meta.WebhookToken = newToken
-	})
+	workflow, err := repo.GetWorkflow(ctx, id)
+	if err != nil {
+		commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, "Failed", false)
+		return "", err
+	}
+	newToken := GenerateWebhookToken()
+	workflow.Meta.WebhookToken = newToken
+	workflow.Status.UpdatedAt = time.Now()
+	err = repo.SaveWorkflow(ctx, workflow)
 
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("ResetWebhookToken", id, "Failed", false)
@@ -401,9 +408,9 @@ func DeleteWorkflow(ctx context.Context, id string) error {
 		for _, inst := range res.Items {
 			_ = repo.DeleteTaskInstance(ctx, inst.ID)
 		}
-		_ = RemoveWorkflowLogs(id)
+		_ = RemoveWorkflowLogs(ctx, id)
 	}
-	GlobalTriggerManager.RemoveTriggers(id)
+	MustRuntime(ctx).TriggerManager.RemoveTriggers(id)
 
 	snapshot, _ := json.Marshal(wf)
 	message := fmt.Sprintf("Deleted workflow %s. Snapshot: %s", wf.Meta.Name, string(snapshot))

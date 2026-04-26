@@ -7,6 +7,7 @@ import (
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/site"
+	runtimepkg "homelab/pkg/runtime"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ const (
 )
 
 type SitePoolService struct {
+	deps          runtimepkg.ModuleDeps
 	engine        *AnalysisEngine
 	exportManager *ExportManager
 	syncTasks     *taskpkg.Manager[*SyncTask]
@@ -29,11 +31,12 @@ type SitePoolService struct {
 	cronLock sync.Mutex
 }
 
-func NewSitePoolService(engine *AnalysisEngine, em *ExportManager) *SitePoolService {
+func NewSitePoolService(deps runtimepkg.ModuleDeps, engine *AnalysisEngine, em *ExportManager) *SitePoolService {
 	s := &SitePoolService{
+		deps:          deps,
 		engine:        engine,
 		exportManager: em,
-		syncTasks:     taskpkg.NewManager[*SyncTask]("action:site_sync", "sync_tasks", "network", "site"),
+		syncTasks:     taskpkg.NewManager[*SyncTask](deps, "action:site_sync", "sync_tasks", "network", "site"),
 		cron:          cron.New(),
 		cronIDs:       make(map[string]cron.EntryID),
 	}

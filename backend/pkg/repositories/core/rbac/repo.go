@@ -3,6 +3,7 @@ package rbac
 import (
 	"context"
 	"homelab/pkg/common"
+	"strings"
 
 	rbacmodel "homelab/pkg/models/core/rbac"
 	"homelab/pkg/models/shared"
@@ -13,9 +14,9 @@ import (
 var (
 	roleCache *lru.Cache[string, *rbacmodel.Role]
 
-	RoleRepo           = common.NewBaseRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
-	BindingRepo        = common.NewBaseRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
-	ServiceAccountRepo = common.NewBaseRepository[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status]("auth", "serviceaccounts")
+	roleRepo           = common.NewBaseRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
+	bindingRepo        = common.NewBaseRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
+	serviceAccountRepo = common.NewBaseRepository[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status]("auth", "serviceaccounts")
 )
 
 func init() {
@@ -33,14 +34,33 @@ func InvalidateCache(roleID string) {
 }
 
 func ScanServiceAccounts(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[rbacmodel.ServiceAccount], error) {
-	return ServiceAccountRepo.List(ctx, cursor, limit, nil)
+	search = strings.ToLower(search)
+	return serviceAccountRepo.List(ctx, cursor, limit, func(sa *rbacmodel.ServiceAccount) bool {
+		return search == "" || strings.Contains(strings.ToLower(sa.Meta.Name), search) || strings.Contains(strings.ToLower(sa.ID), search)
+	})
+}
+
+func GetServiceAccount(ctx context.Context, id string) (*rbacmodel.ServiceAccount, error) {
+	return serviceAccountRepo.Get(ctx, id)
+}
+
+func SaveServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) error {
+	return serviceAccountRepo.Save(ctx, sa)
+}
+
+func DeleteServiceAccount(ctx context.Context, id string) error {
+	return serviceAccountRepo.Delete(ctx, id)
+}
+
+func UpdateServiceAccountStatus(ctx context.Context, id string, apply func(*rbacmodel.ServiceAccountV1Status)) error {
+	return serviceAccountRepo.UpdateStatus(ctx, id, apply)
 }
 
 func GetCachedRole(ctx context.Context, id string) (*rbacmodel.Role, error) {
 	if val, ok := roleCache.Get(id); ok {
 		return val, nil
 	}
-	role, err := RoleRepo.Get(ctx, id)
+	role, err := roleRepo.Get(ctx, id)
 	if err == nil {
 		roleCache.Add(id, role)
 	}
@@ -48,17 +68,43 @@ func GetCachedRole(ctx context.Context, id string) (*rbacmodel.Role, error) {
 }
 
 func ScanRoles(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[rbacmodel.Role], error) {
-	return RoleRepo.List(ctx, cursor, limit, nil)
+	search = strings.ToLower(search)
+	return roleRepo.List(ctx, cursor, limit, func(role *rbacmodel.Role) bool {
+		return search == "" || strings.Contains(strings.ToLower(role.Meta.Name), search) || strings.Contains(strings.ToLower(role.ID), search)
+	})
+}
+
+func GetRole(ctx context.Context, id string) (*rbacmodel.Role, error) {
+	return roleRepo.Get(ctx, id)
+}
+
+func SaveRole(ctx context.Context, role *rbacmodel.Role) error {
+	return roleRepo.Save(ctx, role)
+}
+
+func DeleteRole(ctx context.Context, id string) error {
+	return roleRepo.Delete(ctx, id)
 }
 
 func ScanRoleBindings(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[rbacmodel.RoleBinding], error) {
-	return BindingRepo.List(ctx, cursor, limit, nil)
+	search = strings.ToLower(search)
+	return bindingRepo.List(ctx, cursor, limit, func(binding *rbacmodel.RoleBinding) bool {
+		return search == "" || strings.Contains(strings.ToLower(binding.ID), search) || strings.Contains(strings.ToLower(binding.Meta.ServiceAccountID), search)
+	})
+}
+
+func GetRoleBinding(ctx context.Context, id string) (*rbacmodel.RoleBinding, error) {
+	return bindingRepo.Get(ctx, id)
+}
+
+func SaveRoleBinding(ctx context.Context, binding *rbacmodel.RoleBinding) error {
+	return bindingRepo.Save(ctx, binding)
+}
+
+func DeleteRoleBinding(ctx context.Context, id string) error {
+	return bindingRepo.Delete(ctx, id)
 }
 
 func ScanAllRoleBindings(ctx context.Context) ([]rbacmodel.RoleBinding, error) {
-	resp, err := BindingRepo.List(ctx, "", 100000, nil)
-	if err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	return bindingRepo.ListAll(ctx)
 }

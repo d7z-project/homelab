@@ -26,7 +26,7 @@ func ScanRecords(ctx context.Context, domainID string, cursor string, limit int,
 		}, nil
 	}
 
-	dom, err := dnsrepo.DomainRepo.Get(ctx, domainID)
+	dom, err := dnsrepo.GetDomain(ctx, domainID)
 	if err != nil {
 		return nil, err
 	}
@@ -39,14 +39,14 @@ func ScanRecords(ctx context.Context, domainID string, cursor string, limit int,
 }
 
 func GetRecord(ctx context.Context, id string) (*dnsmodel.Record, error) {
-	return dnsrepo.RecordRepo.Get(ctx, id)
+	return dnsrepo.GetRecord(ctx, id)
 }
 
 func CreateRecord(ctx context.Context, record *dnsmodel.Record) (*dnsmodel.Record, error) {
 	if err := normalizeRecord(record); err != nil {
 		return nil, err
 	}
-	dom, err := dnsrepo.DomainRepo.Get(ctx, record.Meta.DomainID)
+	dom, err := dnsrepo.GetDomain(ctx, record.Meta.DomainID)
 	if err != nil {
 		return nil, errors.New("domain not found")
 	}
@@ -69,7 +69,7 @@ func CreateRecord(ctx context.Context, record *dnsmodel.Record) (*dnsmodel.Recor
 	}
 
 	record.ID = uuid.New().String()
-	if err := dnsrepo.RecordRepo.Cow(ctx, record.ID, func(res *dnsmodel.Record) error { res.Meta = record.Meta; res.Status = record.Status; return nil }); err != nil {
+	if err := dnsrepo.SaveRecord(ctx, record); err != nil {
 		commonaudit.FromContext(ctx).Log("CreateRecord", record.Meta.Name+"."+dom.Meta.Name, "Failed", false)
 		return nil, err
 	}
@@ -82,11 +82,11 @@ func UpdateRecord(ctx context.Context, id string, record *dnsmodel.Record) (*dns
 	if err := normalizeRecord(record); err != nil {
 		return nil, err
 	}
-	existing, err := dnsrepo.RecordRepo.Get(ctx, id)
+	existing, err := dnsrepo.GetRecord(ctx, id)
 	if err != nil {
 		return nil, errors.New("not found")
 	}
-	dom, _ := dnsrepo.DomainRepo.Get(ctx, existing.Meta.DomainID)
+	dom, _ := dnsrepo.GetDomain(ctx, existing.Meta.DomainID)
 	if dom == nil {
 		return nil, errors.New("domain not found")
 	}
@@ -108,24 +108,21 @@ func UpdateRecord(ctx context.Context, id string, record *dnsmodel.Record) (*dns
 		return nil, err
 	}
 
-	err = dnsrepo.RecordRepo.PatchMeta(ctx, id, record.Generation, func(meta *dnsmodel.RecordV1Meta) {
-		meta.Name = record.Meta.Name
-		meta.Type = record.Meta.Type
-		meta.Value = record.Meta.Value
-		meta.TTL = record.Meta.TTL
-		meta.Enabled = record.Meta.Enabled
-		meta.Comments = record.Meta.Comments
-
-		if existing.Meta.Type == "SOA" {
-			// SOA specific logic handled inside patch to ensure atomicity and correct versioning
-			meta.Name = "@"
-			meta.Type = "SOA"
-			meta.Enabled = true
-			if mName, rName, _, err := parseSOA(record.Meta.Value); err == nil {
-				meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", mName, rName, incrementSerial(existing.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
-			}
+	existing.Meta.Name = record.Meta.Name
+	existing.Meta.Type = record.Meta.Type
+	existing.Meta.Value = record.Meta.Value
+	existing.Meta.TTL = record.Meta.TTL
+	existing.Meta.Enabled = record.Meta.Enabled
+	existing.Meta.Comments = record.Meta.Comments
+	if existing.Meta.Type == "SOA" {
+		existing.Meta.Name = "@"
+		existing.Meta.Type = "SOA"
+		existing.Meta.Enabled = true
+		if mName, rName, _, parseErr := parseSOA(record.Meta.Value); parseErr == nil {
+			existing.Meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", mName, rName, incrementSerial(existing.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
 		}
-	})
+	}
+	err = dnsrepo.SaveRecord(ctx, existing)
 
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateRecord", record.Meta.Name+"."+dom.Meta.Name, "Failed", false)
@@ -136,17 +133,17 @@ func UpdateRecord(ctx context.Context, id string, record *dnsmodel.Record) (*dns
 		updateSOASerial(ctx, dom.ID)
 	}
 
-	updated, _ := dnsrepo.RecordRepo.Get(ctx, id)
+	updated, _ := dnsrepo.GetRecord(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateRecord", record.Meta.Name+"."+dom.Meta.Name, "Updated", true)
 	return updated, nil
 }
 
 func DeleteRecord(ctx context.Context, id string) error {
-	existing, err := dnsrepo.RecordRepo.Get(ctx, id)
+	existing, err := dnsrepo.GetRecord(ctx, id)
 	if err != nil {
 		return errors.New("not found")
 	}
-	dom, _ := dnsrepo.DomainRepo.Get(ctx, existing.Meta.DomainID)
+	dom, _ := dnsrepo.GetDomain(ctx, existing.Meta.DomainID)
 	if dom == nil {
 		return errors.New("domain not found")
 	}
@@ -164,7 +161,7 @@ func DeleteRecord(ctx context.Context, id string) error {
 	if existing.Meta.Type == "SOA" {
 		return errors.New("cannot delete SOA")
 	}
-	err = dnsrepo.RecordRepo.Delete(ctx, id)
+	err = dnsrepo.DeleteRecord(ctx, id)
 	if err == nil {
 		updateSOASerial(ctx, dom.ID)
 		commonaudit.FromContext(ctx).Log("DeleteRecord", existing.Meta.Name+"."+dom.Meta.Name, "Deleted", true)

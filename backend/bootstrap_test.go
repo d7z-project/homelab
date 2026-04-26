@@ -3,7 +3,6 @@ package main
 import (
 	"testing"
 
-	"homelab/pkg/common"
 	intelligencemodel "homelab/pkg/models/network/intelligence"
 	runtimepkg "homelab/pkg/runtime"
 
@@ -11,7 +10,7 @@ import (
 	"gopkg.d7z.net/middleware/kv"
 )
 
-func setupBootstrapTestEnv(t *testing.T) {
+func setupBootstrapTestEnv(t *testing.T) runtimepkg.ModuleDeps {
 	t.Helper()
 
 	db, err := kv.NewKVFromURL("memory://")
@@ -21,18 +20,23 @@ func setupBootstrapTestEnv(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	common.DB = db
-	common.FS = afero.NewMemMapFs()
-	common.TempDir = afero.NewMemMapFs()
+	return runtimepkg.ModuleDeps{
+		Dependencies: runtimepkg.Dependencies{
+			DB:     db,
+			FS:     afero.NewMemMapFs(),
+			TempFS: afero.NewMemMapFs(),
+		},
+		Registry: runtimepkg.NewApp(runtimepkg.Dependencies{}).Registry(),
+	}
 }
 
 func TestRegisterCoreModules(t *testing.T) {
 	t.Parallel()
 
-	setupBootstrapTestEnv(t)
+	deps := setupBootstrapTestEnv(t)
 
-	app := runtimepkg.NewApp(runtimepkg.Dependencies{})
-	if err := registerModules(app, buildModules([]intelligencemodel.IntelligenceSource{}, moduleOptions{
+	app := runtimepkg.NewApp(deps.Dependencies)
+	if err := registerModules(app, buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{
 		enableWorkflow:     true,
 		enableIntelligence: true,
 	})); err != nil {
@@ -65,9 +69,9 @@ func TestRegisterCoreModules(t *testing.T) {
 func TestBuildModules(t *testing.T) {
 	t.Parallel()
 
-	setupBootstrapTestEnv(t)
+	deps := setupBootstrapTestEnv(t)
 
-	modules := buildModules([]intelligencemodel.IntelligenceSource{}, moduleOptions{
+	modules := buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{
 		enableWorkflow:     true,
 		enableIntelligence: true,
 	})
@@ -79,10 +83,10 @@ func TestBuildModules(t *testing.T) {
 func TestRegisterCoreModulesWithOptionalModulesDisabled(t *testing.T) {
 	t.Parallel()
 
-	setupBootstrapTestEnv(t)
+	deps := setupBootstrapTestEnv(t)
 
-	app := runtimepkg.NewApp(runtimepkg.Dependencies{})
-	if err := registerModules(app, buildModules([]intelligencemodel.IntelligenceSource{}, moduleOptions{})); err != nil {
+	app := runtimepkg.NewApp(deps.Dependencies)
+	if err := registerModules(app, buildModules(deps, []intelligencemodel.IntelligenceSource{}, moduleOptions{})); err != nil {
 		t.Fatalf("register core modules: %v", err)
 	}
 

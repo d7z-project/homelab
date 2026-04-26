@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	dnsmodel "homelab/pkg/models/network/dns"
 	dnsrepo "homelab/pkg/repositories/network/dns"
 	"strings"
 	"time"
@@ -24,10 +23,10 @@ func updateSOASerial(ctx context.Context, domainID string) {
 	if resp != nil {
 		for _, r := range resp.Items {
 			if r.Meta.Type == "SOA" {
-				_ = dnsrepo.RecordRepo.PatchMeta(ctx, r.ID, 0, func(meta *dnsmodel.RecordV1Meta) {
-					m, rn, _, _ := parseSOA(meta.Value)
-					meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
-				})
+				record := r
+				m, rn, _, _ := parseSOA(record.Meta.Value)
+				record.Meta.Value = fmt.Sprintf("%s %s %s %d %d %d %d", m, rn, incrementSerial(record.Meta.Value), defaultSOARefresh, defaultSOARetry, defaultSOAExpire, defaultSOAMinimum)
+				_ = dnsrepo.SaveRecord(ctx, &record)
 				break
 			}
 		}

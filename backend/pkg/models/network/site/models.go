@@ -2,10 +2,15 @@ package site
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	networkcommon "homelab/pkg/models/network/common"
 	"homelab/pkg/models/shared"
+
+	"github.com/robfig/cron/v3"
 )
 
 type SiteSyncPolicyV1Meta struct {
@@ -21,6 +26,36 @@ type SiteSyncPolicyV1Meta struct {
 }
 
 func (m *SiteSyncPolicyV1Meta) Validate(_ context.Context) error {
+	m.Name = strings.TrimSpace(m.Name)
+	m.Description = strings.TrimSpace(m.Description)
+	m.SourceURL = strings.TrimSpace(m.SourceURL)
+	m.TargetGroupID = strings.TrimSpace(m.TargetGroupID)
+	m.Cron = strings.TrimSpace(m.Cron)
+	if m.Name == "" {
+		return errors.New("name is required")
+	}
+	if m.SourceURL == "" {
+		return errors.New("sourceUrl is required")
+	}
+	if m.TargetGroupID == "" {
+		return errors.New("targetGroupId is required")
+	}
+	if m.Cron == "" {
+		return errors.New("cron expression is required")
+	}
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+	if _, err := parser.Parse(m.Cron); err != nil {
+		return fmt.Errorf("invalid cron expression: %w", err)
+	}
+	if m.Format == "" {
+		m.Format = "text"
+	}
+	if m.Mode == "" {
+		m.Mode = "overwrite"
+	}
+	if m.Config == nil {
+		m.Config = map[string]string{}
+	}
 	return nil
 }
 
@@ -48,6 +83,11 @@ type SiteGroupV1Meta struct {
 }
 
 func (m *SiteGroupV1Meta) Validate(_ context.Context) error {
+	m.Name = strings.TrimSpace(m.Name)
+	m.Description = strings.TrimSpace(m.Description)
+	if m.Name == "" {
+		return errors.New("name is required")
+	}
 	return nil
 }
 
@@ -68,6 +108,18 @@ type SiteExportV1Meta struct {
 }
 
 func (m *SiteExportV1Meta) Validate(_ context.Context) error {
+	m.Name = strings.TrimSpace(m.Name)
+	m.Description = strings.TrimSpace(m.Description)
+	m.Rule = strings.TrimSpace(m.Rule)
+	if m.Name == "" {
+		return errors.New("name is required")
+	}
+	if m.Rule == "" {
+		return errors.New("rule expression is required")
+	}
+	if len(m.GroupIDs) == 0 {
+		return errors.New("at least one source group is required")
+	}
 	return nil
 }
 

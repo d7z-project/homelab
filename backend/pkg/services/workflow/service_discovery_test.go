@@ -5,15 +5,16 @@ import (
 	"strings"
 	"testing"
 
-	"homelab/pkg/common"
 	commonauth "homelab/pkg/common/auth"
 	discoverymodel "homelab/pkg/models/core/discovery"
 	rbacmodel "homelab/pkg/models/core/rbac"
 	workflowmodel "homelab/pkg/models/workflow"
 	actionrepo "homelab/pkg/repositories/workflow/actions"
+	runtimepkg "homelab/pkg/runtime"
 	registryruntime "homelab/pkg/runtime/registry"
 	actionservice "homelab/pkg/services/workflow"
 
+	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 )
 
@@ -27,11 +28,20 @@ func TestRegisterDiscovery(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	common.DB = db
+	registry := registryruntime.New()
+	deps := runtimepkg.ModuleDeps{
+		Dependencies: runtimepkg.Dependencies{
+			DB:     db,
+			FS:     afero.NewMemMapFs(),
+			TempFS: afero.NewMemMapFs(),
+		},
+		Registry: registry,
+	}
+	ctx := deps.WithContext(context.Background())
 
-	if err := actionrepo.WorkflowRepo.Cow(context.Background(), "wf-1", func(res *workflowmodel.Workflow) error {
-		res.ID = "wf-1"
-		res.Meta = workflowmodel.WorkflowV1Meta{
+	if err := actionrepo.SaveWorkflow(ctx, &workflowmodel.Workflow{
+		ID: "wf-1",
+		Meta: workflowmodel.WorkflowV1Meta{
 			Name:             "deploy",
 			Description:      "deploy workflow",
 			Enabled:          true,
@@ -40,19 +50,17 @@ func TestRegisterDiscovery(t *testing.T) {
 			Steps: []workflowmodel.Step{
 				{ID: "step1", Type: "core/sleep", Name: "Sleep", Params: map[string]string{"seconds": "1"}},
 			},
-		}
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
+		},
+		Generation: 1,
 	}); err != nil {
 		t.Fatalf("seed workflow: %v", err)
 	}
 
-	actionservice.RegisterDiscovery()
+	actionservice.RegisterDiscovery(registry)
 
-	ctx := commonauth.WithPermissions(context.Background(), &rbacmodel.ResourcePermissions{AllowedAll: true})
+	ctx = commonauth.WithPermissions(ctx, &rbacmodel.ResourcePermissions{AllowedAll: true})
 
-	lookup, err := registryruntime.Default().Lookup(ctx, discoverymodel.LookupRequest{
+	lookup, err := registry.Lookup(ctx, discoverymodel.LookupRequest{
 		Code:  "actions/workflows",
 		Limit: 20,
 	})
@@ -63,7 +71,7 @@ func TestRegisterDiscovery(t *testing.T) {
 		t.Fatalf("unexpected workflow lookup result: %#v", lookup.Items)
 	}
 
-	suggestions, err := registryruntime.Default().SuggestResources(ctx, "actions/workflows/")
+	suggestions, err := registry.SuggestResources(ctx, "actions/workflows/")
 	if err != nil {
 		t.Fatalf("suggest resources: %v", err)
 	}
@@ -71,7 +79,7 @@ func TestRegisterDiscovery(t *testing.T) {
 		t.Fatal("expected actions resource suggestions")
 	}
 
-	err = registryruntime.Default().CheckSAUsage(ctx, "sa-build")
+	err = registry.CheckSAUsage(ctx, "sa-build")
 	if err == nil || !strings.Contains(err.Error(), "deploy") {
 		t.Fatalf("expected SA usage error mentioning workflow, got %v", err)
 	}

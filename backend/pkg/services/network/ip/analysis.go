@@ -7,6 +7,7 @@ import (
 	networkcommon "homelab/pkg/models/network/common"
 	ipmodel "homelab/pkg/models/network/ip"
 	repo "homelab/pkg/repositories/network/ip"
+	runtimepkg "homelab/pkg/runtime"
 	ruleservice "homelab/pkg/services/rules"
 	"io"
 	"net/netip"
@@ -27,7 +28,7 @@ type AnalysisEngine struct {
 func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error) {
 	lockKey := "network:ip:trie:build:" + id
 	for {
-		release := common.Locker.TryLock(ctx, lockKey)
+		release := runtimepkg.LockerFromContext(ctx).TryLock(ctx, lockKey)
 		if release != nil {
 			return release, nil
 		}
@@ -85,7 +86,7 @@ func (e *AnalysisEngine) GetTrie(ctx context.Context, groupID string) (*IPPoolTr
 
 	// 从 VFS 加载并构建
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	f, err := common.FS.Open(poolPath)
+	f, err := runtimepkg.FSFromContext(ctx).Open(poolPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open pool data: %w", err)
 	}
@@ -125,11 +126,11 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 
 	// 如果没有指定 groupIDs，则查询所有
 	if len(groupIDs) == 0 {
-		res, err := repo.PoolRepo.List(ctx, "", 1000, nil)
+		groups, err := repo.ScanAllPools(ctx)
 		if err != nil {
 			return nil, err
 		}
-		for _, g := range res.Items {
+		for _, g := range groups {
 			groupIDs = append(groupIDs, g.ID)
 		}
 	}
@@ -144,7 +145,7 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 		if ok {
 			// 1. 获取池名称
 			poolName := gid
-			if group, err := repo.PoolRepo.Get(ctx, gid); err == nil && group.Meta.Name != "" {
+			if group, err := repo.GetPool(ctx, gid); err == nil && group.Meta.Name != "" {
 				poolName = group.Meta.Name
 			}
 
@@ -160,7 +161,7 @@ func (e *AnalysisEngine) HitTest(ctx context.Context, ipStr string, groupIDs []s
 				displayTag := t
 				if strings.HasPrefix(tid, "_") {
 					// 尝试作为同步策略查找
-					if policy, err := repo.SyncPolicyRepo.Get(ctx, tid); err == nil && policy.Meta.Name != "" {
+					if policy, err := repo.GetSyncPolicy(ctx, tid); err == nil && policy.Meta.Name != "" {
 						displayTag = "策略: " + policy.Meta.Name
 					} else {
 						// 如果无法解析为策略名称，则隐藏该内部标签

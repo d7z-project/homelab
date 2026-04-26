@@ -15,6 +15,8 @@ func New() *Module { return &Module{} }
 
 func (m *Module) Name() string { return "core.discovery" }
 
+func (m *Module) Init(runtimepkg.ModuleDeps) error { return nil }
+
 func (m *Module) RegisterRoutes(r chi.Router) {
 	r.Route("/discovery", func(r chi.Router) {
 		r.Group(func(r chi.Router) {

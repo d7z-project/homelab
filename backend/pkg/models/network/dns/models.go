@@ -2,6 +2,8 @@ package dns
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"time"
 
 	"homelab/pkg/models/shared"
@@ -14,6 +16,11 @@ type DomainV1Meta struct {
 }
 
 func (m *DomainV1Meta) Validate(_ context.Context) error {
+	m.Name = strings.TrimSpace(m.Name)
+	m.Description = strings.TrimSpace(m.Description)
+	if m.Name == "" {
+		return errors.New("domain name is required")
+	}
 	return nil
 }
 
@@ -36,6 +43,23 @@ type RecordV1Meta struct {
 }
 
 func (m *RecordV1Meta) Validate(_ context.Context) error {
+	m.DomainID = strings.TrimSpace(m.DomainID)
+	m.Name = strings.TrimSpace(m.Name)
+	m.Type = strings.TrimSpace(m.Type)
+	m.Value = strings.TrimSpace(m.Value)
+	m.Comments = strings.TrimSpace(m.Comments)
+	if m.DomainID == "" {
+		return errors.New("domainId is required")
+	}
+	if m.Name == "" {
+		return errors.New("record name is required")
+	}
+	if m.Type == "" {
+		return errors.New("record type is required")
+	}
+	if m.Value == "" {
+		return errors.New("record value is required")
+	}
 	return nil
 }
 

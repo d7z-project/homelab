@@ -8,6 +8,7 @@ import (
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
+	runtimepkg "homelab/pkg/runtime"
 
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ const (
 )
 
 type IPPoolService struct {
+	deps           runtimepkg.ModuleDeps
 	cron           *cron.Cron
 	cronIDs        map[string]cron.EntryID
 	cronLock       sync.Mutex
@@ -70,18 +72,19 @@ func (t *SyncTask) SetProgress(progress float64) {
 
 var _ shared.TaskInfo = (*SyncTask)(nil)
 
-func NewIPPoolService(ae *AnalysisEngine, em *ExportManager) *IPPoolService {
+func NewIPPoolService(deps runtimepkg.ModuleDeps, ae *AnalysisEngine, em *ExportManager) *IPPoolService {
 	svc := &IPPoolService{
+		deps:           deps,
 		analysisEngine: ae,
 		exportManager:  em,
 		cron:           cron.New(),
 		cronIDs:        make(map[string]cron.EntryID),
-		syncTasks:      task.NewManager[*SyncTask]("action:ip_sync", "sync_tasks", "network", "ip"),
+		syncTasks:      task.NewManager[*SyncTask](deps, "action:ip_sync", "sync_tasks", "network", "ip"),
 	}
 
 	// 集群事件: 变更同步策略时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
 	common.RegisterEventHandler(common.EventIPSyncPolicyChanged, func(ctx context.Context, policyID string) {
-		policy, err := repo.SyncPolicyRepo.Get(ctx, policyID)
+		policy, err := repo.GetSyncPolicy(ctx, policyID)
 		if err != nil {
 			svc.removeCronJob(policyID)
 			return
@@ -112,7 +115,7 @@ func NewIPPoolService(ae *AnalysisEngine, em *ExportManager) *IPPoolService {
 func (s *IPPoolService) lockPool(ctx context.Context, id string) (func(), error) {
 	lockKey := "network:ip:pool:" + id
 	for {
-		release := common.Locker.TryLock(ctx, lockKey)
+		release := s.deps.Locker.TryLock(ctx, lockKey)
 		if release != nil {
 			return release, nil
 		}
@@ -143,20 +146,20 @@ func (s *IPPoolService) StartSyncRunner(ctx context.Context) {
 	for _, t := range s.syncTasks.RangeAll() {
 		status := t.GetStatus()
 		if status == shared.TaskStatusFailed || status == shared.TaskStatusCancelled {
-			p, err := repo.SyncPolicyRepo.Get(sysCtx, t.GetID())
+			p, err := repo.GetSyncPolicy(sysCtx, t.GetID())
 			if err == nil && (p.Status.LastStatus == shared.TaskStatusRunning || p.Status.LastStatus == shared.TaskStatusPending) {
 				p.Status.LastStatus = status
 				p.Status.ErrorMessage = t.Error
 				p.Status.LastRunAt = time.Now()
-				_ = repo.SyncPolicyRepo.Cow(sysCtx, p.ID, func(res *ipmodel.IPSyncPolicy) error { res.Meta = p.Meta; res.Status = p.Status; return nil })
+				_ = repo.SaveSyncPolicy(sysCtx, p)
 			}
 		}
 	}
 
 	// 然后调度启用的策略
-	policiesRes, err := repo.SyncPolicyRepo.List(sysCtx, "", 10000, nil)
+	policies, err := repo.ScanAllSyncPolicies(sysCtx)
 	if err == nil {
-		for _, p := range policiesRes.Items {
+		for _, p := range policies {
 			if p.Meta.Enabled {
 				s.addCronJob(p)
 			}

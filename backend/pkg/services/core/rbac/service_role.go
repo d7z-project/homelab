@@ -9,7 +9,6 @@ import (
 	rbacrepo "homelab/pkg/repositories/core/rbac"
 
 	rbacmodel "homelab/pkg/models/core/rbac"
-	"homelab/pkg/models/shared"
 
 	"github.com/google/uuid"
 )
@@ -28,12 +27,7 @@ func CreateRole(ctx context.Context, role *rbacmodel.Role) (*rbacmodel.Role, err
 		return nil, errors.New("Role ID already exists")
 	}
 
-	err := rbacrepo.RoleRepo.Cow(ctx, role.ID, func(res *shared.Resource[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]) error {
-		res.Meta = role.Meta
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	err := rbacrepo.SaveRole(ctx, role)
 
 	message := fmt.Sprintf("Created Role: %s (id: %s) with rules: %+v", role.Meta.Name, role.ID, role.Meta.Rules)
 	if err != nil {
@@ -54,10 +48,13 @@ func UpdateRole(ctx context.Context, id string, role *rbacmodel.Role) (*rbacmode
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
-	err := rbacrepo.RoleRepo.PatchMeta(ctx, id, role.Generation, func(m *rbacmodel.RoleV1Meta) {
-		m.Name = role.Meta.Name
-		m.Rules = role.Meta.Rules
-	})
+	existing, err := rbacrepo.GetRole(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	existing.Meta.Name = role.Meta.Name
+	existing.Meta.Rules = role.Meta.Rules
+	err = rbacrepo.SaveRole(ctx, existing)
 
 	message := fmt.Sprintf("Updated Role %s", id)
 	if err != nil {
@@ -101,10 +98,10 @@ func DeleteRole(ctx context.Context, id string) error {
 			}
 			if found {
 				if len(newRoleIDs) == 0 {
-					_ = rbacrepo.BindingRepo.Delete(ctx, rb.ID)
+					_ = rbacrepo.DeleteRoleBinding(ctx, rb.ID)
 				} else {
 					rb.Meta.RoleIDs = newRoleIDs
-					if err := rbacrepo.BindingRepo.Save(ctx, &rb); err == nil {
+					if err := rbacrepo.SaveRoleBinding(ctx, &rb); err == nil {
 						rbacrepo.InvalidateCache("")
 					}
 				}
@@ -113,7 +110,7 @@ func DeleteRole(ctx context.Context, id string) error {
 	}
 
 	message := fmt.Sprintf("Deleted Role: %s (name: %s) with rules: %+v", existing.ID, existing.Meta.Name, existing.Meta.Rules)
-	if err := rbacrepo.RoleRepo.Delete(ctx, id); err != nil {
+	if err := rbacrepo.DeleteRole(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteRole", id, message, false)
 		return err
 	}

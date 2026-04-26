@@ -19,6 +19,7 @@ func ValidateRegex(regex string) error {
 }
 
 func Probe(ctx context.Context, processorID string, params map[string]string) (map[string]string, error) {
+	rt := MustRuntime(ctx)
 	processor, ok := GetProcessor(processorID)
 	if !ok {
 		return nil, fmt.Errorf("processor not found: %s", processorID)
@@ -28,19 +29,19 @@ func Probe(ctx context.Context, processorID string, params map[string]string) (m
 	instanceID := fmt.Sprintf("probe_%d", time.Now().UnixNano())
 
 	// Create a temporary workspace for probe in actionsFS
-	workspace, err := afero.TempDir(actionsFS, "", instanceID)
+	workspace, err := afero.TempDir(rt.ActionsFS, "", instanceID)
 	if err != nil {
 		return nil, err
 	}
-	defer actionsFS.RemoveAll(workspace)
+	defer rt.ActionsFS.RemoveAll(workspace)
 
 	// Use '_probe' as a reserved workflow ID for system-level tests
-	logger, err := NewTaskLogger("_probe", instanceID)
+	logger, err := NewTaskLogger(ctx, "_probe", instanceID)
 	if err != nil {
 		return nil, err
 	}
 	defer logger.Close()
-	defer RemoveTaskLogs("_probe", instanceID)
+	defer RemoveTaskLogs(ctx, "_probe", instanceID)
 
 	authCtx := commonauth.FromContext(ctx)
 	userID := "anonymous"
@@ -55,7 +56,7 @@ func Probe(ctx context.Context, processorID string, params map[string]string) (m
 	taskCtx := &TaskContext{
 		WorkflowID:       "_probe",
 		InstanceID:       instanceID,
-		Workspace:        afero.NewBasePathFs(actionsFS, workspace),
+		Workspace:        afero.NewBasePathFs(rt.ActionsFS, workspace),
 		UserID:           userID,
 		ServiceAccountID: "root", // Probes run as root for full validation
 		Context:          ctx,

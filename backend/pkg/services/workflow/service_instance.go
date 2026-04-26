@@ -12,6 +12,7 @@ import (
 
 	"homelab/pkg/models/shared"
 	workflowmodel "homelab/pkg/models/workflow"
+	runtimepkg "homelab/pkg/runtime"
 )
 
 func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, userID string, triggerSource string, inputs map[string]string) (string, error) {
@@ -82,7 +83,7 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 		return "", fmt.Errorf("failed to save pending instance: %v", err)
 	}
 
-	if common.Subscriber != nil {
+	if runtimepkg.SubscriberFromContext(ctx) != nil {
 		payload := workflowmodel.WorkflowExecutePayload{
 			WorkflowID: workflow.ID,
 			InstanceID: instanceID,
@@ -93,7 +94,7 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 		common.NotifyCluster(ctx, common.EventWorkflowExecute, payload)
 	} else {
 		// Standalone/Test mode fallback: execute locally
-		_, _ = GlobalExecutor.Execute(ctx, userID, workflow, triggerSource, finalInputs, instanceID)
+		_, _ = MustRuntime(ctx).Executor.Execute(ctx, userID, workflow, triggerSource, finalInputs, instanceID)
 	}
 
 	message := fmt.Sprintf("%s triggered workflow %s (Instance: %s)", triggerSource, workflow.Meta.Name, instanceID)
@@ -104,7 +105,7 @@ func TriggerWorkflow(ctx context.Context, workflow *workflowmodel.Workflow, user
 func RunWorkflow(ctx context.Context, workflowID string, inputs map[string]string, triggerSource string) (string, error) {
 	// Use distributed lock to prevent concurrent triggers for the same workflow
 	lockKey := "action:trigger:" + workflowID
-	release := common.Locker.TryLock(ctx, lockKey)
+	release := runtimepkg.LockerFromContext(ctx).TryLock(ctx, lockKey)
 	if release == nil {
 		return "", fmt.Errorf("workflow '%s' is already being triggered, please wait", workflowID)
 	}
@@ -149,7 +150,7 @@ func GetTaskInstance(ctx context.Context, id string) (*workflowmodel.TaskInstanc
 	}
 
 	// Populate logs from all parts
-	logs, _ := ReadAllTaskLogs(inst.Meta.WorkflowID, id)
+	logs, _ := ReadAllTaskLogs(ctx, inst.Meta.WorkflowID, id)
 	if logs != nil {
 		inst.Status.Logs = logs
 	} else {
@@ -169,7 +170,7 @@ func ScanTaskInstances(ctx context.Context, cursor string, limit int, search str
 	}
 	for i := range res.Items {
 		// Populate logs from all parts
-		logs, _ := ReadAllTaskLogs(res.Items[i].Meta.WorkflowID, res.Items[i].ID)
+		logs, _ := ReadAllTaskLogs(ctx, res.Items[i].Meta.WorkflowID, res.Items[i].ID)
 		if logs != nil {
 			res.Items[i].Status.Logs = logs
 		} else {
@@ -200,7 +201,7 @@ func DeleteTaskInstance(ctx context.Context, id string) error {
 	}
 
 	// Also remove logs
-	_ = RemoveTaskLogs(inst.Meta.WorkflowID, id)
+	_ = RemoveTaskLogs(ctx, inst.Meta.WorkflowID, id)
 	return nil
 }
 
@@ -223,7 +224,7 @@ func CleanupTaskInstances(ctx context.Context, days int) (int, error) {
 		// Only cleanup non-running instances older than cutoff
 		if inst.Status.Status != "Running" && inst.Status.StartedAt.Before(cutoff) {
 			_ = repo.DeleteTaskInstance(ctx, inst.ID)
-			_ = RemoveTaskLogs(inst.Meta.WorkflowID, inst.ID)
+			_ = RemoveTaskLogs(ctx, inst.Meta.WorkflowID, inst.ID)
 			count++
 		}
 	}
@@ -242,7 +243,7 @@ func CancelTaskInstance(ctx context.Context, id string) error {
 	}
 
 	message := fmt.Sprintf("Requested cancellation of task instance %s", id)
-	if GlobalExecutor.Cancel(id) {
+	if MustRuntime(ctx).Executor.Cancel(id) {
 		commonaudit.FromContext(ctx).Log("CancelTask", id, message, true)
 		return nil
 	}

@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+	runtimepkg "homelab/pkg/runtime"
 	"log"
 	"reflect"
 	"strings"
@@ -76,13 +77,14 @@ func RegisterEventHandler[T any](event string, handler func(ctx context.Context,
 func StartEventLoop(ctx context.Context) {
 	eventLoopMu.Lock()
 	defer eventLoopMu.Unlock()
-	if eventLoopStarted || Subscriber == nil {
+	subscriber := runtimepkg.SubscriberFromContext(ctx)
+	if eventLoopStarted || subscriber == nil {
 		return
 	}
 	eventLoopStarted = true
 
 	go func() {
-		ch, err := Subscriber.Subscribe(ctx, "homelab:cluster:events")
+		ch, err := subscriber.Subscribe(ctx, "homelab:cluster:events")
 		if err != nil {
 			log.Printf("Failed to subscribe to cluster events: %v", err)
 			eventLoopMu.Lock()
@@ -137,7 +139,8 @@ func ResetEventHandlers() {
 
 // NotifyCluster broadcasts an event with an optional payload to the cluster.
 func NotifyCluster(ctx context.Context, event string, payload any) {
-	if Subscriber == nil {
+	subscriber := runtimepkg.SubscriberFromContext(ctx)
+	if subscriber == nil {
 		return
 	}
 	msg := event
@@ -152,7 +155,7 @@ func NotifyCluster(ctx context.Context, event string, payload any) {
 		msg = event + ":" + pStr
 	}
 
-	if err := Subscriber.Publish(ctx, "homelab:cluster:events", msg); err != nil {
+	if err := subscriber.Publish(ctx, "homelab:cluster:events", msg); err != nil {
 		log.Printf("[Events] failed to notify cluster: %v", err)
 	}
 }

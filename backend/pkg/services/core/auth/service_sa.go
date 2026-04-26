@@ -28,7 +28,7 @@ func UpdateSALastUsed(saID string) {
 
 	go func() {
 		ctx := context.Background()
-		_ = rbacrepo.ServiceAccountRepo.UpdateStatus(ctx, saID, func(status *rbacmodel.ServiceAccountV1Status) {
+		_ = rbacrepo.UpdateServiceAccountStatus(ctx, saID, func(status *rbacmodel.ServiceAccountV1Status) {
 			status.LastUsedAt = now.Format(time.RFC3339)
 		})
 	}()
@@ -76,7 +76,7 @@ func HashToken(token string) string {
 }
 
 func IsSAEnabled(ctx context.Context, saID string, currentToken string) bool {
-	sa, err := rbacrepo.ServiceAccountRepo.Get(ctx, saID)
+	sa, err := rbacrepo.GetServiceAccount(ctx, saID)
 	if err != nil || sa == nil {
 		return false
 	}

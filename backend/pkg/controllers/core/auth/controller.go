@@ -6,12 +6,12 @@ import (
 	"homelab/pkg/common"
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
+	controllercommon "homelab/pkg/controllers"
 	"net/http"
 
 	authservice "homelab/pkg/services/core/auth"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 // LoginHandler godoc
@@ -24,9 +24,8 @@ import (
 // @Failure 401 {object} common.Response "Unauthorized"
 // @Router /auth/login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var req apiv1.LoginRequest
-	if err := render.Bind(r, &req); err != nil {
-		common.BadRequestError(w, r, http.StatusBadRequest, err.Error())
+	req, ok := controllercommon.BindRequest[apiv1.LoginRequest](w, r)
+	if !ok {
 		return
 	}
 

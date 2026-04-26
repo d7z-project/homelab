@@ -21,6 +21,8 @@ type testModule struct {
 
 func (m *testModule) Name() string { return m.name }
 
+func (m *testModule) Init(runtimepkg.ModuleDeps) error { return nil }
+
 func (m *testModule) RegisterRoutes(r chi.Router) {
 	if m.routesHit != nil {
 		*m.routesHit = true

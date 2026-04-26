@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"homelab/pkg/common"
-	intelligencemodel "homelab/pkg/models/network/intelligence"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/intelligence"
+	runtimepkg "homelab/pkg/runtime"
 	"homelab/pkg/services/network/ip"
 	"log"
 	"sync"
@@ -22,6 +22,7 @@ var (
 )
 
 type IntelligenceService struct {
+	deps    runtimepkg.ModuleDeps
 	mmdb    *ip.MMDBManager
 	cron    *cron.Cron
 	entries map[string]cron.EntryID
@@ -68,18 +69,19 @@ func (t *SyncTask) SetProgress(progress float64) {
 
 var _ shared.TaskInfo = (*SyncTask)(nil)
 
-func NewIntelligenceService(mmdb *ip.MMDBManager) *IntelligenceService {
+func NewIntelligenceService(deps runtimepkg.ModuleDeps, mmdb *ip.MMDBManager) *IntelligenceService {
 	s := &IntelligenceService{
+		deps:    deps,
 		mmdb:    mmdb,
 		cron:    cron.New(),
 		entries: make(map[string]cron.EntryID),
-		tasks:   task.NewManager[*SyncTask]("action:intelligence_sync", "sync_tasks", "network", "intelligence"),
+		tasks:   task.NewManager[*SyncTask](deps, "action:intelligence_sync", "sync_tasks", "network", "intelligence"),
 	}
 	s.cron.Start()
 
 	// 集群事件: 变更数据源时，刷新本节点 cron 调度 (涵盖创建、更新、删除及启停)
 	common.RegisterEventHandler(common.EventIntelligenceSourceChanged, func(ctx context.Context, sourceID string) {
-		src, err := repo.SourceRepo.Get(ctx, sourceID)
+		src, err := repo.GetSource(ctx, sourceID)
 		if err != nil {
 			s.removeCronJob(sourceID)
 			return
@@ -108,11 +110,7 @@ func (s *IntelligenceService) Init(ctx context.Context) error {
 			if err == nil && (src.Status.Status == shared.TaskStatusRunning || src.Status.Status == shared.TaskStatusPending) {
 				src.Status.Status = status
 				src.Status.ErrorMessage = t.Error
-				_ = repo.SourceRepo.Cow(ctx, src.ID, func(res *intelligencemodel.IntelligenceSource) error {
-					res.Meta = src.Meta
-					res.Status = src.Status
-					return nil
-				})
+				_ = repo.SaveSource(ctx, src)
 			}
 		}
 	}

@@ -21,10 +21,10 @@ type moduleOptions struct {
 	enableIntelligence bool
 }
 
-func buildModules(mmdbSources []intelligencemodel.IntelligenceSource, options moduleOptions) []runtimepkg.Module {
+func buildModules(deps runtimepkg.ModuleDeps, mmdbSources []intelligencemodel.IntelligenceSource, options moduleOptions) []runtimepkg.Module {
 	var enricher *ip.MMDBManager
 	if options.enableIntelligence {
-		enricher = ip.NewMMDBManager(mmdbSources)
+		enricher = ip.NewMMDBManager(deps, mmdbSources)
 	}
 	modules := []runtimepkg.Module{
 		modulediscovery.New(),

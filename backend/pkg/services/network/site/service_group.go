@@ -9,7 +9,6 @@ import (
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/site"
-	ruleservice "homelab/pkg/services/rules"
 	"path/filepath"
 	"slices"
 	"time"
@@ -23,14 +22,9 @@ func (s *SitePoolService) CreateGroup(ctx context.Context, group *sitemodel.Site
 		return err
 	}
 
-	err := ruleservice.CreateAndLoad(ctx, repo.GroupRepo, group, func(res *shared.Resource[sitemodel.SiteGroupV1Meta, sitemodel.SiteGroupV1Status]) error {
-		res.Meta = group.Meta
-		res.Status.CreatedAt = time.Now()
-		res.Status.UpdatedAt = time.Now()
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	group.Status.CreatedAt = time.Now()
+	group.Status.UpdatedAt = time.Now()
+	err := repo.SaveGroup(ctx, group)
 
 	commonaudit.FromContext(ctx).Log("CreateSiteGroup", group.Meta.Name, "Created", err == nil)
 	return err
@@ -41,7 +35,12 @@ func (s *SitePoolService) UpdateGroup(ctx context.Context, group *sitemodel.Site
 		return err
 	}
 
-	err := ruleservice.ReplaceMeta(ctx, repo.GroupRepo, group)
+	current, err := repo.GetGroup(ctx, group.ID)
+	if err == nil {
+		current.Meta = group.Meta
+		current.Status.UpdatedAt = time.Now()
+		err = repo.SaveGroup(ctx, current)
+	}
 	commonaudit.FromContext(ctx).Log("UpdateSiteGroup", group.Meta.Name, "Updated", err == nil)
 	return err
 }
@@ -73,7 +72,7 @@ func (s *SitePoolService) DeleteGroup(ctx context.Context, id string) error {
 	}
 
 	poolPath := filepath.Join(PoolsDir, id+".bin")
-	_ = common.FS.Remove(poolPath)
+	_ = s.deps.FS.Remove(poolPath)
 	if s.engine != nil {
 		notifySitePoolChanged(ctx, id)
 	}
@@ -94,9 +93,19 @@ func (s *SitePoolService) GetGroup(ctx context.Context, id string) (*sitemodel.S
 func (s *SitePoolService) ScanGroups(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[sitemodel.SiteGroup], error) {
 	perms := commonauth.PermissionsFromContext(ctx)
 	hasGlobal := perms.IsAllowed(siteResourceBase)
-	return ruleservice.ScanBySearch(ctx, repo.GroupRepo, cursor, limit, search, func(g *sitemodel.SiteGroup) bool {
-		return hasGlobal || perms.IsAllowed(siteGroupResource(g.ID))
-	}, func(meta *sitemodel.SiteGroupV1Meta) string {
-		return meta.Name
-	})
+	res, err := repo.ScanGroups(ctx, cursor, limit, search)
+	if err != nil {
+		return nil, err
+	}
+	if hasGlobal {
+		return res, nil
+	}
+	filtered := make([]sitemodel.SiteGroup, 0, len(res.Items))
+	for _, item := range res.Items {
+		if perms.IsAllowed(siteGroupResource(item.ID)) {
+			filtered = append(filtered, item)
+		}
+	}
+	res.Items = filtered
+	return res, nil
 }

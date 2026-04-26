@@ -16,7 +16,6 @@ import (
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
-	ruleservice "homelab/pkg/services/rules"
 	"io"
 	"net/http"
 	"net/netip"
@@ -42,7 +41,7 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *ipmodel.IP
 	if policy.ID == "" {
 		for i := 0; i < 10; i++ { // 最多重试 10 次
 			newID := generatePolicyID()
-			if _, err := repo.SyncPolicyRepo.Get(ctx, newID); err != nil {
+			if _, err := repo.GetSyncPolicy(ctx, newID); err != nil {
 				policy.ID = newID
 				break
 			}
@@ -53,13 +52,7 @@ func (s *IPPoolService) CreateSyncPolicy(ctx context.Context, policy *ipmodel.IP
 	}
 	policy.Status.CreatedAt = time.Now()
 	policy.Status.UpdatedAt = time.Now()
-	err := ruleservice.CreateAndLoad(ctx, repo.SyncPolicyRepo, policy, func(res *ipmodel.IPSyncPolicy) error {
-		res.Meta = policy.Meta
-		res.Status = policy.Status
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	err := repo.SaveSyncPolicy(ctx, policy)
 	if err == nil && policy.Meta.Enabled {
 		s.addCronJob(*policy)
 		common.NotifyCluster(ctx, common.EventIPSyncPolicyChanged, policy.ID)
@@ -73,10 +66,15 @@ func (s *IPPoolService) UpdateSyncPolicy(ctx context.Context, policy *ipmodel.IP
 		return err
 	}
 
-	err := ruleservice.ReplaceMeta(ctx, repo.SyncPolicyRepo, policy)
+	current, err := repo.GetSyncPolicy(ctx, policy.ID)
+	if err == nil {
+		current.Meta = policy.Meta
+		current.Status.UpdatedAt = time.Now()
+		err = repo.SaveSyncPolicy(ctx, current)
+	}
 
 	if err == nil {
-		updated, _ := repo.SyncPolicyRepo.Get(ctx, policy.ID)
+		updated, _ := repo.GetSyncPolicy(ctx, policy.ID)
 		if updated != nil {
 			if updated.Meta.Enabled {
 				s.addCronJob(*updated)
@@ -94,11 +92,11 @@ func (s *IPPoolService) DeleteSyncPolicy(ctx context.Context, id string) error {
 	if err := requireIPResource(ctx, ipResourceBase); err != nil {
 		return err
 	}
-	old, err := repo.SyncPolicyRepo.Get(ctx, id)
+	old, err := repo.GetSyncPolicy(ctx, id)
 	if err != nil {
 		return err
 	}
-	err = repo.SyncPolicyRepo.Delete(ctx, id)
+	err = repo.DeleteSyncPolicy(ctx, id)
 	if err == nil {
 		s.removeCronJob(id)
 		common.NotifyCluster(ctx, common.EventIPSyncPolicyChanged, id)
@@ -111,14 +109,14 @@ func (s *IPPoolService) GetSyncPolicy(ctx context.Context, id string) (*ipmodel.
 	if err := requireIPResource(ctx, ipResourceBase); err != nil {
 		return nil, err
 	}
-	return repo.SyncPolicyRepo.Get(ctx, id)
+	return repo.GetSyncPolicy(ctx, id)
 }
 
 func (s *IPPoolService) ScanSyncPolicies(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[ipmodel.IPSyncPolicy], error) {
 	if err := requireIPResource(ctx, ipResourceBase); err != nil {
 		return nil, err
 	}
-	res, err := repo.SyncPolicyRepo.List(ctx, cursor, limit, nil)
+	res, err := repo.ScanSyncPolicies(ctx, cursor, limit, search)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +139,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 	if err := requireIPResource(ctx, ipResourceBase); err != nil {
 		return err
 	}
-	policy, err := repo.SyncPolicyRepo.Get(ctx, id)
+	policy, err := repo.GetSyncPolicy(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -153,7 +151,7 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 		status := existingTask.GetStatus()
 		if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
 			lockKey := "action:ip_sync:" + id
-			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+			if release := s.deps.Locker.TryLock(ctx, lockKey); release != nil {
 				// 任务僵死：框架强制标记取消
 				s.syncTasks.CancelTask(id)
 				release()
@@ -172,9 +170,9 @@ func (s *IPPoolService) Sync(ctx context.Context, id string) error {
 
 	policy.Status.LastStatus = shared.TaskStatusPending
 	policy.Status.LastRunAt = time.Now()
-	_ = repo.SyncPolicyRepo.Cow(ctx, policy.ID, func(res *ipmodel.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
+	_ = repo.SaveSyncPolicy(ctx, policy)
 
-	if common.Subscriber != nil {
+	if s.deps.Subscriber != nil {
 		common.NotifyCluster(ctx, common.EventIPSyncRun, id)
 	} else {
 		// Standalone/Test mode fallback: execute locally in background
@@ -197,14 +195,14 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 	var finalErr error
 	s.syncTasks.RunTask(bgCtx, policyID, func(taskCtx context.Context, task *SyncTask) error {
 		// 重新加载 policy 以获取最新配置
-		policy, err := repo.SyncPolicyRepo.Get(taskCtx, policyID)
+		policy, err := repo.GetSyncPolicy(taskCtx, policyID)
 		if err != nil || policy == nil {
 			finalErr = fmt.Errorf("policy is nil or missing")
 			return finalErr
 		}
 
 		policy.Status.LastStatus = shared.TaskStatusRunning
-		_ = repo.SyncPolicyRepo.Cow(taskCtx, policy.ID, func(res *ipmodel.IPSyncPolicy) error { res.Meta = policy.Meta; res.Status = policy.Status; return nil })
+		_ = repo.SaveSyncPolicy(taskCtx, policy)
 
 		defer func() {
 			if policy == nil {
@@ -517,20 +515,20 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 		defer release()
 
 		var group *ipmodel.IPPool
-		group, err = repo.PoolRepo.Get(taskCtx, policy.Meta.TargetGroupID)
+		group, err = repo.GetPool(taskCtx, policy.Meta.TargetGroupID)
 		if err != nil {
 			finalErr = err
 			return err
 		}
 
-		_ = common.FS.MkdirAll(PoolsDir, 0755)
+		_ = s.deps.FS.MkdirAll(PoolsDir, 0755)
 		poolPath := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin")
 		tempFile := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin.tmp")
 
 		// 处理旧数据合并
-		if exists, _ := afero.Exists(common.FS, poolPath); exists {
+		if exists, _ := afero.Exists(s.deps.FS, poolPath); exists {
 			var pf afero.File
-			pf, err = common.FS.Open(poolPath)
+			pf, err = s.deps.FS.Open(poolPath)
 			if err == nil {
 				reader, _ := NewReader(pf)
 				oldTags := reader.Tags()
@@ -601,7 +599,7 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 		finalTags := newTags
 		// 写入最终文件
 		var tf afero.File
-		tf, err = common.FS.Create(tempFile)
+		tf, err = s.deps.FS.Create(tempFile)
 		if err != nil {
 			finalErr = err
 			return err
@@ -610,16 +608,16 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 		err = codec.WritePool(tf, finalTags, finalEntries)
 		tf.Close()
 		if err != nil {
-			_ = common.FS.Remove(tempFile)
+			_ = s.deps.FS.Remove(tempFile)
 			finalErr = err
 			return err
 		}
 
 		// 计算哈希并更新元数据
 		var content []byte
-		content, err = afero.ReadFile(common.FS, tempFile)
+		content, err = afero.ReadFile(s.deps.FS, tempFile)
 		if err != nil {
-			_ = common.FS.Remove(tempFile)
+			_ = s.deps.FS.Remove(tempFile)
 			finalErr = err
 			return err
 		}
@@ -630,12 +628,12 @@ func (s *IPPoolService) doSync(bgCtx context.Context, policyID string) error {
 		group.Status.UpdatedAt = time.Now()
 		group.Status.Checksum = hex.EncodeToString(hf.Sum(nil))
 
-		if err := common.FS.Rename(tempFile, poolPath); err != nil {
+		if err := s.deps.FS.Rename(tempFile, poolPath); err != nil {
 			finalErr = err
 			return err
 		}
 
-		err = repo.PoolRepo.UpdateStatus(taskCtx, group.ID, func(s *ipmodel.IPPoolV1Status) {
+		err = repo.UpdatePoolStatus(taskCtx, group.ID, func(s *ipmodel.IPPoolV1Status) {
 			s.EntryCount = int64(len(finalEntries))
 			s.UpdatedAt = time.Now()
 			s.Checksum = hex.EncodeToString(hf.Sum(nil))

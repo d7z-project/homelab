@@ -4,6 +4,7 @@ import (
 	apiv1 "homelab/pkg/apis/core/discovery/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
+	runtimepkg "homelab/pkg/runtime"
 	registryruntime "homelab/pkg/runtime/registry"
 	"net/http"
 
@@ -48,7 +49,13 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := registryruntime.Default().Lookup(r.Context(), toModelLookupRequest(req))
+	registry := runtimepkg.RegistryFromContext(r.Context())
+	if registry == nil {
+		common.InternalServerError(w, r, http.StatusInternalServerError, "registry not configured")
+		return
+	}
+
+	res, err := registry.Lookup(r.Context(), toModelLookupRequest(req))
 	if err != nil {
 		if err == registryruntime.ErrCodeNotFound {
 			common.Error(w, r, http.StatusNotFound, http.StatusNotFound, err.Error())
@@ -71,6 +78,11 @@ func lookupHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /discovery/codes [get]
 // @Security ApiKeyAuth
 func ScanCodesHandler(w http.ResponseWriter, r *http.Request) {
-	codes := registryruntime.Default().ScanCodes()
+	registry := runtimepkg.RegistryFromContext(r.Context())
+	if registry == nil {
+		common.InternalServerError(w, r, http.StatusInternalServerError, "registry not configured")
+		return
+	}
+	codes := registry.ScanCodes()
 	common.Success(w, r, codes)
 }

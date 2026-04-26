@@ -15,22 +15,24 @@ import (
 )
 
 type Module struct {
+	enricher *ipservice.MMDBManager
 	service  *ipservice.IPPoolService
 	analysis *ipservice.AnalysisEngine
 	exports  *ipservice.ExportManager
 }
 
 func New(enricher *ipservice.MMDBManager) *Module {
-	analysis := ipservice.NewAnalysisEngine(enricher)
-	exports := ipservice.NewExportManager(analysis)
-	return &Module{
-		service:  ipservice.NewIPPoolService(analysis, exports),
-		analysis: analysis,
-		exports:  exports,
-	}
+	return &Module{enricher: enricher}
 }
 
 func (m *Module) Name() string { return "network.ip" }
+
+func (m *Module) Init(deps runtimepkg.ModuleDeps) error {
+	m.analysis = ipservice.NewAnalysisEngine(m.enricher)
+	m.exports = ipservice.NewExportManager(deps, m.analysis)
+	m.service = ipservice.NewIPPoolService(deps, m.analysis, m.exports)
+	return nil
+}
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	routerx.Mount(r, "/network/ip", routerx.Scope{
@@ -69,7 +71,7 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 }
 
 func (m *Module) Start(ctx context.Context) error {
-	ruleservice.RegisterIPDiscovery()
+	ruleservice.RegisterIPDiscovery(runtimepkg.RegistryFromContext(ctx))
 	m.service.StartSyncRunner(ctx)
 	return nil
 }

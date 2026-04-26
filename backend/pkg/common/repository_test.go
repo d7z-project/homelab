@@ -6,7 +6,10 @@ import (
 	"testing"
 
 	"homelab/pkg/models/shared"
+	runtimepkg "homelab/pkg/runtime"
+	registryruntime "homelab/pkg/runtime/registry"
 
+	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 )
 
@@ -25,7 +28,7 @@ type repoTestStatus struct {
 	State string `json:"state"`
 }
 
-func newTestRepository(t *testing.T) *BaseRepository[repoTestMeta, repoTestStatus] {
+func newTestRepository(t *testing.T) (*BaseRepository[repoTestMeta, repoTestStatus], context.Context) {
 	t.Helper()
 	db, err := kv.NewKVFromURL("memory://")
 	if err != nil {
@@ -34,15 +37,21 @@ func newTestRepository(t *testing.T) *BaseRepository[repoTestMeta, repoTestStatu
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	DB = db
-	return NewBaseRepository[repoTestMeta, repoTestStatus]("test", "objects")
+	deps := runtimepkg.ModuleDeps{
+		Dependencies: runtimepkg.Dependencies{
+			DB:     db,
+			FS:     afero.NewMemMapFs(),
+			TempFS: afero.NewMemMapFs(),
+		},
+		Registry: registryruntime.New(),
+	}
+	return NewBaseRepository[repoTestMeta, repoTestStatus]("test", "objects"), deps.WithContext(context.Background())
 }
 
 func TestBaseRepositoryCowPatchMetaAndStatus(t *testing.T) {
 	t.Parallel()
 
-	repo := newTestRepository(t)
-	ctx := context.Background()
+	repo, ctx := newTestRepository(t)
 
 	if err := repo.Cow(ctx, "alpha", func(res *shared.Resource[repoTestMeta, repoTestStatus]) error {
 		res.ID = "alpha"
@@ -101,8 +110,7 @@ func TestBaseRepositoryCowPatchMetaAndStatus(t *testing.T) {
 func TestBaseRepositoryListAndListAll(t *testing.T) {
 	t.Parallel()
 
-	repo := newTestRepository(t)
-	ctx := context.Background()
+	repo, ctx := newTestRepository(t)
 
 	for _, name := range []string{"alpha", "beta", "gamma"} {
 		resourceName := name

@@ -59,12 +59,3 @@ func GetSearchCursorParams(r *http.Request) (string, int, string) {
 func PathID(r *http.Request, param string) string {
 	return chi.URLParam(r, param)
 }
-
-func PathIDWithScopedPermission(w http.ResponseWriter, r *http.Request, param string, resourceBase string) (string, bool) {
-	id := PathID(r, param)
-	if err := RequireScopedPermission(r.Context(), resourceBase, id); err != nil {
-		HandleError(w, r, err)
-		return "", false
-	}
-	return id, true
-}

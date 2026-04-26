@@ -7,11 +7,10 @@ import (
 	commonaudit "homelab/pkg/common/audit"
 	commonauth "homelab/pkg/common/auth"
 	rbacrepo "homelab/pkg/repositories/core/rbac"
-	registryruntime "homelab/pkg/runtime/registry"
+	runtimepkg "homelab/pkg/runtime"
 	authservice "homelab/pkg/services/core/auth"
 
 	rbacmodel "homelab/pkg/models/core/rbac"
-	"homelab/pkg/models/shared"
 )
 
 func CreateServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) (*rbacmodel.ServiceAccount, error) {
@@ -25,7 +24,7 @@ func CreateServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) (*r
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
-	existing, _ := rbacrepo.ServiceAccountRepo.Get(ctx, sa.ID)
+	existing, _ := rbacrepo.GetServiceAccount(ctx, sa.ID)
 	if existing != nil {
 		return nil, errors.New("ServiceAccount already exists")
 	}
@@ -43,12 +42,7 @@ func CreateServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) (*r
 	sa.Meta.Token = authservice.HashToken(plainToken)
 	sa.Meta.Enabled = true
 
-	err := rbacrepo.ServiceAccountRepo.Cow(ctx, sa.ID, func(res *shared.Resource[rbacmodel.ServiceAccountV1Meta, rbacmodel.ServiceAccountV1Status]) error {
-		res.Meta = sa.Meta
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	err := rbacrepo.SaveServiceAccount(ctx, sa)
 
 	message := fmt.Sprintf("Created ServiceAccount: %s (id: %s, enabled: %v)", sa.Meta.Name, sa.ID, sa.Meta.Enabled)
 	if err != nil {
@@ -58,7 +52,7 @@ func CreateServiceAccount(ctx context.Context, sa *rbacmodel.ServiceAccount) (*r
 	commonaudit.FromContext(ctx).Log("CreateServiceAccount", sa.ID, message, true)
 
 	// Set back plain token for the response
-	updated, _ := rbacrepo.ServiceAccountRepo.Get(ctx, sa.ID)
+	updated, _ := rbacrepo.GetServiceAccount(ctx, sa.ID)
 	updated.Meta.Token = plainToken
 	return updated, nil
 }
@@ -71,11 +65,14 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *rbacmodel.ServiceA
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
-	err := rbacrepo.ServiceAccountRepo.PatchMeta(ctx, id, sa.Generation, func(m *rbacmodel.ServiceAccountV1Meta) {
-		m.Name = sa.Meta.Name
-		m.Enabled = sa.Meta.Enabled
-		m.Comments = sa.Meta.Comments
-	})
+	existing, err := rbacrepo.GetServiceAccount(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	existing.Meta.Name = sa.Meta.Name
+	existing.Meta.Enabled = sa.Meta.Enabled
+	existing.Meta.Comments = sa.Meta.Comments
+	err = rbacrepo.SaveServiceAccount(ctx, existing)
 
 	message := fmt.Sprintf("Updated ServiceAccount %s", id)
 	if err != nil {
@@ -83,7 +80,7 @@ func UpdateServiceAccount(ctx context.Context, id string, sa *rbacmodel.ServiceA
 		return nil, err
 	}
 
-	updated, _ := rbacrepo.ServiceAccountRepo.Get(ctx, id)
+	updated, _ := rbacrepo.GetServiceAccount(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateServiceAccount", id, message, true)
 	return updated, nil
 }
@@ -99,13 +96,17 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	existing, err := rbacrepo.ServiceAccountRepo.Get(ctx, id)
+	existing, err := rbacrepo.GetServiceAccount(ctx, id)
 	if err != nil {
 		return errors.New("ServiceAccount not found")
 	}
 
 	// Usage Check
-	if err := registryruntime.Default().CheckSAUsage(ctx, id); err != nil {
+	registry := runtimepkg.RegistryFromContext(ctx)
+	if registry == nil {
+		return fmt.Errorf("registry not configured")
+	}
+	if err := registry.CheckSAUsage(ctx, id); err != nil {
 		return err
 	}
 
@@ -114,13 +115,13 @@ func DeleteServiceAccount(ctx context.Context, id string) error {
 	if err == nil {
 		for _, rb := range rbs {
 			if rb.Meta.ServiceAccountID == id {
-				_ = rbacrepo.BindingRepo.Delete(ctx, rb.ID)
+				_ = rbacrepo.DeleteRoleBinding(ctx, rb.ID)
 			}
 		}
 	}
 
 	message := fmt.Sprintf("Deleted ServiceAccount: %s (name: %s, enabled: %v, comments: '%s')", existing.ID, existing.Meta.Name, existing.Meta.Enabled, existing.Meta.Comments)
-	if err := rbacrepo.ServiceAccountRepo.Delete(ctx, id); err != nil {
+	if err := rbacrepo.DeleteServiceAccount(ctx, id); err != nil {
 		commonaudit.FromContext(ctx).Log("DeleteServiceAccount", id, message, false)
 		return err
 	}
@@ -133,12 +134,16 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*rbacmodel.Servic
 		return nil, fmt.Errorf("%w: rbac", commonauth.ErrPermissionDenied)
 	}
 
-	var plainToken string
-	err := rbacrepo.ServiceAccountRepo.PatchMeta(ctx, id, 0, func(m *rbacmodel.ServiceAccountV1Meta) {
-		token, _ := authservice.CreateSAToken(id)
-		plainToken = token
-		m.Token = authservice.HashToken(plainToken)
-	})
+	updated, err := rbacrepo.GetServiceAccount(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	plainToken, err := authservice.CreateSAToken(id)
+	if err != nil {
+		return nil, err
+	}
+	updated.Meta.Token = authservice.HashToken(plainToken)
+	err = rbacrepo.SaveServiceAccount(ctx, updated)
 
 	message := fmt.Sprintf("Reset token for ServiceAccount: %s", id)
 	if err != nil {
@@ -146,7 +151,7 @@ func ResetServiceAccountToken(ctx context.Context, id string) (*rbacmodel.Servic
 		return nil, err
 	}
 
-	updated, _ := rbacrepo.ServiceAccountRepo.Get(ctx, id)
+	updated, _ = rbacrepo.GetServiceAccount(ctx, id)
 	commonaudit.FromContext(ctx).Log("ResetServiceAccountToken", id, message, true)
 
 	updated.Meta.Token = plainToken

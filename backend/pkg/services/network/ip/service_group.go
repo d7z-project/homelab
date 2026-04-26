@@ -9,7 +9,6 @@ import (
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
-	ruleservice "homelab/pkg/services/rules"
 	"path/filepath"
 	"slices"
 	"time"
@@ -22,14 +21,9 @@ func (s *IPPoolService) CreateGroup(ctx context.Context, group *ipmodel.IPPool) 
 	if err := requireIPResource(ctx, ipGroupResource(group.ID)); err != nil {
 		return err
 	}
-	err := ruleservice.CreateAndLoad(ctx, repo.PoolRepo, group, func(res *ipmodel.IPPool) error {
-		res.Meta = group.Meta
-		res.Status.CreatedAt = time.Now()
-		res.Status.UpdatedAt = time.Now()
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	group.Status.CreatedAt = time.Now()
+	group.Status.UpdatedAt = time.Now()
+	err := repo.SavePool(ctx, group)
 	commonaudit.FromContext(ctx).Log("CreateIPGroup", group.Meta.Name, "Created", err == nil)
 	return err
 }
@@ -39,7 +33,12 @@ func (s *IPPoolService) UpdateGroup(ctx context.Context, group *ipmodel.IPPool) 
 		return err
 	}
 
-	err := ruleservice.ReplaceMeta(ctx, repo.PoolRepo, group)
+	current, err := repo.GetPool(ctx, group.ID)
+	if err == nil {
+		current.Meta = group.Meta
+		current.Status.UpdatedAt = time.Now()
+		err = repo.SavePool(ctx, current)
+	}
 	commonaudit.FromContext(ctx).Log("UpdateIPGroup", group.Meta.Name, "Updated", err == nil)
 	return err
 }
@@ -55,37 +54,37 @@ func (s *IPPoolService) DeleteGroup(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	old, _ := repo.PoolRepo.Get(ctx, id)
+	old, _ := repo.GetPool(ctx, id)
 	// 校验依赖：检查是否有 IPExport 引用了此池
-	resExports, err := repo.ExportRepo.List(ctx, "", 1000, nil)
+	resExports, err := repo.ScanAllExports(ctx)
 	if err != nil {
 		return err
 	}
-	for _, e := range resExports.Items {
+	for _, e := range resExports {
 		if slices.Contains(e.Meta.GroupIDs, id) {
 			return fmt.Errorf("cannot delete group %s: referenced by export %s", id, e.Meta.Name)
 		}
 	}
 
 	// 校验依赖：检查是否有同步策略引用了此池
-	resPolicies, err := repo.SyncPolicyRepo.List(ctx, "", 1000, nil)
+	resPolicies, err := repo.ScanAllSyncPolicies(ctx)
 	if err != nil {
 		return err
 	}
-	for _, p := range resPolicies.Items {
+	for _, p := range resPolicies {
 		if p.Meta.TargetGroupID == id {
 			return fmt.Errorf("cannot delete group %s: referenced by sync policy %s", id, p.Meta.Name)
 		}
 	}
 
-	err = repo.PoolRepo.Delete(ctx, id)
+	err = repo.DeletePool(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	// 级联删除 VFS 中的数据文件
 	poolPath := filepath.Join(PoolsDir, id+".bin")
-	_ = common.FS.Remove(poolPath)
+	_ = s.deps.FS.Remove(poolPath)
 	if s.analysisEngine != nil {
 		notifyIPPoolChanged(ctx, id)
 	}
@@ -100,19 +99,29 @@ func (s *IPPoolService) GetGroup(ctx context.Context, id string) (*ipmodel.IPPoo
 	if err := requireIPResourceOrGlobal(ctx, ipGroupResource(id)); err != nil {
 		return nil, err
 	}
-	return repo.PoolRepo.Get(ctx, id)
+	return repo.GetPool(ctx, id)
 }
 
 func (s *IPPoolService) LookupGroup(ctx context.Context, id string) (interface{}, error) {
-	return repo.PoolRepo.Get(ctx, id)
+	return repo.GetPool(ctx, id)
 }
 
 func (s *IPPoolService) ScanGroups(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[ipmodel.IPPool], error) {
 	perms := commonauth.PermissionsFromContext(ctx)
 	hasGlobal := perms.IsAllowed(ipResourceBase)
-	return ruleservice.ScanBySearch(ctx, repo.PoolRepo, cursor, limit, search, func(p *ipmodel.IPPool) bool {
-		return hasGlobal || perms.IsAllowed(ipGroupResource(p.ID))
-	}, func(meta *ipmodel.IPPoolV1Meta) string {
-		return meta.Name
-	})
+	res, err := repo.ScanPools(ctx, cursor, limit, search)
+	if err != nil {
+		return nil, err
+	}
+	if hasGlobal {
+		return res, nil
+	}
+	filtered := make([]ipmodel.IPPool, 0, len(res.Items))
+	for _, item := range res.Items {
+		if perms.IsAllowed(ipGroupResource(item.ID)) {
+			filtered = append(filtered, item)
+		}
+	}
+	res.Items = filtered
+	return res, nil
 }

@@ -44,6 +44,13 @@ func (a *App) Dependencies() Dependencies {
 	return a.deps
 }
 
+func (a *App) ModuleDeps() ModuleDeps {
+	return ModuleDeps{
+		Dependencies: a.deps,
+		Registry:     a.registry,
+	}
+}
+
 func (a *App) Registry() *registryruntime.Registry {
 	return a.registry
 }
@@ -72,8 +79,12 @@ func (a *App) Modules() []Module {
 }
 
 func (a *App) RegisterRoutes(r chi.Router) {
+	deps := a.ModuleDeps()
 	for _, module := range a.Modules() {
-		module.RegisterRoutes(r)
+		r.Group(func(r chi.Router) {
+			r.Use(ContextMiddleware(deps))
+			module.RegisterRoutes(r)
+		})
 	}
 }
 
@@ -82,8 +93,15 @@ func (a *App) Start(ctx context.Context) error {
 	defer a.mu.Unlock()
 
 	a.started = a.started[:0]
+	moduleDeps := a.ModuleDeps()
 	for _, module := range a.modules {
-		if err := module.Start(ctx); err != nil {
+		if err := module.Init(moduleDeps); err != nil {
+			return fmt.Errorf("init module %s: %w", module.Name(), err)
+		}
+	}
+	moduleCtx := moduleDeps.WithContext(ctx)
+	for _, module := range a.modules {
+		if err := module.Start(moduleCtx); err != nil {
 			_ = a.stopStartedLocked(ctx)
 			return fmt.Errorf("start module %s: %w", module.Name(), err)
 		}
@@ -100,9 +118,10 @@ func (a *App) Stop(ctx context.Context) error {
 
 func (a *App) stopStartedLocked(ctx context.Context) error {
 	var stopErr error
+	moduleCtx := a.ModuleDeps().WithContext(ctx)
 	for i := len(a.started) - 1; i >= 0; i-- {
 		module := a.started[i]
-		if err := module.Stop(ctx); err != nil {
+		if err := module.Stop(moduleCtx); err != nil {
 			stopErr = errors.Join(stopErr, fmt.Errorf("stop module %s: %w", module.Name(), err))
 		}
 	}

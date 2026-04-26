@@ -12,18 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/render"
-	"github.com/spf13/afero"
-	"gopkg.d7z.net/middleware/kv"
-	"gopkg.d7z.net/middleware/lock"
-	"gopkg.d7z.net/middleware/subscribe"
-)
+	runtimepkg "homelab/pkg/runtime"
 
-var DB kv.KV
-var Locker lock.Locker
-var Subscriber subscribe.Subscriber
-var FS afero.Fs
-var TempDir afero.Fs
+	"github.com/go-chi/render"
+	"gopkg.d7z.net/middleware/kv"
+)
 
 // --- 分布式协调辅助函数 ---
 
@@ -33,16 +26,23 @@ func UpdateGlobalVersion(ctx context.Context, module string) int64 {
 	parts := strings.Split(module, "/")
 	ns := append([]string{"system", "sync", "version"}, parts[:len(parts)-1]...)
 	key := parts[len(parts)-1]
-	_ = DB.Child(ns...).Put(ctx, key, strconv.FormatInt(version, 10), kv.TTLKeep)
+	db := runtimepkg.DBFromContext(ctx)
+	if db != nil {
+		_ = db.Child(ns...).Put(ctx, key, strconv.FormatInt(version, 10), kv.TTLKeep)
+	}
 	return version
 }
 
 // GetGlobalVersion 获取指定模块的全局版本号
 func GetGlobalVersion(ctx context.Context, module string) int64 {
+	db := runtimepkg.DBFromContext(ctx)
+	if db == nil {
+		return 0
+	}
 	parts := strings.Split(module, "/")
 	ns := append([]string{"system", "sync", "version"}, parts[:len(parts)-1]...)
 	key := parts[len(parts)-1]
-	val, err := DB.Child(ns...).Get(ctx, key)
+	val, err := db.Child(ns...).Get(ctx, key)
 	if err != nil || val == "" {
 		return 0
 	}
@@ -52,12 +52,13 @@ func GetGlobalVersion(ctx context.Context, module string) int64 {
 
 // LockWithTimeout 尝试获取分布式锁，带重试和超时机制
 func LockWithTimeout(ctx context.Context, lockKey string, timeout time.Duration) (func(), error) {
-	if Locker == nil {
+	locker := runtimepkg.LockerFromContext(ctx)
+	if locker == nil {
 		return func() {}, nil // 单机模式或未配置锁，跳过逻辑
 	}
 	start := time.Now()
 	for {
-		release := Locker.TryLock(ctx, lockKey)
+		release := locker.TryLock(ctx, lockKey)
 		if release != nil {
 			return release, nil
 		}

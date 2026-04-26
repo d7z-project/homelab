@@ -9,6 +9,7 @@ import (
 	sitemodel "homelab/pkg/models/network/site"
 	workflowmodel "homelab/pkg/models/workflow"
 	repo "homelab/pkg/repositories/network/site"
+	runtimepkg "homelab/pkg/runtime"
 	actions "homelab/pkg/services/workflow"
 	"io"
 	"os"
@@ -144,8 +145,9 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 	tagSet := make(map[string]struct{})
 
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	if exists, _ := afero.Exists(common.FS, poolPath); exists {
-		pf, _ := common.FS.Open(poolPath)
+	fs := runtimepkg.FSFromContext(ctx.Context)
+	if exists, _ := afero.Exists(fs, poolPath); exists {
+		pf, _ := fs.Open(poolPath)
 		reader, _ := NewReader(pf)
 		for {
 			entry, err := reader.Next()
@@ -194,21 +196,21 @@ func (p *ImportProcessor) Execute(ctx *actions.TaskContext, inputs map[string]st
 		entries = append(entries, Entry{Type: ne.Type, Value: ne.Value, TagIndices: tagIndices})
 	}
 
-	_ = common.FS.MkdirAll(PoolsDir, 0755)
+	_ = fs.MkdirAll(PoolsDir, 0755)
 	tempFile := poolPath + ".tmp"
-	tf, _ := common.FS.Create(tempFile)
+	tf, _ := fs.Create(tempFile)
 	codec := NewCodec()
 	_ = codec.WritePool(tf, allTags, entries)
 	tf.Close()
-	_ = common.FS.Rename(tempFile, poolPath)
+	_ = fs.Rename(tempFile, poolPath)
 
 	hf := sha256.New()
-	content, _ := afero.ReadFile(common.FS, poolPath)
+	content, _ := afero.ReadFile(fs, poolPath)
 	hf.Write(content)
 	checksum := hex.EncodeToString(hf.Sum(nil))
 	count := int64(len(entries))
 
-	_ = repo.GroupRepo.UpdateStatus(ctx.Context, groupID, func(status *sitemodel.SiteGroupV1Status) {
+	_ = repo.UpdateGroupStatus(ctx.Context, groupID, func(status *sitemodel.SiteGroupV1Status) {
 		status.EntryCount = count
 		status.UpdatedAt = time.Now()
 		status.Checksum = checksum

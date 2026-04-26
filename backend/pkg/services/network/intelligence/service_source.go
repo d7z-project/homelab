@@ -20,17 +20,11 @@ func (s *IntelligenceService) CreateSource(ctx context.Context, source *intellig
 		return fmt.Errorf("%w: network/intelligence", commonauth.ErrPermissionDenied)
 	}
 	source.ID = uuid.NewString()
-
-	err := repo.SourceRepo.Cow(ctx, source.ID, func(res *shared.Resource[intelligencemodel.IntelligenceSourceV1Meta, intelligencemodel.IntelligenceSourceV1Status]) error {
-		res.Meta = source.Meta
-		res.Status.Status = shared.TaskStatusSuccess
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	source.Status.Status = shared.TaskStatusSuccess
+	err := repo.SaveSource(ctx, source)
 
 	if err == nil {
-		updated, _ := repo.SourceRepo.Get(ctx, source.ID)
+		updated, _ := repo.GetSource(ctx, source.ID)
 		if updated != nil {
 			*source = *updated
 			s.updateCronJob(*source)
@@ -45,12 +39,15 @@ func (s *IntelligenceService) UpdateSource(ctx context.Context, source *intellig
 		return fmt.Errorf("%w: network/intelligence", commonauth.ErrPermissionDenied)
 	}
 
-	err := repo.SourceRepo.PatchMeta(ctx, source.ID, source.Generation, func(m *intelligencemodel.IntelligenceSourceV1Meta) {
-		*m = source.Meta
-	})
+	current, err := repo.GetSource(ctx, source.ID)
+	if err != nil {
+		return err
+	}
+	current.Meta = source.Meta
+	err = repo.SaveSource(ctx, current)
 
 	if err == nil {
-		updated, _ := repo.SourceRepo.Get(ctx, source.ID)
+		updated, _ := repo.GetSource(ctx, source.ID)
 		if updated != nil {
 			s.updateCronJob(*updated)
 		}
@@ -85,7 +82,7 @@ func (s *IntelligenceService) ScanSources(ctx context.Context, cursor string, li
 }
 
 func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error {
-	src, _ := repo.SourceRepo.Get(ctx, id)
+	src, _ := repo.GetSource(ctx, id)
 	if err := repo.DeleteSource(ctx, id); err != nil {
 		return err
 	}
@@ -93,7 +90,7 @@ func (s *IntelligenceService) DeleteSource(ctx context.Context, id string) error
 
 	// 物理删除文件
 	path := filepath.Join(ip.MMDBDir, id+".mmdb")
-	_ = common.FS.Remove(path)
+	_ = s.deps.FS.Remove(path)
 
 	// 通知集群：配置已变且库需卸载
 	common.NotifyCluster(ctx, common.EventIntelligenceSourceChanged, id)

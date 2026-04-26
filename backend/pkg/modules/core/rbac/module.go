@@ -16,6 +16,8 @@ func New() *Module { return &Module{} }
 
 func (m *Module) Name() string { return "core.rbac" }
 
+func (m *Module) Init(runtimepkg.ModuleDeps) error { return nil }
+
 func (m *Module) RegisterRoutes(r chi.Router) {
 	routerx.Mount(r, "/rbac", routerx.Scope{
 		Resource: "rbac",
@@ -41,8 +43,8 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 	)
 }
 
-func (m *Module) Start(context.Context) error {
-	rbacservice.RegisterDiscovery()
+func (m *Module) Start(ctx context.Context) error {
+	rbacservice.RegisterDiscovery(runtimepkg.RegistryFromContext(ctx))
 	return nil
 }
 

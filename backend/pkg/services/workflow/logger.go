@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"homelab/pkg/common"
+	repo "homelab/pkg/repositories/workflow/actions"
+	runtimepkg "homelab/pkg/runtime"
 	"os"
 	"path"
 	"sync"
@@ -17,6 +18,7 @@ import (
 
 type TaskLogger struct {
 	mu           sync.Mutex
+	ctx          context.Context
 	workflowID   string
 	instanceID   string
 	currentIndex int
@@ -26,8 +28,9 @@ type TaskLogger struct {
 
 // NewTaskLogger creates a new logger that writes to a temporary file in logFS.
 // Initial file is index 0 (engine logs).
-func NewTaskLogger(workflowID, instanceID string) (*TaskLogger, error) {
+func NewTaskLogger(ctx context.Context, workflowID, instanceID string) (*TaskLogger, error) {
 	l := &TaskLogger{
+		ctx:          ctx,
 		workflowID:   workflowID,
 		instanceID:   instanceID,
 		currentIndex: 0,
@@ -36,6 +39,10 @@ func NewTaskLogger(workflowID, instanceID string) (*TaskLogger, error) {
 		return nil, err
 	}
 	return l, nil
+}
+
+func (l *TaskLogger) Context() context.Context {
+	return l.ctx
 }
 
 func (l *TaskLogger) getLogDir() string {
@@ -50,11 +57,12 @@ func (l *TaskLogger) openCurrent() error {
 	}
 
 	dir := l.getLogDir()
-	_ = logFS.MkdirAll(dir, 0755)
+	rt := MustRuntime(l.ctx)
+	_ = rt.LogFS.MkdirAll(dir, 0755)
 
 	tmpFilename := path.Join(dir, fmt.Sprintf("%d.log.tmp", l.currentIndex))
 	// Open in append mode, create if not exists
-	f, err := logFS.OpenFile(tmpFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := rt.LogFS.OpenFile(tmpFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open log file %s: %w", tmpFilename, err)
 	}
@@ -66,15 +74,16 @@ func (l *TaskLogger) openCurrent() error {
 func (l *TaskLogger) promoteTmpFile(index int) {
 	oldPath := path.Join(l.getLogDir(), fmt.Sprintf("%d.log.tmp", index))
 	newPath := path.Join(l.getLogDir(), fmt.Sprintf("%d.log", index))
-	if exists, _ := afero.Exists(logFS, oldPath); exists {
+	rt := MustRuntime(l.ctx)
+	if exists, _ := afero.Exists(rt.LogFS, oldPath); exists {
 		// Acquire distributed lock for final rename
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(runtimepkg.DetachContext(l.ctx), 5*time.Second)
 		defer cancel()
 		lockKey := fmt.Sprintf("actions:log_rename:%s:%s:%d", l.workflowID, l.instanceID, index)
-		release := common.Locker.TryLock(ctx, lockKey)
+		release := rt.Deps.Locker.TryLock(ctx, lockKey)
 		if release != nil {
 			defer release()
-			_ = logFS.Rename(oldPath, newPath)
+			_ = rt.LogFS.Rename(oldPath, newPath)
 		}
 	}
 }
@@ -111,13 +120,11 @@ func (l *TaskLogger) Log(message string) {
 	}
 
 	// Distributed temporary storage in DB for real-time aggregation across nodes
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(runtimepkg.DetachContext(l.ctx), 1*time.Second)
 	defer cancel()
 	key := fmt.Sprintf("%08d", l.lineCount)
 	l.lineCount++
-	if common.DB != nil {
-		_ = common.DB.Child("system", "task:logs", l.instanceID, fmt.Sprint(l.currentIndex)).Put(ctx, key, formatted, 24*time.Hour)
-	}
+	_ = repo.AppendTaskLogLine(ctx, l.instanceID, l.currentIndex, key, formatted, 24*time.Hour)
 }
 
 func (l *TaskLogger) Logf(format string, a ...interface{}) {
@@ -133,14 +140,15 @@ func getReadLogPathTmp(workflowID, instanceID string, index int) string {
 }
 
 // ReadStepLogs reads logs for a specific step index starting from a line offset.
-func ReadStepLogs(workflowID, instanceID string, index int, offset int) ([]workflowmodel.LogEntry, int, error) {
+func ReadStepLogs(ctx context.Context, workflowID, instanceID string, index int, offset int) ([]workflowmodel.LogEntry, int, error) {
+	rt := MustRuntime(ctx)
 	filename := getReadLogPath(workflowID, instanceID, index)
-	f, err := logFS.Open(filename)
+	f, err := rt.LogFS.Open(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Fallback to read from .tmp stream file if final log is missing
 			tmpFilename := getReadLogPathTmp(workflowID, instanceID, index)
-			f, err = logFS.Open(tmpFilename)
+			f, err = rt.LogFS.Open(tmpFilename)
 			if err != nil {
 				if os.IsNotExist(err) {
 					return []workflowmodel.LogEntry{}, 0, nil
@@ -181,18 +189,19 @@ func ReadStepLogs(workflowID, instanceID string, index int, offset int) ([]workf
 }
 
 // ReadAllTaskLogs aggregates logs from all step files for an instance.
-func ReadAllTaskLogs(workflowID, instanceID string) ([]workflowmodel.LogEntry, error) {
+func ReadAllTaskLogs(ctx context.Context, workflowID, instanceID string) ([]workflowmodel.LogEntry, error) {
+	rt := MustRuntime(ctx)
 	var allLogs []workflowmodel.LogEntry
 
 	// We scan files sequentially from index 0 until we hit a gap or error
 	for i := 0; ; i++ {
-		logs, _, err := ReadStepLogs(workflowID, instanceID, i, 0)
+		logs, _, err := ReadStepLogs(ctx, workflowID, instanceID, i, 0)
 		if err != nil || len(logs) == 0 {
 			// Check if the file (or tmp file) exists but is empty vs doesn't exist
 			filename := getReadLogPath(workflowID, instanceID, i)
 			tmpFilename := getReadLogPathTmp(workflowID, instanceID, i)
-			_, statErr := logFS.Stat(filename)
-			_, tmpStatErr := logFS.Stat(tmpFilename)
+			_, statErr := rt.LogFS.Stat(filename)
+			_, tmpStatErr := rt.LogFS.Stat(tmpFilename)
 
 			if statErr != nil && tmpStatErr != nil {
 				break // Stop if both files don't exist
@@ -209,15 +218,17 @@ func ReadAllTaskLogs(workflowID, instanceID string) ([]workflowmodel.LogEntry, e
 }
 
 // RemoveTaskLogs cleans up all log files associated with an instance.
-func RemoveTaskLogs(workflowID, instanceID string) error {
+func RemoveTaskLogs(ctx context.Context, workflowID, instanceID string) error {
+	rt := MustRuntime(ctx)
 	dir := path.Join("actions", workflowID, instanceID)
-	_ = common.DB.Child("system", "task:logs", instanceID).DeleteAll(context.Background())
-	return logFS.RemoveAll(dir)
+	_ = repo.DeleteTaskLogs(runtimepkg.DetachContext(ctx), instanceID)
+	return rt.LogFS.RemoveAll(dir)
 }
 
 // RemoveWorkflowLogs cleans up all logs associated with a workflow.
-func RemoveWorkflowLogs(workflowID string) error {
-	return logFS.RemoveAll(path.Join("actions", workflowID))
+func RemoveWorkflowLogs(ctx context.Context, workflowID string) error {
+	rt := MustRuntime(ctx)
+	return rt.LogFS.RemoveAll(path.Join("actions", workflowID))
 }
 
 func (l *TaskLogger) Close() {

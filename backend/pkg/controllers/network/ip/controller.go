@@ -5,6 +5,7 @@ import (
 	apiv1 "homelab/pkg/apis/network/ip/v1"
 	"homelab/pkg/common"
 	controllercommon "homelab/pkg/controllers"
+	runtimepkg "homelab/pkg/runtime"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -87,10 +88,7 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	group, ok := controllercommon.BindRequest[apiv1.Pool](w, r)
 	if !ok {
 		return
@@ -122,10 +120,7 @@ func PreviewPoolHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	cursor := r.URL.Query().Get("cursor")
 	limitStr := r.URL.Query().Get("limit")
 	limit, _ := strconv.Atoi(limitStr)
@@ -158,10 +153,7 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	if err := deps.PoolService.DeleteGroup(r.Context(), id); err != nil {
 		controllercommon.HandleError(w, r, err)
 		return
@@ -478,7 +470,7 @@ func DownloadExportHandler(w http.ResponseWriter, r *http.Request) {
 	tempFileName := fmt.Sprintf("export_%s.%s", taskId, task.Format)
 	tempPath := filepath.Join("temp", tempFileName)
 
-	f, err := common.TempDir.Open(tempPath)
+	f, err := runtimepkg.TempFSFromContext(r.Context()).Open(tempPath)
 	if err != nil {
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
@@ -510,10 +502,7 @@ func ManagePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	req, ok := controllercommon.BindRequest[apiv1.PoolEntryRequest](w, r)
 	if !ok {
 		return
@@ -550,10 +539,7 @@ func DeletePoolEntryHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := controllercommon.PathIDWithScopedPermission(w, r, "id", controllercommon.NetworkIPResourceBase)
-	if !ok {
-		return
-	}
+	id := controllercommon.PathID(r, "id")
 	cidr := r.URL.Query().Get("cidr")
 	tagsStr := r.URL.Query().Get("tags")
 	var tags []string

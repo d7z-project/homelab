@@ -9,7 +9,6 @@ import (
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
-	ruleservice "homelab/pkg/services/rules"
 	"io"
 	"path/filepath"
 	"time"
@@ -25,13 +24,7 @@ func (s *IPPoolService) CreateExport(ctx context.Context, export *ipmodel.IPExpo
 	export.ID = uuid.NewString()
 	export.Status.CreatedAt = time.Now()
 	export.Status.UpdatedAt = time.Now()
-	err := ruleservice.CreateAndLoad(ctx, repo.ExportRepo, export, func(res *ipmodel.IPExport) error {
-		res.Meta = export.Meta
-		res.Status = export.Status
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	err := repo.SaveExport(ctx, export)
 	commonaudit.FromContext(ctx).Log("CreateIPExport", export.Meta.Name, "Created", err == nil)
 	return err
 }
@@ -41,7 +34,12 @@ func (s *IPPoolService) UpdateExport(ctx context.Context, export *ipmodel.IPExpo
 		return err
 	}
 
-	err := ruleservice.ReplaceMeta(ctx, repo.ExportRepo, export)
+	current, err := repo.GetExport(ctx, export.ID)
+	if err == nil {
+		current.Meta = export.Meta
+		current.Status.UpdatedAt = time.Now()
+		err = repo.SaveExport(ctx, current)
+	}
 	commonaudit.FromContext(ctx).Log("UpdateIPExport", export.Meta.Name, "Updated", err == nil)
 	return err
 }
@@ -55,7 +53,7 @@ func (s *IPPoolService) DeleteExport(ctx context.Context, id string) error {
 	if s.exportManager != nil {
 		s.exportManager.DeleteTasksByExportID(id)
 	}
-	err := repo.ExportRepo.Delete(ctx, id)
+	err := repo.DeleteExport(ctx, id)
 	commonaudit.FromContext(ctx).Log("DeleteIPExport", id, "Deleted", err == nil)
 	return err
 }
@@ -64,17 +62,27 @@ func (s *IPPoolService) GetExport(ctx context.Context, id string) (*ipmodel.IPEx
 	if err := requireIPResourceOrGlobal(ctx, ipExportResource(id)); err != nil {
 		return nil, err
 	}
-	return repo.ExportRepo.Get(ctx, id)
+	return repo.GetExport(ctx, id)
 }
 
 func (s *IPPoolService) ScanExports(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[ipmodel.IPExport], error) {
 	perms := commonauth.PermissionsFromContext(ctx)
 	hasGlobal := perms.IsAllowed(ipResourceBase)
-	return ruleservice.ScanBySearch(ctx, repo.ExportRepo, cursor, limit, search, func(e *ipmodel.IPExport) bool {
-		return hasGlobal || perms.IsAllowed(ipExportResource(e.ID))
-	}, func(meta *ipmodel.IPExportV1Meta) string {
-		return meta.Name
-	})
+	res, err := repo.ScanExports(ctx, cursor, limit, search)
+	if err != nil {
+		return nil, err
+	}
+	if hasGlobal {
+		return res, nil
+	}
+	filtered := make([]ipmodel.IPExport, 0, len(res.Items))
+	for _, item := range res.Items {
+		if perms.IsAllowed(ipExportResource(item.ID)) {
+			filtered = append(filtered, item)
+		}
+	}
+	res.Items = filtered
+	return res, nil
 }
 
 func (s *IPPoolService) PreviewExport(ctx context.Context, req *ipmodel.IPExportPreviewRequest) ([]ipmodel.IPPoolEntry, error) {
@@ -90,7 +98,7 @@ func (s *IPPoolService) PreviewExport(ctx context.Context, req *ipmodel.IPExport
 	var results []ipmodel.IPPoolEntry
 	for _, gid := range req.GroupIDs {
 		poolPath := filepath.Join(PoolsDir, gid+".bin")
-		pf, err := common.FS.Open(poolPath)
+		pf, err := s.deps.FS.Open(poolPath)
 		if err != nil {
 			continue
 		}
@@ -129,5 +137,5 @@ func (s *IPPoolService) PreviewExport(ctx context.Context, req *ipmodel.IPExport
 }
 
 func (s *IPPoolService) LookupExport(ctx context.Context, id string) (interface{}, error) {
-	return repo.ExportRepo.Get(ctx, id)
+	return repo.GetExport(ctx, id)
 }

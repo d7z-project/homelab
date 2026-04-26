@@ -6,11 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"homelab/pkg/common"
 	"homelab/pkg/common/task"
 	ipmodel "homelab/pkg/models/network/ip"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/ip"
+	runtimepkg "homelab/pkg/runtime"
 	"io"
 	"net"
 	"net/netip"
@@ -98,23 +98,25 @@ type ExportTaskDTO struct {
 }
 
 type ExportManager struct {
+	deps     runtimepkg.ModuleDeps
 	core     *task.Manager[*ExportTask]
 	analysis *AnalysisEngine
 	wg       sync.WaitGroup
 }
 
-func NewExportManager(analysis *AnalysisEngine) *ExportManager {
-	core := task.NewManager[*ExportTask]("action:ip_export", "export_tasks", "network", "ip")
+func NewExportManager(deps runtimepkg.ModuleDeps, analysis *AnalysisEngine) *ExportManager {
+	core := task.NewManager[*ExportTask](deps, "action:ip_export", "export_tasks", "network", "ip")
 
 	core.SetCleanupHook(func(t *ExportTask) {
 		tempFileName := fmt.Sprintf("export_%s.%s", t.ID, t.Format)
 		tempPath := filepath.Join("temp", tempFileName)
-		_ = common.TempDir.Remove(tempPath)
+		_ = deps.TempFS.Remove(tempPath)
 	})
 
 	core.StartCleanupTimer(24*time.Hour, 1*time.Hour)
 
 	return &ExportManager{
+		deps:     deps,
 		core:     core,
 		analysis: analysis,
 	}
@@ -174,7 +176,7 @@ func (m *ExportManager) CancelTask(id string) bool {
 }
 
 func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, format string) (string, error) {
-	e, err := repo.ExportRepo.Get(ctx, exportID)
+	e, err := repo.GetExport(ctx, exportID)
 	if err != nil {
 		return "", err
 	}
@@ -184,7 +186,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 	hf.Write([]byte(format))
 	for _, gid := range e.Meta.GroupIDs {
 		hf.Write([]byte(gid))
-		g, _ := repo.PoolRepo.Get(ctx, gid)
+		g, _ := repo.GetPool(ctx, gid)
 		if g != nil {
 			hf.Write([]byte(g.Status.Checksum))
 		}
@@ -202,7 +204,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 		if match {
 			tempFileName := fmt.Sprintf("export_%s.%s", tID, tFormat)
 			tempPath := filepath.Join("temp", tempFileName)
-			if exists, _ := afero.Exists(common.TempDir, tempPath); exists {
+			if exists, _ := afero.Exists(m.deps.TempFS, tempPath); exists {
 				return tID, nil
 			}
 		}
@@ -214,7 +216,7 @@ func (m *ExportManager) TriggerExport(ctx context.Context, exportID string, form
 			status := t.GetStatus()
 			if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
 				lockKey := "action:ip_export:" + t.ID
-				if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+				if release := m.deps.Locker.TryLock(ctx, lockKey); release != nil {
 					m.core.CancelTask(t.ID)
 					release()
 				} else {
@@ -260,7 +262,7 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *ipmod
 
 		totalEntries := int64(0)
 		for _, gid := range e.Meta.GroupIDs {
-			g, _ := repo.PoolRepo.Get(taskCtx, gid)
+			g, _ := repo.GetPool(taskCtx, gid)
 			if g != nil {
 				totalEntries += g.Status.EntryCount
 			}
@@ -272,8 +274,8 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *ipmod
 		totalRead := int64(0)
 		tempFileName := fmt.Sprintf("export_%s.%s", task.ID, task.Format)
 		tempPath := filepath.Join("temp", tempFileName)
-		_ = common.TempDir.MkdirAll("temp", 0755)
-		f, err := common.TempDir.Create(tempPath)
+		_ = m.deps.TempFS.MkdirAll("temp", 0755)
+		f, err := m.deps.TempFS.Create(tempPath)
 		if err != nil {
 			return fmt.Errorf("File create error: %w", err)
 		}
@@ -298,7 +300,7 @@ func (m *ExportManager) runExport(bgCtx context.Context, taskID string, e *ipmod
 
 		for _, gid := range e.Meta.GroupIDs {
 			poolPath := filepath.Join(PoolsDir, gid+".bin")
-			pf, err := common.FS.Open(poolPath)
+			pf, err := m.deps.FS.Open(poolPath)
 			if err != nil {
 				continue
 			}

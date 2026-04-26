@@ -6,7 +6,10 @@ import (
 
 	"homelab/pkg/common"
 	rbacmodel "homelab/pkg/models/core/rbac"
+	runtimepkg "homelab/pkg/runtime"
+	registryruntime "homelab/pkg/runtime/registry"
 
+	"github.com/spf13/afero"
 	"gopkg.d7z.net/middleware/kv"
 )
 
@@ -20,11 +23,18 @@ func TestGetCachedRoleAndInvalidateCache(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	common.DB = db
-	RoleRepo = common.NewBaseRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
+	roleRepo = common.NewBaseRepository[rbacmodel.RoleV1Meta, rbacmodel.RoleV1Status]("auth", "roles")
 	ClearCache()
+	ctx := runtimepkg.ModuleDeps{
+		Dependencies: runtimepkg.Dependencies{
+			DB:     db,
+			FS:     afero.NewMemMapFs(),
+			TempFS: afero.NewMemMapFs(),
+		},
+		Registry: registryruntime.New(),
+	}.WithContext(context.Background())
 
-	if err := RoleRepo.Save(context.Background(), &rbacmodel.Role{
+	if err := roleRepo.Save(ctx, &rbacmodel.Role{
 		ID:              "role-1",
 		Meta:            rbacmodel.RoleV1Meta{Name: "before", Rules: []rbacmodel.PolicyRule{{Resource: "rbac", Verbs: []string{"get"}}}},
 		Generation:      1,
@@ -33,7 +43,7 @@ func TestGetCachedRoleAndInvalidateCache(t *testing.T) {
 		t.Fatalf("seed role: %v", err)
 	}
 
-	role, err := GetCachedRole(context.Background(), "role-1")
+	role, err := GetCachedRole(ctx, "role-1")
 	if err != nil {
 		t.Fatalf("get cached role: %v", err)
 	}
@@ -41,13 +51,16 @@ func TestGetCachedRoleAndInvalidateCache(t *testing.T) {
 		t.Fatalf("unexpected cached role: %#v", role)
 	}
 
-	if err := RoleRepo.PatchMeta(context.Background(), "role-1", 1, func(meta *rbacmodel.RoleV1Meta) {
-		meta.Name = "after"
-	}); err != nil {
-		t.Fatalf("patch role: %v", err)
+	role, err = GetRole(ctx, "role-1")
+	if err != nil {
+		t.Fatalf("get role for update: %v", err)
+	}
+	role.Meta.Name = "after"
+	if err := SaveRole(ctx, role); err != nil {
+		t.Fatalf("save role: %v", err)
 	}
 
-	cachedRole, err := GetCachedRole(context.Background(), "role-1")
+	cachedRole, err := GetCachedRole(ctx, "role-1")
 	if err != nil {
 		t.Fatalf("get stale cached role: %v", err)
 	}
@@ -57,7 +70,7 @@ func TestGetCachedRoleAndInvalidateCache(t *testing.T) {
 
 	InvalidateCache("role-1")
 
-	freshRole, err := GetCachedRole(context.Background(), "role-1")
+	freshRole, err := GetCachedRole(ctx, "role-1")
 	if err != nil {
 		t.Fatalf("get fresh cached role: %v", err)
 	}
@@ -76,12 +89,19 @@ func TestScanAllRoleBindings(t *testing.T) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	common.DB = db
-	BindingRepo = common.NewBaseRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
+	bindingRepo = common.NewBaseRepository[rbacmodel.RoleBindingV1Meta, rbacmodel.RoleBindingV1Status]("auth", "rolebindings")
+	ctx := runtimepkg.ModuleDeps{
+		Dependencies: runtimepkg.Dependencies{
+			DB:     db,
+			FS:     afero.NewMemMapFs(),
+			TempFS: afero.NewMemMapFs(),
+		},
+		Registry: registryruntime.New(),
+	}.WithContext(context.Background())
 
 	for _, id := range []string{"binding-a", "binding-b"} {
 		bindingID := id
-		if err := BindingRepo.Save(context.Background(), &rbacmodel.RoleBinding{
+		if err := bindingRepo.Save(ctx, &rbacmodel.RoleBinding{
 			ID:              bindingID,
 			Meta:            rbacmodel.RoleBindingV1Meta{Name: bindingID, ServiceAccountID: "sa-1", RoleIDs: []string{"role-1"}, Enabled: true},
 			Generation:      1,
@@ -91,7 +111,7 @@ func TestScanAllRoleBindings(t *testing.T) {
 		}
 	}
 
-	items, err := ScanAllRoleBindings(context.Background())
+	items, err := ScanAllRoleBindings(ctx)
 	if err != nil {
 		t.Fatalf("scan all role bindings: %v", err)
 	}

@@ -10,8 +10,6 @@ import (
 	metav1 "homelab/pkg/apis/meta/v1"
 	"homelab/pkg/models/shared"
 	"homelab/pkg/store"
-
-	"gopkg.d7z.net/middleware/kv"
 )
 
 // BaseRepository is a transitional wrapper over the new resource store.
@@ -23,9 +21,6 @@ type BaseRepository[M any, S any] struct {
 // NewBaseRepository creates a repository backed by the new resource store.
 func NewBaseRepository[M any, S any](module, model string) *BaseRepository[M, S] {
 	resource := strings.ToLower(strings.ReplaceAll(module+"-"+model, "/", "-"))
-	store.DefaultDB = func() kv.KV {
-		return DB
-	}
 	return &BaseRepository[M, S]{
 		store: store.NewResourceStore[M, S](
 			nil,

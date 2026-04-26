@@ -8,6 +8,7 @@ import (
 
 type FuncModule struct {
 	ModuleName string
+	OnInit     func(deps ModuleDeps) error
 	Routes     func(r chi.Router)
 	OnStart    func(ctx context.Context) error
 	OnStop     func(ctx context.Context) error
@@ -15,6 +16,13 @@ type FuncModule struct {
 
 func (m FuncModule) Name() string {
 	return m.ModuleName
+}
+
+func (m FuncModule) Init(deps ModuleDeps) error {
+	if m.OnInit != nil {
+		return m.OnInit(deps)
+	}
+	return nil
 }
 
 func (m FuncModule) RegisterRoutes(r chi.Router) {

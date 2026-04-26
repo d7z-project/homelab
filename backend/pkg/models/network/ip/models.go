@@ -3,9 +3,13 @@ package ip
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"homelab/pkg/models/shared"
+
+	"github.com/robfig/cron/v3"
 )
 
 type IPSyncPolicyV1Meta struct {
@@ -21,6 +25,36 @@ type IPSyncPolicyV1Meta struct {
 }
 
 func (p *IPSyncPolicyV1Meta) Validate(_ context.Context) error {
+	p.Name = strings.TrimSpace(p.Name)
+	p.Description = strings.TrimSpace(p.Description)
+	p.SourceURL = strings.TrimSpace(p.SourceURL)
+	p.TargetGroupID = strings.TrimSpace(p.TargetGroupID)
+	p.Cron = strings.TrimSpace(p.Cron)
+	if p.Name == "" {
+		return errors.New("name is required")
+	}
+	if p.SourceURL == "" {
+		return errors.New("sourceUrl is required")
+	}
+	if p.TargetGroupID == "" {
+		return errors.New("targetGroupId is required")
+	}
+	if p.Cron == "" {
+		return errors.New("cron expression is required")
+	}
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+	if _, err := parser.Parse(p.Cron); err != nil {
+		return fmt.Errorf("invalid cron expression: %w", err)
+	}
+	if p.Format == "" {
+		p.Format = "text"
+	}
+	if p.Mode == "" {
+		p.Mode = "merge"
+	}
+	if p.Config == nil {
+		p.Config = map[string]string{}
+	}
 	return nil
 }
 
@@ -41,6 +75,8 @@ type IPPoolV1Meta struct {
 }
 
 func (m *IPPoolV1Meta) Validate(_ context.Context) error {
+	m.Name = strings.TrimSpace(m.Name)
+	m.Description = strings.TrimSpace(m.Description)
 	if m.Name == "" {
 		return errors.New("name is required")
 	}
@@ -70,6 +106,18 @@ type IPExportV1Meta struct {
 }
 
 func (e *IPExportV1Meta) Validate(_ context.Context) error {
+	e.Name = strings.TrimSpace(e.Name)
+	e.Description = strings.TrimSpace(e.Description)
+	e.Rule = strings.TrimSpace(e.Rule)
+	if e.Name == "" {
+		return errors.New("name is required")
+	}
+	if e.Rule == "" {
+		return errors.New("rule expression is required")
+	}
+	if len(e.GroupIDs) == 0 {
+		return errors.New("at least one source group is required")
+	}
 	return nil
 }
 

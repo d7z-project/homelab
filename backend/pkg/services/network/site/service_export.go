@@ -7,7 +7,6 @@ import (
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/site"
-	ruleservice "homelab/pkg/services/rules"
 	"io"
 	"path/filepath"
 	"time"
@@ -21,14 +20,9 @@ func (s *SitePoolService) CreateExport(ctx context.Context, export *sitemodel.Si
 		return err
 	}
 	export.ID = uuid.NewString()
-	err := ruleservice.CreateAndLoad(ctx, repo.ExportRepo, export, func(res *shared.Resource[sitemodel.SiteExportV1Meta, sitemodel.SiteExportV1Status]) error {
-		res.Meta = export.Meta
-		res.Status.CreatedAt = time.Now()
-		res.Status.UpdatedAt = time.Now()
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	export.Status.CreatedAt = time.Now()
+	export.Status.UpdatedAt = time.Now()
+	err := repo.SaveExport(ctx, export)
 	return err
 }
 
@@ -37,7 +31,13 @@ func (s *SitePoolService) UpdateExport(ctx context.Context, export *sitemodel.Si
 		return err
 	}
 
-	return ruleservice.ReplaceMeta(ctx, repo.ExportRepo, export)
+	current, err := repo.GetExport(ctx, export.ID)
+	if err != nil {
+		return err
+	}
+	current.Meta = export.Meta
+	current.Status.UpdatedAt = time.Now()
+	return repo.SaveExport(ctx, current)
 }
 
 func (s *SitePoolService) DeleteExport(ctx context.Context, id string) error {
@@ -77,7 +77,7 @@ func (s *SitePoolService) PreviewExport(ctx context.Context, req *sitemodel.Site
 	var results []sitemodel.SitePoolEntry
 	for _, gid := range req.GroupIDs {
 		poolPath := filepath.Join(PoolsDir, gid+".bin")
-		pf, err := common.FS.Open(poolPath)
+		pf, err := s.deps.FS.Open(poolPath)
 		if err != nil {
 			continue
 		}

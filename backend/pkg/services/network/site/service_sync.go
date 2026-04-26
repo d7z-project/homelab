@@ -15,7 +15,6 @@ import (
 	sitemodel "homelab/pkg/models/network/site"
 	"homelab/pkg/models/shared"
 	repo "homelab/pkg/repositories/network/site"
-	ruleservice "homelab/pkg/services/rules"
 	"io"
 	"net/http"
 	"os"
@@ -94,14 +93,9 @@ func (s *SitePoolService) CreateSyncPolicy(ctx context.Context, policy *sitemode
 		}
 	}
 
-	err := ruleservice.CreateAndLoad(ctx, repo.SyncPolicyRepo, policy, func(res *shared.Resource[sitemodel.SiteSyncPolicyV1Meta, sitemodel.SiteSyncPolicyV1Status]) error {
-		res.Meta = policy.Meta
-		res.Status.CreatedAt = time.Now()
-		res.Status.UpdatedAt = time.Now()
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	policy.Status.CreatedAt = time.Now()
+	policy.Status.UpdatedAt = time.Now()
+	err := repo.SaveSyncPolicy(ctx, policy)
 	if err == nil && policy.Meta.Enabled {
 		s.addCronJob(*policy)
 		common.NotifyCluster(ctx, common.EventSiteSyncPolicyChanged, policy.ID)
@@ -115,7 +109,12 @@ func (s *SitePoolService) UpdateSyncPolicy(ctx context.Context, policy *sitemode
 		return err
 	}
 
-	err := ruleservice.ReplaceMeta(ctx, repo.SyncPolicyRepo, policy)
+	current, err := repo.GetSyncPolicy(ctx, policy.ID)
+	if err == nil {
+		current.Meta = policy.Meta
+		current.Status.UpdatedAt = time.Now()
+		err = repo.SaveSyncPolicy(ctx, current)
+	}
 
 	if err == nil {
 		updated, _ := repo.GetSyncPolicy(ctx, policy.ID)
@@ -183,7 +182,7 @@ func (s *SitePoolService) Sync(ctx context.Context, id string) error {
 		status := existingTask.GetStatus()
 		if status == shared.TaskStatusPending || status == shared.TaskStatusRunning {
 			lockKey := "action:site_sync:" + id
-			if release := common.Locker.TryLock(ctx, lockKey); release != nil {
+			if release := s.deps.Locker.TryLock(ctx, lockKey); release != nil {
 				s.syncTasks.CancelTask(id)
 				release()
 			} else {
@@ -203,7 +202,7 @@ func (s *SitePoolService) Sync(ctx context.Context, id string) error {
 	policy.Status.LastRunAt = time.Now()
 	_ = repo.SaveSyncPolicy(ctx, policy)
 
-	if common.Subscriber != nil {
+	if s.deps.Subscriber != nil {
 		common.NotifyCluster(ctx, common.EventSiteSyncRun, id)
 	} else {
 		go func() {
@@ -439,13 +438,13 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 			return err
 		}
 
-		_ = common.FS.MkdirAll(PoolsDir, 0755)
+		_ = s.deps.FS.MkdirAll(PoolsDir, 0755)
 		poolPath := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin")
 		tempFile := filepath.Join(PoolsDir, policy.Meta.TargetGroupID+".bin.tmp")
 
-		if exists, _ := afero.Exists(common.FS, poolPath); exists {
+		if exists, _ := afero.Exists(s.deps.FS, poolPath); exists {
 			var pf afero.File
-			pf, err = common.FS.Open(poolPath)
+			pf, err = s.deps.FS.Open(poolPath)
 			if err == nil {
 				reader, _ := NewReader(pf)
 				targetInternalTag := strings.ToLower(policy.ID)
@@ -505,7 +504,7 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 
 		finalTags := newTags
 		var tf afero.File
-		tf, err = common.FS.Create(tempFile)
+		tf, err = s.deps.FS.Create(tempFile)
 		if err != nil {
 			finalErr = err
 			return err
@@ -514,15 +513,15 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 		err = codec.WritePool(tf, finalTags, finalEntries)
 		tf.Close()
 		if err != nil {
-			_ = common.FS.Remove(tempFile)
+			_ = s.deps.FS.Remove(tempFile)
 			finalErr = err
 			return err
 		}
 
 		var content []byte
-		content, err = afero.ReadFile(common.FS, tempFile)
+		content, err = afero.ReadFile(s.deps.FS, tempFile)
 		if err != nil {
-			_ = common.FS.Remove(tempFile)
+			_ = s.deps.FS.Remove(tempFile)
 			finalErr = err
 			return err
 		}
@@ -531,12 +530,12 @@ func (s *SitePoolService) doSync(bgCtx context.Context, policyID string) error {
 		checksum := hex.EncodeToString(hf.Sum(nil))
 		count := int64(len(finalEntries))
 
-		if err := common.FS.Rename(tempFile, poolPath); err != nil {
+		if err := s.deps.FS.Rename(tempFile, poolPath); err != nil {
 			finalErr = err
 			return err
 		}
 
-		err = repo.GroupRepo.UpdateStatus(taskCtx, group.ID, func(status *sitemodel.SiteGroupV1Status) {
+		err = repo.UpdateGroupStatus(taskCtx, group.ID, func(status *sitemodel.SiteGroupV1Status) {
 			status.EntryCount = count
 			status.UpdatedAt = time.Now()
 			status.Checksum = checksum

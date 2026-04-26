@@ -10,6 +10,7 @@ import (
 	"time"
 
 	metav1 "homelab/pkg/apis/meta/v1"
+	runtimepkg "homelab/pkg/runtime"
 
 	"gopkg.d7z.net/middleware/kv"
 )
@@ -28,7 +29,6 @@ var (
 	ErrBadRequest    = errors.New("bad request")
 	ErrConflict      = errors.New("resource conflict")
 	ErrInvalidConfig = errors.New("invalid configuration")
-	DefaultDB        func() kv.KV
 )
 
 type ResourceStore[Spec any, Status any] struct {
@@ -51,14 +51,15 @@ func NewResourceStore[Spec any, Status any](db kv.KV, apiVersion string, kind st
 	}
 }
 
-func (s *ResourceStore[Spec, Status]) childDB() kv.KV {
+func (s *ResourceStore[Spec, Status]) childDB(ctx context.Context) kv.KV {
 	if s.db != nil {
 		return s.db.Child(s.prefix...)
 	}
-	if DefaultDB == nil || DefaultDB() == nil {
-		panic("store default db is not configured")
+	db := runtimepkg.DBFromContext(ctx)
+	if db == nil {
+		panic("resource store db is not configured in context")
 	}
-	return DefaultDB().Child(s.prefix...)
+	return db.Child(s.prefix...)
 }
 
 func (s *ResourceStore[Spec, Status]) Create(ctx context.Context, obj *Resource[Spec, Status]) error {
@@ -84,7 +85,7 @@ func (s *ResourceStore[Spec, Status]) Create(ctx context.Context, obj *Resource[
 	if err != nil {
 		return err
 	}
-	created, err := s.childDB().PutIfNotExists(ctx, name, string(data), kv.TTLKeep)
+	created, err := s.childDB(ctx).PutIfNotExists(ctx, name, string(data), kv.TTLKeep)
 	if err != nil {
 		return err
 	}
@@ -99,7 +100,7 @@ func (s *ResourceStore[Spec, Status]) Get(ctx context.Context, name string) (*Re
 	if err != nil {
 		return nil, err
 	}
-	data, err := s.childDB().Get(ctx, key)
+	data, err := s.childDB(ctx).Get(ctx, key)
 	if err != nil {
 		if isNotFound(err) {
 			return nil, ErrNotFound
@@ -126,7 +127,7 @@ func (s *ResourceStore[Spec, Status]) List(ctx context.Context, cursor string, l
 		fetchLimit = 50
 	}
 
-	resp, err := s.childDB().ListCurrentCursor(ctx, &kv.ListOptions{
+	resp, err := s.childDB(ctx).ListCurrentCursor(ctx, &kv.ListOptions{
 		Limit:  int64(fetchLimit),
 		Cursor: cursor,
 	})
@@ -194,7 +195,7 @@ func (s *ResourceStore[Spec, Status]) Delete(ctx context.Context, name string) e
 	if err != nil {
 		return err
 	}
-	deleted, err := s.childDB().Delete(ctx, key)
+	deleted, err := s.childDB(ctx).Delete(ctx, key)
 	if err != nil {
 		if isNotFound(err) {
 			return ErrNotFound
@@ -225,7 +226,7 @@ func (s *ResourceStore[Spec, Status]) Apply(ctx context.Context, obj *Resource[S
 	if err != nil {
 		return err
 	}
-	return s.childDB().Put(ctx, name, string(data), kv.TTLKeep)
+	return s.childDB(ctx).Put(ctx, name, string(data), kv.TTLKeep)
 }
 
 func (s *ResourceStore[Spec, Status]) Mutate(ctx context.Context, name string, createIfMissing bool, mutate ResourceMutator[Spec, Status]) error {
@@ -234,7 +235,7 @@ func (s *ResourceStore[Spec, Status]) Mutate(ctx context.Context, name string, c
 		return err
 	}
 	for attempt := 0; attempt < 10; attempt++ {
-		current, err := s.childDB().Get(ctx, key)
+		current, err := s.childDB(ctx).Get(ctx, key)
 		if err != nil && !isNotFound(err) {
 			return err
 		}
@@ -275,7 +276,7 @@ func (s *ResourceStore[Spec, Status]) Mutate(ctx context.Context, name string, c
 			return err
 		}
 		if !exists {
-			ok, err := s.childDB().PutIfNotExists(ctx, key, string(updated), kv.TTLKeep)
+			ok, err := s.childDB(ctx).PutIfNotExists(ctx, key, string(updated), kv.TTLKeep)
 			if err != nil {
 				return err
 			}
@@ -283,7 +284,7 @@ func (s *ResourceStore[Spec, Status]) Mutate(ctx context.Context, name string, c
 				return nil
 			}
 		} else {
-			ok, err := s.childDB().CompareAndSwap(ctx, key, current, string(updated))
+			ok, err := s.childDB(ctx).CompareAndSwap(ctx, key, current, string(updated))
 			if err != nil {
 				return err
 			}
@@ -297,7 +298,7 @@ func (s *ResourceStore[Spec, Status]) Mutate(ctx context.Context, name string, c
 }
 
 func (s *ResourceStore[Spec, Status]) ListAll(ctx context.Context, filter ResourceFilter[Spec, Status]) ([]Resource[Spec, Status], error) {
-	items, err := s.childDB().List(ctx, "")
+	items, err := s.childDB(ctx).List(ctx, "")
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +322,7 @@ func (s *ResourceStore[Spec, Status]) compareAndSwap(ctx context.Context, name s
 		return err
 	}
 	for attempt := 0; attempt < 10; attempt++ {
-		current, err := s.childDB().Get(ctx, key)
+		current, err := s.childDB(ctx).Get(ctx, key)
 		if err != nil {
 			if isNotFound(err) {
 				return ErrNotFound
@@ -341,7 +342,7 @@ func (s *ResourceStore[Spec, Status]) compareAndSwap(ctx context.Context, name s
 		if err != nil {
 			return err
 		}
-		ok, err := s.childDB().CompareAndSwap(ctx, key, current, string(updated))
+		ok, err := s.childDB(ctx).CompareAndSwap(ctx, key, current, string(updated))
 		if err != nil {
 			return err
 		}

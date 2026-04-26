@@ -2,6 +2,8 @@ package intelligence
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"time"
 
 	"homelab/pkg/models/shared"
@@ -18,6 +20,26 @@ type IntelligenceSourceV1Meta struct {
 }
 
 func (m *IntelligenceSourceV1Meta) Validate(_ context.Context) error {
+	m.Name = strings.TrimSpace(m.Name)
+	m.URL = strings.TrimSpace(m.URL)
+	m.UpdateCron = strings.TrimSpace(m.UpdateCron)
+	if m.Name == "" {
+		return errors.New("name is required")
+	}
+	if m.URL == "" {
+		return errors.New("url is required")
+	}
+	switch m.Type {
+	case "asn", "city", "country":
+	default:
+		return errors.New("invalid type: must be asn, city or country")
+	}
+	if m.AutoUpdate && m.UpdateCron == "" {
+		return errors.New("cron expression is required when auto update is enabled")
+	}
+	if m.Config == nil {
+		m.Config = map[string]string{}
+	}
 	return nil
 }
 

@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	runtimepkg "homelab/pkg/runtime"
 	"math/rand"
 	"time"
 
@@ -36,13 +37,19 @@ func AddDistributedCronJob(c *cron.Cron, spec, lockKey string, fn func()) (cron.
 			ttl = maxAllowed
 		}
 
+		db := runtimepkg.DBFromContext(ctx)
+		if db == nil {
+			fmt.Printf("cron_lease: db not configured for %s\n", lockKey)
+			return
+		}
+
 		val := fmt.Sprintf("%d", now.UnixNano())
-		acquired, err := DB.Child("system", "cron", "lease").PutIfNotExists(ctx, lockKey, val, ttl)
+		acquired, err := db.Child("system", "cron", "lease").PutIfNotExists(ctx, lockKey, val, ttl)
 		if err == nil && !acquired {
 			// 时钟容错: 抢锁失败的节点会进入一个极短的随机等待期 (50-200ms) 后再次尝试
 			jitter := time.Duration(rand.Intn(150)+50) * time.Millisecond
 			time.Sleep(jitter)
-			acquired, err = DB.Child("system", "cron", "lease").PutIfNotExists(ctx, lockKey, val, ttl)
+			acquired, err = db.Child("system", "cron", "lease").PutIfNotExists(ctx, lockKey, val, ttl)
 		}
 
 		if err != nil {

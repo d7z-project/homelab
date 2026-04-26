@@ -9,8 +9,11 @@ import (
 	discoverymodel "homelab/pkg/models/core/discovery"
 )
 
-func registerResourceDiscovery() {
-	_ = registryruntime.Default().RegisterResource(registryruntime.ResourceDescriptor{
+func registerResourceDiscovery(registry *registryruntime.Registry) {
+	if registry == nil {
+		return
+	}
+	_ = registry.RegisterResource(registryruntime.ResourceDescriptor{
 		Group: "rbac",
 		Kind:  "rbac",
 		Verbs: []string{"get", "list", "create", "update", "delete", "simulate", "*"},

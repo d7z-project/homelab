@@ -10,6 +10,8 @@ import (
 	"net/netip"
 	"sync"
 
+	runtimepkg "homelab/pkg/runtime"
+
 	"github.com/oschwald/geoip2-golang/v2"
 	"github.com/spf13/afero"
 )
@@ -20,13 +22,15 @@ const (
 
 type MMDBManager struct {
 	mu      sync.RWMutex
+	fs      afero.Fs
 	asn     map[string]*geoip2.Reader
 	city    map[string]*geoip2.Reader
 	country map[string]*geoip2.Reader
 }
 
-func NewMMDBManager(sources []intelligencemodel.IntelligenceSource) *MMDBManager {
+func NewMMDBManager(deps runtimepkg.ModuleDeps, sources []intelligencemodel.IntelligenceSource) *MMDBManager {
 	m := &MMDBManager{
+		fs:      deps.FS,
 		asn:     make(map[string]*geoip2.Reader),
 		city:    make(map[string]*geoip2.Reader),
 		country: make(map[string]*geoip2.Reader),
@@ -81,7 +85,7 @@ func (m *MMDBManager) remove(id string) {
 }
 
 func (m *MMDBManager) loadReader(path string) *geoip2.Reader {
-	data, err := afero.ReadFile(common.FS, path)
+	data, err := afero.ReadFile(m.fs, path)
 	if err != nil {
 		log.Printf("[MMDB] failed to read file %q: %v", path, err)
 		return nil

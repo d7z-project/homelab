@@ -7,6 +7,7 @@ import (
 	networkcommon "homelab/pkg/models/network/common"
 	sitemodel "homelab/pkg/models/network/site"
 	repo "homelab/pkg/repositories/network/site"
+	runtimepkg "homelab/pkg/runtime"
 	ruleservice "homelab/pkg/services/rules"
 	"io"
 	"net"
@@ -27,7 +28,7 @@ type AnalysisEngine struct {
 func (e *AnalysisEngine) lockPool(ctx context.Context, id string) (func(), error) {
 	lockKey := "network:site:matcher:build:" + id
 	for {
-		release := common.Locker.TryLock(ctx, lockKey)
+		release := runtimepkg.LockerFromContext(ctx).TryLock(ctx, lockKey)
 		if release != nil {
 			return release, nil
 		}
@@ -76,7 +77,7 @@ func (e *AnalysisEngine) GetMatcher(ctx context.Context, groupID string) (*Compo
 	}
 
 	poolPath := filepath.Join(PoolsDir, groupID+".bin")
-	f, err := common.FS.Open(poolPath)
+	f, err := runtimepkg.FSFromContext(ctx).Open(poolPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open pool data: %w", err)
 	}

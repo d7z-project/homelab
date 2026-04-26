@@ -16,6 +16,8 @@ func New() *Module { return &Module{} }
 
 func (m *Module) Name() string { return "core.audit" }
 
+func (m *Module) Init(runtimepkg.ModuleDeps) error { return nil }
+
 func (m *Module) RegisterRoutes(r chi.Router) {
 	routerx.Mount(r, "/audit", routerx.Scope{
 		Resource: "audit",
@@ -27,8 +29,8 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 	)
 }
 
-func (m *Module) Start(context.Context) error {
-	auditservice.RegisterDiscovery()
+func (m *Module) Start(ctx context.Context) error {
+	auditservice.RegisterDiscovery(runtimepkg.RegistryFromContext(ctx))
 	return nil
 }
 

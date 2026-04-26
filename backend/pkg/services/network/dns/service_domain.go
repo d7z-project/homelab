@@ -21,7 +21,7 @@ func lockDomain(ctx context.Context, id string) (func(), error) {
 }
 
 func ScanDomains(ctx context.Context, cursor string, limit int, search string) (*shared.PaginationResponse[dnsmodel.Domain], error) {
-	resp, err := dnsrepo.DomainRepo.List(ctx, cursor, limit, nil)
+	resp, err := dnsrepo.ScanDomains(ctx, cursor, limit, search)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func ScanDomains(ctx context.Context, cursor string, limit int, search string) (
 }
 
 func GetDomain(ctx context.Context, id string) (*dnsmodel.Domain, error) {
-	return dnsrepo.DomainRepo.Get(ctx, id)
+	return dnsrepo.GetDomain(ctx, id)
 }
 
 func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domain, error) {
@@ -55,7 +55,7 @@ func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domai
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	existingResp, _ := dnsrepo.DomainRepo.List(ctx, "", 1000, nil)
+	existingResp, _ := dnsrepo.ScanDomains(ctx, "", 1000, "")
 	if existingResp != nil {
 		for _, ed := range existingResp.Items {
 			if strings.EqualFold(ed.Meta.Name, domain.Meta.Name) {
@@ -65,14 +65,9 @@ func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domai
 	}
 
 	domain.ID = uuid.New().String()
-	err := dnsrepo.DomainRepo.Cow(ctx, domain.ID, func(res *shared.Resource[dnsmodel.DomainV1Meta, dnsmodel.DomainV1Status]) error {
-		res.Meta = domain.Meta
-		res.Status.CreatedAt = time.Now()
-		res.Status.UpdatedAt = time.Now()
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	domain.Status.CreatedAt = time.Now()
+	domain.Status.UpdatedAt = time.Now()
+	err := dnsrepo.SaveDomain(ctx, domain)
 
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("CreateDomain", domain.Meta.Name, "Failed: "+err.Error(), false)
@@ -91,15 +86,10 @@ func CreateDomain(ctx context.Context, domain *dnsmodel.Domain) (*dnsmodel.Domai
 			Comments: "System generated SOA",
 		},
 	}
-	_ = dnsrepo.RecordRepo.Cow(ctx, defaultSOA.ID, func(res *shared.Resource[dnsmodel.RecordV1Meta, dnsmodel.RecordV1Status]) error {
-		res.Meta = defaultSOA.Meta
-		res.Generation = 1
-		res.ResourceVersion = 1
-		return nil
-	})
+	_ = dnsrepo.SaveRecord(ctx, defaultSOA)
 
 	commonaudit.FromContext(ctx).Log("CreateDomain", domain.Meta.Name, "Created", true)
-	updated, _ := dnsrepo.DomainRepo.Get(ctx, domain.ID)
+	updated, _ := dnsrepo.GetDomain(ctx, domain.ID)
 	return updated, nil
 }
 
@@ -107,7 +97,7 @@ func UpdateDomain(ctx context.Context, id string, domain *dnsmodel.Domain) (*dns
 	if err := normalizeDomain(domain); err != nil {
 		return nil, err
 	}
-	existing, err := dnsrepo.DomainRepo.Get(ctx, id)
+	existing, err := dnsrepo.GetDomain(ctx, id)
 	if err != nil {
 		return nil, errors.New("not found")
 	}
@@ -116,23 +106,22 @@ func UpdateDomain(ctx context.Context, id string, domain *dnsmodel.Domain) (*dns
 		return nil, fmt.Errorf("%w: %s", commonauth.ErrPermissionDenied, resource)
 	}
 
-	err = dnsrepo.DomainRepo.PatchMeta(ctx, id, domain.Generation, func(m *dnsmodel.DomainV1Meta) {
-		// Only description is really editable for domain itself, name is immutable
-		m.Description = domain.Meta.Description
-	})
+	existing.Meta.Description = domain.Meta.Description
+	existing.Status.UpdatedAt = time.Now()
+	err = dnsrepo.SaveDomain(ctx, existing)
 
 	if err != nil {
 		commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Meta.Name, "Failed: "+err.Error(), false)
 		return nil, err
 	}
 
-	updated, _ := dnsrepo.DomainRepo.Get(ctx, id)
+	updated, _ := dnsrepo.GetDomain(ctx, id)
 	commonaudit.FromContext(ctx).Log("UpdateDomain", existing.Meta.Name, "Updated", true)
 	return updated, nil
 }
 
 func DeleteDomain(ctx context.Context, id string) error {
-	existing, err := dnsrepo.DomainRepo.Get(ctx, id)
+	existing, err := dnsrepo.GetDomain(ctx, id)
 	if err != nil {
 		return errors.New("not found")
 	}
@@ -142,7 +131,7 @@ func DeleteDomain(ctx context.Context, id string) error {
 	}
 
 	_ = dnsrepo.DeleteRecordsByDomain(ctx, id)
-	err = dnsrepo.DomainRepo.Delete(ctx, id)
+	err = dnsrepo.DeleteDomain(ctx, id)
 	commonaudit.FromContext(ctx).Log("DeleteDomain", existing.Meta.Name, "Deleted", err == nil)
 	return err
 }

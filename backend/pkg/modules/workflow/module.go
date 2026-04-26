@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"net/http"
 
 	"homelab/pkg/controllers/routerx"
 	workflowcontroller "homelab/pkg/controllers/workflow"
@@ -12,7 +13,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Module struct{}
+type Module struct {
+	runtime *actionservice.Runtime
+}
 
 func New() *Module {
 	return &Module{}
@@ -20,6 +23,15 @@ func New() *Module {
 
 func (m *Module) Name() string {
 	return "workflow"
+}
+
+func (m *Module) Init(deps runtimepkg.ModuleDeps) error {
+	rt, err := actionservice.NewRuntime(deps)
+	if err != nil {
+		return err
+	}
+	m.runtime = rt
+	return nil
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
@@ -31,6 +43,9 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 			Resource: "actions",
 			Audit:    "actions",
 			UsesAuth: true,
+			Extra: []func(http.Handler) http.Handler{
+				actionservice.ContextMiddleware(m.runtime),
+			},
 		},
 			routerx.Get("/workflows", workflowcontroller.ScanWorkflowsHandler, "list"),
 			routerx.Post("/workflows", workflowcontroller.CreateWorkflowHandler, "create"),
@@ -56,13 +71,13 @@ func (m *Module) RegisterRoutes(r chi.Router) {
 
 func (m *Module) Start(ctx context.Context) error {
 	actionprocessors.RegisterBuiltins()
-	actionservice.Init()
-	actionservice.RegisterDiscovery()
-	actionservice.BootUpSelfHealing()
-	if err := actionservice.GlobalTriggerManager.InitTriggers(ctx); err != nil {
+	ctx = m.runtime.WithContext(ctx)
+	actionservice.RegisterDiscovery(m.runtime.Deps.Registry)
+	actionservice.BootUpSelfHealing(ctx)
+	if err := m.runtime.TriggerManager.InitTriggers(ctx); err != nil {
 		return err
 	}
-	actionservice.GlobalTriggerManager.Start()
+	m.runtime.TriggerManager.Start(ctx)
 	return nil
 }
 
